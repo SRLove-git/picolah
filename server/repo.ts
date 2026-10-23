@@ -74,16 +74,29 @@ export function getProduct(id: string): Product | null {
   return row ? mapProduct(row) : null;
 }
 
+function downsample(points: PricePoint[], limit: number): PricePoint[] {
+  if (points.length <= limit) return points;
+  const sampled: PricePoint[] = [];
+  const step = (points.length - 1) / (limit - 1);
+  for (let index = 0; index < limit; index += 1) {
+    sampled.push(points[Math.round(index * step)]);
+  }
+  return sampled;
+}
+
 export function getPriceHistory(offerId: string): PricePoint[] {
+  // A real 30-day window, not "last 30 writes": the mock crawler can add many
+  // points per day, and the 30-day low must stay meaningful.
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const rows = db
     .prepare(
-      `SELECT recorded_at, price FROM (
-         SELECT recorded_at, price FROM price_points
-         WHERE offer_id = ? ORDER BY recorded_at DESC LIMIT 30
-       ) ORDER BY recorded_at ASC`,
+      `SELECT recorded_at, price FROM price_points
+       WHERE offer_id = ? AND recorded_at >= ?
+       ORDER BY recorded_at ASC`,
     )
-    .all(offerId) as Row[];
-  return rows.map((row) => ({ date: String(row.recorded_at), price: Number(row.price) }));
+    .all(offerId, cutoff) as Row[];
+  const points = rows.map((row) => ({ date: String(row.recorded_at), price: Number(row.price) }));
+  return downsample(points, 24);
 }
 
 export function getOffers(productId: string, country: CountryCode, includeOutOfStock = false): Offer[] {

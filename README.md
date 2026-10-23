@@ -1,35 +1,50 @@
 # Picolah
 
-**东南亚比价工作台 · Southeast Asia price copilot**
+**购物之前，PICO 一下 · Southeast Asia price copilot**
 
-左边是对话历史，右边是比价工作区。问一句想买的东西，Picolah 会把六个市场的在售报价、运费和券后价摊开，用一张结果卡告诉你最低价、和次低价差多少，以及要不要为官方店多付一点。
+Picolah 把比价做成一件轻松的小事。首页像 Google 一样干净，中间是一个 ChatGPT 式的大输入框，左边是 Instagram 式导航，Reels 里是商品测评短片。问一句想买的东西，它会把六个市场的在售报价、运费和券后价摊开，用一张结果卡告诉你最低价、和次低价差多少，以及要不要为官方店多付一点。
 
 网站本身**不抓价格**。独立爬虫 App 负责采集，通过数据接入 API 把标准化批次推进来；Picolah 只负责校验、入库、比价和展示。
 
-视觉方向参照 [TangMi](https://github.com/SRLove-git/TangMi) 的浅色工作台语言：近黑主色、白色大圆角卡片、冷灰表面、轻边框、玻璃顶栏，以及 Poppins / Geist Sans 字体组合。
+视觉方向来自「带角的卡皮巴拉」：奶油纸色底、覆盆子粉强调色、淡紫与薄荷点缀、Poppins 彩色字标，以及一只会漂浮、眨眼、晃角的卡皮巴拉吉祥物。
 
 ![Picolah welcome](docs/preview/welcome.png)
 
 ## 已实现
 
-- **TangMi 风格工作台**：白色浮层卡片 + 冷灰底、近黑主按钮、胶囊式导航、圆角价格卡，浅色主题优先。
+- **PICOLAH 视觉系统**：奶油纸色画布、粉色渐变主按钮、淡紫 / 薄荷辅助色、Poppins 彩色字标与 Geist 正文，整体明亮、年轻、Instagram 感。
+- **Google 式首页**：只保留吉祥物、字标、tagline 和一个搜索框；推荐词与测评短片收在下方，打开页面不抢注意力。
+- **ChatGPT 式输入框**：大圆角、可换行、支持语音输入、图片上传 / 拍照搜同款、拖拽图片；底栏直接切换市场与价格口径，右侧显示当前模型。
+- **卡皮巴拉吉祥物**：纯 SVG 绘制，漂浮、眨眼、耳朵和独角会轻轻摆动，星星会闪；从首页、侧栏头像到对话头像保持一致。
+- **Instagram 式左侧导航**：首页、Reels、消息、搜索、通知、创建、个人主页、更多；底部是工作区账号卡，移动端变为抽屉。
+- **Reels 测评短片**：商品测评 / 好价短片，自动播放进度、点赞、收藏、分享、关注、同款「去比价」；首页也有三张精选卡片直达对应短片。
+- **消息 / 通知 / 个人主页**：消息页保留完整比价对话；通知页聚合价格提醒与同步事件；个人主页集中管理默认市场、价格口径、爬虫数据源和账号。
 - **对话式比价**：SSE 流式回答，助手先定位商品与市场，再展示结构化的平台报价卡。
-- **四种价格口径**：顶部一键切换「到手价 / 商品价 / 含运费 / 30 日低」，列表会按当前口径重新排序并高亮对应数字。
+- **四种价格口径**：顶部和输入框都能切换「到手价 / 商品价 / 含运费 / 30 日低」，列表会按当前口径重新排序并高亮对应数字。
 - **六国本地化**：新加坡、马来西亚、泰国、印度尼西亚、菲律宾、越南；本地货币、当地主流平台和国旗图标。
-- **真实对话持久化**：SQLite 存储会话、消息、商品、报价、价格点和爬虫批次；刷新页面会恢复上次对话。
+- **真实对话持久化**：SQLite 存储会话、消息、商品、报价、价格点和爬虫批次；从「消息」列表可以继续任意一段对话。
 - **独立数据接入**：带 Bearer 鉴权的批量写接口，按 `source + externalId` 幂等 upsert，整批原子写入。
-- **LLM 接入**：兼容 OpenAI 协议的 Chat Completions（默认 DeepSeek）。价格检索始终在本地完成，模型只拿到价格库里的数据；比价建议严格基于报价，打招呼、没匹配到型号等对话也由模型自然回应，不再套用固定文案。没有配置 Key 时自动使用本地摘要器。
+- **LLM 接入**：兼容 OpenAI 协议的 Chat Completions（默认 DeepSeek）。价格检索始终在本地完成，模型只拿到价格库里的数据；比价建议严格基于报价，打招呼、没匹配到型号等对话也由模型自然回应。没有配置 Key 时自动使用本地摘要器。
 - **模型意图路由**：每条消息先由模型判断「比价 / 推荐 / 打招呼 / 闲聊」，抽取品类、预算和品牌；本地关键词匹配保留为兜底。
 - **需求型推荐**：按预算、品类和用途从价格库挑 1–4 款，回答里给推荐理由和价差，下方展示可直接点开的商品卡。
 - **图片找货**：支持上传或手机拍照，视觉模型识别品牌/型号并匹配价格库；没有收录时按品类推荐替代款。
 - **可操作的网关面板**：数据源状态、最近入库、接口地址、字段契约和 curl 示例都在界面内。
-- **响应式界面**：桌面为侧栏卡片 + 工作区卡片，移动端切换为抽屉式历史记录与单列比价卡。
+- **响应式界面**：桌面为 252px 侧栏 + 主工作区；1100px 以下收成图标栏；820px 以下切换为抽屉式导航与单列卡片。
+- **可运行的 mock**：`pnpm mock` 是一支模拟爬虫，按市场轮询把真实格式的批次推进来，价格、库存、今日更新和 30 日曲线都会持续变化；`?mock=1` 则完全离线，只用前端内置数据跑通整套工作台。
 
 ## 界面预览
+
+首页：Google 式留白、彩色字标、卡皮巴拉吉祥物和 ChatGPT 式大输入框。
+
+![Picolah home](docs/preview/welcome.png)
 
 比价对话：模型建议 + 可按价格口径重排的完整报价卡。
 
 ![Picolah comparison workspace](docs/preview/chat.png)
+
+Reels：商品测评短片、同款好价和「去比价」入口。
+
+![Picolah reels](docs/preview/reels.png)
 
 独立爬虫网关：状态、最近批次、字段契约和接入地址都在这里。
 
@@ -41,23 +56,21 @@
 
 ## 视觉语言
 
-参考 TangMi 的 design language，而不是复制它的业务界面：
-
 | Token | 值 | 用途 |
 | --- | --- | --- |
-| Workspace | `#F8FAFC` | 页面底色、次级表面 |
-| Card | `#FFFFFF` | 侧栏、主工作区、结果卡 |
-| Subtle | `#F1F5F9` | 胶囊容器、图标底、弱按钮 |
-| Border | `#E5E7EB` | 卡片和控件描边 |
-| Ink | `#111827` | 主文字、主按钮、价格 |
-| Muted | `#6B7280` | 辅助说明、元数据 |
-| Success | `#16A34A` | 在线状态、官方店、省钱提示 |
-| Warning | `#D97706` | 本地模式、星标 |
-| Info | `#2563EB` | 信息与对比辅助色 |
+| Paper | `#FBF7F2` | 页面底色、奶油纸张感 |
+| Card | `#FFFDFA` | 侧栏、工作区、结果卡 |
+| Ink | `#241C25` | 主文字、主按钮、价格 |
+| Muted | `#7E6F7D` | 辅助说明、元数据 |
+| Raspberry | `#EF4F7E` | 主 CTA、选中态、重点数字 |
+| Lilac | `#B79BFF` | 次级强调、Reels 渐变 |
+| Mint | `#57C9A8` | 在线状态、省钱提示 |
+| Butter | `#F2B53C` | 标签、星标、促销贴纸 |
+| Line | `#F1E5DE` | 卡片和控件描边 |
 
-- 字体：Poppins 负责 UI / 数字标题，Geist Sans 负责正文与价格明细，中文自动回退到系统无衬线字体。
-- 卡片：20px 大圆角、1px 冷灰描边、低对比阴影；桌面侧栏固定 300px。
-- 控件：胶囊式价格口径切换、近黑主 CTA、图标按钮和圆角下拉。
+- 字体：Poppins 负责彩色字标、标题和数字，Geist Sans 负责正文与控制项，中文自动回退到系统无衬线字体。
+- 形状：大圆角（18–28px）、软阴影、白色玻璃浮层；侧栏 252px，1100px 以下收成 78px 图标栏。
+- 动效：吉祥物漂浮 / 眨眼 / 晃角，Reels 进度自动推进，页面淡入；全部尊重 `prefers-reduced-motion`。
 - 字体文件位于 `public/fonts/`（Poppins / Geist Sans，SIL OFL）。
 
 ## 快速开始
@@ -72,7 +85,16 @@ pnpm dev
 
 打开 **http://127.0.0.1:5173**。API 在 **http://127.0.0.1:8787**。
 
-首次启动会自动建库、写入 10 个商品 / 210 条演示报价，并生成几段示例对话。演示数据只用于把界面和链路跑通，不代表真实市场价。
+首次启动会自动建库、写入 **28 个商品 / 588 条演示报价**（六个市场 × 各市场平台矩阵），并生成 8 段示例对话。演示数据只用于把界面和链路跑通，不代表真实市场价。
+
+想让数据动起来（模拟爬虫每 2 分钟推一批）：
+
+```bash
+pnpm mock          # 常驻；Windows 另开一个终端
+pnpm mock:once     # 只推一批，适合冒烟测试
+```
+
+只想看纯前端演示、不启动 API：打开 **http://127.0.0.1:5173/?mock=1**（或构建时设 `VITE_MOCK=1`）。
 
 重置演示库：
 
@@ -228,14 +250,20 @@ picolah/
 ├── server/
 │   ├── index.ts             # Express 入口与静态资源托管
 │   ├── db.ts                # node:sqlite 初始化和 schema
-│   ├── seed.ts              # 演示数据 + 示例对话
-│   ├── catalog-data.ts      # 商品与报价生成器
+│   ├── seed.ts              # 演示目录同步 + 示例对话
 │   ├── repo.ts              # 商品 / 报价 / 会话查询
-│   ├── query.ts             # 国家识别、商品别名匹配
+│   ├── query.ts             # 国家识别、商品别名匹配（包 shared/query）
 │   ├── llm.ts               # OpenAI-compatible SSE 流
-│   ├── copy.ts              # 本地兜底摘要器
+│   ├── copy.ts              # 本地兜底摘要器（转 shared/copy）
 │   └── routes/              # chat / conversations / config / ingest
-├── shared/types.ts          # 前后端共享类型、市场与平台定义
+├── shared/
+│   ├── catalog.ts           # 28 个商品 + 报价生成器（服务端 / 爬虫 / 前端共用）
+│   ├── comparison.ts        # 从内存报价组装 Comparison
+│   ├── query.ts             # 纯函数匹配（可跑在浏览器）
+│   ├── copy.ts / format.ts  # 兜底文案与货币格式化
+│   └── demo-conversations.ts# 示例对话列表
+├── mock/crawler.ts          # 模拟爬虫：定时向 ingest API 推批次
+├── src/lib/mock-backend.ts  # 纯前端离线 mock（?mock=1）
 ├── docs/ingest-api.md       # 爬虫接入契约
 └── data/                    # SQLite（首次运行自动生成，已 gitignore）
 ```
@@ -250,20 +278,70 @@ picolah/
 | `pnpm build` | 类型检查 + 生产构建 |
 | `pnpm start` | 启动 API（若存在 `dist/` 则同时托管前端） |
 | `pnpm seed` | 清空并重建演示库 |
-| `pnpm test` | 国家 / 商品匹配与货币格式化测试 |
+| `pnpm mock` | 启动模拟爬虫，持续推送批次 |
+| `pnpm mock:once` | 模拟爬虫只推一批 |
+| `pnpm test` | 匹配、目录完整性、比价组装与货币格式化测试 |
+
+picolah 的演示数据有三个层次，都用 `shared/catalog.ts` 这一份目录：
+
+1. **seed**：首次启动把 28 个商品、588 条报价和 8 段示例对话写进 SQLite，报价的
+   `externalId` 就是 `mock-<market>-<product>-<platform>`，与模拟爬虫的幂等键一致。
+2. **模拟爬虫**：`pnpm mock` 按市场轮询，每次挑 8 条报价做小幅价格游走、偶发闪购折扣和
+   库存切换，再以正常 ingest 批次写回；更新的是同一批报价，不会产生重复行。
+3. **离线 mock**：`?mock=1`（或 `VITE_MOCK=1` 构建）时，前端用同一份目录和
+   `shared/comparison.ts` 直接渲染历史、比价卡和流式回答，完全不需要 API 进程。
+
+模拟爬虫的节奏可用 `MOCK_INTERVAL_MS`、`MOCK_BATCH_SIZE`、`MOCK_MARKETS` 调整，
+价格状态写在 `mock-state/state.json`，`pnpm mock -- --reset` 可重置。
+
+演示数据的报价、店铺名和链接都是生成的，不代表真实市场价。
 
 生产模式：
 
 ```bash
 pnpm build
-NODE_ENV=production pnpm start
+NODE_ENV=production HOST=0.0.0.0 pnpm start
 ```
+
+## 生产部署（Docker + HTTPS）
+
+仓库自带 `Dockerfile` 与 `docker-compose.yml`：多阶段构建前端，运行时用 `tsx`
+同时托管 API 与 `dist/`，SQLite 挂载到 `./data`。
+
+```bash
+cp deploy/.env.example .env   # 填 LLM_API_KEY、INGEST_API_KEY
+docker compose up -d --build
+curl -s http://172.20.0.1:8787/api/health
+```
+
+compose 默认同时启动 `picolah` 与 `picolah-mock`（模拟爬虫）。只想要静态数据时：
+
+```bash
+docker compose stop mock-crawler     # 停止价格变化
+docker compose start mock-crawler    # 恢复
+```
+
+线上服务器（47.84.25.19）的 443 端口由共享的 `diy-nginx-lb` 容器持有，
+picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通过 HTTP-01 签发，
+续期由 root cron 自动完成。完整说明、nginx 片段和自愈脚本见
+[deploy/README.md](deploy/README.md)。
+
+**入口是隐藏的：**
+
+- `/` 是 Picolah Research 的伪装首页（`public/landing.html`），不放任何工作台入口。
+- 真正的工作台在 `/7hk9ho`，可用 `PICOLAH_ENTRY_PATH` 改。
+- `/api/*` 需要入口页下发的 `pcl_entry` cookie；`/api/health` 和带 Bearer 的 ingest 例外（爬虫不受影响）。
+- 工作台页面带 `noindex`，`robots.txt` 也屏蔽了入口和 API。
+
+- `deploy/nginx/picolah.com.conf`：加入共享 443 nginx 的 server 块。
+- `deploy/apply-nginx.sh`：幂等重挂 vhost（diy 重新部署覆盖配置后自动恢复）。
 
 ## 环境变量
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PORT` | `8787` | API 端口 |
+| `HOST` | `127.0.0.1` | 监听地址；容器内设为 `0.0.0.0` |
 | `INGEST_API_KEY` | `pcl_dev_crawler_key` | 爬虫写入密钥，生产必须更换 |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | 允许跨域的来源，逗号分隔 |
 | `LLM_API_KEY` | 空 | 空则启用本地摘要 |
@@ -273,6 +351,13 @@ NODE_ENV=production pnpm start
 | `LLM_VISION_MODEL` | `deepseek-flash` | 图片识别模型名（需支持图片输入） |
 | `LLM_PROVIDER` | `DeepSeek` | 界面上显示的服务商名 |
 | `PICOLAH_DB_PATH` | `data/picolah.db` | 可选数据库路径 |
+| `VITE_MOCK` | 空 | 构建时设为 `1`，前端默认进入离线 mock（运行时 `?mock=1` 等效） |
+| `MOCK_INTERVAL_MS` | `120000` | 模拟爬虫批次间隔 |
+| `MOCK_BATCH_SIZE` | `8` | 模拟爬虫每批报价数（1–100） |
+| `MOCK_MARKETS` | 全部 | 只跑部分市场，例如 `SG,MY` |
+| `MOCK_STATE_FILE` | `mock-state/state.json` | 模拟爬虫价格状态文件 |
+| `PICOLAH_API_BASE` | `http://127.0.0.1:8787` | 模拟爬虫写入的 API 地址 |
+| `PICOLAH_INGEST_KEY` | 同 `INGEST_API_KEY` | 模拟爬虫使用的写入密钥 |
 
 ## 安全与边界
 

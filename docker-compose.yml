@@ -1,0 +1,62 @@
+name: picolah
+
+services:
+  picolah:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: picolah:latest
+    container_name: picolah
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PICOLAH_ENTRY_PATH: ${PICOLAH_ENTRY_PATH:-/7hk9ho}
+    # Bind only to the docker_default bridge gateway: reachable by the shared
+    # 443 nginx-lb (which lives on that network) and by the host, not the internet.
+    ports:
+      - "172.20.0.1:8787:8787"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8787/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Simulates the separate crawler app: nudges demo prices and pushes real
+  # ingest batches, so the gateway panel and price history stay alive.
+  mock-crawler:
+    image: picolah:latest
+    container_name: picolah-mock
+    restart: unless-stopped
+    depends_on:
+      picolah:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PICOLAH_API_BASE: http://picolah:8787
+      PICOLAH_INGEST_KEY: ${INGEST_API_KEY}
+      MOCK_INTERVAL_MS: ${MOCK_INTERVAL_MS:-120000}
+      MOCK_BATCH_SIZE: ${MOCK_BATCH_SIZE:-8}
+      MOCK_MARKETS: ${MOCK_MARKETS:-}
+      MOCK_STATE_FILE: /app/mock-state/state.json
+    command: ["./node_modules/.bin/tsx", "mock/crawler.ts"]
+    volumes:
+      - ./mock-state:/app/mock-state
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

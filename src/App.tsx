@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowDown, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type {
   AppConfig,
   ChatMessage as ChatMessageType,
@@ -10,14 +10,16 @@ import type {
 } from '../shared/types';
 import { COUNTRY_CODES } from '../shared/types';
 import { getConfig, getConversation, getConversations, streamChat } from './lib/api';
-import { TopBar } from './components/TopBar';
-import { Sidebar } from './components/Sidebar';
-import { Welcome } from './components/Welcome';
-import { ChatMessage, StreamingMessage } from './components/ChatMessage';
-import { Composer } from './components/Composer';
+import { AppSidebar, type AppView } from './components/AppSidebar';
+import { HomeView } from './components/HomeView';
+import { ChatView } from './components/ChatView';
+import { ReelsView } from './components/ReelsView';
+import { MessagesView } from './components/MessagesView';
+import { SearchView } from './components/SearchView';
+import { NotificationsView } from './components/NotificationsView';
+import { ProfileView } from './components/ProfileView';
 import { IngestDrawer } from './components/IngestDrawer';
 
-const ACTIVE_KEY = 'picolah.activeConversation';
 const MARKET_KEY = 'picolah.market';
 const PRICE_MODE_KEY = 'picolah.priceMode';
 
@@ -27,6 +29,8 @@ interface StreamState {
   comparison: Comparison | null;
   startedAt: number;
 }
+
+const PAGE_VIEWS: AppView[] = ['home', 'reels', 'messages', 'search', 'notifications', 'profile'];
 
 function readStorage(key: string): string | null {
   try {
@@ -59,47 +63,31 @@ function initialPriceMode(): PriceMode {
     : 'landed';
 }
 
-function ConversationSkeleton() {
-  return (
-    <div className="conversation-skeleton" aria-label="正在加载对话">
-      <div className="skeleton-user" />
-      <div className="skeleton-assistant">
-        <div className="skeleton-avatar" />
-        <div className="skeleton-lines">
-          <span style={{ width: '32%' }} />
-          <span style={{ width: '94%' }} />
-          <span style={{ width: '78%' }} />
-        </div>
-      </div>
-      <div className="skeleton-card">
-        <div className="skeleton-card-top">
-          <span className="skeleton-square" />
-          <span className="skeleton-block" />
-        </div>
-        <span className="skeleton-row" />
-        <span className="skeleton-row" />
-        <span className="skeleton-row short" />
-      </div>
-    </div>
-  );
+function initialView(): AppView {
+  if (typeof window === 'undefined') return 'home';
+  const hash = window.location.hash.replace('#', '');
+  return PAGE_VIEWS.includes(hash as AppView) ? (hash as AppView) : 'home';
 }
 
 export default function App() {
-  const initialActive = useRef<string | null>(readStorage(ACTIVE_KEY));
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(initialActive.current);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [title, setTitle] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [market, setMarket] = useState<CountryCode>(initialMarket);
   const [priceMode, setPriceMode] = useState<PriceMode>(initialPriceMode);
   const [stream, setStream] = useState<StreamState | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [conversationLoading, setConversationLoading] = useState(Boolean(initialActive.current));
+  const [conversationLoading, setConversationLoading] = useState(false);
   const [booting, setBooting] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [gatewayOpen, setGatewayOpen] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
+  const [view, setView] = useState<AppView>(initialView);
+  const [reelStart, setReelStart] = useState(0);
+  const [unread, setUnread] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -110,6 +98,7 @@ export default function App() {
   const streamRef = useRef<StreamState | null>(null);
   const nearBottomRef = useRef(true);
   const scrollFrameRef = useRef<number | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -118,6 +107,15 @@ export default function App() {
   useEffect(() => {
     streamRef.current = stream;
   }, [stream]);
+
+  const notify = useCallback((message: string) => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast(message);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 2800);
+  }, []);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -135,13 +133,13 @@ export default function App() {
     (conversation: Awaited<ReturnType<typeof getConversation>>) => {
       activeIdRef.current = conversation.id;
       setActiveId(conversation.id);
-      writeStorage(ACTIVE_KEY, conversation.id);
       setTitle(conversation.title);
       setMessages(conversation.messages);
       setMarket(conversation.market);
       writeStorage(MARKET_KEY, conversation.market);
       nearBottomRef.current = true;
       setNearBottom(true);
+      setView('chat');
     },
     [],
   );
@@ -157,40 +155,31 @@ export default function App() {
       if (cancelled) return;
       if (configResult.status === 'fulfilled') setConfig(configResult.value);
       if (listResult.status === 'fulfilled') setConversations(listResult.value);
-
-      const savedId = initialActive.current;
-      if (savedId) {
-        try {
-          const conversation = await getConversation(savedId);
-          if (!cancelled && activeIdRef.current === savedId) applyConversation(conversation);
-        } catch {
-          if (!cancelled && activeIdRef.current === savedId) {
-            activeIdRef.current = null;
-            setActiveId(null);
-            setTitle(null);
-            writeStorage(ACTIVE_KEY, null);
-          }
-        }
-      }
-      if (!cancelled) {
-        setConversationLoading(false);
-        setBooting(false);
-      }
+      if (!cancelled) setBooting(false);
     }
 
     void boot();
     return () => {
       cancelled = true;
     };
-  }, [applyConversation]);
+  }, []);
 
   useEffect(() => {
-    document.title = title ? `${title} · Picolah` : 'Picolah · 东南亚比价工作台';
+    document.title = title ? `${title} · Picolah` : 'Picolah · 购物之前 PICO 一下';
   }, [title]);
+
+  useEffect(() => {
+    const hash = view === 'chat' ? '' : `#${view}`;
+    const next = `${window.location.pathname}${window.location.search}${hash}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== next) {
+      window.history.replaceState(null, '', next);
+    }
+  }, [view]);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     };
   }, []);
 
@@ -204,18 +193,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (view !== 'chat') return;
     if (messages.length || stream || conversationLoading) {
       scheduleScroll();
     }
-  }, [messages.length, stream?.text, stream?.status, conversationLoading, scheduleScroll, stream]);
+  }, [view, messages.length, stream?.text, stream?.status, conversationLoading, scheduleScroll, stream]);
 
   useEffect(() => {
-    if (!conversationLoading && !messages.length && !stream) {
-      nearBottomRef.current = true;
-      setNearBottom(true);
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }
-  }, [conversationLoading, messages.length, stream]);
+    if (view !== 'chat' || conversationLoading || messages.length || stream) return;
+    nearBottomRef.current = true;
+    setNearBottom(true);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [view, conversationLoading, messages.length, stream]);
 
   const handleScroll = useCallback(() => {
     const element = scrollRef.current;
@@ -267,14 +256,33 @@ export default function App() {
     setChatError(null);
     setConversationLoading(false);
     setSidebarOpen(false);
-    writeStorage(ACTIVE_KEY, null);
-    window.requestAnimationFrame(() => composerRef.current?.focus());
+    setView('home');
+    window.requestAnimationFrame(() => {
+      if (window.matchMedia('(min-width: 821px)').matches) composerRef.current?.focus();
+    });
   }, [cancelStream]);
+
+  const navigate = useCallback(
+    (next: AppView) => {
+      setSidebarOpen(false);
+      if (next === 'home') {
+        if (view === 'home' && !messages.length) {
+          if (window.matchMedia('(min-width: 821px)').matches) composerRef.current?.focus();
+          return;
+        }
+        handleNewChat();
+        return;
+      }
+      setView(next);
+    },
+    [handleNewChat, messages.length, view],
+  );
 
   const loadConversation = useCallback(
     async (id: string) => {
       if (activeIdRef.current === id && !conversationLoading && !streamRef.current) {
         setSidebarOpen(false);
+        setView('chat');
         return;
       }
       cancelStream(false);
@@ -282,10 +290,10 @@ export default function App() {
       loadTokenRef.current = token;
       activeIdRef.current = id;
       setActiveId(id);
-      writeStorage(ACTIVE_KEY, id);
       setConversationLoading(true);
       setChatError(null);
       setSidebarOpen(false);
+      setView('chat');
       nearBottomRef.current = true;
 
       try {
@@ -298,13 +306,20 @@ export default function App() {
         setActiveId(null);
         setTitle(null);
         setMessages([]);
-        writeStorage(ACTIVE_KEY, null);
       } finally {
         if (loadTokenRef.current === token) setConversationLoading(false);
       }
     },
     [applyConversation, cancelStream, conversationLoading],
   );
+
+  const deepLinkRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkRef.current) return;
+    deepLinkRef.current = true;
+    const requested = new URLSearchParams(window.location.search).get('conversation');
+    if (requested) void loadConversation(requested);
+  }, [loadConversation]);
 
   const sendMessage = useCallback(
     async (rawMessage: string, image?: string) => {
@@ -329,6 +344,7 @@ export default function App() {
       setStream({ status: '正在理解问题…', text: '', comparison: null, startedAt: Date.now() });
       setChatError(null);
       setSidebarOpen(false);
+      setView('chat');
       nearBottomRef.current = true;
       setNearBottom(true);
 
@@ -366,7 +382,6 @@ export default function App() {
               conversationId = meta.conversationId;
               setActiveId(meta.conversationId);
               activeIdRef.current = meta.conversationId;
-              writeStorage(ACTIVE_KEY, meta.conversationId);
               setTitle(meta.title);
               setMarket(meta.market);
               writeStorage(MARKET_KEY, meta.market);
@@ -463,7 +478,6 @@ export default function App() {
           abortRef.current = null;
           void refreshConversations();
           if (conversationId) {
-            // Keep the active id in sync even when the stream ends without a done event.
             activeIdRef.current = conversationId;
           }
         }
@@ -484,9 +498,16 @@ export default function App() {
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const editing =
+        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         handleNewChat();
+      }
+      if (event.key === '/' && !editing && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        setView('search');
       }
       if (event.key === 'Escape') {
         setSidebarOpen(false);
@@ -497,101 +518,159 @@ export default function App() {
   }, [handleNewChat]);
 
   const busy = Boolean(stream);
-  const showWelcome = !conversationLoading && !messages.length && !stream;
 
   return (
-    <div className="app-shell">
+    <div className={`pc-app ${sidebarOpen ? 'is-sidebar-open' : ''}`}>
       <div
-        className={`sidebar-scrim ${sidebarOpen ? 'is-open' : ''}`}
+        className={`pc-sidebar-scrim ${sidebarOpen ? 'is-open' : ''}`}
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
       />
-      <Sidebar
+      <AppSidebar
+        view={view}
         conversations={conversations}
         activeId={activeId}
         open={sidebarOpen}
         loading={booting}
         config={config}
+        unread={unread}
+        onNavigate={navigate}
         onSelect={(id) => void loadConversation(id)}
         onNew={handleNewChat}
-        onOpenGateway={() => setGatewayOpen(true)}
+        onOpenGateway={() => {
+          setSidebarOpen(false);
+          setGatewayOpen(true);
+        }}
         onClose={() => setSidebarOpen(false)}
+        notify={notify}
       />
 
-      <main className="main">
-        <TopBar
-          title={title}
-          config={config}
-          market={market}
-          priceMode={priceMode}
-          onMarketChange={handleMarketChange}
-          onPriceModeChange={handlePriceModeChange}
-          onOpenSidebar={() => setSidebarOpen(true)}
-          onNew={handleNewChat}
-        />
-
-        <div className="chat-region">
-          <div className="chat-scroll" ref={scrollRef} onScroll={handleScroll}>
-            {conversationLoading ? (
-              <ConversationSkeleton />
-            ) : showWelcome ? (
-              <Welcome
-                market={market}
-                priceMode={priceMode}
-                config={config}
-                onAsk={(query) => void sendMessage(query)}
-              />
-            ) : (
-              <div className="thread">
-                {messages.map((message) => (
-                  <ChatMessage
-                    key={message.id}
-                    message={message}
-                    priceMode={priceMode}
-                    market={market}
-                    onAsk={(query) => void sendMessage(query)}
-                  />
-                ))}
-                {stream && (
-                  <StreamingMessage
-                    status={stream.status}
-                    text={stream.text}
-                    hasResults={Boolean(stream.comparison?.offers.length)}
-                    offerCount={stream.comparison?.offers.length || 0}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-
-          {!nearBottom && (
-            <button className="scroll-down" type="button" onClick={scrollToBottom} aria-label="回到底部">
-              <ArrowDown size={16} />
-            </button>
-          )}
-
-          {chatError && (
-            <div className="chat-error" role="alert">
-              <AlertCircle size={15} />
-              <span>{chatError}</span>
-              <button type="button" onClick={() => setChatError(null)} aria-label="关闭错误提示">
-                <X size={14} />
-              </button>
-            </div>
-          )}
-
-          <Composer
+      <main className="pc-main">
+        {view === 'home' && (
+          <HomeView
             market={market}
             priceMode={priceMode}
             config={config}
             busy={busy}
-            loadingConversation={conversationLoading}
+            unread={unread}
             inputRef={composerRef}
             onSend={(message, image) => void sendMessage(message, image)}
             onStop={() => cancelStream(true)}
+            onAsk={(query) => void sendMessage(query)}
+            onMarketChange={handleMarketChange}
+            onPriceModeChange={handlePriceModeChange}
+            onOpenReels={(index = 0) => {
+              setReelStart(index);
+              setView('reels');
+            }}
+            onOpenNotifications={() => setView('notifications')}
+            onOpenProfile={() => setView('profile')}
+            onOpenSidebar={() => setSidebarOpen(true)}
           />
-        </div>
+        )}
+
+        {view === 'chat' && (
+          <ChatView
+            title={title}
+            market={market}
+            priceMode={priceMode}
+            config={config}
+            messages={messages}
+            stream={stream}
+            loading={conversationLoading}
+            chatError={chatError}
+            nearBottom={nearBottom}
+            busy={busy}
+            inputRef={composerRef}
+            scrollRef={scrollRef}
+            onScroll={handleScroll}
+            onScrollToBottom={scrollToBottom}
+            onDismissError={() => setChatError(null)}
+            onSend={(message, image) => void sendMessage(message, image)}
+            onStop={() => cancelStream(true)}
+            onAsk={(query) => void sendMessage(query)}
+            onMarketChange={handleMarketChange}
+            onPriceModeChange={handlePriceModeChange}
+            onNew={handleNewChat}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        )}
+
+        {view === 'reels' && (
+          <ReelsView
+            market={market}
+            initialIndex={reelStart}
+            onAsk={(query) => void sendMessage(query)}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            notify={notify}
+          />
+        )}
+
+        {view === 'messages' && (
+          <MessagesView
+            conversations={conversations}
+            loading={booting}
+            config={config}
+            market={market}
+            unread={unread}
+            onSelect={(id) => void loadConversation(id)}
+            onNew={handleNewChat}
+            onOpenNotifications={() => setView('notifications')}
+            onOpenProfile={() => setView('profile')}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        )}
+
+        {view === 'search' && (
+          <SearchView
+            config={config}
+            market={market}
+            unread={unread}
+            onAsk={(query) => void sendMessage(query)}
+            onOpenNotifications={() => setView('notifications')}
+            onOpenProfile={() => setView('profile')}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        )}
+
+        {view === 'notifications' && (
+          <NotificationsView
+            config={config}
+            market={market}
+            unread={unread}
+            onMarkRead={() => setUnread(false)}
+            onAsk={(query) => void sendMessage(query)}
+            onOpenProfile={() => setView('profile')}
+            onOpenGateway={() => setGatewayOpen(true)}
+            onOpenReels={() => setView('reels')}
+            onOpenNotifications={() => setView('notifications')}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        )}
+
+        {view === 'profile' && (
+          <ProfileView
+            config={config}
+            market={market}
+            priceMode={priceMode}
+            conversationCount={conversations.length}
+            unread={unread}
+            onMarketChange={handleMarketChange}
+            onPriceModeChange={handlePriceModeChange}
+            onOpenGateway={() => setGatewayOpen(true)}
+            onOpenNotifications={() => setView('notifications')}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            notify={notify}
+          />
+        )}
       </main>
+
+      {toast && (
+        <div className="pc-toast" role="status">
+          <Sparkles size={14} />
+          <span>{toast}</span>
+        </div>
+      )}
 
       <IngestDrawer
         open={gatewayOpen}

@@ -6,6 +6,20 @@ import type {
   ConversationSummary,
 } from '../../shared/types';
 
+/**
+ * Offline demo mode: `?mock=1` (or a VITE_MOCK=1 build) serves the whole
+ * workspace from shared/catalog.ts with no API process running.
+ */
+export function isMockMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (String(import.meta.env.VITE_MOCK) === '1') return true;
+  try {
+    return new URLSearchParams(window.location.search).get('mock') === '1';
+  } catch {
+    return false;
+  }
+}
+
 async function parseError(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { message?: string; error?: string };
@@ -22,15 +36,18 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
 }
 
 export async function getConfig(): Promise<AppConfig> {
+  if (isMockMode()) return (await import('./mock-backend')).mockGetConfig();
   return getJson<AppConfig>('/api/config');
 }
 
 export async function getConversations(): Promise<ConversationSummary[]> {
+  if (isMockMode()) return (await import('./mock-backend')).mockGetConversations();
   const data = await getJson<{ conversations: ConversationSummary[] }>('/api/conversations');
   return data.conversations;
 }
 
 export async function getConversation(id: string, signal?: AbortSignal): Promise<ConversationDetail> {
+  if (isMockMode()) return (await import('./mock-backend')).mockGetConversation(id);
   const data = await getJson<{ conversation: ConversationDetail }>(
     `/api/conversations/${encodeURIComponent(id)}`,
     signal,
@@ -39,6 +56,7 @@ export async function getConversation(id: string, signal?: AbortSignal): Promise
 }
 
 export async function removeConversation(id: string): Promise<void> {
+  if (isMockMode()) return (await import('./mock-backend')).mockRemoveConversation(id);
   const response = await fetch(`/api/conversations/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
@@ -88,6 +106,10 @@ export async function streamChat(
   handlers: StreamHandlers,
   signal: AbortSignal,
 ): Promise<void> {
+  if (isMockMode()) {
+    return (await import('./mock-backend')).mockStreamChat(input, handlers, signal);
+  }
+
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

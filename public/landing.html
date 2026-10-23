@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f2ec" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta
+      name="description"
+      content="Picolah Research — 关于东南亚六个市场消费习惯的长期笔记。"
+    />
+    <title>Picolah Research · 东南亚消费笔记</title>
+    <style>
+      :root {
+        --paper: #f4f2ec;
+        --paper-2: #ece9e0;
+        --ink: #15171a;
+        --muted: #6b6a63;
+        --line: #d8d3c6;
+        --accent: #2f5d4b;
+        --serif: "Iowan Old Style", "Palatino Linotype", "Songti SC", "Noto Serif SC", Georgia, serif;
+        --sans: "Inter", "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a { color: inherit; }
+
+      .wrap {
+        width: min(1080px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .masthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 28px 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .brand strong {
+        font-family: var(--serif);
+        font-size: 20px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .brand span {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+
+      nav {
+        display: flex;
+        gap: 24px;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      nav a { text-decoration: none; }
+      nav a:hover { color: var(--ink); }
+
+      .hero {
+        padding: 88px 0 64px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 26px;
+      }
+
+      .kicker::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: var(--accent);
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 6vw, 68px);
+        line-height: 1.14;
+        letter-spacing: -0.01em;
+        max-width: 15ch;
+      }
+
+      .lede {
+        max-width: 56ch;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .lede em {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--ink);
+      }
+
+      .issue {
+        margin-top: 34px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 28px;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .issue span { white-space: nowrap; }
+
+      section.notes { padding: 56px 0 24px; }
+
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 28px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .section-head span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .note-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+
+      article.note {
+        background: var(--paper);
+        padding: 28px 26px 30px;
+        display: flex;
+        flex-direction: column;
+        min-height: 260px;
+        transition: background 160ms ease;
+      }
+
+      article.note:hover { background: #f8f6f0; }
+
+      .note-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 22px;
+      }
+
+      .note h3 {
+        margin: 0 0 14px;
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 23px;
+        line-height: 1.34;
+      }
+
+      .note p {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .note a.more {
+        margin-top: auto;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        align-self: flex-start;
+        padding-bottom: 2px;
+      }
+
+      .note a.more:hover { border-color: var(--accent); }
+
+      .about {
+        padding: 56px 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .about-grid {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 32px;
+      }
+
+      .about h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .about p {
+        margin: 0 0 16px;
+        max-width: 62ch;
+      }
+
+      .about p:last-child { margin-bottom: 0; }
+
+      .subscribe {
+        padding: 48px 0 72px;
+      }
+
+      .subscribe-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+      }
+
+      .subscribe h2 {
+        margin: 0 0 10px;
+        font-family: var(--serif);
+        font-size: 28px;
+        font-weight: 500;
+      }
+
+      .subscribe p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      form {
+        display: flex;
+        gap: 0;
+        border: 1px solid var(--ink);
+        background: transparent;
+        min-width: min(360px, 100%);
+      }
+
+      input[type="email"] {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        padding: 13px 16px;
+        font: inherit;
+        font-size: 14px;
+        color: var(--ink);
+        outline: none;
+      }
+
+      button {
+        border: 0;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 13px 20px;
+        font: inherit;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+      }
+
+      button:hover { background: var(--accent); }
+
+      .form-note {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        min-height: 18px;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 26px 0 46px;
+      }
+
+      .footer-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px 24px;
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+
+      footer a { text-decoration: none; }
+      footer a:hover { color: var(--ink); }
+
+      @media (max-width: 720px) {
+        .masthead { flex-direction: column; align-items: flex-start; gap: 14px; }
+        nav { gap: 18px; }
+        .hero { padding: 64px 0 48px; }
+        .about-grid { grid-template-columns: 1fr; gap: 14px; }
+        .subscribe { padding: 40px 0 56px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap masthead">
+        <div class="brand">
+          <strong>Picolah</strong>
+          <span>Consumer notes · Southeast Asia</span>
+        </div>
+        <nav aria-label="站点导航">
+          <a href="#notes">笔记</a>
+          <a href="#about">关于</a>
+          <a href="#subscribe">订阅</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="wrap">
+          <span class="kicker">Issue 01 · October 2026</span>
+          <h1>东南亚消费者，正在重写货架。</h1>
+          <p class="lede">
+            我们记录六个市场的日常消费：人们怎么挑选、怎么下单、为什么放弃购物车。
+            <em>Notes from Singapore, Jakarta, Bangkok, Manila, Kuala Lumpur and Ho Chi Minh City.</em>
+          </p>
+          <div class="issue">
+            <span>双周更新</span>
+            <span>独立研究 · 不接受品牌投放</span>
+            <span>Singapore</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="notes" id="notes">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Latest notes</h2>
+            <span>三篇 · 阅读约 19 分钟</span>
+          </div>
+          <div class="note-grid">
+            <article class="note">
+              <div class="note-meta">
+                <span>消费观察</span>
+                <span>08 · 10</span>
+              </div>
+              <h3>从货架到购物车：新加坡家庭的补货节奏</h3>
+              <p>
+                一周两次的超市采购正在被拆成更多小单。我们翻了 40 个家庭的记账本，看见补货频率和平台补贴之间的关系。
+              </p>
+              <a class="more" href="#subscribe">阅读笔记 →</a>
+            </article>
+
+            <article class="note">
+              <div class="note-meta">
+                <span>渠道</span>
+                <span>07 · 26</span>
+              </div>
+              <h3>雅加达的直播间，为什么比商场更热闹</h3>
+              <p>
+                价格只是表层。主播的讲解、免运费门槛和货到付款，才是让下单按钮被按下的那几秒。
+              </p>
+              <a class="more" href="#subscribe">阅读笔记 →</a>
+            </article>
+
+            <article class="note">
+              <div class="note-meta">
+                <span>城市</span>
+                <span>07 · 12</span>
+              </div>
+              <h3>曼谷年轻人把预算花在哪</h3>
+              <p>
+                一份关于 22–30 岁城市消费者的支出切片：咖啡、通勤、护肤，以及那些看起来不贵但每个月都会买的小东西。
+              </p>
+              <a class="more" href="#subscribe">阅读笔记 →</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="about" id="about">
+        <div class="wrap about-grid">
+          <h2>关于这份笔记</h2>
+          <div>
+            <p>
+              Picolah Research 是一份关于东南亚消费市场的独立笔记。我们不追热点，也不做榜单，
+              只把门店、平台和家庭里的细节记下来，给做产品、定价和渠道的人一点参考。
+            </p>
+            <p>
+              所有内容基于公开信息与匿名访谈，不包含任何商业合作。转载或引用请注明出处。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="subscribe" id="subscribe">
+        <div class="wrap subscribe-row">
+          <div>
+            <h2>新笔记发布时，寄一封邮件给你。</h2>
+            <p>每两周一封，只有笔记本身，没有广告。</p>
+          </div>
+          <div>
+            <form id="signup">
+              <input type="email" required placeholder="you@example.com" aria-label="邮箱地址" />
+              <button type="submit">订阅</button>
+            </form>
+            <div class="form-note" id="signup-note" role="status"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap footer-row">
+        <span>© 2026 Picolah Research</span>
+        <span>hello@picolah.com</span>
+        <span>Singapore · Jakarta</span>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('signup').addEventListener('submit', function (event) {
+        event.preventDefault();
+        document.getElementById('signup-note').textContent = '已记录，下一期寄给你。';
+        this.reset();
+      });
+    </script>
+  </body>
+</html>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Check, Copy, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, CountryCode, PriceMode } from '../../shared/types';
 import { formatClock, relativeTime } from '../lib/format';
-import { Logo } from './Logo';
+import { Capybara } from './PicolahMark';
 import { MarkdownText } from './MarkdownText';
 import { AlternativeGrid, ComparisonPanel } from './ComparisonPanel';
 
@@ -52,7 +52,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
     <article className="message message-assistant">
       <header className="assistant-head">
         <span className="assistant-avatar">
-          <Logo size={26} />
+          <Capybara variant="face" size={30} />
         </span>
         <span className="assistant-name">Picolah</span>
         <span className="assistant-role">AI 比价助手</span>
@@ -130,7 +130,7 @@ export function StreamingMessage({
     <article className="message message-assistant is-streaming" aria-live="polite">
       <header className="assistant-head">
         <span className="assistant-avatar is-thinking">
-          <Logo size={26} />
+          <Capybara variant="face" size={30} />
         </span>
         <span className="assistant-name">Picolah</span>
         <span className="assistant-role">正在比价</span>

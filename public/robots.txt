@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /7hk9ho
+Disallow: /api/

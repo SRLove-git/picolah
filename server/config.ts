@@ -7,6 +7,7 @@ const num = (value: string | undefined, fallback: number) => {
 
 export const config = {
   port: num(process.env.PORT, 8787),
+  host: process.env.HOST || '127.0.0.1',
   isProduction: process.env.NODE_ENV === 'production',
   ingestKey: process.env.INGEST_API_KEY || 'pcl_dev_crawler_key',
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')

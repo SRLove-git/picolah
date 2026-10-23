@@ -9,3 +9,5 @@ data/*.db-wal
 *.log
 .playwright/
 screenshots/
+mock-state/
+.tmp/

@@ -14,6 +14,8 @@
     "dev:web": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
+    "mock": "tsx mock/crawler.ts",
+    "mock:once": "tsx mock/crawler.ts --once",
     "seed": "tsx server/seed.ts --force",
     "test": "tsx --test server/query.test.ts",
     "typecheck": "tsc --noEmit"

@@ -2,11 +2,69 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PRODUCTS } from './catalog-data.ts';
 import { formatMoney } from './format.ts';
+import { generateOffers } from '../shared/catalog.ts';
+import { MARKETS, COUNTRY_CODES } from '../shared/types.ts';
+import { buildCatalogComparison, buildCatalogSuggestions } from '../shared/comparison.ts';
 
 process.env.PICOLAH_DB_PATH = ':memory:';
 const { detectMarket, findProduct } = await import('./query.ts');
 
 const products = PRODUCTS.map(({ baseSgd: _baseSgd, ...product }) => product);
+
+test('demo catalog covers every market and every platform of that market', () => {
+  const offers = generateOffers();
+  const expected = COUNTRY_CODES.reduce(
+    (total, code) => total + PRODUCTS.length * MARKETS[code].platformIds.length,
+    0,
+  );
+  assert.equal(offers.length, expected);
+  assert.equal(new Set(offers.map((offer) => offer.id)).size, offers.length);
+
+  for (const code of COUNTRY_CODES) {
+    const inMarket = offers.filter((offer) => offer.country === code);
+    assert.equal(inMarket.length, PRODUCTS.length * MARKETS[code].platformIds.length);
+    assert.ok(inMarket.every((offer) => offer.currency === MARKETS[code].currency));
+    assert.ok(inMarket.every((offer) => offer.finalPrice > 0));
+    for (const platformId of MARKETS[code].platformIds) {
+      assert.ok(inMarket.some((offer) => offer.platformId === platformId), `${code}/${platformId}`);
+    }
+  }
+});
+
+test('comparison builder sorts landed prices and keeps a 30-day low', () => {
+  const offers = generateOffers();
+  const product = products.find((item) => item.id === 'sony-wh1000xm5')!;
+  const comparison = buildCatalogComparison({
+    query: 'Sony XM5',
+    market: 'SG',
+    product,
+    products,
+    offers,
+  });
+  assert.equal(comparison.kind, 'comparison');
+  assert.equal(comparison.product?.id, product.id);
+  assert.ok(comparison.offers.length >= 2);
+  const prices = comparison.offers.map((offer) => offer.finalPrice);
+  assert.deepEqual(prices, [...prices].sort((a, b) => a - b));
+  for (const offer of comparison.offers) {
+    assert.ok(offer.low30d <= offer.finalPrice + 0.001);
+    assert.ok(offer.history.length > 0);
+  }
+  assert.equal(comparison.alternatives.length, 3);
+});
+
+test('suggestions are returned when nothing matches', () => {
+  const offers = generateOffers();
+  const comparison = buildCatalogSuggestions({
+    query: '伴手礼',
+    market: 'SG',
+    products,
+    offers,
+  });
+  assert.equal(comparison.kind, 'suggestions');
+  assert.equal(comparison.alternatives.length, 4);
+  assert.ok(comparison.alternatives.every((item) => item.offer !== null));
+});
 
 test('detects named markets and cities in Chinese and English', () => {
   assert.equal(detectMarket('Sony XM5 在泰国哪里买最便宜？', 'SG'), 'TH');
