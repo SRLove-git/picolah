@@ -1,37 +1,109 @@
-import { ArrowUpRight, BadgeCheck, Clock3, Info } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Clock3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { CSSProperties } from 'react';
 import type { ComparisonAlternative, CountryCode, Offer, PriceMode } from '../../shared/types';
 import { MARKETS, PLATFORMS } from '../../shared/types';
 import {
   formatMoney,
   offerValue,
-  priceModeMeta,
   relativeTime,
   sortOffers,
 } from '../lib/format';
 import { PlatformBadge } from './PlatformBadge';
-import { ProductArt } from './ProductArt';
 import { Sparkline } from './Sparkline';
-import { CountryFlag } from './CountryFlag';
+import { Capybara } from './PicolahMark';
 
 interface ComparisonPanelProps {
   comparison: import('../../shared/types').Comparison;
   priceMode: PriceMode;
 }
 
+function relativeBar(value: number, minimum: number, maximum: number) {
+  if (maximum <= minimum) return 100;
+  return 42 + ((value - minimum) / (maximum - minimum)) * 58;
+}
+
+function MetricComparison({ offers, market, priceMode }: { offers: Offer[]; market: CountryCode; priceMode: PriceMode }) {
+  const { t, i18n } = useTranslation();
+  const prices = offers.map((offer) => offerValue(offer, priceMode));
+  const ratings = offers.map((offer) => offer.rating);
+  const reviews = offers.map((offer) => offer.reviews);
+  const priceMin = Math.min(...prices);
+  const priceMax = Math.max(...prices);
+  const ratingMin = Math.min(...ratings);
+  const ratingMax = Math.max(...ratings);
+  const reviewMin = Math.min(...reviews);
+  const reviewMax = Math.max(...reviews);
+  const numberFormat = new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'zh-CN');
+
+  return (
+    <section className="offer-metrics" aria-label={t('comparison.chartTitle')}>
+      <header className="offer-metrics-head">
+        <strong>{t('comparison.chartTitle')}</strong>
+        <span>{t('comparison.chartHint')}</span>
+      </header>
+      <div className="offer-metrics-scroll">
+        <div className="offer-metrics-grid">
+          <span />
+          <span className="offer-metric-heading tone-price">
+            <b>{t('comparison.priceMetric')}</b><small>{t('comparison.lowerBetter')}</small>
+          </span>
+          <span className="offer-metric-heading tone-rating">
+            <b>{t('comparison.ratingMetric')}</b><small>{t('comparison.higherBetter')}</small>
+          </span>
+          <span className="offer-metric-heading tone-reviews">
+            <b>{t('comparison.reviewMetric')}</b><small>{t('comparison.higherBetter')}</small>
+          </span>
+          {offers.map((offer) => {
+            const platform = PLATFORMS[offer.platformId];
+            const price = offerValue(offer, priceMode);
+            const metrics = [
+              { key: 'price', name: t('comparison.priceMetric'), width: relativeBar(price, priceMin, priceMax), label: formatMoney(price, market), best: price === priceMin },
+              { key: 'rating', name: t('comparison.ratingMetric'), width: relativeBar(offer.rating, ratingMin, ratingMax), label: offer.rating.toFixed(1), best: offer.rating === ratingMax },
+              { key: 'reviews', name: t('comparison.reviewMetric'), width: relativeBar(offer.reviews, reviewMin, reviewMax), label: numberFormat.format(offer.reviews), best: offer.reviews === reviewMax },
+            ];
+            return (
+              <div className="offer-metric-row" key={offer.id}>
+                <span className="offer-metric-platform" title={platform?.name || offer.platform}>
+                  <PlatformBadge platformId={offer.platformId} />
+                  <b>{platform?.name || offer.platform}</b>
+                </span>
+                {metrics.map((metric) => (
+                  <span
+                    className={`offer-metric-cell tone-${metric.key} ${metric.best ? 'is-best' : ''}`}
+                    key={metric.key}
+                    data-label={metric.name}
+                    style={{ '--metric-width': `${metric.width}%` } as CSSProperties}
+                    aria-label={`${platform?.name || offer.platform}: ${metric.label}`}
+                  >
+                    <i />
+                    <strong>{metric.label}</strong>
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Breakdown({ offer, country, mode }: { offer: Offer; country: CountryCode; mode: PriceMode }) {
+  const { t } = useTranslation();
   return (
     <span className="offer-breakdown">
       <span className={mode === 'item' ? 'is-active-metric' : ''}>
-        商品 {formatMoney(offer.itemPrice, country)}
+        {t('comparison.item')} {formatMoney(offer.itemPrice, country)}
       </span>
       <span className="breakdown-dot" />
       <span className={mode === 'shipping' ? 'is-active-metric' : ''}>
-        运费 {offer.shippingFee > 0 ? formatMoney(offer.shippingFee, country) : '包邮'}
+        {t('comparison.shipping')} {offer.shippingFee > 0 ? formatMoney(offer.shippingFee, country) : t('comparison.freeShipping')}
       </span>
       {offer.discount > 0 && (
         <>
           <span className="breakdown-dot" />
-          <span className="breakdown-discount">券 −{formatMoney(offer.discount, country)}</span>
+          <span className="breakdown-discount">{t('comparison.coupon')} −{formatMoney(offer.discount, country)}</span>
         </>
       )}
     </span>
@@ -39,80 +111,46 @@ function Breakdown({ offer, country, mode }: { offer: Offer; country: CountryCod
 }
 
 export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps) {
+  const { t, i18n } = useTranslation();
   const { product, market } = comparison;
   if (!product) return null;
 
-  const mode = priceModeMeta(priceMode);
   const marketInfo = MARKETS[market];
   const sorted = sortOffers(comparison.offers, priceMode);
   const best = sorted[0];
-  const second = sorted[1];
-  const diff = best && second ? offerValue(second, priceMode) - offerValue(best, priceMode) : 0;
 
   return (
     <div className="comparison-card">
-      <div className="comparison-glow" aria-hidden="true" />
       <div className="comparison-head">
-        <div className="product-art-wrap">
-          <ProductArt visual={product.visual} size={78} />
-          <span className="product-art-badge">{product.brand}</span>
+        <div className="product-art-wrap comparison-mascot">
+          <Capybara size={72} />
         </div>
         <div className="product-copy">
-          <div className="product-overline">
-            <span>{product.category}</span>
-            <span className="overline-dot" />
-            <span className="country-inline">
-              <CountryFlag code={market} width={14} />
-              {marketInfo.nameZh}
-            </span>
-            <span className="overline-dot" />
-            <span>{comparison.offers.length} 个平台</span>
-          </div>
           <h3>{product.name}</h3>
-          <p>
-            {product.tagline} <span className="spec-divider">·</span> {product.specs}
-          </p>
         </div>
         {best && (
           <div className="headline-price">
-            <span className="headline-label">{mode.bestLabel}</span>
             <strong>{formatMoney(offerValue(best, priceMode), market)}</strong>
-            <span className="headline-diff">
-              {second ? (
-                diff > 0 ? (
-                  <>
-                    比次低省 <b>{formatMoney(diff, market)}</b>
-                  </>
-                ) : (
-                  '与次低同价'
-                )
-              ) : (
-                '当前唯一在售'
-              )}
-            </span>
           </div>
         )}
       </div>
 
-      <div className="comparison-toolbar">
-        <span className="toolbar-source">
-          <span className="status-dot" />
-          {comparison.sourceCount} 个平台 · {comparison.offers.length} 条本市场报价
-        </span>
+      <div className="comparison-toolbar is-compact">
         <span className="toolbar-updated">
           <Clock3 size={13} />
-          更新于 {relativeTime(comparison.updatedAt)}
+          {t('comparison.updated')} {relativeTime(comparison.updatedAt)}
         </span>
       </div>
 
       {best ? (
         <>
+          <MetricComparison offers={sorted} market={market} priceMode={priceMode} />
           <div className="offer-table">
             <div className="offer-table-head">
               <span className="col-rank">#</span>
-              <span>在售平台 / 店铺</span>
-              <span className="col-trend">近 30 天</span>
-              <span className="col-price">{mode.label}</span>
+              <span>{t('comparison.seller')}</span>
+              <span className="col-trend">{t('comparison.trend')}</span>
+              <span className="col-price">{t(`controls.${priceMode}.label`)}</span>
             </div>
             {sorted.map((offer, index) => {
               const platform = PLATFORMS[offer.platformId];
@@ -137,29 +175,29 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                       {offer.isOfficial && (
                         <span className="official-tag">
                           <BadgeCheck size={12} />
-                          官方
+                          {t('comparison.official')}
                         </span>
                       )}
-                      {index === 0 && <span className="best-tag">最低</span>}
+                      {index === 0 && <span className="best-tag">{t('comparison.best')}</span>}
                     </div>
                     <div className="offer-subline">
                       <Breakdown offer={offer} country={market} mode={priceMode} />
                       <span className="offer-rating">
                         <span aria-hidden="true">★</span> {offer.rating.toFixed(1)}
                         <span className="review-count">
-                          · {new Intl.NumberFormat('zh-CN').format(offer.reviews)} 评价
+                          · {new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'zh-CN').format(offer.reviews)} {t('comparison.reviews')}
                         </span>
                       </span>
                     </div>
                   </div>
                   <div className="offer-trend">
                     <Sparkline values={offer.history} accent={index === 0 ? '#111827' : '#9ca3af'} />
-                    <span>30日低 {formatMoney(offer.low30d, market)}</span>
+                    <span>{t('comparison.low')} {formatMoney(offer.low30d, market)}</span>
                   </div>
                   <div className="offer-price">
                     <strong>{formatMoney(value, market)}</strong>
                     <span className="offer-link">
-                      去平台
+                      {t('comparison.visit')}
                       <ArrowUpRight size={13} />
                     </span>
                   </div>
@@ -167,29 +205,16 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
               );
             })}
           </div>
-          <div className="comparison-foot">
-            <span className="foot-definition">
-              <Info size={13} />
-              {mode.hint}
-            </span>
-            <span className="foot-scope">
-              本市场 {comparison.offers.length} 条 <span className="foot-slash">/</span> 全区{' '}
-              {comparison.totalOffers} 条
-            </span>
-          </div>
         </>
       ) : (
         <div className="comparison-empty">
           <span className="empty-orbit" aria-hidden="true" />
           <div>
-            <strong>{marketInfo.nameZh}暂时没有在售报价</strong>
-            <p>价格库还没有覆盖这个市场，或者报价刚刚下架。可以切换市场，或看看下面的同类选择。</p>
+            <strong>{t('comparison.unavailable', { market: i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh })}</strong>
+            <p>{t('comparison.unavailableHint')}</p>
           </div>
         </div>
       )}
-      <div className="comparison-disclaimer">
-        价格由独立爬虫数据源同步，仅作比价参考；下单前请以商家页面为准。
-      </div>
     </div>
   );
 }
@@ -199,7 +224,7 @@ export function AlternativeGrid({
   market,
   priceMode,
   onAsk,
-  title = '也可以看看',
+  title,
 }: {
   alternatives: ComparisonAlternative[];
   market: CountryCode;
@@ -207,15 +232,15 @@ export function AlternativeGrid({
   onAsk: (query: string) => void;
   title?: string;
 }) {
+  const { t, i18n } = useTranslation();
   if (!alternatives.length) return null;
-  const mode = priceModeMeta(priceMode);
   const marketInfo = MARKETS[market];
 
   return (
     <div className="alternatives">
       <div className="alternatives-head">
-        <span>{title}</span>
-        <small>{marketInfo.nameZh} · 当前市场</small>
+        <span>{title || t('comparison.seeAlso')}</span>
+        <small>{i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh} · {t('comparison.currentMarket')}</small>
       </div>
       <div className="alternatives-grid">
         {alternatives.map((item) => {
@@ -227,10 +252,12 @@ export function AlternativeGrid({
               key={item.product.id}
               type="button"
               onClick={() =>
-                onAsk(`${item.product.name} 在${MARKETS[item.market].nameZh}哪里买最便宜？`)
+                onAsk(t('comparison.askCheapest', { product: item.product.name, market: i18n.language === 'en' ? MARKETS[item.market].nameEn : MARKETS[item.market].nameZh }))
               }
             >
-              <ProductArt visual={item.product.visual} size={58} />
+              <span className="alternative-mascot">
+                <Capybara size={54} />
+              </span>
               <span className="alternative-copy">
                 <span className="alternative-category">{item.product.category}</span>
                 <strong>{item.product.name}</strong>
@@ -240,7 +267,7 @@ export function AlternativeGrid({
                       {platform?.name || offer.platform} · {formatMoney(offerValue(offer, priceMode), market)}
                     </>
                   ) : (
-                    '暂无报价'
+                    t('comparison.noOffer')
                   )}
                 </span>
               </span>
@@ -249,7 +276,7 @@ export function AlternativeGrid({
               </span>
               {offer && (
                 <span className="alternative-mode">
-                  {mode.short}
+                  {t(`controls.${priceMode}.label`)}
                 </span>
               )}
             </button>

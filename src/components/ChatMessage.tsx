@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Copy, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, CountryCode, PriceMode } from '../../shared/types';
 import { formatClock, relativeTime } from '../lib/format';
@@ -13,13 +14,25 @@ interface ChatMessageProps {
   onAsk: (query: string) => void;
 }
 
+function stripPriceReminder(content: string) {
+  return content
+    .split('\n')
+    .filter((line) => !/(?:下单前|去平台前).*(?:优惠券|券后价|券后到手价)/.test(line.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessageProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const displayContent =
+    message.role === 'assistant' ? stripPriceReminder(message.content) : message.content;
 
   async function copyAnswer() {
     try {
-      await navigator.clipboard.writeText(message.content);
+      await navigator.clipboard.writeText(displayContent);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -34,7 +47,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
           <img
             className="user-image"
             src={message.image}
-            alt="用户上传的商品图片"
+            alt={t('chat.userImage')}
             loading="lazy"
           />
         )}
@@ -55,12 +68,11 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
           <Capybara variant="face" size={30} />
         </span>
         <span className="assistant-name">Picolah</span>
-        <span className="assistant-role">AI 比价助手</span>
         <span className="assistant-time">{formatClock(message.createdAt)}</span>
       </header>
 
       <div className="assistant-body">
-        <MarkdownText text={message.content} />
+        <MarkdownText text={displayContent} />
 
         {hasComparison && <ComparisonPanel comparison={comparison} priceMode={priceMode} />}
 
@@ -76,10 +88,10 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
               onAsk={onAsk}
               title={
                 comparison.kind === 'recommendation'
-                  ? '根据你的需求挑的'
+                  ? t('chat.recommended')
                   : comparison.product
-                    ? '这个市场暂无报价，看看同类'
-                    : '也可以从这些热门商品开始'
+                    ? t('chat.noOffers')
+                    : t('chat.popular')
               }
             />
           )}
@@ -87,14 +99,14 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
         <div className="assistant-actions">
           <button type="button" className="text-action" onClick={copyAnswer}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? '已复制' : '复制建议'}
+            {t(copied ? 'chat.copied' : 'chat.copy')}
           </button>
           <span className="action-divider" />
           <button
             type="button"
             className={`icon-action ${feedback === 'up' ? 'is-selected' : ''}`}
-            aria-label="有帮助"
-            title="有帮助"
+            aria-label={t('chat.helpful')}
+            title={t('chat.helpful')}
             onClick={() => setFeedback(feedback === 'up' ? null : 'up')}
           >
             <ThumbsUp size={14} />
@@ -102,13 +114,13 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
           <button
             type="button"
             className={`icon-action ${feedback === 'down' ? 'is-selected' : ''}`}
-            aria-label="不太有帮助"
-            title="不太有帮助"
+            aria-label={t('chat.unhelpful')}
+            title={t('chat.unhelpful')}
             onClick={() => setFeedback(feedback === 'down' ? null : 'down')}
           >
             <ThumbsDown size={14} />
           </button>
-          <span className="assistant-actions-meta">价格库 · {relativeTime(message.createdAt)}</span>
+          <span className="assistant-actions-meta">{t('chat.source')} · {relativeTime(message.createdAt)}</span>
         </div>
       </div>
     </article>
@@ -126,6 +138,7 @@ export function StreamingMessage({
   hasResults: boolean;
   offerCount: number;
 }) {
+  const { t } = useTranslation();
   return (
     <article className="message message-assistant is-streaming" aria-live="polite">
       <header className="assistant-head">
@@ -133,7 +146,7 @@ export function StreamingMessage({
           <Capybara variant="face" size={30} />
         </span>
         <span className="assistant-name">Picolah</span>
-        <span className="assistant-role">正在比价</span>
+        <span className="assistant-role">{t('chat.comparing')}</span>
         <span className="assistant-live">
           <i />
           LIVE
@@ -148,7 +161,7 @@ export function StreamingMessage({
             {hasResults && (
               <div className="stream-result-hint">
                 <span className="status-dot" />
-                已找到 {offerCount} 条本市场报价，整理完建议后展开比价卡
+                {t('chat.found', { count: offerCount })}
               </div>
             )}
           </>
@@ -158,7 +171,7 @@ export function StreamingMessage({
               <span className="thinking-orb" aria-hidden="true">
                 <span />
               </span>
-              <span className="thinking-status">{status || '正在检索价格库…'}</span>
+              <span className="thinking-status">{status || t('chat.searching')}</span>
               <span className="thinking-dots" aria-hidden="true">
                 <i />
                 <i />
@@ -171,10 +184,10 @@ export function StreamingMessage({
               <span style={{ width: '58%' }} />
             </div>
             <div className="thinking-tools" aria-hidden="true">
-              <span>价格库</span>
-              <span>运费</span>
-              <span>券后价</span>
-              <span>30 日走势</span>
+              <span>{t('chat.source')}</span>
+              <span>{t('chat.shipping')}</span>
+              <span>{t('chat.coupon')}</span>
+              <span>{t('chat.trend')}</span>
             </div>
           </div>
         )}

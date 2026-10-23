@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowUp,
   ImagePlus,
@@ -82,6 +83,7 @@ export function PromptComposer({
   onMarketChange,
   onPriceModeChange,
 }: PromptComposerProps) {
+  const { t, i18n } = useTranslation();
   const [value, setValue] = useState('');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
@@ -115,14 +117,14 @@ export function PromptComposer({
       const dataUrl = await prepareImage(file);
       setAttachment({ dataUrl, name: file.name });
     } catch (error) {
-      setImageError(error instanceof Error ? error.message : '图片处理失败，请换一张试试。');
+      setImageError(error instanceof Error ? error.message : t('composer.imageError'));
     } finally {
       setImageBusy(false);
     }
   }
 
   function submit() {
-    const text = value.trim() || (attachment ? '帮我看看这张图里的商品，推荐一下' : '');
+    const text = value.trim() || (attachment ? t('composer.imageQuery') : '');
     if (!text || busy || loadingConversation || imageBusy) return;
     if (listening) {
       recognitionRef.current?.stop();
@@ -159,12 +161,12 @@ export function PromptComposer({
     }
     const Ctor = readRecognitionCtor();
     if (!Ctor) {
-      setVoiceError('当前浏览器不支持语音输入，可以试试 Chrome 或 Edge。');
+      setVoiceError(t('composer.voiceUnsupported'));
       return;
     }
     try {
       const recognition = new Ctor();
-      recognition.lang = 'zh-CN';
+      recognition.lang = i18n.language === 'en' ? 'en-US' : 'zh-CN';
       recognition.continuous = false;
       recognition.interimResults = true;
       baseTextRef.current = value.trim();
@@ -180,8 +182,8 @@ export function PromptComposer({
         const denied = event?.error === 'not-allowed' || event?.error === 'service-not-allowed';
         setVoiceError(
           denied
-            ? '麦克风权限被拒绝，请在浏览器地址栏重新允许。'
-            : '没有听清，再试一次吧。',
+            ? t('composer.micDenied')
+            : t('composer.notHeard'),
         );
         setListening(false);
       };
@@ -192,7 +194,7 @@ export function PromptComposer({
       recognitionRef.current = recognition;
       setListening(true);
     } catch {
-      setVoiceError('语音输入启动失败，请稍后再试。');
+      setVoiceError(t('composer.voiceFailed'));
       setListening(false);
     }
   }
@@ -239,9 +241,9 @@ export function PromptComposer({
 
         {attachment && (
           <div className="pc-attachment">
-            <img src={attachment.dataUrl} alt="待发送的商品图片" />
+            <img src={attachment.dataUrl} alt={t('composer.imageAlt')} />
             <span className="pc-attachment-copy">
-              <strong>图片已就绪</strong>
+              <strong>{t('composer.imageReady')}</strong>
               <span>{attachment.name}</span>
             </span>
             <button
@@ -251,7 +253,7 @@ export function PromptComposer({
                 setAttachment(null);
                 setImageError(null);
               }}
-              aria-label="移除图片"
+              aria-label={t('composer.removeImage')}
             >
               <X size={14} />
             </button>
@@ -269,10 +271,12 @@ export function PromptComposer({
             value={value}
             placeholder={
               variant === 'hero'
-                ? '搜商品、品牌或型号，比如 Sony XM5…'
-                : `继续问${marketInfo.nameZh}的价格，或上传商品图…`
+                ? t('composer.homePlaceholder')
+                : t('composer.followupPlaceholder', {
+                    market: i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh,
+                  })
             }
-            aria-label="输入比价问题"
+            aria-label={t('composer.inputLabel')}
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={handleKeyDown}
             onCompositionStart={() => {
@@ -301,9 +305,9 @@ export function PromptComposer({
               <i />
               <i />
             </span>
-            <span>正在听你说… 说完会自动停</span>
+            <span>{t('composer.listening')}</span>
             <button type="button" onClick={toggleVoice}>
-              取消
+              {t('composer.cancel')}
             </button>
           </div>
         )}
@@ -315,8 +319,8 @@ export function PromptComposer({
               className="pc-round-tool"
               onClick={() => fileRef.current?.click()}
               disabled={busy || imageBusy || loadingConversation}
-              aria-label="上传图片搜同款"
-              title="上传图片搜同款"
+              aria-label={t('composer.upload')}
+              title={t('composer.upload')}
             >
               {imageBusy ? <Loader2 size={18} className="pc-spin" /> : <Plus size={19} />}
             </button>
@@ -325,11 +329,11 @@ export function PromptComposer({
               className="pc-image-tool"
               onClick={() => fileRef.current?.click()}
               disabled={busy || imageBusy || loadingConversation}
-              aria-label="图片搜索"
-              title="图片搜索"
+              aria-label={t('composer.upload')}
+              title={t('composer.upload')}
             >
               <ImagePlus size={16} />
-              <span>图片</span>
+              <span>{t('composer.image')}</span>
             </button>
             <MarketPicker market={market} onChange={onMarketChange} compact />
             <PriceModePicker priceMode={priceMode} onChange={onPriceModeChange} />
@@ -341,7 +345,7 @@ export function PromptComposer({
               title={
                 config?.llmConfigured
                   ? `${config.llmProvider} · ${config.llmModel}`
-                  : '本地比价摘要'
+                  : t('composer.localSummary')
               }
             >
               <Sparkles size={13} />
@@ -351,8 +355,8 @@ export function PromptComposer({
               type="button"
               className={`pc-mic ${listening ? 'is-listening' : ''}`}
               onClick={toggleVoice}
-              aria-label={listening ? '停止语音输入' : '语音输入'}
-              title={listening ? '停止语音输入' : '语音输入'}
+              aria-label={t(listening ? 'composer.stopVoice' : 'composer.voice')}
+              title={t(listening ? 'composer.stopVoice' : 'composer.voice')}
             >
               <Mic size={18} />
             </button>
@@ -361,21 +365,21 @@ export function PromptComposer({
                 type="button"
                 className="pc-send is-stop"
                 onClick={onStop}
-                aria-label="停止生成"
-                title="停止生成"
+                aria-label={t('composer.stopGeneration')}
+                title={t('composer.stopGeneration')}
               >
                 <Square size={13} fill="currentColor" />
-                <span className="pc-send-label">停止</span>
+                <span className="pc-send-label">{t('composer.stop')}</span>
               </button>
             ) : (
               <button
                 type="submit"
                 className="pc-send"
                 disabled={!canSend}
-                aria-label="发送"
-                title="发送 · Enter"
+                aria-label={t('composer.send')}
+                title={t('composer.sendTitle')}
               >
-                <span className="pc-send-label">pico 一下</span>
+                <span className="pc-send-label">{t('composer.send')}</span>
                 <ArrowUp size={17} strokeWidth={2.4} />
               </button>
             )}
@@ -383,14 +387,6 @@ export function PromptComposer({
         </div>
       </form>
 
-      <div className="pc-composer-hint">
-        <span>Picolah 只读价格库的数据 · 支持语音和图片搜索</span>
-        <span className="pc-shortcuts">
-          <kbd>Enter</kbd> 发送
-          <i />
-          <kbd>Shift</kbd> + <kbd>Enter</kbd> 换行
-        </span>
-      </div>
     </div>
   );
 }

@@ -1,14 +1,21 @@
 import {
   BadgeCheck,
+  Bookmark,
   Check,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
   Database,
   Globe2,
+  Heart,
   LogOut,
   Pencil,
+  PlaySquare,
   Settings2,
   Sparkles,
   Wallet,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
 import { PRICE_MODES, relativeTime } from '../lib/format';
@@ -20,7 +27,6 @@ interface AccountViewProps {
   config: AppConfig | null;
   market: CountryCode;
   priceMode: PriceMode;
-  conversationCount: number;
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
   onOpenGateway: () => void;
@@ -39,22 +45,21 @@ export function AccountView({
   config,
   market,
   priceMode,
-  conversationCount,
   onMarketChange,
   onPriceModeChange,
   onOpenGateway,
   onOpenSidebar,
   notify,
 }: AccountViewProps) {
+  const { t, i18n } = useTranslation();
   const marketInfo = MARKETS[market];
   const lastRun = config?.gateway.lastRun;
 
   return (
-    <section className="pc-page pc-profile-page" aria-label="账号">
+    <section className="pc-page pc-profile-page" aria-label={t('account.label')}>
       <PageHeader
         eyebrow="ACCOUNT"
-        title="账号"
-        description="账号、登录方式和比价偏好，都在这里。"
+        title={t('account.label')}
         onOpenSidebar={onOpenSidebar}
       />
 
@@ -80,59 +85,33 @@ export function AccountView({
             </span>
             <div className="pc-profile-name">
               <h2>
-                Picolah 工作区
+                {t('account.workspace')}
                 <BadgeCheck size={18} />
               </h2>
-              <p>
-                @picolah.sea · 东南亚比价工作台
-              </p>
-              <span className="pc-profile-bio">
-                喜欢的东西，也值得多比一比。这里是我的六国价格库。
-              </span>
             </div>
             <button
               type="button"
               className="pc-outline-button pc-profile-edit"
-              onClick={() => notify('工作区资料暂存在本地，多设备同步还在路上')}
+              onClick={() => notify(t('account.editNotice'))}
             >
               <Pencil size={14} />
-              编辑资料
+              {t('account.edit')}
             </button>
-          </div>
-
-          <div className="pc-profile-stats">
-            <span>
-              <strong>{conversationCount}</strong>
-              <small>次比价</small>
-            </span>
-            <span>
-              <strong>{config?.gateway.markets ?? 6}</strong>
-              <small>个市场</small>
-            </span>
-            <span>
-              <strong>
-                {config ? new Intl.NumberFormat('zh-CN').format(config.gateway.offers) : '—'}
-              </strong>
-              <small>条在售价</small>
-            </span>
-            <span>
-              <strong>{config?.gateway.products ?? '—'}</strong>
-              <small>件商品</small>
-            </span>
           </div>
         </div>
 
         <div className="pc-profile-grid">
-          <section className="pc-profile-card">
-            <header>
+          <details className="pc-profile-card">
+            <summary>
               <span className="pc-profile-card-icon tone-pink">
                 <Globe2 size={17} />
               </span>
               <div>
-                <h3>默认市场</h3>
-                <p>新比价会默认从这个市场开始。</p>
+                <h3>{t('account.defaultMarket')}</h3>
+                <p>{t('account.defaultMarketHint')}</p>
               </div>
-            </header>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
             <div className="pc-market-chips">
               {COUNTRY_LIST.map((item) => (
                 <button
@@ -143,25 +122,26 @@ export function AccountView({
                 >
                   <CountryFlag code={item.code} width={18} />
                   <span>
-                    <strong>{item.nameZh}</strong>
+                    <strong>{i18n.language === 'en' ? item.nameEn : item.nameZh}</strong>
                     <small>{item.currency}</small>
                   </span>
                   {item.code === market && <Check size={13} />}
                 </button>
               ))}
             </div>
-          </section>
+          </details>
 
-          <section className="pc-profile-card">
-            <header>
+          <details className="pc-profile-card">
+            <summary>
               <span className="pc-profile-card-icon tone-mint">
                 <Wallet size={17} />
               </span>
               <div>
-                <h3>默认价格口径</h3>
-                <p>决定比价卡先按哪种价格排序。</p>
+                <h3>{t('account.defaultPrice')}</h3>
+                <p>{t('account.defaultPriceHint')}</p>
               </div>
-            </header>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
             <div className="pc-price-options">
               {PRICE_MODES.map((item) => {
                 const Icon = PRICE_ICONS[item.id];
@@ -176,121 +156,155 @@ export function AccountView({
                       <Icon size={16} />
                     </span>
                     <span>
-                      <strong>{item.label}</strong>
-                      <small>{item.hint}</small>
+                      <strong>{t(`controls.${item.id}.label`)}</strong>
+                      <small>{t(`controls.${item.id}.hint`)}</small>
                     </span>
                   </button>
                 );
               })}
             </div>
             <div className="pc-profile-note">
-              价格按 <b>{marketInfo.currency}</b> 展示，不会自动换汇。
+              {t('account.currencyNote', { currency: marketInfo.currency })}
             </div>
-          </section>
+          </details>
 
-          <section className="pc-profile-card pc-profile-source">
-            <header>
+          <details className="pc-profile-card pc-profile-activity">
+            <summary>
+              <span className="pc-profile-card-icon tone-pink">
+                <Clock3 size={17} />
+              </span>
+              <div>
+                <h3>{t('account.activity')}</h3>
+                <p>{t('account.activityHint')}</p>
+              </div>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
+            <div className="pc-activity-list">
+              {[
+                { key: 'watched', Icon: PlaySquare },
+                { key: 'browsing', Icon: Clock3 },
+                { key: 'likes', Icon: Heart },
+                { key: 'saved', Icon: Bookmark },
+              ].map(({ key, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => notify(t('account.noActivity', { label: t(`account.${key}`) }))}
+                >
+                  <span className="pc-activity-icon">
+                    <Icon size={16} />
+                  </span>
+                  <span>
+                    <strong>{t(`account.${key}`)}</strong>
+                    <small>{t(`account.${key}Hint`)}</small>
+                  </span>
+                  <ChevronRight size={16} />
+                </button>
+              ))}
+            </div>
+          </details>
+
+          <details className="pc-profile-card pc-profile-source">
+            <summary>
               <span className="pc-profile-card-icon tone-blue">
                 <Database size={17} />
               </span>
               <div>
-                <h3>爬虫数据源</h3>
-                <p>独立爬虫同步价格，网站只读价格库。</p>
+                <h3>{t('account.source')}</h3>
+                <p>{t('account.sourceHint')}</p>
               </div>
               <span className={`pc-source-state ${config ? 'is-live' : ''}`}>
                 <i />
-                {config ? '在线' : '连接中'}
+                {t(config ? 'account.online' : 'account.connecting')}
               </span>
-            </header>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
             <div className="pc-source-grid">
               <span>
-                <small>同步接口</small>
+                <small>{t('account.endpoint')}</small>
                 <strong>{config?.gateway.endpoint || '/api/ingest'}</strong>
               </span>
               <span>
-                <small>上次同步</small>
-                <strong>{lastRun ? relativeTime(lastRun.createdAt) : '等待首批数据'}</strong>
+                <small>{t('account.lastSync')}</small>
+                <strong>{lastRun ? relativeTime(lastRun.createdAt) : t('account.waiting')}</strong>
               </span>
               <span>
-                <small>最新一批</small>
+                <small>{t('account.latest')}</small>
                 <strong>
-                  {lastRun ? `${lastRun.received} 收到 / ${lastRun.upserted} 更新` : '—'}
+                  {lastRun ? t('account.batch', { received: lastRun.received, upserted: lastRun.upserted }) : '—'}
                 </strong>
               </span>
               <span>
-                <small>今日新增</small>
-                <strong>{config?.gateway.todayOffers ?? '—'} 条</strong>
+                <small>{t('account.today')}</small>
+                <strong>{t('account.offers', { count: config?.gateway.todayOffers ?? '—' })}</strong>
               </span>
             </div>
             <div className="pc-profile-card-actions">
               <button type="button" className="pc-primary-button" onClick={onOpenGateway}>
                 <Settings2 size={14} />
-                管理数据源
+                {t('account.manage')}
               </button>
-              <span className="pc-source-safe">
-                <Sparkles size={13} />
-                只读价格库，不直接抓取平台页面
-              </span>
             </div>
-          </section>
+          </details>
 
-          <section className="pc-profile-card pc-profile-account">
-            <header>
+          <details className="pc-profile-card pc-profile-account">
+            <summary>
               <span className="pc-profile-card-icon tone-lilac">
                 <BadgeCheck size={17} />
               </span>
               <div>
-                <h3>账号与安全</h3>
-                <p>当前工作区的登录状态和安全设置。</p>
+                <h3>{t('account.security')}</h3>
+                <p>{t('account.securityHint')}</p>
               </div>
-            </header>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
             <div className="pc-account-rows">
               <span>
-                <small>工作区</small>
-                <strong>Picolah 工作区</strong>
+                <small>{t('account.workspace')}</small>
+                <strong>{t('account.workspace')}</strong>
               </span>
               <span>
-                <small>用户名</small>
+                <small>{t('account.username')}</small>
                 <strong>@picolah.sea</strong>
               </span>
               <span>
-                <small>登录方式</small>
-                <strong>邮箱验证码</strong>
+                <small>{t('account.loginMethod')}</small>
+                <strong>{t('account.emailCode')}</strong>
               </span>
               <span>
-                <small>绑定邮箱</small>
+                <small>{t('account.email')}</small>
                 <strong>hello@picolah.sea</strong>
               </span>
               <span>
-                <small>方案</small>
+                <small>{t('account.plan')}</small>
                 <strong>
-                  Beta <em>免费</em>
+                  Beta <em>{t('account.free')}</em>
                 </strong>
               </span>
               <span>
-                <small>最近登录</small>
-                <strong>刚刚 · 本机浏览器</strong>
+                <small>{t('account.recentLogin')}</small>
+                <strong>{t('account.localLogin')}</strong>
               </span>
             </div>
             <div className="pc-profile-card-actions">
               <button
                 type="button"
                 className="pc-outline-button"
-                onClick={() => notify('演示工作区：验证码登录和改密还没有接后端')}
+                onClick={() => notify(t('account.passwordNotice'))}
               >
                 <Pencil size={14} />
-                修改密码
+                {t('account.changePassword')}
               </button>
               <button
                 type="button"
                 className="pc-text-button is-danger"
-                onClick={() => notify('这是本地演示工作区，退出登录暂未启用')}
+                onClick={() => notify(t('account.logoutNotice'))}
               >
                 <LogOut size={14} />
-                退出登录
+                {t('account.logout')}
               </button>
             </div>
-          </section>
+          </details>
         </div>
       </div>
     </section>

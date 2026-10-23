@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type {
   AppConfig,
   ChatMessage as ChatMessageType,
@@ -68,6 +69,7 @@ function initialView(): AppView {
 }
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -162,8 +164,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = title ? `${title} · Picolah` : 'Picolah · 购物之前 PICO 一下';
-  }, [title]);
+    document.title = title ? `${title} · Picolah` : t('app.title');
+  }, [title, t, i18n.language]);
 
   useEffect(() => {
     const hash = view === 'chat' ? '' : `#${view}`;
@@ -299,7 +301,7 @@ export default function App() {
         applyConversation(conversation);
       } catch (error) {
         if (loadTokenRef.current !== token) return;
-        setChatError(error instanceof Error ? error.message : '对话加载失败');
+        setChatError(error instanceof Error ? error.message : t('app.loadFailed'));
         setActiveId(null);
         setTitle(null);
         setMessages([]);
@@ -307,7 +309,7 @@ export default function App() {
         if (loadTokenRef.current === token) setConversationLoading(false);
       }
     },
-    [applyConversation, cancelStream, conversationLoading],
+    [applyConversation, cancelStream, conversationLoading, t],
   );
 
   const deepLinkRef = useRef(false);
@@ -338,7 +340,7 @@ export default function App() {
       };
 
       setMessages((previous) => [...previous, optimisticUser]);
-      setStream({ status: '正在理解问题…', text: '', comparison: null, startedAt: Date.now() });
+      setStream({ status: t('app.understanding'), text: '', comparison: null, startedAt: Date.now() });
       setChatError(null);
       setSidebarOpen(false);
       setView('chat');
@@ -397,7 +399,7 @@ export default function App() {
                     id: meta.conversationId,
                     title: meta.title,
                     market: meta.market,
-                    preview: '正在生成比价结果…',
+                    preview: t('app.generating'),
                     createdAt: now,
                     updatedAt: now,
                   },
@@ -480,7 +482,7 @@ export default function App() {
         }
       }
     },
-    [conversationLoading, market, refreshConversations],
+    [conversationLoading, market, refreshConversations, t],
   );
 
   const handleMarketChange = useCallback((next: CountryCode) => {
@@ -518,17 +520,8 @@ export default function App() {
       />
       <AppSidebar
         view={view}
-        conversations={conversations}
-        activeId={activeId}
         open={sidebarOpen}
-        loading={booting}
-        config={config}
         onNavigate={navigate}
-        onSelect={(id) => void loadConversation(id)}
-        onOpenGateway={() => {
-          setSidebarOpen(false);
-          setGatewayOpen(true);
-        }}
         onClose={() => setSidebarOpen(false)}
       />
 
@@ -542,13 +535,8 @@ export default function App() {
             inputRef={composerRef}
             onSend={(message, image) => void sendMessage(message, image)}
             onStop={() => cancelStream(true)}
-            onAsk={(query) => void sendMessage(query)}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
-            onOpenReels={(index = 0) => {
-              setReelStart(index);
-              setView('reels');
-            }}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
@@ -607,7 +595,6 @@ export default function App() {
             config={config}
             market={market}
             priceMode={priceMode}
-            conversationCount={conversations.length}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenGateway={() => setGatewayOpen(true)}
