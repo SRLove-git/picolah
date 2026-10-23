@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Bell,
   Check,
   ChevronDown,
-  CircleDollarSign,
   Tag,
   TrendingDown,
   Truck,
   Wallet,
 } from 'lucide-react';
-import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
+import type { CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
 import { PRICE_MODES, priceModeMeta } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
-import { Capybara } from './PicolahMark';
 
 const PRICE_ICONS = {
   landed: Wallet,
@@ -217,90 +214,3 @@ export function PriceModeTabs({
   );
 }
 
-export function UtilityBar({
-  config,
-  market,
-  unread,
-  onOpenNotifications,
-  onOpenProfile,
-  onOpenMarket,
-}: {
-  config: AppConfig | null;
-  market: CountryCode;
-  unread?: boolean;
-  onOpenNotifications: () => void;
-  onOpenProfile: () => void;
-  onOpenMarket?: () => void;
-}) {
-  const marketInfo = MARKETS[market];
-  const offers = config?.gateway.offers;
-  const marketContent = (
-    <>
-      <CountryFlag code={market} width={17} />
-      <span>{marketInfo.nameZh}</span>
-      <small>{marketInfo.currency}</small>
-    </>
-  );
-
-  return (
-    <div className="pc-utility">
-      <span className={`pc-live-pill ${config ? 'is-live' : ''}`} title="独立爬虫数据源状态">
-        <i />
-        {config ? '价格库在线' : '正在连接'}
-        {typeof offers === 'number' && (
-          <b>{new Intl.NumberFormat('zh-CN').format(offers)} 条</b>
-        )}
-      </span>
-      {onOpenMarket ? (
-        <button type="button" className="pc-utility-market" onClick={onOpenMarket} title="默认市场">
-          {marketContent}
-        </button>
-      ) : (
-        <span className="pc-utility-market is-static" title="当前默认市场">
-          {marketContent}
-        </span>
-      )}
-      <button
-        type="button"
-        className="pc-icon-button pc-bell"
-        onClick={onOpenNotifications}
-        aria-label="通知"
-      >
-        <Bell size={18} />
-        {unread && <i className="pc-unread-dot" />}
-      </button>
-      <button
-        type="button"
-        className="pc-avatar-button"
-        onClick={onOpenProfile}
-        aria-label="打开个人主页"
-      >
-        <Capybara variant="face" size={38} />
-      </button>
-    </div>
-  );
-}
-
-export function IconStat({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <span className="pc-icon-stat">
-      <span className="pc-icon-stat-icon">{icon}</span>
-      <span>
-        <strong>{value}</strong>
-        <small>{label}</small>
-      </span>
-    </span>
-  );
-}
-
-export function CircleDollar() {
-  return <CircleDollarSign size={16} />;
-}

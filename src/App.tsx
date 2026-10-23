@@ -13,10 +13,7 @@ import { getConfig, getConversation, getConversations, streamChat } from './lib/
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
-import { ReelsView } from './components/ReelsView';
 import { MessagesView } from './components/MessagesView';
-import { SearchView } from './components/SearchView';
-import { NotificationsView } from './components/NotificationsView';
 import { ProfileView } from './components/ProfileView';
 import { IngestDrawer } from './components/IngestDrawer';
 
@@ -30,7 +27,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'reels', 'messages', 'search', 'notifications', 'profile'];
+const PAGE_VIEWS: AppView[] = ['home', 'messages', 'profile'];
 
 function readStorage(key: string): string | null {
   try {
@@ -85,8 +82,6 @@ export default function App() {
   const [gatewayOpen, setGatewayOpen] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
   const [view, setView] = useState<AppView>(initialView);
-  const [reelStart, setReelStart] = useState(0);
-  const [unread, setUnread] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -498,16 +493,9 @@ export default function App() {
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const editing =
-        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         handleNewChat();
-      }
-      if (event.key === '/' && !editing && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        setView('search');
       }
       if (event.key === 'Escape') {
         setSidebarOpen(false);
@@ -529,20 +517,14 @@ export default function App() {
       <AppSidebar
         view={view}
         conversations={conversations}
-        activeId={activeId}
         open={sidebarOpen}
-        loading={booting}
         config={config}
-        unread={unread}
         onNavigate={navigate}
-        onSelect={(id) => void loadConversation(id)}
-        onNew={handleNewChat}
         onOpenGateway={() => {
           setSidebarOpen(false);
           setGatewayOpen(true);
         }}
         onClose={() => setSidebarOpen(false)}
-        notify={notify}
       />
 
       <main className="pc-main">
@@ -552,19 +534,12 @@ export default function App() {
             priceMode={priceMode}
             config={config}
             busy={busy}
-            unread={unread}
             inputRef={composerRef}
             onSend={(message, image) => void sendMessage(message, image)}
             onStop={() => cancelStream(true)}
             onAsk={(query) => void sendMessage(query)}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
-            onOpenReels={(index = 0) => {
-              setReelStart(index);
-              setView('reels');
-            }}
-            onOpenNotifications={() => setView('notifications')}
-            onOpenProfile={() => setView('profile')}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
@@ -596,54 +571,14 @@ export default function App() {
           />
         )}
 
-        {view === 'reels' && (
-          <ReelsView
-            market={market}
-            initialIndex={reelStart}
-            onAsk={(query) => void sendMessage(query)}
-            onOpenSidebar={() => setSidebarOpen(true)}
-            notify={notify}
-          />
-        )}
-
         {view === 'messages' && (
           <MessagesView
             conversations={conversations}
             loading={booting}
             config={config}
-            market={market}
-            unread={unread}
             onSelect={(id) => void loadConversation(id)}
             onNew={handleNewChat}
-            onOpenNotifications={() => setView('notifications')}
-            onOpenProfile={() => setView('profile')}
-            onOpenSidebar={() => setSidebarOpen(true)}
-          />
-        )}
-
-        {view === 'search' && (
-          <SearchView
-            config={config}
-            market={market}
-            unread={unread}
-            onAsk={(query) => void sendMessage(query)}
-            onOpenNotifications={() => setView('notifications')}
-            onOpenProfile={() => setView('profile')}
-            onOpenSidebar={() => setSidebarOpen(true)}
-          />
-        )}
-
-        {view === 'notifications' && (
-          <NotificationsView
-            config={config}
-            market={market}
-            unread={unread}
-            onMarkRead={() => setUnread(false)}
-            onAsk={(query) => void sendMessage(query)}
-            onOpenProfile={() => setView('profile')}
             onOpenGateway={() => setGatewayOpen(true)}
-            onOpenReels={() => setView('reels')}
-            onOpenNotifications={() => setView('notifications')}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
@@ -654,11 +589,9 @@ export default function App() {
             market={market}
             priceMode={priceMode}
             conversationCount={conversations.length}
-            unread={unread}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenGateway={() => setGatewayOpen(true)}
-            onOpenNotifications={() => setView('notifications')}
             onOpenSidebar={() => setSidebarOpen(true)}
             notify={notify}
           />

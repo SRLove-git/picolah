@@ -1,26 +1,19 @@
-import { ArrowRight, Menu, Play, Search, Sparkles, TrendingUp } from 'lucide-react';
+import { Menu, Sparkles, TrendingUp } from 'lucide-react';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
-import { REELS, compactCount } from '../lib/reels';
-import { UtilityBar } from './Controls';
 import { Capybara, Wordmark } from './PicolahMark';
 import { PromptComposer } from './PromptComposer';
-import { ProductArt } from './ProductArt';
 
 interface HomeViewProps {
   market: CountryCode;
   priceMode: PriceMode;
   config: AppConfig | null;
   busy: boolean;
-  unread: boolean;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onSend: (message: string, image?: string) => void;
   onStop: () => void;
   onAsk: (query: string) => void;
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
-  onOpenReels: (index?: number) => void;
-  onOpenNotifications: () => void;
-  onOpenProfile: () => void;
   onOpenSidebar: () => void;
 }
 
@@ -37,16 +30,12 @@ export function HomeView({
   priceMode,
   config,
   busy,
-  unread,
   inputRef,
   onSend,
   onStop,
   onAsk,
   onMarketChange,
   onPriceModeChange,
-  onOpenReels,
-  onOpenNotifications,
-  onOpenProfile,
   onOpenSidebar,
 }: HomeViewProps) {
   return (
@@ -72,17 +61,6 @@ export function HomeView({
       >
         <Menu size={19} />
       </button>
-
-      <div className="pc-home-utility">
-        <UtilityBar
-          config={config}
-          market={market}
-          unread={unread}
-          onOpenNotifications={onOpenNotifications}
-          onOpenProfile={onOpenProfile}
-          onOpenMarket={onOpenProfile}
-        />
-      </div>
 
       <div className="pc-home-scroll">
         <div className="pc-home-main">
@@ -138,70 +116,11 @@ export function HomeView({
                 {item.label}
               </button>
             ))}
-            <button
-              type="button"
-              className="pc-suggestion-more"
-              onClick={() => onOpenReels()}
-            >
-              看测评
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          <div className="pc-home-reels">
-            <div className="pc-home-reels-head">
-              <span>
-                <span className="pc-reels-badge">
-                  <Play size={9} fill="currentColor" />
-                  REELS
-                </span>
-                测评短视频
-              </span>
-              <button type="button" onClick={() => onOpenReels()}>
-                全部 <ArrowRight size={13} />
-              </button>
-            </div>
-            <div className="pc-mini-reels">
-              {REELS.slice(0, 3).map((reel, index) => (
-                <button
-                  key={reel.id}
-                  type="button"
-                  className="pc-mini-reel"
-                  onClick={() => onOpenReels(index)}
-                  style={{
-                    background: `linear-gradient(135deg, ${reel.gradient[0]}, ${reel.gradient[1]})`,
-                  }}
-                >
-                  <div className="pc-mini-reel-art">
-                    <ProductArt visual={reel.visual} size={62} />
-                    <span className="pc-mini-reel-play">
-                      <Play size={11} fill="currentColor" />
-                    </span>
-                  </div>
-                  <span className="pc-mini-reel-copy">
-                    <strong>{reel.shortTitle}</strong>
-                    <small>
-                      {reel.handle} · {compactCount(reel.likes)} 赞
-                    </small>
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
         <footer className="pc-home-foot">
           <span>价格由独立爬虫同步 · Picolah 只展示价格库里的数据</span>
-          <span className="pc-home-foot-links">
-            <button type="button" onClick={() => onOpenReels()}>
-              <Play size={11} />
-              测评
-            </button>
-            <button type="button" onClick={() => onAsk('Sony WH-1000XM5 哪里买最便宜？')}>
-              <Search size={11} />
-              随便逛逛
-            </button>
-          </span>
         </footer>
       </div>
     </section>

@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, MessageCircle, Plus, Search, Sparkles, X } from 'lucide-react';
-import type { AppConfig, ConversationSummary, CountryCode } from '../../shared/types';
+import type { AppConfig, ConversationSummary } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
 import { dayGroup, relativeTime, stripMarkdown, truncate } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
-import { UtilityBar } from './Controls';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
 
@@ -12,12 +11,9 @@ interface MessagesViewProps {
   conversations: ConversationSummary[];
   loading: boolean;
   config: AppConfig | null;
-  market: CountryCode;
-  unread: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
-  onOpenNotifications: () => void;
-  onOpenProfile: () => void;
+  onOpenGateway: () => void;
   onOpenSidebar: () => void;
 }
 
@@ -27,12 +23,9 @@ export function MessagesView({
   conversations,
   loading,
   config,
-  market,
-  unread,
   onSelect,
   onNew,
-  onOpenNotifications,
-  onOpenProfile,
+  onOpenGateway,
   onOpenSidebar,
 }: MessagesViewProps) {
   const [query, setQuery] = useState('');
@@ -63,16 +56,7 @@ export function MessagesView({
         title="消息"
         description="每一段对话，都是一次认真比过的价。"
         onOpenSidebar={onOpenSidebar}
-      >
-        <UtilityBar
-          config={config}
-          market={market}
-          unread={unread}
-          onOpenNotifications={onOpenNotifications}
-          onOpenProfile={onOpenProfile}
-          onOpenMarket={onOpenProfile}
-        />
-      </PageHeader>
+      />
 
       <div className="pc-page-body pc-messages-body">
         <div className="pc-msg-panel">
@@ -190,7 +174,7 @@ export function MessagesView({
             </div>
           </div>
 
-          <button type="button" className="pc-msg-source-card" onClick={onOpenProfile}>
+          <button type="button" className="pc-msg-source-card" onClick={onOpenGateway}>
             <span className={`pc-source-dot ${config ? 'is-live' : ''}`} />
             <span>
               <strong>{config ? '价格库在线' : '正在连接价格库'}</strong>

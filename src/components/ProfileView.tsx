@@ -13,7 +13,6 @@ import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
 import { PRICE_MODES, priceModeMeta, relativeTime } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
-import { UtilityBar } from './Controls';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
 
@@ -22,11 +21,9 @@ interface ProfileViewProps {
   market: CountryCode;
   priceMode: PriceMode;
   conversationCount: number;
-  unread: boolean;
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
   onOpenGateway: () => void;
-  onOpenNotifications: () => void;
   onOpenSidebar: () => void;
   notify: (message: string) => void;
 }
@@ -43,11 +40,9 @@ export function ProfileView({
   market,
   priceMode,
   conversationCount,
-  unread,
   onMarketChange,
   onPriceModeChange,
   onOpenGateway,
-  onOpenNotifications,
   onOpenSidebar,
   notify,
 }: ProfileViewProps) {
@@ -56,21 +51,13 @@ export function ProfileView({
   const lastRun = config?.gateway.lastRun;
 
   return (
-    <section className="pc-page pc-profile-page" aria-label="个人主页">
+    <section className="pc-page pc-profile-page" aria-label="设置">
       <PageHeader
-        eyebrow="PROFILE"
-        title="个人主页"
-        description="你的账号、比价偏好和价格库，都放在这里。"
+        eyebrow="SETTINGS"
+        title="设置"
+        description="默认市场、价格口径和价格库，都在这里。"
         onOpenSidebar={onOpenSidebar}
-      >
-        <UtilityBar
-          config={config}
-          market={market}
-          unread={unread}
-          onOpenNotifications={onOpenNotifications}
-          onOpenProfile={() => notify('你已经在个人主页啦')}
-        />
-      </PageHeader>
+      />
 
       <div className="pc-page-body pc-profile-body">
         <div className="pc-profile-cover">
