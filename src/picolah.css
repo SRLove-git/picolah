@@ -5759,3 +5759,20 @@
 .pc-profile-grid .pc-profile-account {
   order: -1;
 }
+
+/* Bottom-left account entry (Instagram-style) */
+.pc-side-status {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pc-account-card.is-active {
+  background: var(--pc-pink-soft);
+  border-color: #f4d4df;
+}
+
+.pc-account-chevron {
+  flex: 0 0 auto;
+  color: var(--pc-faint);
+}

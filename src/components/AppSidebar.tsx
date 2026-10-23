@@ -1,4 +1,4 @@
-import { Clapperboard, Database, Home, MessageCircle, UserRound, X } from 'lucide-react';
+import { ChevronRight, Clapperboard, Database, Home, MessageCircle, X } from 'lucide-react';
 import type { AppConfig, ConversationSummary } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
 import { relativeTime } from '../lib/format';
@@ -24,7 +24,6 @@ const NAV = [
   { key: 'home' as const, label: '首页', Icon: Home },
   { key: 'messages' as const, label: '消息', Icon: MessageCircle },
   { key: 'reels' as const, label: '短视频', Icon: Clapperboard },
-  { key: 'account' as const, label: '账号', Icon: UserRound },
 ];
 
 export function AppSidebar({
@@ -134,15 +133,34 @@ export function AppSidebar({
       </div>
 
       <footer className="pc-side-foot">
-        <span className={`pc-side-live ${config ? 'is-live' : ''}`}>
-          <i />
-          {config ? '价格库在线' : '正在连接'}
+        <span className="pc-side-status">
+          <span className={`pc-side-live ${config ? 'is-live' : ''}`}>
+            <i />
+            {config ? '价格库在线' : '正在连接'}
+          </span>
+          <small>
+            {config
+              ? `${config.gateway.markets} 个市场 · ${new Intl.NumberFormat('zh-CN').format(offers ?? 0)} 条在售价`
+              : 'PICOLAH · BETA'}
+          </small>
         </span>
-        <small>
-          {config
-            ? `${config.gateway.markets} 个市场 · ${new Intl.NumberFormat('zh-CN').format(offers ?? 0)} 条在售价`
-            : 'PICOLAH · BETA'}
-        </small>
+
+        <button
+          type="button"
+          className={`pc-account-card ${view === 'account' ? 'is-active' : ''}`}
+          onClick={() => onNavigate('account')}
+          aria-current={view === 'account' ? 'page' : undefined}
+        >
+          <span className="pc-account-avatar">
+            <Capybara variant="face" size={34} />
+            <i />
+          </span>
+          <span className="pc-account-copy">
+            <strong>Picolah 工作区</strong>
+            <small>账号与设置</small>
+          </span>
+          <ChevronRight size={15} className="pc-account-chevron" />
+        </button>
       </footer>
     </aside>
   );
