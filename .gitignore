@@ -1,13 +1,11 @@
 node_modules/
 dist/
-data/*.db
-data/*.db-shm
-data/*.db-wal
+data/
+mock-state/
 .env
 .env.local
 .DS_Store
 *.log
 .playwright/
 screenshots/
-mock-state/
 .tmp/

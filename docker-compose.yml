@@ -12,6 +12,9 @@ services:
       - .env
     environment:
       PICOLAH_ENTRY_PATH: ${PICOLAH_ENTRY_PATH:-/7hk9ho}
+      # The website source now lives under /app/web, but the SQLite file keeps
+      # using the host mount at /app/data so existing deployments keep their DB.
+      PICOLAH_DB_PATH: /app/data/picolah.db
     # Bind only to the docker_default bridge gateway: reachable by the shared
     # 443 nginx-lb (which lives on that network) and by the host, not the internet.
     ports:
@@ -34,7 +37,7 @@ services:
         max-size: "20m"
         max-file: "3"
 
-  # Simulates the separate crawler app: nudges demo prices and pushes real
+  # Stand-in for the future crawler app: nudges demo prices and pushes real
   # ingest batches, so the gateway panel and price history stay alive.
   mock-crawler:
     image: picolah:latest
@@ -52,7 +55,7 @@ services:
       MOCK_BATCH_SIZE: ${MOCK_BATCH_SIZE:-8}
       MOCK_MARKETS: ${MOCK_MARKETS:-}
       MOCK_STATE_FILE: /app/mock-state/state.json
-    command: ["./node_modules/.bin/tsx", "mock/crawler.ts"]
+    command: ["./web/node_modules/.bin/tsx", "web/mock/crawler.ts"]
     volumes:
       - ./mock-state:/app/mock-state
     logging:

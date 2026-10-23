@@ -2,43 +2,23 @@
   "name": "picolah",
   "version": "0.1.0",
   "private": true,
-  "description": "Picolah — an AI price-comparison workspace for Southeast Asia, fed by a separate crawler app.",
+  "description": "Picolah monorepo — the website lives in web/, the crawler lives in crawler/.",
   "type": "module",
   "packageManager": "pnpm@11.28.5",
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "concurrently -k -n api,web -c yellow,cyan \"pnpm dev:api\" \"pnpm dev:web\"",
-    "dev:api": "tsx watch server/index.ts",
-    "dev:web": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
-    "start": "tsx server/index.ts",
-    "mock": "tsx mock/crawler.ts",
-    "mock:once": "tsx mock/crawler.ts --once",
-    "seed": "tsx server/seed.ts --force",
-    "test": "tsx --test server/query.test.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.8",
-    "express": "^5.3.0",
-    "lucide-react": "^1.59.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "zod": "^4.6.7"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.6.5",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "concurrently": "^10.0.6",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "dev": "npm --prefix web run dev",
+    "dev:api": "npm --prefix web run dev:api",
+    "dev:web": "npm --prefix web run dev:web",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix web run start",
+    "seed": "npm --prefix web run seed",
+    "mock": "npm --prefix web run mock",
+    "mock:once": "npm --prefix web run mock:once",
+    "crawl": "npm --prefix crawler run crawl --",
+    "test": "npm --prefix web run test",
+    "typecheck": "npm --prefix web run typecheck"
   }
 }

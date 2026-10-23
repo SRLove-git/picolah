@@ -1,4 +1,6 @@
 packages:
-  - '.'
+  - 'web'
+  - 'crawler'
+
 allowBuilds:
   esbuild: true

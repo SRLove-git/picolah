@@ -7,7 +7,8 @@ Production stack: Docker + Node 24, served over HTTPS by the shared
 
 | Path | Purpose |
 | --- | --- |
-| `/opt/picolah/` | app source, Dockerfile, compose file |
+| `/opt/picolah/` | repo root: compose file, Dockerfile, deploy scripts |
+| `/opt/picolah/web/` | website source (React + Express + SQLite) |
 | `/opt/picolah/.env` | production env (600, contains LLM + ingest keys) |
 | `/opt/picolah/data/` | SQLite database (mounted at `/app/data`) |
 | `/opt/picolah/mock-state/` | mock crawler price state (safe to delete; it re-seeds) |
@@ -74,7 +75,7 @@ curl -sI https://picolah.com/
 
 ## Mock crawler
 
-`picolah-mock` runs `mock/crawler.ts` inside the same image. Every
+`picolah-mock` runs `web/mock/crawler.ts` inside the same image. Every
 `MOCK_INTERVAL_MS` (default 120s) it nudges ~8 demo offers and POSTs a normal
 ingest batch, so "最近入库", "今日更新", stock flags and the 30-day chart move.
 It writes the same `(source, external_id)` rows the seed created, so offers are
@@ -82,7 +83,7 @@ updated in place — no duplicate platforms.
 
 ```bash
 # one manual batch (also proves the ingest key works)
-docker compose exec mock-crawler ./node_modules/.bin/tsx mock/crawler.ts --once
+docker compose exec mock-crawler ./web/node_modules/.bin/tsx web/mock/crawler.ts --once
 
 # reset the local price walk
 docker compose stop mock-crawler
@@ -95,7 +96,7 @@ stop the service rather than setting a zero interval.
 
 ## Data upgrades
 
-On start the API syncs `shared/catalog.ts` into SQLite: missing products and
+On start the API syncs `web/shared/catalog.ts` into SQLite: missing products and
 offers are inserted, and legacy rows with `source='seed'` are rewritten to the
 crawler's `picolah-mock` identity so they keep being updated instead of
 duplicated. Existing conversations are preserved.
@@ -126,6 +127,8 @@ console.log('mock offers removed');
 
 Then point the real crawler at `POST /api/v1/ingest/offers` with its own
 `source` (e.g. `shopee-sg-crawler`); the catalog products stay in place.
+The repo's crawler writes with `source=picolah-crawler` and can be run with
+`pnpm crawl --market SG --platform lazada` (see `crawler/README.md`).
 
 ## TLS
 

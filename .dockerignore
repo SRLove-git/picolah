@@ -7,3 +7,9 @@ data
 *.log
 docs
 deploy
+.tmp
+web/dist
+web/data
+web/mock-state
+web/.env
+crawler

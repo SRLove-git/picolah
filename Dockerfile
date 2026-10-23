@@ -5,28 +5,31 @@ FROM node:24-alpine AS build
 WORKDIR /app
 RUN npm install -g pnpm@11.28.5
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY web/package.json ./web/package.json
 RUN pnpm install --frozen-lockfile
-COPY tsconfig.json vite.config.ts index.html ./
-COPY src ./src
-COPY server ./server
-COPY shared ./shared
-COPY mock ./mock
-COPY public ./public
+COPY web/tsconfig.json web/vite.config.ts web/index.html ./web/
+COPY web/src ./web/src
+COPY web/server ./web/server
+COPY web/shared ./web/shared
+COPY web/mock ./web/mock
+COPY web/public ./web/public
 RUN pnpm build
 
-# ---- runtime: Node + tsx serving API and the built frontend ----
+# ---- runtime: Node + tsx serving the API and the built frontend ----
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=8787
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/web/node_modules ./web/node_modules
 COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/tsconfig.json ./tsconfig.json
-COPY --from=build /app/server ./server
-COPY --from=build /app/shared ./shared
-COPY --from=build /app/mock ./mock
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/web/package.json ./web/package.json
+COPY --from=build /app/web/tsconfig.json ./web/tsconfig.json
+COPY --from=build /app/web/server ./web/server
+COPY --from=build /app/web/shared ./web/shared
+COPY --from=build /app/web/mock ./web/mock
+COPY --from=build /app/web/dist ./web/dist
 
 EXPOSE 8787
-CMD ["./node_modules/.bin/tsx", "server/index.ts"]
+CMD ["./web/node_modules/.bin/tsx", "web/server/index.ts"]

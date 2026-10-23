@@ -2,6 +2,8 @@
 
 Picolah 的价格全部来自外部爬虫。本文档定义爬虫 App 如何把标准化的商品和报价写入价格库。
 
+> 网站侧实现：`web/server/routes/ingest.ts`；爬虫项目：[`crawler/`](../crawler/README.md)（尚未开工）。本文档是两个项目之间的唯一契约。
+
 - 版本：`v1`
 - Base URL（本地）：`http://127.0.0.1:8787`
 - 通过 Vite 代理时也可用：`http://127.0.0.1:5173`
