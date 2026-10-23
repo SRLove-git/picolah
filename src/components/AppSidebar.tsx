@@ -1,11 +1,11 @@
-import { Database, Home, MessageCircle, Settings, X } from 'lucide-react';
+import { Clapperboard, Database, Home, MessageCircle, UserRound, X } from 'lucide-react';
 import type { AppConfig, ConversationSummary } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
 import { relativeTime } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
 import { BrandLockup, Capybara } from './PicolahMark';
 
-export type AppView = 'home' | 'messages' | 'profile' | 'chat';
+export type AppView = 'home' | 'messages' | 'reels' | 'account' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
@@ -23,6 +23,8 @@ interface AppSidebarProps {
 const NAV = [
   { key: 'home' as const, label: '首页', Icon: Home },
   { key: 'messages' as const, label: '消息', Icon: MessageCircle },
+  { key: 'reels' as const, label: '短视频', Icon: Clapperboard },
+  { key: 'account' as const, label: '账号', Icon: UserRound },
 ];
 
 export function AppSidebar({
@@ -81,18 +83,6 @@ export function AppSidebar({
             <Database size={21} strokeWidth={1.9} />
           </span>
           <span className="pc-nav-label">数据源</span>
-        </button>
-
-        <button
-          type="button"
-          className={`pc-nav-item ${view === 'profile' ? 'is-active' : ''}`}
-          onClick={() => onNavigate('profile')}
-          aria-current={view === 'profile' ? 'page' : undefined}
-        >
-          <span className="pc-nav-icon">
-            <Settings size={21} strokeWidth={view === 'profile' ? 2.3 : 1.9} />
-          </span>
-          <span className="pc-nav-label">设置</span>
         </button>
       </nav>
 

@@ -1,6 +1,8 @@
-import { Menu, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowRight, Menu, Play, Sparkles, TrendingUp } from 'lucide-react';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
+import { REELS, compactCount } from '../lib/reels';
 import { Capybara, Wordmark } from './PicolahMark';
+import { ProductArt } from './ProductArt';
 import { PromptComposer } from './PromptComposer';
 
 interface HomeViewProps {
@@ -14,6 +16,7 @@ interface HomeViewProps {
   onAsk: (query: string) => void;
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
+  onOpenReels: (index?: number) => void;
   onOpenSidebar: () => void;
 }
 
@@ -36,6 +39,7 @@ export function HomeView({
   onAsk,
   onMarketChange,
   onPriceModeChange,
+  onOpenReels,
   onOpenSidebar,
 }: HomeViewProps) {
   return (
@@ -116,6 +120,51 @@ export function HomeView({
                 {item.label}
               </button>
             ))}
+            <button type="button" className="pc-suggestion-more" onClick={() => onOpenReels()}>
+              看测评
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div className="pc-home-reels">
+            <div className="pc-home-reels-head">
+              <span>
+                <span className="pc-reels-badge">
+                  <Play size={9} fill="currentColor" />
+                  REELS
+                </span>
+                商品测评短视频
+              </span>
+              <button type="button" onClick={() => onOpenReels()}>
+                全部 <ArrowRight size={13} />
+              </button>
+            </div>
+            <div className="pc-mini-reels">
+              {REELS.slice(0, 3).map((reel, index) => (
+                <button
+                  key={reel.id}
+                  type="button"
+                  className="pc-mini-reel"
+                  onClick={() => onOpenReels(index)}
+                  style={{
+                    background: `linear-gradient(135deg, ${reel.gradient[0]}, ${reel.gradient[1]})`,
+                  }}
+                >
+                  <div className="pc-mini-reel-art">
+                    <ProductArt visual={reel.visual} size={62} />
+                    <span className="pc-mini-reel-play">
+                      <Play size={11} fill="currentColor" />
+                    </span>
+                  </div>
+                  <span className="pc-mini-reel-copy">
+                    <strong>{reel.shortTitle}</strong>
+                    <small>
+                      {reel.handle} · {compactCount(reel.likes)} 赞
+                    </small>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

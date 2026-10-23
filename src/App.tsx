@@ -13,8 +13,9 @@ import { getConfig, getConversation, getConversations, streamChat } from './lib/
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
+import { ReelsView } from './components/ReelsView';
 import { MessagesView } from './components/MessagesView';
-import { ProfileView } from './components/ProfileView';
+import { AccountView } from './components/AccountView';
 import { IngestDrawer } from './components/IngestDrawer';
 
 const MARKET_KEY = 'picolah.market';
@@ -27,7 +28,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'messages', 'profile'];
+const PAGE_VIEWS: AppView[] = ['home', 'messages', 'reels', 'account'];
 
 function readStorage(key: string): string | null {
   try {
@@ -82,6 +83,7 @@ export default function App() {
   const [gatewayOpen, setGatewayOpen] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
   const [view, setView] = useState<AppView>(initialView);
+  const [reelStart, setReelStart] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -543,6 +545,10 @@ export default function App() {
             onAsk={(query) => void sendMessage(query)}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
+            onOpenReels={(index = 0) => {
+              setReelStart(index);
+              setView('reels');
+            }}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
@@ -574,6 +580,16 @@ export default function App() {
           />
         )}
 
+        {view === 'reels' && (
+          <ReelsView
+            market={market}
+            initialIndex={reelStart}
+            onAsk={(query) => void sendMessage(query)}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            notify={notify}
+          />
+        )}
+
         {view === 'messages' && (
           <MessagesView
             conversations={conversations}
@@ -586,8 +602,8 @@ export default function App() {
           />
         )}
 
-        {view === 'profile' && (
-          <ProfileView
+        {view === 'account' && (
+          <AccountView
             config={config}
             market={market}
             priceMode={priceMode}

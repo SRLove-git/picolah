@@ -5754,3 +5754,8 @@
   background: rgba(36, 28, 37, 0.14);
   border-radius: 999px;
 }
+
+/* Account page: security card comes first */
+.pc-profile-grid .pc-profile-account {
+  order: -1;
+}

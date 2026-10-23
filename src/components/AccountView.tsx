@@ -11,12 +11,12 @@ import {
 } from 'lucide-react';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
-import { PRICE_MODES, priceModeMeta, relativeTime } from '../lib/format';
+import { PRICE_MODES, relativeTime } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
 
-interface ProfileViewProps {
+interface AccountViewProps {
   config: AppConfig | null;
   market: CountryCode;
   priceMode: PriceMode;
@@ -35,7 +35,7 @@ const PRICE_ICONS = {
   history: Sparkles,
 } as const;
 
-export function ProfileView({
+export function AccountView({
   config,
   market,
   priceMode,
@@ -45,17 +45,16 @@ export function ProfileView({
   onOpenGateway,
   onOpenSidebar,
   notify,
-}: ProfileViewProps) {
-  const mode = priceModeMeta(priceMode);
+}: AccountViewProps) {
   const marketInfo = MARKETS[market];
   const lastRun = config?.gateway.lastRun;
 
   return (
-    <section className="pc-page pc-profile-page" aria-label="设置">
+    <section className="pc-page pc-profile-page" aria-label="账号">
       <PageHeader
-        eyebrow="SETTINGS"
-        title="设置"
-        description="默认市场、价格口径和价格库，都在这里。"
+        eyebrow="ACCOUNT"
+        title="账号"
+        description="账号、登录方式和比价偏好，都在这里。"
         onOpenSidebar={onOpenSidebar}
       />
 
@@ -241,8 +240,8 @@ export function ProfileView({
                 <BadgeCheck size={17} />
               </span>
               <div>
-                <h3>账号</h3>
-                <p>当前登录的工作区。</p>
+                <h3>账号与安全</h3>
+                <p>当前工作区的登录状态和安全设置。</p>
               </div>
             </header>
             <div className="pc-account-rows">
@@ -255,24 +254,32 @@ export function ProfileView({
                 <strong>@picolah.sea</strong>
               </span>
               <span>
+                <small>登录方式</small>
+                <strong>邮箱验证码</strong>
+              </span>
+              <span>
+                <small>绑定邮箱</small>
+                <strong>hello@picolah.sea</strong>
+              </span>
+              <span>
                 <small>方案</small>
                 <strong>
                   Beta <em>免费</em>
                 </strong>
               </span>
               <span>
-                <small>默认口径</small>
-                <strong>{mode.label}</strong>
+                <small>最近登录</small>
+                <strong>刚刚 · 本机浏览器</strong>
               </span>
             </div>
             <div className="pc-profile-card-actions">
               <button
                 type="button"
                 className="pc-outline-button"
-                onClick={() => notify('工作区资料暂存在本地，多设备同步还在路上')}
+                onClick={() => notify('演示工作区：验证码登录和改密还没有接后端')}
               >
                 <Pencil size={14} />
-                编辑资料
+                修改密码
               </button>
               <button
                 type="button"
