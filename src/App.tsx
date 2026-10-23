@@ -517,9 +517,12 @@ export default function App() {
       <AppSidebar
         view={view}
         conversations={conversations}
+        activeId={activeId}
         open={sidebarOpen}
+        loading={booting}
         config={config}
         onNavigate={navigate}
+        onSelect={(id) => void loadConversation(id)}
         onOpenGateway={() => {
           setSidebarOpen(false);
           setGatewayOpen(true);

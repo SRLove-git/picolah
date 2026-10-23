@@ -5728,3 +5728,29 @@
   color: var(--pc-muted);
   letter-spacing: 0.02em;
 }
+
+/* Sidebar conversation history */
+.pc-side-recent {
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-side-recent-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  padding: 0 4px 8px 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.pc-side-recent-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.pc-side-recent-list::-webkit-scrollbar-thumb {
+  background: rgba(36, 28, 37, 0.14);
+  border-radius: 999px;
+}
