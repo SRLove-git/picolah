@@ -1,4 +1,5 @@
 import { ArrowDown, Menu, Plus, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type {
   AppConfig,
   ChatMessage as ChatMessageType,
@@ -43,8 +44,9 @@ interface ChatViewProps {
 }
 
 function ChatSkeleton() {
+  const { t } = useTranslation();
   return (
-    <div className="pc-chat-skeleton" aria-label="正在加载对话">
+    <div className="pc-chat-skeleton" aria-label={t('chat.loading')}>
       <div className="pc-chat-skeleton-user" />
       <div className="pc-chat-skeleton-assistant">
         <span className="pc-chat-skeleton-avatar" />
@@ -87,25 +89,26 @@ export function ChatView({
   onNew,
   onOpenSidebar,
 }: ChatViewProps) {
+  const { t } = useTranslation();
   return (
-    <section className="pc-chat" aria-label="比价对话">
+    <section className="pc-chat" aria-label={t('chat.label')}>
       <header className="pc-chat-head">
         <button
           type="button"
           className="pc-mobile-menu pc-page-menu"
           onClick={onOpenSidebar}
-          aria-label="打开导航"
+          aria-label={t('chat.openNav')}
         >
           <Menu size={19} />
         </button>
         <div className="pc-chat-heading">
-          <span className="pc-eyebrow">PICOLAH / 比价对话</span>
-          <h1>{title || '新的比价'}</h1>
+          <span className="pc-eyebrow">{t('chat.eyebrow')}</span>
+          <h1>{title || t('chat.newTitle')}</h1>
         </div>
         <div className="pc-chat-controls">
           <span className={`pc-live-pill pc-chat-live ${config ? 'is-live' : ''}`}>
             <i />
-            {config ? '价格库在线' : '连接中'}
+            {t(config ? 'chat.online' : 'chat.connecting')}
           </span>
           <MarketPicker
             market={market}
@@ -116,7 +119,7 @@ export function ChatView({
           <PriceModeTabs priceMode={priceMode} onChange={onPriceModeChange} />
           <button type="button" className="pc-primary-button pc-chat-new" onClick={onNew}>
             <Plus size={15} />
-            新比价
+            {t('chat.new')}
           </button>
         </div>
       </header>
@@ -155,7 +158,7 @@ export function ChatView({
             type="button"
             className="pc-scroll-down"
             onClick={onScrollToBottom}
-            aria-label="回到底部"
+            aria-label={t('chat.bottom')}
           >
             <ArrowDown size={16} />
           </button>
@@ -164,7 +167,7 @@ export function ChatView({
         {chatError && (
           <div className="pc-chat-error" role="alert">
             <span>{chatError}</span>
-            <button type="button" onClick={onDismissError} aria-label="关闭提示">
+            <button type="button" onClick={onDismissError} aria-label={t('chat.close')}>
               <X size={14} />
             </button>
           </div>

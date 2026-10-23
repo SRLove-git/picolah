@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BadgeCheck,
   Bookmark,
@@ -42,6 +43,7 @@ function ReelProgress({
   onSelect: (index: number) => void;
   onComplete: () => void;
 }) {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -63,14 +65,14 @@ function ReelProgress({
   }, [playing, progress, onComplete]);
 
   return (
-    <div className="pc-reel-progress" role="group" aria-label="短片进度">
+    <div className="pc-reel-progress" role="group" aria-label={t('reels.progress')}>
       {Array.from({ length: count }, (_, itemIndex) => (
         <button
           key={itemIndex}
           type="button"
           className="pc-reel-segment"
           onClick={() => onSelect(itemIndex)}
-          aria-label={`第 ${itemIndex + 1} 个短片`}
+          aria-label={t('reels.clip', { count: itemIndex + 1 })}
         >
           <span
             style={{
@@ -90,6 +92,7 @@ export function ReelsView({
   onOpenSidebar,
   notify,
 }: ReelsViewProps) {
+  const { t, i18n } = useTranslation();
   const [index, setIndex] = useState(() => Math.min(Math.max(initialIndex, 0), REELS.length - 1));
   const [playing, setPlaying] = useState(true);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
@@ -113,14 +116,14 @@ export function ReelsView({
   async function share() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#reels`);
-      notify('Reels 链接已复制，去分享给朋友吧');
+      notify(t('reels.linkCopied'));
     } catch {
-      notify('链接复制失败，可以手动分享页面地址');
+      notify(t('reels.linkFailed'));
     }
   }
 
   return (
-    <section className="pc-reels" aria-label="Reels 商品测评">
+    <section className="pc-reels" aria-label={t('reels.label')}>
       <div
         className="pc-reels-ambient"
         aria-hidden="true"
@@ -135,7 +138,7 @@ export function ReelsView({
           type="button"
           className="pc-reels-menu"
           onClick={onOpenSidebar}
-          aria-label="打开导航"
+          aria-label={t('reels.openNav')}
         >
           <Menu size={19} />
         </button>
@@ -145,16 +148,16 @@ export function ReelsView({
           </span>
           <div>
             <h1>Reels</h1>
-            <p>商品测评 · 好价短片</p>
+            <p>{t('reels.subtitle')}</p>
           </div>
         </div>
         <div className="pc-reels-head-actions">
-          <span className="pc-reels-auto">{playing ? '自动播放中' : '已暂停'}</span>
+          <span className="pc-reels-auto">{t(playing ? 'reels.autoplay' : 'reels.paused')}</span>
           <button
             type="button"
             className="pc-reels-round"
             onClick={() => setPlaying((value) => !value)}
-            aria-label={playing ? '暂停' : '播放'}
+            aria-label={t(playing ? 'reels.pause' : 'reels.play')}
           >
             {playing ? <Pause size={16} /> : <Play size={16} fill="currentColor" />}
           </button>
@@ -163,9 +166,9 @@ export function ReelsView({
             className="pc-reels-round"
             onClick={() => {
               setMuted((value) => !value);
-              notify(muted ? '已打开声音（演示短片暂无音轨）' : '已静音');
+              notify(t(muted ? 'reels.soundDemo' : 'reels.muted'));
             }}
-            aria-label={muted ? '打开声音' : '静音'}
+            aria-label={t(muted ? 'reels.soundOn' : 'reels.mute')}
           >
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
@@ -177,7 +180,7 @@ export function ReelsView({
           type="button"
           className="pc-reels-nav pc-reels-prev"
           onClick={() => goTo(index - 1)}
-          aria-label="上一个"
+          aria-label={t('reels.prev')}
         >
           <ChevronUp size={20} />
         </button>
@@ -203,7 +206,7 @@ export function ReelsView({
             <div className="pc-reel-topline">
               <span className="pc-reel-tag">
                 <Sparkles size={11} />
-                测评
+                {t('reels.review')}
               </span>
               <span className="pc-reel-index">
                 {String(index + 1).padStart(2, '0')} / {String(REELS.length).padStart(2, '0')}
@@ -219,20 +222,20 @@ export function ReelsView({
               <ProductArt visual={reel.visual} size={280} />
             </div>
             <span className="pc-reel-price-tag">
-              <small>今日最低</small>
+              <small>{t('reels.todayLow')}</small>
               <strong>{reel.price}</strong>
             </span>
             <span className="pc-reel-market-tag">
-              {MARKETS[reel.market].flag} {MARKETS[reel.market].nameZh}
+              {MARKETS[reel.market].flag} {i18n.language === 'en' ? MARKETS[reel.market].nameEn : MARKETS[reel.market].nameZh}
             </span>
-            <span className="pc-reel-sticker">值得 pico</span>
+            <span className="pc-reel-sticker">{t('reels.worth')}</span>
           </div>
 
           <button
             type="button"
             className={`pc-reel-playcenter ${playing ? 'is-playing' : ''}`}
             onClick={() => setPlaying((value) => !value)}
-            aria-label={playing ? '暂停短片' : '播放短片'}
+            aria-label={t(playing ? 'reels.pause' : 'reels.play')}
           >
             {playing ? <Pause size={20} /> : <Play size={22} fill="currentColor" />}
           </button>
@@ -242,7 +245,7 @@ export function ReelsView({
               type="button"
               className={`pc-reel-action ${isLiked ? 'is-active' : ''}`}
               onClick={() => setLiked((value) => ({ ...value, [reel.id]: !isLiked }))}
-              aria-label="喜欢"
+              aria-label={t('reels.like')}
             >
               <span>
                 <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
@@ -252,15 +255,15 @@ export function ReelsView({
             <button
               type="button"
               className="pc-reel-action"
-              onClick={() => notify(`这条短片有 ${reel.comments} 条评论，先去看看同款价格吧`)}
-              aria-label="评论"
+              onClick={() => notify(t('reels.comments', { count: reel.comments }))}
+              aria-label={t('reels.comment')}
             >
               <span>
                 <MessageCircle size={22} />
               </span>
               <small>{compactCount(reel.comments)}</small>
             </button>
-            <button type="button" className="pc-reel-action" onClick={() => void share()} aria-label="分享">
+            <button type="button" className="pc-reel-action" onClick={() => void share()} aria-label={t('reels.share')}>
               <span>
                 <Send size={21} />
               </span>
@@ -270,12 +273,12 @@ export function ReelsView({
               type="button"
               className={`pc-reel-action ${isSaved ? 'is-active pc-reel-saved' : ''}`}
               onClick={() => setSaved((value) => ({ ...value, [reel.id]: !isSaved }))}
-              aria-label="收藏"
+              aria-label={t('reels.save')}
             >
               <span>
                 <Bookmark size={22} fill={isSaved ? 'currentColor' : 'none'} />
               </span>
-              <small>收藏</small>
+              <small>{t('reels.save')}</small>
             </button>
             <span className="pc-reel-avatar">
               <Capybara variant="face" size={30} />
@@ -303,7 +306,7 @@ export function ReelsView({
                   setFollowing((value) => ({ ...value, [reel.handle]: !isFollowing }))
                 }
               >
-                {isFollowing ? '已关注' : '关注'}
+                {t(isFollowing ? 'reels.following' : 'reels.follow')}
               </button>
             </div>
 
@@ -313,7 +316,7 @@ export function ReelsView({
 
             <div className="pc-reel-product">
               <span className="pc-reel-product-copy">
-                <small>同款当前好价</small>
+                <small>{t('reels.currentDeal')}</small>
                 <strong>{reel.productName}</strong>
                 <span>{reel.compare}</span>
               </span>
@@ -322,7 +325,7 @@ export function ReelsView({
                 className="pc-reel-cta"
                 onClick={() => onAsk(`${reel.query}`)}
               >
-                <span>去比价</span>
+                <span>{t('reels.compare')}</span>
                 <Sparkles size={13} />
               </button>
             </div>
@@ -333,7 +336,7 @@ export function ReelsView({
           type="button"
           className="pc-reels-nav pc-reels-next"
           onClick={() => goTo(index + 1)}
-          aria-label="下一个"
+          aria-label={t('reels.next')}
         >
           <ChevronDown size={20} />
         </button>
@@ -341,9 +344,9 @@ export function ReelsView({
 
       <footer className="pc-reels-foot">
         <span>
-          当前市场 <b>{MARKETS[market].nameZh}</b> · 短片中的价格为演示数据
+          {t('reels.currentMarket')} <b>{i18n.language === 'en' ? MARKETS[market].nameEn : MARKETS[market].nameZh}</b> · {t('reels.demoPrice')}
         </span>
-        <span>上下滑动 / 点击箭头切换</span>
+        <span>{t('reels.navigate')}</span>
       </footer>
     </section>
   );

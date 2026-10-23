@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Check,
   ChevronDown,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
-import { PRICE_MODES, priceModeMeta } from '../lib/format';
+import { PRICE_MODES } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
 
 const PRICE_ICONS = {
@@ -54,6 +55,7 @@ export function MarketPicker({
   compact?: boolean;
   tone?: 'light' | 'ghost';
 }) {
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useDismiss(open, () => setOpen(false));
   const current = MARKETS[market];
@@ -66,11 +68,11 @@ export function MarketPicker({
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        title="切换比价市场"
+        title={t('controls.changeMarket')}
       >
         <CountryFlag code={market} width={compact ? 16 : 18} />
         <span className="pc-picker-label">
-          {compact ? current.currency : current.nameZh}
+          {compact ? current.currency : i18n.language === 'en' ? current.nameEn : current.nameZh}
         </span>
         <ChevronDown size={13} className={open ? 'is-flipped' : ''} />
       </button>
@@ -79,10 +81,10 @@ export function MarketPicker({
         <div
           className={`pc-picker-menu pc-market-menu ${direction === 'up' ? 'is-up' : ''}`}
           role="listbox"
-          aria-label="选择市场"
+          aria-label={t('controls.selectMarket')}
         >
           <div className="pc-picker-menu-head">
-            <span>比价市场</span>
+            <span>{t('controls.market')}</span>
             <span className="pc-picker-menu-tag">SEA · 06</span>
           </div>
           {COUNTRY_LIST.map((item) => (
@@ -99,14 +101,14 @@ export function MarketPicker({
             >
               <CountryFlag code={item.code} width={20} />
               <span className="pc-picker-option-copy">
-                <strong>{item.nameZh}</strong>
-                <small>{item.nameEn}</small>
+                <strong>{i18n.language === 'en' ? item.nameEn : item.nameZh}</strong>
+                <small>{i18n.language === 'en' ? item.nameZh : item.nameEn}</small>
               </span>
               <span className="pc-picker-option-meta">{item.currency}</span>
               {item.code === market && <Check size={14} className="pc-picker-check" />}
             </button>
           ))}
-          <div className="pc-picker-menu-foot">价格按本地货币展示，不自动换汇</div>
+          <div className="pc-picker-menu-foot">{t('controls.localCurrency')}</div>
         </div>
       )}
     </div>
@@ -124,9 +126,13 @@ export function PriceModePicker({
   direction?: 'up' | 'down';
   tone?: 'light' | 'ghost';
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useDismiss(open, () => setOpen(false));
-  const mode = priceModeMeta(priceMode);
+  const mode = {
+    label: t(`controls.${priceMode}.label`),
+    hint: t(`controls.${priceMode}.hint`),
+  };
   const Icon = PRICE_ICONS[priceMode];
 
   return (
@@ -148,11 +154,11 @@ export function PriceModePicker({
         <div
           className={`pc-picker-menu pc-price-menu ${direction === 'up' ? 'is-up' : ''}`}
           role="listbox"
-          aria-label="价格口径"
+          aria-label={t('controls.priceBasis')}
         >
           <div className="pc-picker-menu-head">
-            <span>价格口径</span>
-            <span className="pc-picker-menu-tag">4 种</span>
+            <span>{t('controls.priceBasis')}</span>
+            <span className="pc-picker-menu-tag">{t('controls.fourTypes')}</span>
           </div>
           {PRICE_MODES.map((item) => {
             const ItemIcon = PRICE_ICONS[item.id];
@@ -172,8 +178,8 @@ export function PriceModePicker({
                   <ItemIcon size={15} />
                 </span>
                 <span className="pc-picker-option-copy">
-                  <strong>{item.label}</strong>
-                  <small>{item.hint}</small>
+                  <strong>{t(`controls.${item.id}.label`)}</strong>
+                  <small>{t(`controls.${item.id}.hint`)}</small>
                 </span>
                 {item.id === priceMode && <Check size={14} className="pc-picker-check" />}
               </button>
@@ -192,8 +198,9 @@ export function PriceModeTabs({
   priceMode: PriceMode;
   onChange: (mode: PriceMode) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="pc-mode-tabs" role="group" aria-label="价格口径">
+    <div className="pc-mode-tabs" role="group" aria-label={t('controls.priceBasis')}>
       {PRICE_MODES.map((mode) => {
         const Icon = PRICE_ICONS[mode.id];
         return (
@@ -202,11 +209,11 @@ export function PriceModeTabs({
             key={mode.id}
             className={`pc-mode-tab ${priceMode === mode.id ? 'is-active' : ''}`}
             onClick={() => onChange(mode.id)}
-            title={mode.hint}
+            title={t(`controls.${mode.id}.hint`)}
             aria-pressed={priceMode === mode.id}
           >
             <Icon size={13} strokeWidth={1.9} />
-            <span>{mode.label}</span>
+            <span>{t(`controls.${mode.id}.label`)}</span>
           </button>
         );
       })}

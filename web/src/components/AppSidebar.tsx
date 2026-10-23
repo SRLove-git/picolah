@@ -1,48 +1,37 @@
-import { ChevronRight, Clapperboard, Database, Home, MessageCircle, X } from 'lucide-react';
-import type { AppConfig, ConversationSummary } from '../../shared/types';
-import { MARKETS } from '../../shared/types';
-import { relativeTime } from '../lib/format';
-import { CountryFlag } from './CountryFlag';
+import { Clapperboard, Home, Languages, Send, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { BrandLockup, Capybara } from './PicolahMark';
 
 export type AppView = 'home' | 'messages' | 'reels' | 'account' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
-  conversations: ConversationSummary[];
-  activeId: string | null;
   open: boolean;
-  loading: boolean;
-  config: AppConfig | null;
   onNavigate: (view: AppView) => void;
-  onSelect: (id: string) => void;
-  onOpenGateway: () => void;
   onClose: () => void;
 }
 
 const NAV = [
-  { key: 'home' as const, label: '首页', Icon: Home },
-  { key: 'messages' as const, label: '消息', Icon: MessageCircle },
-  { key: 'reels' as const, label: '短视频', Icon: Clapperboard },
+  { key: 'home' as const, labelKey: 'nav.home', Icon: Home },
+  { key: 'reels' as const, labelKey: 'nav.reels', Icon: Clapperboard },
+  { key: 'messages' as const, labelKey: 'nav.messages', Icon: Send },
 ];
 
 export function AppSidebar({
   view,
-  conversations,
-  activeId,
   open,
-  loading,
-  config,
   onNavigate,
-  onSelect,
-  onOpenGateway,
   onClose,
 }: AppSidebarProps) {
+  const { t, i18n } = useTranslation();
   const activeKey = view === 'chat' ? 'messages' : view;
-  const offers = config?.gateway.offers;
+
+  function toggleLanguage() {
+    void i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en');
+  }
 
   return (
-    <aside className={`pc-sidebar ${open ? 'is-open' : ''}`} aria-label="主导航">
+    <aside className={`pc-sidebar ${open ? 'is-open' : ''}`} aria-label={t('nav.main')}>
       <div className="pc-side-head">
         <BrandLockup
           size={23}
@@ -50,14 +39,15 @@ export function AppSidebar({
             onNavigate('home');
           }}
         />
-        <button className="pc-side-close" type="button" onClick={onClose} aria-label="关闭导航">
+        <button className="pc-side-close" type="button" onClick={onClose} aria-label={t('nav.close')}>
           <X size={18} />
         </button>
       </div>
 
       <nav className="pc-nav">
-        {NAV.map(({ key, label, Icon }) => {
+        {NAV.map(({ key, labelKey, Icon }) => {
           const isActive = activeKey === key;
+          const label = t(labelKey);
           return (
             <button
               key={key}
@@ -65,101 +55,49 @@ export function AppSidebar({
               className={`pc-nav-item ${isActive ? 'is-active' : ''}`}
               onClick={() => onNavigate(key)}
               aria-current={isActive ? 'page' : undefined}
+              aria-label={label}
+              data-tooltip={label}
             >
               <span className="pc-nav-icon">
-                <Icon size={21} strokeWidth={isActive ? 2.3 : 1.9} />
+                <Icon
+                  size={25}
+                  strokeWidth={isActive ? 2.5 : 1.9}
+                  fill={isActive ? 'currentColor' : 'none'}
+                />
               </span>
               <span className="pc-nav-label">{label}</span>
-              {key === 'messages' && conversations.length > 0 && (
-                <span className="pc-nav-count">{conversations.length}</span>
-              )}
             </button>
           );
         })}
 
-        <button type="button" className="pc-nav-item" onClick={onOpenGateway}>
-          <span className="pc-nav-icon">
-            <Database size={21} strokeWidth={1.9} />
-          </span>
-          <span className="pc-nav-label">数据源</span>
-        </button>
       </nav>
 
-      <div className="pc-side-recent">
-        <div className="pc-side-section-head">
-          <span>最近对话</span>
-          <button type="button" onClick={() => onNavigate('messages')}>
-            全部
-          </button>
-        </div>
-        {loading && !conversations.length ? (
-          <div className="pc-side-skeletons" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-        ) : conversations.length ? (
-          <div className="pc-side-recent-list">
-            {conversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                type="button"
-                className={`pc-recent-item ${activeId === conversation.id && view === 'chat' ? 'is-active' : ''}`}
-                onClick={() => onSelect(conversation.id)}
-              >
-                <span className="pc-recent-avatar">
-                  <Capybara variant="face" size={25} />
-                </span>
-                <span className="pc-recent-copy">
-                  <strong>{conversation.title}</strong>
-                  <small>
-                    <CountryFlag code={conversation.market} width={11} />
-                    {MARKETS[conversation.market]?.nameZh || conversation.market} ·{' '}
-                    {relativeTime(conversation.updatedAt)}
-                  </small>
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="pc-side-empty">
-            <Capybara variant="face" size={36} />
-            <span>还没有比价记录</span>
-            <button type="button" onClick={() => onNavigate('home')}>
-              开始第一次比价
-            </button>
-          </div>
-        )}
-      </div>
-
       <footer className="pc-side-foot">
-        <span className="pc-side-status">
-          <span className={`pc-side-live ${config ? 'is-live' : ''}`}>
-            <i />
-            {config ? '价格库在线' : '正在连接'}
-          </span>
-          <small>
-            {config
-              ? `${config.gateway.markets} 个市场 · ${new Intl.NumberFormat('zh-CN').format(offers ?? 0)} 条在售价`
-              : 'PICOLAH · BETA'}
-          </small>
-        </span>
-
+        <button
+          type="button"
+          className="pc-language-toggle"
+          onClick={toggleLanguage}
+          aria-label={t('language.switch')}
+          data-tooltip={t('language.switch')}
+        >
+          <Languages size={24} strokeWidth={1.9} />
+          <span>{t('language.short')}</span>
+        </button>
         <button
           type="button"
           className={`pc-account-card ${view === 'account' ? 'is-active' : ''}`}
           onClick={() => onNavigate('account')}
           aria-current={view === 'account' ? 'page' : undefined}
+          aria-label={t('nav.account')}
+          data-tooltip={t('nav.account')}
         >
           <span className="pc-account-avatar">
             <Capybara variant="face" size={34} />
             <i />
           </span>
           <span className="pc-account-copy">
-            <strong>Picolah 工作区</strong>
-            <small>账号与设置</small>
+            <strong>{t('nav.account')}</strong>
           </span>
-          <ChevronRight size={15} className="pc-account-chevron" />
         </button>
       </footer>
     </aside>
