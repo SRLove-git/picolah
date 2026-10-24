@@ -34,6 +34,7 @@ interface CatalogItem {
   category: string;
   tagline: string;
   specs: string;
+  aliases: string[];
   lowestLandedPrice: string | null;
   platform: string | null;
   officialStore: boolean;
@@ -53,6 +54,9 @@ Picolah 是东南亚六国电商比价助手。把用户这句话解析成结构
 6. 只能使用 catalog 中存在的 id，不要编造商品或价格。预算明显低于所有候选时，推荐最接近预算的，不要虚构更便宜的。
 7. “推荐 / 类似 / 替代 / 预算 / 适合 / 哪个好”这类需求优先 recommend；只有明确只问一款具体商品时才用 compare。
 8. 不确定时用 recommend，并挑最接近的 catalog 商品；catalog 里没有同品类就返回空数组。
+9. 识别商品时按“品牌 + 系列 + 型号 + 容量/尺寸/代数”核对。空格、连字符和大小写差异可忽略，aliases 是同一商品的俗称。
+10. 品牌名或品类词（如 Sony、苹果、耳机、手机、空气炸锅）不能单独证明具体型号；用户型号、容量或代数与 catalog 不一致时，matchedProductId 必须为 null，不能选择相似款冒充。
+11. 如果本地关键词匹配非 null，它是确定性型号匹配结果；除非用户明确在比较多款，否则优先使用该 id。
 
 输出 JSON 形状：
 {"intent":"compare|recommend|smalltalk|offtopic","matchedProductId":null,"recommendedProductIds":[],"category":null,"budget":null,"budgetCurrency":null,"reason":"一句话"} `;
@@ -69,6 +73,7 @@ const VISION_SYSTEM_PROMPT = `你是 Picolah 的商品视觉识别器和导购�
 5. 用户文字里的预算、品牌、用途要一起考虑；预算明显不够时说明，但不要编造价格。
 6. 如果图片不是商品（风景、截图、模糊图），recognition.confidence 低于 0.35，notes 说明原因，intent=recommend，recommendedProductIds 可为空。
 7. 只能使用 catalog 中存在的 id，不能编造商品、价格、折扣或库存。
+8. 型号、容量、尺寸和代数必须与 catalog 一致；只看出品牌或品类时不能猜具体型号。aliases 是商品的俗称，可辅助识别。
 
 输出 JSON 形状：
 {"intent":"compare|recommend","matchedProductId":null,"recommendedProductIds":[],"category":null,"budget":null,"budgetCurrency":null,"recognition":{"name":"","brand":null,"model":null,"category":null,"confidence":0.8,"keywords":[],"notes":""},"reason":"一句话"}`;
@@ -84,6 +89,7 @@ function buildCatalog(market: CountryCode): CatalogItem[] {
       category: product.category,
       tagline: product.tagline,
       specs: product.specs,
+      aliases: product.aliases,
       lowestLandedPrice: best ? formatMoney(best.finalPrice, market) : null,
       platform: best?.platform ?? null,
       officialStore: best?.isOfficial ?? false,
@@ -270,6 +276,7 @@ export async function understandQuery(options: {
   market: CountryCode;
   image?: string;
   localProduct: Product | null;
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }): Promise<UnderstandingResult> {
   const { query, market, image, localProduct } = options;
   if (!process.env.LLM_API_KEY) return { understanding: null, error: 'LLM_API_KEY is not configured' };
@@ -280,9 +287,14 @@ export async function understandQuery(options: {
     ? { id: localProduct.id, name: localProduct.name, brand: localProduct.brand }
     : null;
   const text = query.trim() || '帮我看看这张图里的商品，推荐一下';
+  const history = (options.history ?? [])
+    .slice(-6)
+    .map((message) => `${message.role === 'user' ? '用户' : '助手'}：${message.content.slice(0, 300)}`)
+    .join('\n');
   const context = `当前市场：${marketInfo.nameZh}（${marketInfo.code}），货币 ${marketInfo.currency}。
 用户问题：${text}
 本地关键词匹配：${JSON.stringify(localMatch)}
+${history ? `<conversation_context>\n${history}\n</conversation_context>` : ''}
 <catalog>
 ${JSON.stringify(catalog, null, 2)}
 </catalog>`;
@@ -304,7 +316,11 @@ ${JSON.stringify(catalog, null, 2)}
         900,
         45_000,
       );
-      return { understanding: normalizeUnderstanding(value, catalog, true) };
+      const understanding = normalizeUnderstanding(value, catalog, true);
+      if (understanding.intent === 'compare' && understanding.recognitionProductId) {
+        understanding.matchedProductId = understanding.recognitionProductId;
+      }
+      return { understanding };
     }
 
     const value = await requestJson(
@@ -316,7 +332,11 @@ ${JSON.stringify(catalog, null, 2)}
       700,
       20_000,
     );
-    return { understanding: normalizeUnderstanding(value, catalog, false) };
+    const understanding = normalizeUnderstanding(value, catalog, false);
+    if (understanding.intent === 'compare' && localProduct) {
+      understanding.matchedProductId = localProduct.id;
+    }
+    return { understanding };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn('[understanding] falling back to local parser:', message);

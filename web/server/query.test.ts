@@ -7,7 +7,7 @@ import { MARKETS, COUNTRY_CODES } from '../shared/types.ts';
 import { buildCatalogComparison, buildCatalogSuggestions } from '../shared/comparison.ts';
 
 process.env.PICOLAH_DB_PATH = ':memory:';
-const { detectMarket, findProduct } = await import('./query.ts');
+const { detectMarket, findProduct, findProducts, isContextualFollowUp } = await import('./query.ts');
 
 const products = PRODUCTS.map(({ baseSgd: _baseSgd, ...product }) => product);
 
@@ -91,6 +91,36 @@ test('matches product aliases and specific model names', () => {
   assert.equal(findProduct('越南小米空气炸锅 6L 降价了吗？', products).product?.id, 'xiaomi-air-fryer-6l');
   assert.equal(findProduct('菲律宾 New Balance 530 多少钱', products).product?.id, 'new-balance-530');
   assert.equal(findProduct('SK-II 神仙水比价', products).product?.id, 'skii-facial-essence-230');
+  assert.equal(findProduct('索尼 WH 1000 XM 5 多少钱', products).product?.id, 'sony-wh1000xm5');
+  assert.equal(findProduct('iphone16pro 256 gb 新加坡价格', products).product?.id, 'iphone-16-pro-256');
+  assert.equal(findProduct('华为 watch-gt-5 46 mm', products).product?.id, 'huawei-watch-gt5');
+  assert.equal(findProduct('Airpod Pro 2 多少钱', products).product?.id, 'airpods-pro-2');
+});
+
+test('finds multiple explicitly named products without collapsing to one', () => {
+  assert.deepEqual(
+    findProducts('Sony XM5 和 Bose QC Ultra 哪个好', products).map((item) => item.product?.id),
+    ['bose-qc-ultra', 'sony-wh1000xm5'],
+  );
+});
+
+test('recognizes short contextual follow-up questions', () => {
+  assert.equal(isContextualFollowUp('那黑色的呢？'), true);
+  assert.equal(isContextualFollowUp('第二个有没有官方店'), true);
+  assert.equal(isContextualFollowUp('推荐一款适合跑步的新耳机'), false);
+});
+
+test('does not mistake a brand or category for a concrete product model', () => {
+  assert.equal(findProduct('Sony 耳机有什么推荐', products).product, null);
+  assert.equal(findProduct('苹果手机哪个比较好', products).product, null);
+  assert.equal(findProduct('想买一个空气炸锅', products).product, null);
+  assert.equal(findProduct('蓝牙音箱推荐', products).product, null);
+});
+
+test('rejects unknown models and conflicting capacity variants', () => {
+  assert.equal(findProduct('Sony WH-1000XM6 哪里便宜', products).product, null);
+  assert.equal(findProduct('iPhone 15 256GB 多少钱', products).product, null);
+  assert.equal(findProduct('小米空气炸锅 5L', products).product, null);
 });
 
 test('falls back to suggestions when no product matches', () => {

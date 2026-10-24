@@ -21,7 +21,25 @@ const GENERIC_ALIASES = new Set([
   'headphones',
   'speaker',
   'airpods',
+  'air fryer',
+  '空气炸锅',
+  '降噪耳机',
+  '头戴式耳机',
+  '无线耳机',
+  '跑鞋',
+  '运动鞋',
+  '球鞋',
+  '智能手表',
+  '手表',
+  '蓝牙音箱',
+  '便携音箱',
+  '音箱',
+  '咖啡机',
+  '胶囊咖啡机',
+  'coffee machine',
 ]);
+
+const VARIANT_PATTERN = /\b\d+(?:\.\d+)?\s*(?:gb|tb|ml|mm|l)\b/gi;
 
 /**
  * Text matching shared by the API, the seed script and the offline mock.
@@ -60,10 +78,31 @@ export function detectMarket(text: string, fallback: CountryCode): CountryCode {
 
 function normalize(text: string): string {
   return text
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[，。！？、,.!?;；:：()[\]{}"'“”‘’]/g, ' ')
+    .replace(/[，。！？、,.!?;；:：()[\]{}"'“”‘’/\\_+]/g, ' ')
+    .replace(/[‐‑‒–—−-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function compact(text: string): string {
+  return normalize(text).replace(/\s+/g, '');
+}
+
+function variants(text: string): string[] {
+  return [...text.matchAll(VARIANT_PATTERN)].map((match) =>
+    match[0].toLowerCase().replace(/\s+/g, ''),
+  );
+}
+
+function hasVariantConflict(query: string, product: Product): boolean {
+  const queryVariants = variants(normalize(query));
+  if (!queryVariants.length) return false;
+  const productText = compact(
+    [product.name, product.specs, ...product.aliases].join(' '),
+  );
+  return queryVariants.some((variant) => !productText.includes(variant));
 }
 
 export interface ProductMatch {
@@ -72,37 +111,99 @@ export interface ProductMatch {
   matchedOn: string;
 }
 
-export function findProduct(text: string, products: Product[]): ProductMatch {
-  const normalized = normalize(text);
-  let best: ProductMatch = { product: null, score: 0, matchedOn: '' };
-
-  for (const product of products) {
-    const candidates = [
-      product.name,
-      product.brand,
-      ...product.aliases,
-      `${product.brand} ${product.category}`,
-    ].map(normalize);
-
-    let score = 0;
-    let matchedOn = '';
-    for (const candidate of candidates) {
-      if (!candidate || candidate.length < 2) continue;
-      if (!normalized.includes(candidate)) continue;
-      const genericPenalty = GENERIC_ALIASES.has(candidate) ? 0.35 : 1;
-      const specificity = Math.min(candidate.length, 24) / 8;
-      const candidateScore = (2 + specificity) * genericPenalty;
-      if (candidateScore > score) {
-        score = candidateScore;
-        matchedOn = candidate;
-      }
+function oneEditAway(left: string, right: string): boolean {
+  if (Math.abs(left.length - right.length) > 1) return false;
+  let first = left;
+  let second = right;
+  if (first.length > second.length) [first, second] = [second, first];
+  let edits = 0;
+  for (let a = 0, b = 0; a < first.length || b < second.length;) {
+    if (first[a] === second[b]) {
+      a += 1;
+      b += 1;
+      continue;
     }
+    edits += 1;
+    if (edits > 1) return false;
+    if (first.length === second.length) a += 1;
+    if (first.length < second.length) b += 1;
+    else b += 1;
+  }
+  return true;
+}
 
-    if (score > best.score) best = { product, score, matchedOn };
+function fuzzyAliasMatch(query: string, candidate: string): boolean {
+  const queryTokens = normalize(query).split(' ').filter(Boolean);
+  const candidateTokens = normalize(candidate).split(' ').filter(Boolean);
+  if (candidateTokens.length < 2 || candidateTokens.some((token) => token.length < 3)) return false;
+  return candidateTokens.every((candidateToken) =>
+    queryTokens.some((queryToken) => {
+      if (candidateToken === queryToken) return true;
+      if (/\d/.test(candidateToken) || /\d/.test(queryToken)) return false;
+      return oneEditAway(candidateToken, queryToken);
+    }),
+  );
+}
+
+function matchProduct(text: string, product: Product): ProductMatch {
+  const normalized = normalize(text);
+  const compactText = compact(text);
+  if (hasVariantConflict(text, product)) return { product: null, score: 0, matchedOn: '' };
+
+  const candidates = [
+    { value: product.name, kind: 'name' },
+    ...product.aliases.map((value) => ({ value, kind: 'alias' })),
+    { value: product.brand, kind: 'brand' },
+    { value: `${product.brand} ${product.category}`, kind: 'brand-category' },
+  ] as const;
+
+  let score = 0;
+  let matchedOn = '';
+  for (const entry of candidates) {
+    const candidate = normalize(entry.value);
+    if (!candidate || candidate.length < 2) continue;
+    const compactCandidate = compact(candidate);
+    const exact = normalized.includes(candidate) || compactText.includes(compactCandidate);
+    const fuzzy = entry.kind === 'alias' && fuzzyAliasMatch(text, candidate);
+    if (!exact && !fuzzy) continue;
+
+    const generic =
+      GENERIC_ALIASES.has(candidate) ||
+      (entry.kind === 'alias' &&
+        !/\d/.test(candidate) &&
+        candidate.endsWith(normalize(product.category)));
+    const kindWeight = entry.kind === 'name' ? 5 : entry.kind === 'alias' ? 3.5 : 0.5;
+    const genericPenalty = generic ? 0.2 : 1;
+    const fuzzyPenalty = fuzzy && !exact ? 0.7 : 0;
+    const specificity = Math.min(compactCandidate.length, 24) / 8;
+    const candidateScore = (kindWeight + specificity - fuzzyPenalty) * genericPenalty;
+    if (candidateScore > score) {
+      score = candidateScore;
+      matchedOn = candidate;
+    }
   }
 
-  if (!best.product || best.score < 1.2) return { product: null, score: 0, matchedOn: '' };
-  return best;
+  return score >= 2.5 ? { product, score, matchedOn } : { product: null, score: 0, matchedOn: '' };
+}
+
+export function findProducts(text: string, products: Product[], limit = 4): ProductMatch[] {
+  return products
+    .map((product) => matchProduct(text, product))
+    .filter((match): match is ProductMatch & { product: Product } => Boolean(match.product))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, Math.max(1, limit));
+}
+
+export function findProduct(text: string, products: Product[]): ProductMatch {
+  return findProducts(text, products, 1)[0] || { product: null, score: 0, matchedOn: '' };
+}
+
+export function isContextualFollowUp(text: string): boolean {
+  const normalized = normalize(text);
+  if (!normalized || normalized.length > 40) return false;
+  return /(?:那|这个|这款|它|它们|这些|第[一二三四1234]个|前者|后者|黑色|白色|颜色|容量|版本|官方|保修|运费|库存|便宜|价格|值得|怎么样|还有|呢|对比)/i.test(
+    normalized,
+  );
 }
 
 export interface ParsedQuery {

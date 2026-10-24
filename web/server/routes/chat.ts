@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
-import type { Comparison, CountryCode, Product } from '../../shared/types.ts';
+import type { ChatMessage, Comparison, CountryCode, Product } from '../../shared/types.ts';
 import { COUNTRY_CODES, MARKETS } from '../../shared/types.ts';
 import { llmConfigured } from '../config.ts';
 import {
@@ -13,7 +13,7 @@ import {
   getProduct,
   updateConversationTitle,
 } from '../repo.ts';
-import { parseQuery } from '../query.ts';
+import { findProducts, isContextualFollowUp, parseQuery } from '../query.ts';
 import { writeFallbackAnswer } from '../copy.ts';
 import { streamLlmAnswer } from '../llm.ts';
 import { understandQuery, type Understanding } from '../understanding.ts';
@@ -45,7 +45,7 @@ function validateImage(value: string | null | undefined): string | undefined {
 
 function resolveComparison(
   understanding: Understanding | null,
-  localProduct: Product | null,
+  localProducts: Product[],
   message: string,
   market: CountryCode,
 ): Comparison {
@@ -75,11 +75,42 @@ function resolveComparison(
     return buildComparison({ query: message, market, product: null });
   }
 
-  if (localProduct) {
-    return buildComparison({ query: message, market, product: localProduct, kind: 'comparison' });
+  if (localProducts.length > 1) {
+    return buildRecommendationComparison({
+      query: message,
+      market,
+      productIds: localProducts.map((product) => product.id),
+    });
+  }
+
+  if (localProducts[0]) {
+    return buildComparison({ query: message, market, product: localProducts[0], kind: 'comparison' });
   }
 
   return buildComparison({ query: message, market, product: null });
+}
+
+function previousComparedProducts(messages: ChatMessage[]): Product[] {
+  const previous = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.comparison)?.comparison;
+  if (!previous || previous.kind === 'suggestions' || previous.kind === 'empty') return [];
+  const ids = previous.product
+    ? [previous.product.id]
+    : previous.alternatives.map((item) => item.product.id);
+  return ids.map((id) => getProduct(id)).filter((product): product is Product => Boolean(product));
+}
+
+function contextualProducts(message: string, previous: Product[]): Product[] {
+  if (!previous.length || !isContextualFollowUp(message)) return [];
+  const ordinal = message.match(/第\s*([一二三四1234])\s*(?:个|款)?/);
+  if (ordinal) {
+    const index = ({ 一: 0, 二: 1, 三: 2, 四: 3, '1': 0, '2': 1, '3': 2, '4': 3 } as const)[
+      ordinal[1] as '一' | '二' | '三' | '四' | '1' | '2' | '3' | '4'
+    ];
+    return previous[index] ? [previous[index]] : [];
+  }
+  return previous.length === 1 || /它们|这些|哪个|对比|比较/.test(message) ? previous : [];
 }
 
 function sse(res: import('express').Response, event: string, data: unknown): void {
@@ -142,9 +173,21 @@ chatRouter.post('/', async (req, res) => {
 
   const query = parseQuery(message, market);
   const title = image ? `图片找货 · ${MARKETS[query.market].nameZh}` : query.title;
+  let priorMessages: ChatMessage[] = [];
   if (!conversation) {
     conversation = createConversation(title, query.market);
+  } else if ('messages' in conversation) {
+    priorMessages = conversation.messages;
   }
+
+  const explicitProducts = findProducts(message)
+    .map((match) => match.product)
+    .filter((product): product is Product => Boolean(product));
+  const inheritedProducts = explicitProducts.length
+    ? []
+    : contextualProducts(message, previousComparedProducts(priorMessages));
+  const localProducts = explicitProducts.length ? explicitProducts : inheritedProducts;
+  const localProduct = localProducts[0] || query.product;
 
   const userId = randomUUID();
   addMessage({
@@ -183,7 +226,8 @@ chatRouter.post('/', async (req, res) => {
       query: message,
       market: query.market,
       image,
-      localProduct: query.product,
+      localProduct,
+      history: priorMessages.slice(-6).map(({ role, content }) => ({ role, content })),
     });
     understanding = result.understanding;
     understandingError = result.error;
@@ -221,7 +265,7 @@ chatRouter.post('/', async (req, res) => {
     }
   }
 
-  const comparison = resolveComparison(understanding, query.product, message, query.market);
+  const comparison = resolveComparison(understanding, localProducts, message, query.market);
   const hasOffers = Boolean(comparison.product && comparison.offers.length > 0);
   const isConversational =
     understanding?.intent === 'smalltalk' || understanding?.intent === 'offtopic';
