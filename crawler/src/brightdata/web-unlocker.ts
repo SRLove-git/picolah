@@ -1,4 +1,8 @@
-import { config, webUnlockerCredentials } from '../config.ts';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { config, proxyCredentials, webUnlockerCredentials } from '../config.ts';
+
+const execFileAsync = promisify(execFile);
 
 export class BrightDataError extends Error {
   readonly code: string;
@@ -25,6 +29,30 @@ export interface FetchHtmlOptions {
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+async function fetchThroughProxy(url: string, options: FetchHtmlOptions): Promise<string> {
+  const { customerId, zone, password, host } = proxyCredentials();
+  const country = options.country ? `-country-${options.country.toLowerCase()}` : '';
+  const username = `brd-customer-${customerId}-zone-${zone}${country}`;
+  try {
+    const { stdout } = await execFileAsync('curl', [
+      '--silent', '--show-error', '--fail-with-body', '--compressed', '--insecure',
+      '--retry', String(options.retries ?? 2), '--retry-all-errors',
+      '--max-time', String(Math.ceil((options.timeoutMs ?? DEFAULT_TIMEOUT_MS) / 1000)),
+      '--proxy', host, '--proxy-user', `${username}:${password}`, url,
+    ], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
+    if (!stdout.trim()) throw new BrightDataError('Bright Data 代理池返回了空响应', { code: 'EMPTY_RESPONSE' });
+    console.log(`[crawler] proxy-pool ${zone} ${url.slice(0, 120)}`);
+    return stdout;
+  } catch (error) {
+    const stderr = typeof error === 'object' && error && 'stderr' in error ? String(error.stderr) : '';
+    const blocked = /ip_blacklisted|blacklist|denylist/i.test(stderr);
+    throw new BrightDataError(stderr.trim() || (error instanceof Error ? error.message : String(error)), {
+      code: blocked ? 'IP_BLOCKED' : 'PROXY_ERROR',
+      hint: blocked ? ipBlockHint(zone, customerId) : undefined,
+    });
+  }
+}
+
 function ipBlockHint(zone: string, customerId: string): string {
   const zoneUrl = customerId
     ? `https://brightdata.com/cp/zones/${zone}/access_params?id=${customerId}`
@@ -41,6 +69,7 @@ function ipBlockHint(zone: string, customerId: string): string {
  * checked before the body.
  */
 export async function fetchHtml(url: string, options: FetchHtmlOptions = {}): Promise<string> {
+  if (config.brightData.transport === 'proxy') return fetchThroughProxy(url, options);
   const { token, zone } = webUnlockerCredentials();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const retries = options.retries ?? 2;

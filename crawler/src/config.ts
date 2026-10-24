@@ -19,10 +19,14 @@ function numberEnv(name: string, fallback: number, min: number, max: number): nu
 }
 
 const brightData = {
+  transport: (process.env.BRIGHTDATA_TRANSPORT?.trim().toLowerCase() || 'api') as 'api' | 'proxy',
   token: process.env.BRIGHTDATA_API_TOKEN?.trim() || '',
   zone: process.env.BRIGHTDATA_ZONE?.trim() || '',
   customerId: process.env.BRIGHTDATA_CUSTOMER_ID?.trim() || '',
   zonePassword: process.env.BRIGHTDATA_ZONE_PASSWORD?.trim() || '',
+  proxyZone: process.env.BRIGHTDATA_PROXY_ZONE?.trim() || '',
+  proxyPassword: process.env.BRIGHTDATA_PROXY_PASSWORD?.trim() || '',
+  proxyHost: process.env.BRIGHTDATA_PROXY_HOST?.trim() || 'http://brd.superproxy.io:33335',
   browserCustomerId: process.env.BRIGHTDATA_BROWSER_CUSTOMER_ID?.trim() || '',
   browserZone: process.env.BRIGHTDATA_BROWSER_ZONE?.trim() || '',
   browserPassword: process.env.BRIGHTDATA_BROWSER_ZONE_PASSWORD?.trim() || '',
@@ -41,6 +45,21 @@ export function webUnlockerCredentials(): { token: string; zone: string } {
   return {
     token: brightData.token || requiredEnv('BRIGHTDATA_API_TOKEN'),
     zone: brightData.zone || requiredEnv('BRIGHTDATA_ZONE'),
+  };
+}
+
+/** Direct Bright Data proxy-pool credentials (ISP/residential zone). */
+export function proxyCredentials(): {
+  customerId: string;
+  zone: string;
+  password: string;
+  host: string;
+} {
+  return {
+    customerId: brightData.customerId || requiredEnv('BRIGHTDATA_CUSTOMER_ID'),
+    zone: brightData.proxyZone || requiredEnv('BRIGHTDATA_PROXY_ZONE'),
+    password: brightData.proxyPassword || brightData.zonePassword || requiredEnv('BRIGHTDATA_PROXY_PASSWORD'),
+    host: brightData.proxyHost,
   };
 }
 

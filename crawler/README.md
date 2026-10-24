@@ -10,7 +10,8 @@
 | --- | --- | --- |
 | Lazada（六国） | ✅ SG 实测通过，其余市场同一模板待逐国验证 | Web Unlocker 抓搜索页 HTML |
 | Shopee（六国） | 🧪 实验性 | Scraping Browser 渲染 + 搜索 API 拦截 |
-| TikTok Shop / Amazon SG / Tokopedia / Tiki | ⏳ 未实现 | 预留 `PlatformAdapter` 接口 |
+| Amazon SG | ✅ SG 实测解析 | Web Unlocker API 或 Bright Data 代理池 |
+| TikTok Shop / Tokopedia / Tiki | ⏳ 未实现 | 预留 `PlatformAdapter` 接口 |
 
 ## 工作方式
 
@@ -54,6 +55,7 @@ pnpm crawl --list
 
 ```bash
 pnpm crawl --market SG --platform lazada --product sony-wh1000xm5 --dry-run
+pnpm crawl --market SG --platform amazon-sg --product sony-wh1000xm5 --dry-run
 ```
 
 确认价格和标题没问题后，去掉 `--dry-run` 正式入库：
@@ -65,7 +67,7 @@ pnpm crawl --market SG --platform lazada --product sony-wh1000xm5
 ## 命令
 
 ```text
-pnpm crawl --market <SG,MY,...> [--platform lazada,shopee] [options]
+pnpm crawl --market <SG,MY,...> [--platform lazada,shopee,amazon-sg] [options]
 ```
 
 | 参数 | 说明 |
@@ -100,13 +102,19 @@ BRIGHTDATA_ZONE=web_unlocker1
 BRIGHTDATA_CUSTOMER_ID=hl_...
 BRIGHTDATA_ZONE_PASSWORD=...
 
+# 可选代理池模式（默认 api）
+BRIGHTDATA_TRANSPORT=proxy
+BRIGHTDATA_PROXY_ZONE=isp_proxy1
+BRIGHTDATA_PROXY_PASSWORD=...
+BRIGHTDATA_PROXY_HOST=http://brd.superproxy.io:33335
+
 # Scraping Browser：Playwright over CDP，抓 JS 渲染页面
 BRIGHTDATA_BROWSER_CUSTOMER_ID=hl_...
 BRIGHTDATA_BROWSER_ZONE=scraping_browser1
 BRIGHTDATA_BROWSER_ZONE_PASSWORD=...
 ```
 
-- **Web Unlocker** 走 REST：`POST https://api.brightdata.com/request`，`format=raw` 直接拿 HTML。
+- **Web Unlocker** 默认走 REST：`POST https://api.brightdata.com/request`，`format=raw` 直接拿 HTML；设 `BRIGHTDATA_TRANSPORT=proxy` 后改走所填代理池。
 - **Scraping Browser** 走 CDP：`wss://brd-customer-<id>-zone-<zone>:<password>@brd.superproxy.io:9222`，用 `playwright-core` 连接，无需本地浏览器。
 
 ### IP 白名单 / 黑名单（重要）
@@ -156,6 +164,7 @@ crawler/
 │   │   ├── web-unlocker.ts       # REST 抓 HTML，错误/重试/提示
 │   │   └── scraping-browser.ts   # Playwright over CDP
 │   ├── platforms/
+│   │   ├── amazon-sg.ts           # Amazon SG 搜索页解析
 │   │   ├── lazada.ts             # 搜索页 + JSON-LD 解析
 │   │   ├── shopee.ts             # 搜索 API 拦截 + DOM 兜底
 │   │   └── index.ts              # 适配器注册表
