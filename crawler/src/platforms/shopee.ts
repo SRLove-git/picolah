@@ -1,9 +1,26 @@
 import type { Page } from 'playwright-core';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { withBrowserPage } from '../brightdata/scraping-browser.ts';
+import { config } from '../config.ts';
+import { logWarn } from '../log.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import { findPrice } from '../money.ts';
 import type { RawListing } from '../types.ts';
+import { hasShopeeDataset, searchShopeeDataset } from './shopee-dataset.ts';
 import type { PlatformAdapter } from './types.ts';
+
+export type ShopeeBrowserMode = 'auto' | 'local' | 'brightdata';
+
+export function shopeeStatePath(market: MarketCode): string {
+  return process.env.SHOPEE_STORAGE_STATE
+    || fileURLToPath(new URL(`../../.shopee-state.${market}.json`, import.meta.url));
+}
+
+function browserMode(): ShopeeBrowserMode {
+  const value = (process.env.CRAWLER_BROWSER || 'auto').trim().toLowerCase();
+  return value === 'local' || value === 'brightdata' ? value : 'auto';
+}
 
 interface ShopeeItemBasic {
   itemid?: number | string;
@@ -160,7 +177,19 @@ async function parseShopeeDom(page: Page, market: MarketCode): Promise<RawListin
  * zone (IP allowlist) and is marked experimental until verified per market.
  */
 export async function searchShopee(market: MarketCode, query: string): Promise<RawListing[]> {
+  // Preferred path: an activated Bright Data Shopee dataset needs no login.
+  if (hasShopeeDataset()) return searchShopeeDataset(market, query);
+
   const url = shopeeSearchUrl(market, query);
+  const statePath = shopeeStatePath(market);
+  const storageState = existsSync(statePath) ? statePath : undefined;
+  if (!storageState) {
+    logWarn(
+      `没有 ${market} 的 Shopee 登录状态（${statePath}）。先运行 npm --prefix crawler run shopee:login -- --market ${market}`,
+    );
+  }
+
+  const marketConfig = MARKETS[market];
   const listings = await withBrowserPage(async (page) => {
     const captured: RawListing[] = [];
     page.on('response', (response) => {
@@ -187,17 +216,43 @@ export async function searchShopee(market: MarketCode, query: string): Promise<R
 
     const title = await page.title();
     const body = await page.content();
-    if (!captured.length && /captcha|verify|are you a robot|unusual traffic/i.test(`${title} ${body.slice(0, 2_000)}`)) {
-      throw new Error(`Shopee 返回了验证页（${title}）。Bright Data 的浏览器会话可能需要重试或更换出口 IP。`);
+    if (!captured.length && process.env.CRAWLER_DEBUG === '1') {
+      mkdirSync('.tmp', { recursive: true });
+      const file = `.tmp/shopee-${market}-${Date.now()}.html`;
+      writeFileSync(file, body);
+      logWarn(`Shopee 调试页面已保存：${file}`);
     }
 
     if (captured.length) return captured;
 
+    const currentUrl = page.url();
+    if (/\/verify\/traffic\/error/.test(currentUrl) || /Login Required|需要登录/i.test(body)) {
+      throw new Error(
+        `Shopee 要求登录（${currentUrl.slice(0, 120)}）。先运行 "npm --prefix crawler run shopee:login -- --market ${market}"，`
+          + `在打开的 Chrome 里登录 ${market} 站点，然后重试。`,
+      );
+    }
+    if (
+      /\/verify\/|xiapibuy\.com/i.test(currentUrl)
+      || /captcha|slide to complete|verify to continue|are you a robot|unusual traffic/i.test(`${title} ${body.slice(0, 5_000)}`)
+    ) {
+      throw new Error(
+        `Shopee 返回了验证/风控页（${currentUrl.slice(0, 120)}）。运行 "npm --prefix crawler run shopee:login -- --market ${market}" `
+          + '手动登录一次（顺带过验证码），爬虫会复用保存的登录状态。',
+      );
+    }
+
     const domListings = await parseShopeeDom(page, market);
     if (!domListings.length) {
-      console.warn(`[crawler] shopee ${market} 未解析到商品：title="${title}" url=${page.url()}`);
+      console.warn(`[crawler] shopee ${market} 未解析到商品：title="${title}" url=${currentUrl}`);
     }
     return domListings;
+  }, {
+    country: market,
+    locale: marketConfig.locale,
+    timezoneId: marketConfig.timezone,
+    mode: browserMode(),
+    storageState,
   });
 
   const unique = [...new Map(listings.map((listing) => [listing.itemId, listing])).values()];
@@ -207,6 +262,6 @@ export async function searchShopee(market: MarketCode, query: string): Promise<R
 
 export const shopeeAdapter: PlatformAdapter = {
   id: 'shopee',
-  experimental: true,
+  experimental: !hasShopeeDataset(),
   search: searchShopee,
 };

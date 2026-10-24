@@ -8,6 +8,8 @@ export interface MarketConfig {
   currency: string;
   /** IDR / VND have no minor units. */
   decimals: 0 | 2;
+  locale: string;
+  timezone: string;
   domains: Partial<Record<PlatformId, string>>;
   /** Platform matrix from docs/ingest-api.md. */
   platforms: PlatformId[];
@@ -19,6 +21,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Singapore',
     currency: 'SGD',
     decimals: 2,
+    locale: 'en-SG',
+    timezone: 'Asia/Singapore',
     domains: { shopee: 'shopee.sg', lazada: 'www.lazada.sg', tiktok: 'shop.tiktok.com', 'amazon-sg': 'www.amazon.sg' },
     platforms: ['shopee', 'lazada', 'tiktok', 'amazon-sg'],
   },
@@ -27,6 +31,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Malaysia',
     currency: 'MYR',
     decimals: 2,
+    locale: 'en-MY',
+    timezone: 'Asia/Kuala_Lumpur',
     domains: { shopee: 'shopee.com.my', lazada: 'www.lazada.com.my', tiktok: 'shop.tiktok.com' },
     platforms: ['shopee', 'lazada', 'tiktok'],
   },
@@ -35,6 +41,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Thailand',
     currency: 'THB',
     decimals: 2,
+    locale: 'th-TH',
+    timezone: 'Asia/Bangkok',
     domains: { shopee: 'shopee.co.th', lazada: 'www.lazada.co.th', tiktok: 'shop.tiktok.com' },
     platforms: ['shopee', 'lazada', 'tiktok'],
   },
@@ -43,6 +51,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Indonesia',
     currency: 'IDR',
     decimals: 0,
+    locale: 'id-ID',
+    timezone: 'Asia/Jakarta',
     domains: { shopee: 'shopee.co.id', lazada: 'www.lazada.co.id', tiktok: 'shop.tiktok.com', tokopedia: 'www.tokopedia.com' },
     platforms: ['shopee', 'lazada', 'tiktok', 'tokopedia'],
   },
@@ -51,6 +61,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Philippines',
     currency: 'PHP',
     decimals: 2,
+    locale: 'en-PH',
+    timezone: 'Asia/Manila',
     domains: { shopee: 'shopee.ph', lazada: 'www.lazada.com.ph', tiktok: 'shop.tiktok.com' },
     platforms: ['shopee', 'lazada', 'tiktok'],
   },
@@ -59,6 +71,8 @@ export const MARKETS: Record<MarketCode, MarketConfig> = {
     name: 'Vietnam',
     currency: 'VND',
     decimals: 0,
+    locale: 'vi-VN',
+    timezone: 'Asia/Ho_Chi_Minh',
     domains: { shopee: 'shopee.vn', lazada: 'www.lazada.vn', tiktok: 'shop.tiktok.com', tiki: 'tiki.vn' },
     platforms: ['shopee', 'lazada', 'tiktok', 'tiki'],
   },

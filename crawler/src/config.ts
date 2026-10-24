@@ -18,14 +18,33 @@ function numberEnv(name: string, fallback: number, min: number, max: number): nu
   return Math.min(max, Math.max(min, Math.trunc(value)));
 }
 
+export type BrightDataTransport = 'api' | 'proxy';
+
+function transportEnv(): BrightDataTransport {
+  const value = (process.env.BRIGHTDATA_TRANSPORT || 'api').trim().toLowerCase();
+  if (value !== 'api' && value !== 'proxy') {
+    throw new Error(`BRIGHTDATA_TRANSPORT 只能是 api 或 proxy，当前是 "${value}"。`);
+  }
+  return value;
+}
+
 const brightData = {
-  token: process.env.BRIGHTDATA_API_TOKEN?.trim() || '',
-  zone: process.env.BRIGHTDATA_ZONE?.trim() || '',
   customerId: process.env.BRIGHTDATA_CUSTOMER_ID?.trim() || '',
-  zonePassword: process.env.BRIGHTDATA_ZONE_PASSWORD?.trim() || '',
+  apiToken: process.env.BRIGHTDATA_API_TOKEN?.trim() || '',
+  zone: process.env.BRIGHTDATA_ZONE?.trim() || '',
+  transport: transportEnv(),
+  proxyZone: process.env.BRIGHTDATA_PROXY_ZONE?.trim() || '',
+  proxyPassword: process.env.BRIGHTDATA_PROXY_PASSWORD?.trim() || '',
+  proxyHost: (process.env.BRIGHTDATA_PROXY_HOST?.trim() || 'http://brd.superproxy.io:44445').replace(/\/+$/, ''),
   browserCustomerId: process.env.BRIGHTDATA_BROWSER_CUSTOMER_ID?.trim() || '',
   browserZone: process.env.BRIGHTDATA_BROWSER_ZONE?.trim() || '',
   browserPassword: process.env.BRIGHTDATA_BROWSER_ZONE_PASSWORD?.trim() || '',
+  browserHost: process.env.BRIGHTDATA_BROWSER_HOST?.trim() || 'brd.superproxy.io',
+  browserPort: numberEnv('BRIGHTDATA_BROWSER_PORT', 9222, 1, 65535),
+  /** Activated Shopee marketplace dataset id; empty = use the login/browser path. */
+  shopeeDatasetId: process.env.BRIGHTDATA_SHOPEE_DATASET_ID?.trim() || '',
+  /** Max records requested per dataset filter job. */
+  shopeeDatasetLimit: numberEnv('BRIGHTDATA_SHOPEE_DATASET_LIMIT', 50, 1, 1000),
 };
 
 export const config = {
@@ -33,26 +52,47 @@ export const config = {
   ingestKey: process.env.PICOLAH_INGEST_KEY || 'pcl_dev_crawler_key',
   source: process.env.CRAWLER_SOURCE || 'picolah-crawler',
   concurrency: numberEnv('CRAWLER_CONCURRENCY', 2, 1, 6),
+  /** Set CRAWLER_LOCAL_PROXY=off to let local Chrome use the direct connection. */
+  localProxyEnabled: !/^(off|0|false|no)$/i.test((process.env.CRAWLER_LOCAL_PROXY || '').trim()),
   brightData,
 };
 
-/** Web Unlocker only needs the API token + zone. */
-export function webUnlockerCredentials(): { token: string; zone: string } {
+/** Web Unlocker credentials, either REST API mode or ISP proxy mode. */
+export function webUnlockerCredentials(
+  transport: BrightDataTransport = brightData.transport,
+):
+  | { mode: 'api'; token: string; zone: string }
+  | { mode: 'proxy'; customerId: string; zone: string; password: string; host: string } {
+  if (transport === 'proxy') {
+    return {
+      mode: 'proxy',
+      customerId: brightData.customerId || requiredEnv('BRIGHTDATA_CUSTOMER_ID'),
+      zone: brightData.proxyZone || requiredEnv('BRIGHTDATA_PROXY_ZONE'),
+      password: brightData.proxyPassword || requiredEnv('BRIGHTDATA_PROXY_PASSWORD'),
+      host: brightData.proxyHost,
+    };
+  }
   return {
-    token: brightData.token || requiredEnv('BRIGHTDATA_API_TOKEN'),
+    mode: 'api',
+    token: brightData.apiToken || requiredEnv('BRIGHTDATA_API_TOKEN'),
     zone: brightData.zone || requiredEnv('BRIGHTDATA_ZONE'),
   };
 }
 
-/** Scraping Browser needs the browser zone credentials (or falls back to the API zone). */
+/** Scraping Browser needs the browser zone credentials. */
 export function browserCredentials(): {
   customerId: string;
   zone: string;
   password: string;
+  host: string;
+  port: number;
 } {
   return {
-    customerId: brightData.browserCustomerId || brightData.customerId || requiredEnv('BRIGHTDATA_BROWSER_CUSTOMER_ID'),
+    customerId:
+      brightData.browserCustomerId || brightData.customerId || requiredEnv('BRIGHTDATA_BROWSER_CUSTOMER_ID'),
     zone: brightData.browserZone || requiredEnv('BRIGHTDATA_BROWSER_ZONE'),
     password: brightData.browserPassword || requiredEnv('BRIGHTDATA_BROWSER_ZONE_PASSWORD'),
+    host: brightData.browserHost,
+    port: brightData.browserPort,
   };
 }

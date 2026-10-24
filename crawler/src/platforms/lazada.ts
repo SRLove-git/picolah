@@ -1,4 +1,5 @@
 import { fetchHtml } from '../brightdata/web-unlocker.ts';
+import { config } from '../config.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import { parsePrice } from '../money.ts';
 import type { RawListing } from '../types.ts';
@@ -142,7 +143,10 @@ function normalizeLazadaUrl(href: string, domain: string): string {
 
 export async function searchLazada(market: MarketCode, query: string): Promise<RawListing[]> {
   const url = lazadaSearchUrl(market, query);
-  const html = await fetchHtml(url);
+  // Lazada's catalog page is server-rendered only when Web Unlocker fetches it;
+  // the plain ISP proxy gets the JS shell (no product cards), so prefer API mode.
+  const useApi = Boolean(config.brightData.apiToken && config.brightData.zone);
+  const html = await fetchHtml(url, useApi ? { transport: 'api' } : {});
   const listings = parseLazadaSearch(html, market);
   console.log(`[crawler] lazada ${market} "${query.slice(0, 60)}" -> ${listings.length} listings`);
   return listings;

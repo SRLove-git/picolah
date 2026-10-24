@@ -9,12 +9,15 @@
   },
   "scripts": {
     "crawl": "tsx src/index.ts",
+    "shopee:dataset-check": "tsx scripts/shopee-dataset-check.ts",
+    "shopee:login": "tsx scripts/shopee-login.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/money.test.ts src/match.test.ts src/brightdata/errors.test.ts src/platforms/lazada.test.ts"
+    "test": "tsx --test src/money.test.ts src/match.test.ts src/brightdata/errors.test.ts src/brightdata/csv.test.ts src/platforms/lazada.test.ts src/platforms/shopee-dataset.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.8",
-    "playwright-core": "^1.64.1"
+    "playwright-core": "^1.64.1",
+    "undici": "^8.12.3"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

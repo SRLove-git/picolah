@@ -4,6 +4,8 @@ data/
 mock-state/
 .env
 .env.local
+.shopee-state*.json
+.chrome-shopee-profile/
 .DS_Store
 *.log
 .playwright/
