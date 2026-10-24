@@ -12,7 +12,7 @@
     "shopee:dataset-check": "tsx scripts/shopee-dataset-check.ts",
     "shopee:login": "tsx scripts/shopee-login.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/money.test.ts src/match.test.ts src/brightdata/errors.test.ts src/brightdata/csv.test.ts src/platforms/lazada.test.ts src/platforms/shopee-dataset.test.ts"
+    "test": "tsx --test src/money.test.ts src/match.test.ts src/brightdata/errors.test.ts src/brightdata/csv.test.ts src/platforms/lazada.test.ts src/platforms/amazon-sg.test.ts src/platforms/shopee-dataset.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.8",

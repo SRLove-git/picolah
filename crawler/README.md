@@ -10,7 +10,8 @@
 | --- | --- | --- |
 | Lazada（六国） | ✅ SG 实测通过，其余市场同一模板待逐国验证 | Web Unlocker API 抓搜索页 HTML |
 | Shopee（六国） | ✅ 数据集免登录（需在 Bright Data 开通）；未开通时回退到登录 cookie | Marketplace Dataset API（`Shopee - products`） |
-| TikTok Shop / Amazon SG / Tokopedia / Tiki | ⏳ 未实现 | 预留 `PlatformAdapter` 接口 |
+| Amazon SG | ✅ SG 实测解析 | Web Unlocker API 抓搜索页 HTML（也支持代理池） |
+| TikTok Shop / Tokopedia / Tiki | ⏳ 未实现 | 预留 `PlatformAdapter` 接口 |
 
 > Shopee 对自动化流量会重定向到 `/verify/traffic/error`（提示登录）或滑块验证码，Web Unlocker/浏览器直接搜索拿不到商品。推荐开通 Bright Data 的 **Shopee - products** 数据集，用 Filter 接口按型号取结构化记录，全程不需要 Shopee 登录；数据集未配置时仍可使用下面的登录 cookie 兜底。
 
@@ -56,6 +57,7 @@ pnpm crawl --list
 
 ```bash
 pnpm crawl --market SG --platform lazada --product sony-wh1000xm5 --dry-run
+pnpm crawl --market SG --platform amazon-sg --product sony-wh1000xm5 --dry-run
 ```
 
 确认价格和标题没问题后，去掉 `--dry-run` 正式入库：
@@ -111,7 +113,7 @@ pnpm crawl --market SG --platform shopee --product sony-wh1000xm5 --dry-run
 ## 命令
 
 ```text
-pnpm crawl --market <SG,MY,...> [--platform lazada,shopee] [options]
+pnpm crawl --market <SG,MY,...> [--platform lazada,shopee,amazon-sg] [options]
 ```
 
 | 参数 | 说明 |
@@ -161,6 +163,12 @@ BRIGHTDATA_PROXY_ZONE=isp_proxy1
 BRIGHTDATA_PROXY_PASSWORD=...
 BRIGHTDATA_PROXY_HOST=http://brd.superproxy.io:44445
 
+# 可选代理池模式（默认 api）
+BRIGHTDATA_TRANSPORT=proxy
+BRIGHTDATA_PROXY_ZONE=isp_proxy1
+BRIGHTDATA_PROXY_PASSWORD=...
+BRIGHTDATA_PROXY_HOST=http://brd.superproxy.io:33335
+
 # Scraping Browser：Playwright over CDP，抓 JS 渲染页面
 BRIGHTDATA_BROWSER_CUSTOMER_ID=hl_...
 BRIGHTDATA_BROWSER_ZONE=scraping_browser1
@@ -180,7 +188,7 @@ BRIGHTDATA_SHOPEE_DATASET_LIMIT=50
 | `api` | Web Unlocker REST | `POST https://api.brightdata.com/request`，能执行 JS / 过风控，Lazada 用这个 |
 | `proxy` | ISP 代理 | `http://brd-customer-<id>-zone-<proxy-zone>:<password>@host:port`，IP 干净但不做解锁 |
 
-> **Lazada 适配器会强制使用 `api` 模式**：实测 ISP 代理只能拿到 Lazada 的 JS 空壳（58KB、无商品卡片），Web Unlocker 才能拿到完整搜索页（1.8MB、带 40 个商品）。`BRIGHTDATA_TRANSPORT` 只作为其他平台/自定义抓取的默认值。
+> **Lazada 适配器会强制使用 `api` 模式**：实测 ISP 代理只能拿到 Lazada 的 JS 空壳（58KB、无商品卡片），Web Unlocker 才能拿到完整搜索页（1.8MB、带 40 个商品）。`BRIGHTDATA_TRANSPORT` 只作为其他平台/自定义抓取的默认值；Amazon SG 用默认通道即可。
 
 - **Web Unlocker** 走 REST：`POST https://api.brightdata.com/request`，`format=raw` 直接拿 HTML。
 - **Scraping Browser** 走 CDP：`wss://brd-customer-<id>-zone-<zone>:<password>@<host>:<port>`，用 `playwright-core` 连接，无需本地浏览器；可按市场加 `-country-sg` 之类的出口标记。
@@ -239,6 +247,7 @@ crawler/
 │   │   ├── csv.ts                # 数据集快照 CSV 解析（RFC 4180）
 │   │   └── scraping-browser.ts   # Playwright over CDP
 │   ├── platforms/
+│   │   ├── amazon-sg.ts           # Amazon SG 搜索页解析
 │   │   ├── lazada.ts             # 搜索页 + JSON-LD 解析
 │   │   ├── shopee.ts             # 搜索 API 拦截 + DOM 兜底
 │   │   ├── shopee-dataset.ts     # Bright Data 数据集 Filter + CSV 映射
