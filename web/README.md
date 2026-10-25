@@ -299,7 +299,10 @@ web/                         # 网站项目（@picolah/web）
 | `pnpm seed` | 清空并重建演示库 |
 | `pnpm mock` | 启动模拟爬虫，持续推送批次 |
 | `pnpm mock:once` | 模拟爬虫只推一批 |
-| `pnpm test` | 匹配、目录完整性、比价组装与货币格式化测试 |
+| `pnpm test` | 匹配、目录完整性、比价组装、账号、关注清单与商品发现测试 |
+| `pnpm e2e` | Playwright 浏览器冒烟测试（使用本机 Chrome，自动 seed 并启动 8790 端口） |
+| `pnpm e2e:api` | 纯 HTTP 端到端冒烟（注册、比价、关注、账号导出） |
+| `pnpm eval:llm` | 真实 LLM 护栏评测（需要 `LLM_API_KEY` 和已启动的 API） |
 
 picolah 的演示数据有三个层次，都用 `shared/catalog.ts` 这一份目录：
 
@@ -365,6 +368,13 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 | `INGEST_API_KEY` | `pcl_dev_crawler_key` | 爬虫写入密钥，生产必须更换 |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | 允许跨域的来源，逗号分隔 |
 | `METRICS_TOKEN` | 空 | 设置后 `/metrics` 需要 `Authorization: Bearer <token>`；生产未设置则返回 404 |
+| `AUTH_REQUIRED` | 开发 `false`，生产 `true` | 是否强制登录；生产缺失会直接报错，避免裸奔 |
+| `SESSION_TTL_DAYS` | `30` | 会话有效期 |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | 登录/注册限流窗口 |
+| `RATE_LIMIT_MAX` | `10` | 每窗口最多登录/注册请求数 |
+| `AFFILIATE_PARAM` | `utm_source` | 出站联盟参数名，例如 `ref` / `aff` |
+| `AFFILIATE_VALUE` | `picolah` | 出站联盟参数值 |
+| `AFFILIATE_URL_TEMPLATE` | 空 | 可选，支持 `{url}` 和 `{offerId}` 的跳转模板 |
 | `LLM_API_KEY` | 空 | 空则启用本地摘要 |
 | `LLM_BASE_URL` | `https://api.deepseek.com` | OpenAI-compatible base URL |
 | `LLM_MODEL` | `deepseek-chat` | 回答生成模型名 |
@@ -394,8 +404,8 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 - 一次比较多款商品，或按类目做价格带分布。
 - 接入真实类目树、规格（SKU）和图片 CDN。
 - TikTok Shop / 更多 Amazon 站点接入；PostgreSQL 双驱动迁移（见 [`docs/postgres.md`](../docs/postgres.md)）。
-- Playwright E2E、k6 压测和 Sentry/OTel 外部追踪。
-- 对 LLM 回答做引用校验，把每句建议绑定到 `offerId`。
+- k6 持续压测和 Sentry/OTel 外部追踪；`docs/observability.md` 已给出指标与告警基线。
+- 对 LLM 回答做引用校验，把每句建议绑定到 `offerId`；`scripts/llm-eval.mjs` 先覆盖价格编造、提示词注入和非东南亚市场四类回归。
 
 ## License
 

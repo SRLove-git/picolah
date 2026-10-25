@@ -34,3 +34,25 @@ jobs:
         run: |
           pnpm --filter @picolah/crawler run typecheck
           pnpm --filter @picolah/crawler run test
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: test
+    env:
+      LLM_API_KEY: ''
+      AUTH_REQUIRED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @picolah/web run build
+      - run: npx playwright install --with-deps chrome
+        working-directory: web
+      - run: pnpm --filter @picolah/web run test:e2e

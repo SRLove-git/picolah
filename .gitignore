@@ -9,5 +9,10 @@ mock-state/
 .DS_Store
 *.log
 .playwright/
+playwright-report/
+test-results/
 screenshots/
 .tmp/
+web/e2e.db
+web/e2e.db-shm
+web/e2e.db-wal
