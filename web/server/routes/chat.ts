@@ -22,6 +22,7 @@ import {
 import { writeFallbackAnswer } from '../copy.ts';
 import { streamLlmAnswer } from '../llm.ts';
 import { understandQuery, type Understanding } from '../understanding.ts';
+import { recordComparisonEvent, requestUserId } from '../profile.ts';
 
 export const chatRouter = Router();
 
@@ -220,6 +221,7 @@ chatRouter.post('/', async (req, res) => {
   }
 
   const { message: rawMessage, market, conversationId } = parsedBody.data;
+  const profileUserId = requestUserId(req);
   let image: string | undefined;
   try {
     image = validateImage(parsedBody.data.image);
@@ -344,6 +346,16 @@ chatRouter.post('/', async (req, res) => {
     requestedPlatforms,
     platformDirective.unsupported,
   );
+  if (profileUserId) {
+    try {
+      recordComparisonEvent(profileUserId, comparison, conversation.id);
+    } catch (error) {
+      console.warn(
+        '[profile] failed to record comparison:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
   const hasOffers = Boolean(comparison.product && comparison.offers.length > 0);
   const isConversational =
     understanding?.intent === 'smalltalk' || understanding?.intent === 'offtopic';

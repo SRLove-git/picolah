@@ -4,7 +4,10 @@ import type {
   Comparison,
   ConversationDetail,
   ConversationSummary,
+  OfferClickEvent,
+  ShoppingProfile,
 } from '../../shared/types';
+import { userHeaders } from './user';
 
 /**
  * Offline demo mode: `?mock=1` (or a VITE_MOCK=1 build) serves the whole
@@ -30,7 +33,10 @@ async function parseError(response: Response): Promise<string> {
 }
 
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(url, { signal, headers: { Accept: 'application/json' } });
+  const response = await fetch(url, {
+    signal,
+    headers: { Accept: 'application/json', ...userHeaders() },
+  });
   if (!response.ok) throw new Error(await parseError(response));
   return (await response.json()) as T;
 }
@@ -59,8 +65,42 @@ export async function removeConversation(id: string): Promise<void> {
   if (isMockMode()) return (await import('./mock-backend')).mockRemoveConversation(id);
   const response = await fetch(`/api/conversations/${encodeURIComponent(id)}`, {
     method: 'DELETE',
+    headers: userHeaders(),
   });
   if (!response.ok) throw new Error(await parseError(response));
+}
+
+export async function getProfile(): Promise<ShoppingProfile | null> {
+  if (isMockMode()) return null;
+  const data = await getJson<{ profile: ShoppingProfile }>('/api/profile');
+  return data.profile;
+}
+
+export async function resetProfile(): Promise<void> {
+  if (isMockMode()) return;
+  const response = await fetch('/api/profile', {
+    method: 'DELETE',
+    headers: userHeaders(),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+}
+
+/**
+ * Fire-and-forget. A failed analytics request must never block the outbound
+ * store link the user just clicked.
+ */
+export async function recordOfferClick(event: OfferClickEvent): Promise<void> {
+  if (isMockMode()) return;
+  try {
+    await fetch('/api/profile/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...userHeaders() },
+      body: JSON.stringify(event),
+      keepalive: true,
+    });
+  } catch {
+    // Best effort only.
+  }
 }
 
 export interface StreamHandlers {
@@ -112,7 +152,7 @@ export async function streamChat(
 
   const response = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
     body: JSON.stringify(input),
     signal,
   });

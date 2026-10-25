@@ -9,6 +9,7 @@ import {
   relativeTime,
   sortOffers,
 } from '../lib/format';
+import { recordOfferClick } from '../lib/api';
 import { PlatformBadge } from './PlatformBadge';
 import { Sparkline } from './Sparkline';
 import { Capybara } from './PicolahMark';
@@ -118,6 +119,9 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
   const marketInfo = MARKETS[market];
   const sorted = sortOffers(comparison.offers, priceMode);
   const best = sorted[0];
+  const lowestPrice = comparison.offers.length
+    ? Math.min(...comparison.offers.map((offer) => offer.finalPrice))
+    : 0;
 
   return (
     <div className="comparison-card">
@@ -163,6 +167,17 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                   target="_blank"
                   rel="noreferrer noopener"
                   style={{ animationDelay: `${index * 55}ms` }}
+                  onClick={() => {
+                    void recordOfferClick({
+                      type: 'offer_click',
+                      market,
+                      productId: product.id,
+                      platformId: offer.platformId,
+                      price: offer.finalPrice,
+                      isLowest: offer.finalPrice === lowestPrice,
+                      position: index + 1,
+                    });
+                  }}
                 >
                   <span className={`offer-rank ${index === 0 ? 'is-first' : ''}`}>
                     {String(index + 1).padStart(2, '0')}

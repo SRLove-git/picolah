@@ -88,9 +88,33 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS app_users (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    last_seen_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS user_events (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('comparison', 'offer_click')),
+    market TEXT NOT NULL,
+    product_id TEXT,
+    category TEXT,
+    brand TEXT,
+    platform_id TEXT,
+    price REAL,
+    currency TEXT,
+    is_lowest INTEGER,
+    position INTEGER,
+    metadata TEXT,
+    created_at TEXT NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_offers_product_country ON offers(product_id, country);
   CREATE INDEX IF NOT EXISTS idx_offers_country ON offers(country);
   CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
   CREATE INDEX IF NOT EXISTS idx_price_points_offer ON price_points(offer_id, recorded_at);
+  CREATE INDEX IF NOT EXISTS idx_user_events_user_created ON user_events(user_id, created_at DESC);
 `);

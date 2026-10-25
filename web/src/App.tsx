@@ -16,6 +16,7 @@ import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
 import { ReelsView } from './components/ReelsView';
 import { MessagesView } from './components/MessagesView';
+import { ProfileView } from './components/ProfileView';
 import { AccountView } from './components/AccountView';
 import { IngestDrawer } from './components/IngestDrawer';
 
@@ -29,7 +30,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'messages', 'reels', 'account'];
+const PAGE_VIEWS: AppView[] = ['home', 'messages', 'reels', 'profile', 'account'];
 
 function readStorage(key: string): string | null {
   try {
@@ -573,6 +574,14 @@ export default function App() {
             market={market}
             initialIndex={reelStart}
             onAsk={(query) => void sendMessage(query)}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            notify={notify}
+          />
+        )}
+
+        {view === 'profile' && (
+          <ProfileView
+            onStart={() => navigate('home')}
             onOpenSidebar={() => setSidebarOpen(true)}
             notify={notify}
           />

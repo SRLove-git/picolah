@@ -230,6 +230,101 @@ export interface AppConfig {
   gateway: GatewayStats;
 }
 
+export type PersonaKey =
+  | 'deal_hunter'
+  | 'brand_loyalist'
+  | 'explorer'
+  | 'platform_native'
+  | 'balanced';
+
+export interface PersonaCopy {
+  key: PersonaKey;
+  emoji: string;
+  accent: string;
+  nameZh: string;
+  nameEn: string;
+  taglineZh: string;
+  taglineEn: string;
+  descriptionZh: string;
+  descriptionEn: string;
+}
+
+export type ProfileTraitKey =
+  | 'price_sensitivity'
+  | 'brand_loyalty'
+  | 'exploration'
+  | 'platform_focus'
+  | 'action_rate';
+
+export interface ProfileTrait {
+  key: ProfileTraitKey;
+  score: number;
+  labelZh: string;
+  labelEn: string;
+  evidenceZh: string;
+  evidenceEn: string;
+}
+
+export interface ProfileDimension {
+  id: string;
+  labelZh: string;
+  labelEn: string;
+  count: number;
+  share: number;
+}
+
+export interface ProfileBudget {
+  min: number;
+  max: number;
+  median: number;
+  currency: string;
+}
+
+export interface ProfileActivity {
+  id: string;
+  type: 'comparison' | 'offer_click';
+  titleZh: string;
+  titleEn: string;
+  market: CountryCode;
+  createdAt: string;
+}
+
+export interface ShoppingProfile {
+  hasData: boolean;
+  user: {
+    anonymousId: string;
+    firstSeen: string;
+    lastSeen: string;
+    activeDays: number;
+  };
+  totals: {
+    comparisons: number;
+    clicks: number;
+    offersSeen: number;
+    conversations: number;
+  };
+  persona: PersonaCopy | null;
+  traits: ProfileTrait[];
+  markets: ProfileDimension[];
+  platforms: ProfileDimension[];
+  categories: ProfileDimension[];
+  brands: ProfileDimension[];
+  budget: ProfileBudget | null;
+  recent: ProfileActivity[];
+}
+
+export interface OfferClickEvent {
+  type: 'offer_click';
+  market: CountryCode;
+  productId?: string;
+  platformId: string;
+  price: number;
+  brand?: string;
+  category?: string;
+  isLowest: boolean;
+  position: number;
+}
+
 export interface ChatStreamMeta {
   conversationId: string;
   title: string;

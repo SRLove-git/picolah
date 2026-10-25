@@ -9,6 +9,7 @@ import { chatRouter } from './routes/chat.ts';
 import { conversationsRouter } from './routes/conversations.ts';
 import { catalogRouter, configRouter } from './routes/config.ts';
 import { ingestRouter } from './routes/ingest.ts';
+import { profileRouter } from './routes/profile.ts';
 
 seedDatabase(false);
 
@@ -31,7 +32,7 @@ const corsMiddleware = cors({
     callback(new Error('Origin not allowed'));
   },
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Picolah-User'],
 });
 
 app.use((req, res, next) => {
@@ -71,9 +72,11 @@ app.use('/api', (req, res, next) => {
   res.status(404).json({ error: 'NOT_FOUND' });
 });
 
-app.use('/api/config', configRouter);app.use('/api/chat', chatRouter);
+app.use('/api/config', configRouter);
+app.use('/api/chat', chatRouter);
 app.use('/api/conversations', conversationsRouter);
 app.use('/api/catalog', catalogRouter);
+app.use('/api/profile', profileRouter);
 app.use('/api/v1/ingest', ingestRouter);
 
 app.use('/api', (_req, res) => {
