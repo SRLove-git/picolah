@@ -5,6 +5,7 @@ import type {
   ConversationDetail,
   ConversationSummary,
   OfferClickEvent,
+  ProductVisual,
   ShoppingProfile,
 } from '../../shared/types';
 import { userHeaders } from './user';
@@ -121,6 +122,29 @@ export async function getProfile(): Promise<ShoppingProfile | null> {
   if (isMockMode()) return null;
   const data = await getJson<{ profile: ShoppingProfile }>('/api/profile');
   return data.profile;
+}
+
+export interface CatalogProduct {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  visual: ProductVisual;
+  specs: string;
+}
+
+export interface CatalogResponse {
+  products: CatalogProduct[];
+  categories: string[];
+  total: number;
+}
+
+export async function searchCatalog(query = '', category = ''): Promise<CatalogResponse> {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('q', query.trim());
+  if (category) params.set('category', category);
+  const suffix = params.toString() ? `?${params}` : '';
+  return getJson<CatalogResponse>(`/api/catalog${suffix}`);
 }
 
 export async function resetProfile(): Promise<void> {

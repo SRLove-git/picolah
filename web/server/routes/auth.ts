@@ -13,6 +13,7 @@ import {
   setSessionCookie,
   verifyPassword,
 } from '../auth.ts';
+import { mergeAnonymousProfile } from '../profile.ts';
 
 export const authRouter = Router();
 
@@ -45,6 +46,10 @@ function attemptKey(ip: string, email: string): string {
   return `${ip}:${normalizeEmail(email)}`;
 }
 
+function anonymousId(request: import('express').Request): string {
+  return String(request.header('x-picolah-user') || '').trim();
+}
+
 authRouter.post('/register', async (req, res) => {
   const parsed = credentialsSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -70,7 +75,8 @@ authRouter.post('/register', async (req, res) => {
   const token = createSession(user.id);
   setSessionCookie(res, token, req);
   clearAttempts(key);
-  return res.status(201).json({ user, required: config.authRequired });
+  const mergedEvents = mergeAnonymousProfile(anonymousId(req), user.id);
+  return res.status(201).json({ user, required: config.authRequired, mergedEvents });
 });
 
 authRouter.post('/login', async (req, res) => {
@@ -95,7 +101,8 @@ authRouter.post('/login', async (req, res) => {
   const token = createSession(row.id);
   setSessionCookie(res, token, req);
   clearAttempts(key);
-  return res.json({ user: publicUser(row), required: config.authRequired });
+  const mergedEvents = mergeAnonymousProfile(anonymousId(req), row.id);
+  return res.json({ user: publicUser(row), required: config.authRequired, mergedEvents });
 });
 
 authRouter.post('/logout', (req, res) => {

@@ -229,6 +229,30 @@ export function ensureUser(userId: string): void {
   ).run(userId, stamp, stamp);
 }
 
+/**
+ * Move what the browser learned before sign-in onto the account. The client
+ * sends its anonymous id on /api/auth/login and /api/auth/register, so a user
+ * who compares first and signs up later keeps the persona instead of starting
+ * from zero. The anonymous app_users row is removed afterwards.
+ */
+export function mergeAnonymousProfile(anonymousId: string, accountId: string): number {
+  const anonymous = String(anonymousId || '').trim();
+  const account = String(accountId || '').trim();
+  if (
+    anonymous === account ||
+    !/^[a-zA-Z0-9_-]{8,80}$/.test(anonymous) ||
+    !/^[a-zA-Z0-9_-]{8,80}$/.test(account)
+  ) {
+    return 0;
+  }
+  ensureUser(account);
+  const exists = db.prepare('SELECT 1 FROM app_users WHERE id = ?').get(anonymous);
+  if (!exists) return 0;
+  const result = db.prepare('UPDATE user_events SET user_id = ? WHERE user_id = ?').run(account, anonymous);
+  db.prepare('DELETE FROM app_users WHERE id = ?').run(anonymous);
+  return Number(result.changes);
+}
+
 function insertEvent(input: {
   userId: string;
   type: 'comparison' | 'offer_click';

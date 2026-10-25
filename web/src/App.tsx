@@ -19,6 +19,7 @@ import { AuthView } from './components/AuthView';
 import { useSession } from './lib/session';
 
 const ReelsView = lazy(() => import('./components/ReelsView').then((module) => ({ default: module.ReelsView })));
+const SearchView = lazy(() => import('./components/SearchView').then((module) => ({ default: module.SearchView })));
 const MessagesView = lazy(() => import('./components/MessagesView').then((module) => ({ default: module.MessagesView })));
 const ProfileView = lazy(() => import('./components/ProfileView').then((module) => ({ default: module.ProfileView })));
 const LegalView = lazy(() => import('./components/LegalView').then((module) => ({ default: module.LegalView })));
@@ -576,6 +577,14 @@ function AppWorkspace() {
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
+          />
+        )}
+
+        {view === 'search' && (
+          <SearchView
+            market={market}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            onAsk={(name) => void sendMessage(name)}
           />
         )}
 

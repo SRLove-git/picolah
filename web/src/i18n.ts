@@ -6,7 +6,13 @@ const resources = {
     translation: {
       app: { title: 'Picolah · 购物之前 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
       language: { switch: 'Switch to English', short: 'EN' },
-      nav: { main: '主导航', home: '首页', watchlist: '关注', reels: '短视频', profile: '画像', messages: '消息', account: '账号', close: '关闭导航' },
+      nav: { main: '主导航', home: '首页', search: '发现', watchlist: '关注', reels: '短视频', profile: '画像', messages: '消息', account: '账号', close: '关闭导航' },
+      search: {
+        label: '商品发现', title: '先逛逛，再 pico', body: '按品类浏览目录，或直接搜索商品和品牌。点“去比价”就会带着这个商品开始一次比价。',
+        placeholder: '搜索商品、品牌或型号', clear: '清空搜索', categories: '品类', all: '全部',
+        results: '{{count}} 件商品', loading: '正在搜索…', empty: '没有找到匹配的商品，换个词或品类试试。',
+        error: '商品目录暂时加载失败，请稍后再试。', compare: '去比价',
+      },
       home: {
         label: '首页', openNav: '打开导航', mascotAction: '和 Picolah 互动并开始比价',
         mascotHello: '先 pico，再买。', mascotReady: '告诉我想买什么吧。',
@@ -104,7 +110,13 @@ const resources = {
     translation: {
       app: { title: 'Picolah · Pico before you buy', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
       language: { switch: '切换为中文', short: '中' },
-      nav: { main: 'Main navigation', home: 'Home', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Messages', account: 'Account', close: 'Close navigation' },
+      nav: { main: 'Main navigation', home: 'Home', search: 'Discover', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Messages', account: 'Account', close: 'Close navigation' },
+      search: {
+        label: 'Product discovery', title: 'Browse first, pico next', body: 'Explore the catalog by category, or search for a product or brand. “Compare” starts a price comparison with that product.',
+        placeholder: 'Search products, brands or models', clear: 'Clear search', categories: 'Categories', all: 'All',
+        results: '{{count}} products', loading: 'Searching…', empty: 'No matching products. Try another word or category.',
+        error: 'The catalog could not load. Please try again.', compare: 'Compare',
+      },
       home: {
         label: 'Home', openNav: 'Open navigation', mascotAction: 'Interact with Picolah and start comparing',
         mascotHello: 'Pico before you buy.', mascotReady: 'Tell me what you want to buy.',

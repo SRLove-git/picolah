@@ -6,6 +6,7 @@ process.env.AUTH_REQUIRED = 'true';
 process.env.PICOLAH_DB_PATH = ':memory:';
 
 const { app } = await import('./index.ts');
+const { recordOfferClick } = await import('./profile.ts');
 const server = await new Promise<import('node:http').Server>((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
 });
@@ -83,6 +84,36 @@ test('rejects invalid credentials and short passwords', async () => {
 test('requires a session for private API routes when auth is on', async () => {
   const response = await fetch(`${baseUrl}/api/conversations`);
   assert.equal(response.status, 401);
+});
+
+test('merges the anonymous shopping profile into the new account', async () => {
+  const anonymous = `anon-${Date.now()}`;
+  recordOfferClick(anonymous, {
+    type: 'offer_click',
+    market: 'SG',
+    platformId: 'shopee',
+    price: 29.9,
+    isLowest: true,
+    position: 1,
+  });
+
+  const email = `merge-${Date.now()}@example.com`;
+  const created = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-picolah-user': anonymous },
+    body: JSON.stringify({ email, password: 'correct horse 9', displayName: 'Merged Pico' }),
+  });
+  assert.equal(created.status, 201);
+  const body = (await created.json()) as { mergedEvents: number; user: { id: string } };
+  assert.equal(body.mergedEvents, 1);
+
+  const cookie = cookieFrom(created);
+  const profileResponse = await fetch(`${baseUrl}/api/profile`, { headers: { cookie } });
+  const profile = (await profileResponse.json()) as {
+    profile: { totals: { clicks: number }; user: { anonymousId: string } };
+  };
+  assert.equal(profile.profile.totals.clicks, 1);
+  assert.equal(profile.profile.user.anonymousId, body.user.id);
 });
 
 test('exports and deletes the signed-in account with password confirmation', async () => {
