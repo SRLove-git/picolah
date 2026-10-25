@@ -1,4 +1,4 @@
-import { fetchHtml } from '../brightdata/web-unlocker.ts';
+import { BrightDataError, fetchHtml } from '../brightdata/web-unlocker.ts';
 import type { MarketCode } from '../markets.ts';
 import type { RawListing } from '../types.ts';
 import type { PlatformAdapter } from './types.ts';
@@ -10,8 +10,10 @@ export function amazonSearchUrl(query: string): string {
 export function decodeAmazonHtml(value: string): string {
   const named: Record<string, string> = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ' };
   return value
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([\da-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&#(?:x([\da-f]+)|(\d+));/gi, (entity, hex: string | undefined, decimal: string | undefined) => {
+      const point = Number.parseInt(hex ?? decimal ?? '', hex ? 16 : 10);
+      return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+    })
     .replace(/&([a-z]+);/gi, (entity, name: string) => named[name.toLowerCase()] ?? entity)
     .replace(/\s+/g, ' ')
     .trim();
@@ -51,8 +53,10 @@ export function parseAmazonSearch(html: string): RawListing[] {
       /data-cy="price-recipe"[\s\S]{0,4000}?<span\b[^>]*class="[^"]*a-offscreen[^"]*"[^>]*>([^<]+)<\/span>/i,
     );
     const price = Number(priceText.replace(/[^\d.]/g, ''));
-    const rating = Number(attribute(block, /aria-label="([\d.]+) out of 5 stars(?:, [^"]*)?"/i));
-    const reviews = Number(attribute(block, /aria-label="([\d,]+) ratings?"/i).replace(/,/g, ''));
+    const ratingText = attribute(block, /aria-label="([\d.]+) out of 5 stars(?:, [^"]*)?"/i);
+    const reviewsText = attribute(block, /aria-label="([\d,]+) ratings?"/i).replace(/,/g, '');
+    const rating = ratingText ? Number(ratingText) : undefined;
+    const reviews = reviewsText ? Number(reviewsText) : undefined;
     if (!title || !Number.isFinite(price) || price <= 0) continue;
 
     const shippingFee = extractAmazonShipping(block);
@@ -67,8 +71,8 @@ export function parseAmazonSearch(html: string): RawListing[] {
       currency: 'SGD',
       ...(shippingFee !== undefined ? { shippingFee } : {}),
       ...(discount !== undefined ? { discount } : {}),
-      rating: Number.isFinite(rating) ? rating : undefined,
-      reviews: Number.isFinite(reviews) ? reviews : undefined,
+      ...(rating !== undefined && Number.isFinite(rating) && rating >= 0 && rating <= 5 ? { rating } : {}),
+      ...(reviews !== undefined && Number.isSafeInteger(reviews) && reviews >= 0 ? { reviews } : {}),
       seller: 'Amazon SG',
       inStock: !/currently unavailable|temporarily out of stock/i.test(block),
     });
@@ -76,10 +80,40 @@ export function parseAmazonSearch(html: string): RawListing[] {
   return listings;
 }
 
-export async function searchAmazonSg(market: MarketCode, query: string): Promise<RawListing[]> {
+function pageContent(html: string): { markup: string; visible: string } {
+  const markup = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
+    .replace(/<template\b[^>]*>[\s\S]*?<\/template\s*>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<([a-z][\w-]*)\b[^>]*(?:\shidden(?=\s|=|>)|\saria-hidden\s*=\s*["']true["']|\sstyle\s*=\s*["'][^"']*(?:display\s*:\s*none|visibility\s*:\s*hidden)[^"']*["'])[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ');
+  return { markup, visible: decodeAmazonHtml(markup.replace(/<[^>]+>/g, ' ')) };
+}
+
+function assertNotBlocked(markup: string, visible: string): void {
+  if (/\brobot\s+check\b|\bcaptcha\b|verify\s+(?:that\s+)?you\s+are\s+(?:a\s+)?human|(?:enter|type)\s+the\s+characters\s+you\s+see|make\s+sure\s+you['’]?re\s+not\s+a\s+robot|automated\s+access\s+to\s+amazon|\baccess\s+denied\b|\bunusual\s+traffic\b|验证码|安全验证/i.test(visible)
+    || /(?:id|name)\s*=\s*["'](?:captchacharacters|captcha|cvf_captcha_input)["']|\/errors\/validateCaptcha/i.test(markup)) {
+    throw new BrightDataError('Amazon 返回了访问验证页面，尚未取得商品搜索结果', { code: 'SOURCE_PAGE_BLOCKED' });
+  }
+}
+
+function assertExplicitlyEmpty(visible: string): void {
+  if (!/\bno\s+(?:matching\s+)?(?:results?|products?|items?)\s+(?:for\b|found\b|available\b)|\b(?:0|zero)\s+(?:results?|products?|items?)\s+(?:for\b|found\b)|\b(?:couldn['’]?t|could\s+not|didn['’]?t|did\s+not)\s+find\s+(?:any\s+)?(?:results?|products?|items?)\b|没有找到(?:相关|匹配|任何)?商品|未找到(?:相关|匹配|任何)?商品/i.test(visible)) {
+    throw new BrightDataError('Amazon 搜索页未能解析出可验证的商品结果，可能是页面未完成或结构已变更', { code: 'SOURCE_PAGE_UNREADABLE' });
+  }
+}
+
+export async function searchAmazonSg(
+  market: MarketCode,
+  query: string,
+  dependencies: { fetchHtml?: typeof fetchHtml } = {},
+): Promise<RawListing[]> {
   if (market !== 'SG') throw new Error(`Amazon SG 不支持市场 ${market}`);
-  const html = await fetchHtml(amazonSearchUrl(query), { country: 'SG' });
-  const listings = parseAmazonSearch(html);
+  const html = await (dependencies.fetchHtml ?? fetchHtml)(amazonSearchUrl(query), { country: 'SG', timeoutMs: 90_000, retries: 0 });
+  const { markup, visible } = pageContent(html);
+  assertNotBlocked(markup, visible);
+  const listings = parseAmazonSearch(markup);
+  if (!listings.length) assertExplicitlyEmpty(visible);
   console.log(`[crawler] amazon-sg SG "${query.slice(0, 60)}" -> ${listings.length} listings`);
   return listings;
 }

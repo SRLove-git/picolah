@@ -59,6 +59,24 @@ test('crawler live search accepts named products without a model code', async ()
   assert.deepEqual(searched, { market: 'SG', platforms: ['lazada'], query: 'iPhone 17 Pro 256GB' });
 });
 
+test('crawler search accepts bounded cross-web scope and platform exclusions', async () => {
+  const input = { scope: 'web', market: 'SG', platforms: [], excludedPlatforms: ['lazada'], query: 'WF-1000XM6' };
+  const response = await fetch(`${baseUrl}/search`, { method: 'POST', headers, body: JSON.stringify(input) });
+  assert.equal(response.status, 200); assert.deepEqual(searched, input);
+});
+
+test('crawler search rejects malformed cross-web scopes without running the crawler', async () => {
+  for (const extra of [
+    { scope: 'everywhere' }, { platforms: ['lazada'] }, { platforms: 'lazada' },
+    { excludedPlatforms: 'lazada' }, { excludedPlatforms: ['unknown'] }, { excludedPlatforms: [null] },
+    { market: 'XX' },
+  ]) {
+    const response = await fetch(`${baseUrl}/search`, { method: 'POST', headers,
+      body: JSON.stringify({ scope: 'web', market: 'SG', platforms: [], query: 'WF-1000XM6', ...extra }) });
+    assert.equal(response.status, 400, JSON.stringify(extra));
+  }
+});
+
 test('crawler search rejects prose, unsupported platforms and unsupported markets', async () => {
   for (const input of [
     { market: 'SG', platforms: ['lazada'], query: 'WF-1000XM6', model: '帮我找一下wf1000xm6' },

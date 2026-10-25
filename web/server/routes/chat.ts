@@ -7,10 +7,11 @@ import { detectMarket, resolvePlatformDirective } from '../../shared/query.ts';
 import { config, crawlerToolConfigured, llmConfigured } from '../config.ts';
 import { addMessage, createConversation, getConversation } from '../repo.ts';
 import { writeFallbackAnswer } from '../copy.ts';
+import { liveSearchCoverageNote } from '../../shared/copy.ts';
 import { streamLlmAnswer } from '../llm.ts';
 import { recordComparisonEvent, requestUserId } from '../profile.ts';
 import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
-import { modelSearchTool } from '../agent/tools/model-search.ts';
+import { modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
 import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts';
 
@@ -60,9 +61,26 @@ chatRouter.post('/', async (req, res) => {
   const priorMessages: ChatMessage[] = stored?.messages ?? [];
   const previous = previousComparison(priorMessages);
   const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${MARKETS[market].nameZh}`, market);
-  const directive = resolvePlatformDirective(message, market, previous?.platformFilter ?? []);
-  const platforms = supportedRealCrawlerPlatforms(MARKETS[market].platformIds, directive.platformIds,
-    directive.unsupported.length ? [] : config.crawlerTool.defaultPlatforms);
+  const directive = resolvePlatformDirective(message, market,
+    previous?.search?.scope === 'web' ? [] : previous?.platformFilter ?? []);
+  const platformRestriction = directive.mode === 'include' ||
+    (directive.mode === 'none' && directive.platformIds.length > 0);
+  const scope = platformRestriction ? 'platforms' : config.crawlerTool.searchScope;
+  const exclusionIds = ['lazada', 'shopee', 'amazon-sg', 'tiktok', 'tokopedia', 'tiki'] as const;
+  const exclusions = directive.mode === 'exclude'
+    ? [...new Set([...(previous?.search?.excludedPlatforms ?? []), ...directive.mentioned])]
+    : directive.mode === 'none' && !platformRestriction ? previous?.search?.excludedPlatforms ?? [] : [];
+  const excludedPlatforms = exclusions.filter((id): id is typeof exclusionIds[number] =>
+    exclusionIds.includes(id as typeof exclusionIds[number]));
+  const platforms = platformRestriction
+    ? supportedRealCrawlerPlatforms(MARKETS[market].platformIds, directive.platformIds, [])
+    : scope === 'platforms'
+      ? supportedRealCrawlerPlatforms(MARKETS[market].platformIds, [], ['shopee', 'lazada', 'amazon-sg'])
+        .filter((platform) => !excludedPlatforms.includes(platform)) : [];
+  // An unsupported exclusion (e.g. "not official stores") must not silently be ignored.
+  const unsupported = [...new Set([...directive.unsupported,
+    ...(platformRestriction ? directive.platformIds.filter((id) => !platforms.includes(id as typeof platforms[number])) : []),
+    ...exclusions.filter((id) => !excludedPlatforms.includes(id as typeof exclusionIds[number]))])];
   const userMessageId = randomUUID();
   await addMessage({ id: userMessageId, conversationId: conversation.id, role: 'user', content: message, metadata: image ? { image } : undefined });
 
@@ -80,23 +98,27 @@ chatRouter.post('/', async (req, res) => {
     const recognized = await visualSearchQuery(image, rawMessage);
     if (recognized) target = liveSearchQuery(recognized, null);
   }
-  let comparison = emptyLiveComparison(message, market, target?.query || '', platforms, directive.unsupported);
+  let comparison = emptyLiveComparison(message, market, target?.query || '', platforms, unsupported);
+  comparison.search!.scope = scope;
+  if (excludedPlatforms.length) comparison.search!.excludedPlatforms = excludedPlatforms;
   comparison.search!.model = target?.model || target?.query || '';
   if (target?.maxPrice !== undefined) comparison.search!.maxPrice = target.maxPrice;
   // Conversation history supplies only the previous query/filter, never cached prices.
-  comparison.platformFilter = directive.platformIds.length ? directive.platformIds : undefined;
+  comparison.platformFilter = platformRestriction ? directive.platformIds : undefined;
   let clarification: string | undefined;
   if (!target) {
     clarification = image
       ? '暂时无法确定图片里的具体商品，请补充品牌、型号或商品名称，我会直接搜索实时商品信息。'
       : '请告诉我商品名称或具体型号，我会直接搜索实时商品信息。';
-  } else if (crawlerToolConfigured && platforms.length && !directive.unsupported.length) {
+  } else if (crawlerToolConfigured && (scope === 'web' || platforms.length) && !unsupported.length) {
     sse(res, 'status', { label: '正在搜索商品信息' });
     try {
-      const input = { market, platforms, ...target };
+      const input: LiveSearchInput = { market, scope, platforms, ...target,
+        ...(scope === 'web' && excludedPlatforms.length ? { excludedPlatforms } : {}) };
       const result = await modelSearchTool.invoke(input);
       comparison = liveComparison(message, input, result);
-      comparison.platformFilter = directive.platformIds.length ? directive.platformIds : undefined;
+      comparison.platformFilter = platformRestriction ? directive.platformIds : undefined;
+      if (excludedPlatforms.length) comparison.search!.excludedPlatforms = excludedPlatforms;
     } catch (error) {
       console.warn('[chat] live product search failed:', error instanceof Error ? error.message : 'unknown error');
       comparison.search!.status = 'failed';
@@ -129,6 +151,10 @@ chatRouter.post('/', async (req, res) => {
     }
   }
   if (!answer.trim()) answer = await streamLocal(res, clarification || writeFallbackAnswer(comparison));
+  else if (usedLlm) {
+    const notice = liveSearchCoverageNote(comparison);
+    if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }
+  }
   const assistantMessageId = await addMessage({
     conversationId: conversation.id, role: 'assistant', content: answer,
     metadata: { comparison, usedLlm, source: 'live-tools' },

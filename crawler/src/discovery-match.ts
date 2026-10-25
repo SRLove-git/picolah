@@ -1,5 +1,6 @@
 import { MARKETS, type MarketCode, type PlatformId } from './markets.ts';
-import type { RawListing } from './types.ts';
+import type { DiscoveryListing } from './types.ts';
+import { safeWebUrl } from './safe-web-url.ts';
 
 export function normalizeSearchQuery(value: string): string {
   const query = value.normalize('NFKC').trim().replace(/ +/g, ' ');
@@ -65,24 +66,28 @@ function exactTitle(model: string, rawTitle: string): boolean {
 
 export function exactDiscoveryListing(
   model: string,
-  listing: RawListing,
+  listing: DiscoveryListing,
   market: MarketCode,
-  platform: PlatformId,
+  platform: PlatformId | 'web',
 ): boolean {
   try { model = normalizeDiscoveryModel(model); } catch { return false; }
   return validSourceListing(listing, market, platform) && exactTitle(model, listing.title);
 }
 
-export function validSourceListing(listing: RawListing, market: MarketCode, platform: PlatformId): boolean {
+export function validSourceListing(listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web'): boolean {
   if (!(market in MARKETS) || listing.market !== market || listing.platform !== platform || listing.inStock !== true) return false;
   if (!Number.isFinite(listing.price) || listing.price <= 0 || listing.price > 1_000_000_000_000) return false;
   if (listing.currency !== MARKETS[market].currency || !listing.itemId?.trim() || listing.itemId.length > 150) return false;
   if (!listing.title?.trim() || listing.title.length > 1000 || NON_PRODUCT.test(listing.title) || /\bfor\b/i.test(listing.title)) return false;
-  const domain = MARKETS[market].domains[platform]?.replace(/^www\./, '');
+  const domain = platform === 'web' ? undefined : MARKETS[market].domains[platform]?.replace(/^www\./, '');
   try {
     const url = new URL(listing.url);
-    if (!domain || url.protocol !== 'https:' || url.username || url.password || url.port) return false;
-    if (url.hostname !== domain && !url.hostname.endsWith(`.${domain}`)) return false;
+    if (platform === 'web') {
+      if (listing.platform !== 'web' || !safeWebUrl(listing.url) || listing.sourceHost !== url.hostname.replace(/^www\./, '')) return false;
+    } else {
+      if (!domain || url.protocol !== 'https:' || url.username || url.password || url.port) return false;
+      if (url.hostname !== domain && !url.hostname.endsWith(`.${domain}`)) return false;
+    }
     if (listing.url.length > 2000) return false;
   } catch {
     return false;
@@ -100,7 +105,7 @@ function queryTokens(value: string): string[] {
   return value.normalize('NFKC').toLowerCase().match(/[a-z]+|\d+|[\p{L}]+/gu) ?? [];
 }
 
-export function queryMatchesListing(query: string, listing: RawListing, market: MarketCode, platform: PlatformId, model?: string): boolean {
+export function queryMatchesListing(query: string, listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web', model?: string): boolean {
   if (!validSourceListing(listing, market, platform)) return false;
   // The optional hint must not be required for exact-code safety.
   model ??= query.toUpperCase().match(/(?:^|[^A-Z0-9])([A-Z]{2,}-?\d{3,}(?:[A-Z]+\d+)*)(?=$|[^A-Z0-9])/)?.[1];

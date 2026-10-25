@@ -299,8 +299,6 @@ async function downloadSnapshot(snapshotId: string, market: MarketCode): Promise
   return parseShopeeDatasetCsv(text, market);
 }
 
-const listingCache = new Map<string, RawListing[]>();
-
 /**
  * Shopee via an activated Bright Data marketplace dataset (no Shopee login).
  * Requires BRIGHTDATA_SHOPEE_DATASET_ID; otherwise the caller should use the
@@ -320,21 +318,15 @@ export async function searchShopeeDataset(market: MarketCode, query: string): Pr
   const keyword = shopeeDatasetKeyword(query);
   if (!keyword) throw new Error('Shopee 数据集搜索词为空');
 
-  const cacheKey = `${market}:${keyword}`;
-  const cached = listingCache.get(cacheKey);
-  if (cached) return cached;
-
   logInfo(`[crawler] shopee-dataset ${market} 筛选 "${keyword}" ...`);
   const snapshotId = await triggerFilter(keyword, domain);
   const hasRecords = await waitForSnapshot(snapshotId);
   if (!hasRecords) {
     logInfo(`[crawler] shopee-dataset ${market} "${keyword}" -> 0 listings`);
-    listingCache.set(cacheKey, []);
     return [];
   }
 
   const listings = await downloadSnapshot(snapshotId, market);
-  listingCache.set(cacheKey, listings);
   logInfo(`[crawler] shopee-dataset ${market} "${keyword}" -> ${listings.length} listings`);
   return listings;
 }

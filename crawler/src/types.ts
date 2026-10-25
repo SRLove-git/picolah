@@ -30,6 +30,14 @@ export interface RawListing {
   inStock: boolean;
 }
 
+/** Verified public product-page result, used only by live search, never ingestion. */
+export type WebListing = Omit<RawListing, 'platform'> & {
+  platform: 'web';
+  sourceHost: string;
+};
+
+export type DiscoveryListing = RawListing | WebListing;
+
 /** Matches POST /api/v1/ingest/offers. */
 export interface Offer {
   externalId: string;

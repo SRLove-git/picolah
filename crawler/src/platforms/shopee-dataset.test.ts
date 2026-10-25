@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mapShopeeDatasetRows, parseShopeeDatasetCsv, shopeeDatasetKeyword } from './shopee-dataset.ts';
+import { mapShopeeDatasetRows, parseShopeeDatasetCsv, searchShopeeDataset, shopeeDatasetKeyword } from './shopee-dataset.ts';
+import { config } from '../config.ts';
 
 const HEADER = 'url,id,title,final_price,currency,rating,reviews,seller_name,stock,is_available,domain';
 
@@ -117,4 +118,25 @@ test('uses a distinctive model token for the dataset filter', () => {
   assert.equal(shopeeDatasetKeyword('Samsung Galaxy S24 Ultra'), 'S24');
   assert.equal(shopeeDatasetKeyword('Apple AirPods Pro'), 'Apple AirPods');
   assert.equal(shopeeDatasetKeyword('Sony WH-1000XM5 (2024)'), 'WH-1000XM5');
+});
+
+test('repeated live dataset searches do not reuse an unbounded process-lifetime quote cache', async (t) => {
+  const previousId = config.brightData.shopeeDatasetId;
+  const previousToken = config.brightData.apiToken;
+  config.brightData.shopeeDatasetId = 'test-dataset';
+  config.brightData.apiToken = 'test-token';
+  t.after(() => { config.brightData.shopeeDatasetId = previousId; config.brightData.apiToken = previousToken; });
+  let requests = 0;
+  let jobs = 0;
+  t.mock.method(globalThis, 'fetch', async (input: string | URL | Request) => {
+    requests++;
+    const url = String(input);
+    if (url.endsWith('/datasets/filter')) return new Response(JSON.stringify({ snapshot_id: `test-snapshot-${++jobs}` }));
+    if (url.includes('/download?')) return new Response(CSV);
+    return new Response(JSON.stringify({ status: 'ready', records_count: 2 }));
+  });
+  assert.equal((await searchShopeeDataset('SG', 'Sony WH-1000XM5')).length, 2);
+  assert.equal((await searchShopeeDataset('SG', 'Sony WH-1000XM5')).length, 2);
+  assert.equal(jobs, 2);
+  assert.equal(requests, 6);
 });

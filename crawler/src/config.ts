@@ -32,6 +32,8 @@ const brightData = {
   customerId: process.env.BRIGHTDATA_CUSTOMER_ID?.trim() || '',
   apiToken: process.env.BRIGHTDATA_API_TOKEN?.trim() || '',
   zone: process.env.BRIGHTDATA_ZONE?.trim() || '',
+  /** Dedicated SERP API zone. Web Unlocker is used only for product pages. */
+  serpZone: process.env.BRIGHTDATA_SERP_ZONE?.trim() || '',
   transport: transportEnv(),
   proxyZone: process.env.BRIGHTDATA_PROXY_ZONE?.trim() || '',
   proxyPassword: process.env.BRIGHTDATA_PROXY_PASSWORD?.trim() || '',

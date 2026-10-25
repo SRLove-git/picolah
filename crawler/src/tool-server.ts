@@ -9,6 +9,7 @@ import { crawl, type CrawlOptions, type CrawlSummary } from './pipeline.ts';
 import { ADAPTERS } from './platforms/index.ts';
 import { discoverProduct, type DiscoveryOptions, type DiscoveryResult } from './discovery.ts';
 import { normalizeDiscoveryModel, normalizeSearchQuery } from './discovery-match.ts';
+import { DISCOVERY_PLATFORMS } from './web-discovery.ts';
 
 const MAX_BODY_BYTES = 32 * 1024;
 
@@ -54,14 +55,16 @@ async function readBody(request: IncomingMessage): Promise<unknown> {
 function parseScope(value: unknown): Pick<CrawlerToolRequest, 'market' | 'platforms'> {
   const body = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const market = typeof body.market === 'string' ? body.market.toUpperCase() : '';
-  if (!(market in MARKETS)) throw new Error(`不支持的市场：${market || '空'}`);
+  if (!Object.hasOwn(MARKETS, market)) throw new Error(`不支持的市场：${market || '空'}`);
+
+  if (!Array.isArray(body.platforms) || body.platforms.some((item) => typeof item !== 'string')) throw new Error('platforms 必须是平台字符串数组');
 
   const platforms = Array.isArray(body.platforms)
     ? [...new Set(body.platforms.filter((item): item is string => typeof item === 'string').map((item) => item.toLowerCase()))]
     : [];
   if (!platforms.length || platforms.length > 3) throw new Error('platforms 必须包含 1–3 个平台');
   for (const platform of platforms) {
-    if (!(platform in ADAPTERS)) throw new Error(`真实爬虫尚未实现平台：${platform}`);
+    if (!Object.hasOwn(ADAPTERS, platform)) throw new Error(`真实爬虫尚未实现平台：${platform}`);
     if (!isPlatformSupported(MARKETS[market as MarketCode], platform as PlatformId)) {
       throw new Error(`${market} 市场不支持平台：${platform}`);
     }
@@ -88,8 +91,25 @@ function parseRequest(value: unknown): CrawlerToolRequest {
 }
 
 function parseSearchRequest(value: unknown): DiscoveryOptions {
-  const scope = parseScope(value);
-  const body = value as Record<string, unknown>;
+  const body = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  if (body.scope !== undefined && body.scope !== 'web' && body.scope !== 'platforms') throw new Error('scope 必须是 web 或 platforms');
+  let scope: Pick<DiscoveryOptions, 'market' | 'platforms' | 'scope' | 'excludedPlatforms'>;
+  if (body.scope === 'web') {
+    const market = typeof body.market === 'string' ? body.market.toUpperCase() : '';
+    if (!Object.hasOwn(MARKETS, market)) throw new Error('不支持的全网搜索市场');
+    if (!Array.isArray(body.platforms) || body.platforms.length !== 0) throw new Error('全网搜索的 platforms 必须为空数组');
+    if (body.excludedPlatforms !== undefined && (!Array.isArray(body.excludedPlatforms)
+      || body.excludedPlatforms.length > 6 || body.excludedPlatforms.some((item) => typeof item !== 'string' || !DISCOVERY_PLATFORMS.includes(item as PlatformId)))) {
+      throw new Error('excludedPlatforms 必须是有效平台数组');
+    }
+    const excluded = [...new Set((body.excludedPlatforms ?? []) as PlatformId[])];
+    scope = { market: market as MarketCode, platforms: [], scope: 'web', ...(excluded.length ? { excludedPlatforms: excluded } : {}) };
+  } else {
+    if (body.excludedPlatforms !== undefined && (!Array.isArray(body.excludedPlatforms) || body.excludedPlatforms.length)) {
+      throw new Error('平台搜索应直接通过 platforms 指定范围');
+    }
+    scope = { ...parseScope(value), ...(body.scope === 'platforms' ? { scope: 'platforms' as const } : {}) };
+  }
   const query = normalizeSearchQuery(typeof body.query === 'string' ? body.query : '');
   const model = body.model === undefined ? undefined : normalizeDiscoveryModel(typeof body.model === 'string' ? body.model : '');
   if (body.maxPrice !== undefined && (typeof body.maxPrice !== 'number' || !Number.isFinite(body.maxPrice) || body.maxPrice <= 0 || body.maxPrice > 1e12)) throw new Error('maxPrice 必须是有效正数');

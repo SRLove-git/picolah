@@ -185,11 +185,15 @@ export interface Comparison {
   unsupportedPlatforms?: string[];
   /** Terminal outcome of an actual model search; pending is sent through SSE status. */
   search?: {
+    scope?: 'web' | 'platforms';
+    excludedPlatforms?: string[];
     query?: string;
     maxPrice?: number;
     model: string;
     platforms: string[];
     failedPlatforms?: number;
+    failedSources?: string[];
+    errorCode?: 'SERP_NOT_CONFIGURED';
     status: 'matched' | 'not_found' | 'failed' | 'unavailable';
   };
 }

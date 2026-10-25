@@ -1,7 +1,8 @@
 import type { Page } from 'playwright-core';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { withBrowserPage } from '../brightdata/scraping-browser.ts';
+import { BrightDataError } from '../brightdata/web-unlocker.ts';
 import { config } from '../config.ts';
 import { logWarn } from '../log.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
@@ -15,6 +16,24 @@ export type ShopeeBrowserMode = 'auto' | 'local' | 'brightdata';
 export function shopeeStatePath(market: MarketCode): string {
   return process.env.SHOPEE_STORAGE_STATE
     || fileURLToPath(new URL(`../../.shopee-state.${market}.json`, import.meta.url));
+}
+
+/** A configured path alone is not proof of a usable, market-matching login. */
+export function hasShopeeLoginState(market: MarketCode, path = shopeeStatePath(market)): boolean {
+  try {
+    if (!existsSync(path) || statSync(path).size > 1024 * 1024) return false;
+    const state: unknown = JSON.parse(readFileSync(path, 'utf8'));
+    if (typeof state !== 'object' || !state || !('cookies' in state) || !Array.isArray(state.cookies)) return false;
+    const domain = MARKETS[market].domains.shopee!;
+    return state.cookies.some((cookie: unknown) => {
+      if (typeof cookie !== 'object' || !cookie) return false;
+      const item = cookie as Record<string, unknown>;
+      if (!['SPC_U', 'SPC_ST'].includes(String(item.name).toUpperCase()) || typeof item.value !== 'string' || !item.value || item.value === '0') return false;
+      const cookieDomain = String(item.domain || '').replace(/^\./, '').toLowerCase();
+      return (cookieDomain === domain || cookieDomain.endsWith(`.${domain}`))
+        && (item.expires === undefined || item.expires === -1 || (typeof item.expires === 'number' && item.expires > Date.now() / 1000));
+    });
+  } catch { return false; }
 }
 
 function browserMode(): ShopeeBrowserMode {
@@ -56,9 +75,10 @@ export function shopeeSearchUrl(market: MarketCode, query: string): string {
 
 const PRICE_SCALE = 100_000;
 
-function toAmount(value: number | undefined): number | undefined {
-  if (!Number.isFinite(value) || !value) return undefined;
-  return Math.round((value as number) / PRICE_SCALE);
+function toAmount(value: number | undefined, decimals: 0 | 2): number | undefined {
+  if (!Number.isFinite(value) || !value || value <= 0) return undefined;
+  const factor = 10 ** decimals;
+  return Math.round((value / PRICE_SCALE) * factor) / factor;
 }
 
 function normalizeItem(raw: ShopeeItemBasic | undefined): ShopeeItemBasic | null {
@@ -81,7 +101,7 @@ export function parseShopeeSearchPayload(payload: ShopeeSearchPayload, market: M
     if (seen.has(itemId)) continue;
     seen.add(itemId);
 
-    const amount = toAmount(item.price ?? item.price_min);
+    const amount = toAmount(item.price ?? item.price_min, marketConfig.decimals);
     if (!amount) continue;
 
     const rating = Number(item.item_rating?.rating_star);
@@ -182,12 +202,13 @@ export async function searchShopee(market: MarketCode, query: string): Promise<R
 
   const url = shopeeSearchUrl(market, query);
   const statePath = shopeeStatePath(market);
-  const storageState = existsSync(statePath) ? statePath : undefined;
-  if (!storageState) {
-    logWarn(
-      `没有 ${market} 的 Shopee 登录状态（${statePath}）。先运行 npm --prefix crawler run shopee:login -- --market ${market}`,
-    );
+  if (!hasShopeeLoginState(market, statePath)) {
+    throw new BrightDataError(`Shopee ${market} 尚未配置数据集或有效登录状态，请先完成该市场的一次性登录。`, {
+      code: 'SHOPEE_LOGIN_REQUIRED',
+      hint: `运行 npm --prefix crawler run shopee:login -- --market ${market}，完成登录后再搜索。`,
+    });
   }
+  const storageState = statePath;
 
   const marketConfig = MARKETS[market];
   const listings = await withBrowserPage(async (page) => {
@@ -227,24 +248,21 @@ export async function searchShopee(market: MarketCode, query: string): Promise<R
 
     const currentUrl = page.url();
     if (/\/verify\/traffic\/error/.test(currentUrl) || /Login Required|需要登录/i.test(body)) {
-      throw new Error(
-        `Shopee 要求登录（${currentUrl.slice(0, 120)}）。先运行 "npm --prefix crawler run shopee:login -- --market ${market}"，`
-          + `在打开的 Chrome 里登录 ${market} 站点，然后重试。`,
-      );
+      throw new BrightDataError(`Shopee ${market} 登录状态已失效，请重新完成一次性登录。`, { code: 'SHOPEE_LOGIN_REQUIRED' });
     }
     if (
       /\/verify\/|xiapibuy\.com/i.test(currentUrl)
       || /captcha|slide to complete|verify to continue|are you a robot|unusual traffic/i.test(`${title} ${body.slice(0, 5_000)}`)
     ) {
-      throw new Error(
-        `Shopee 返回了验证/风控页（${currentUrl.slice(0, 120)}）。运行 "npm --prefix crawler run shopee:login -- --market ${market}" `
-          + '手动登录一次（顺带过验证码），爬虫会复用保存的登录状态。',
-      );
+      throw new BrightDataError(`Shopee ${market} 返回了验证页面，需要人工完成验证后重试。`, { code: 'SOURCE_PAGE_BLOCKED' });
     }
 
     const domListings = await parseShopeeDom(page, market);
     if (!domListings.length) {
-      console.warn(`[crawler] shopee ${market} 未解析到商品：title="${title}" url=${currentUrl}`);
+      const visibleText = await page.locator('body').innerText().catch(() => '');
+      if (!/\bno\s+(?:results?|products?|items?)\s+(?:found|for)\b|没有找到|未找到商品|无搜索结果/i.test(visibleText)) {
+        throw new BrightDataError(`Shopee ${market} 页面未解析到商品，不能确定搜索结果为空。`, { code: 'SOURCE_PARSE_FAILED' });
+      }
     }
     return domListings;
   }, {

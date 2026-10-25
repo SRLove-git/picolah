@@ -70,6 +70,10 @@ test('partial live results disclose failed platforms and do not invent missing f
   assert.deepEqual(comparison.offers[0].history, []);
   assert.match(writeFallbackAnswer(comparison), /1 个平台暂未完成搜索/);
   assert.match(writeFallbackAnswer(comparison), /商品价/);
+  const namedFailure = liveComparison('帮我找一下wf1000xm6', input,
+    { ...result, summary: { ...result.summary, failedPlatforms: ['shopee'] } });
+  assert.deepEqual(namedFailure.search?.failedSources, ['Shopee']);
+  assert.match(writeFallbackAnswer(namedFailure), /Shopee暂未完成搜索/);
 });
 
 test('live search rejects a price outside the requested budget', async () => {
@@ -80,4 +84,62 @@ test('live search rejects a price outside the requested budget', async () => {
       listings: [{ platform: 'lazada', market: 'SG', itemId: 'test', title: '耳机',
         url: 'https://www.lazada.sg/products/test.html', price: 101, currency: 'SGD', inStock: true }] })) as typeof fetch });
   await assert.rejects(search.invoke(input), /无效报价/);
+});
+
+const webInput = { market: 'SG' as const, scope: 'web' as const, platforms: [], query: 'WF-1000XM6', model: 'WF-1000XM6' };
+function webListing(host = 'retailer.sg') {
+  return { platform: 'web' as const, sourceHost: host, market: 'SG' as const, itemId: 'product-123',
+    title: 'Sony WF-1000XM6', url: `https://www.${host}/sony-wf1000xm6`, price: 399, currency: 'SGD', inStock: true as const };
+}
+function webTool(listings: Array<Record<string, unknown>>, overrides: Record<string, unknown> = {}) {
+  return createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+    fetchImpl: (async () => Response.json({ ...webInput, ok: true, listings,
+      summary: { requests: 3, matched: listings.length, skipped: 0, failed: 0 }, ...overrides })) as typeof fetch });
+}
+
+test('web searches accept multiple website sources, show hostnames and do not imply official stores', async () => {
+  const result = await webTool([webListing(), { ...webListing('electronics.sg'), isOfficial: true }]).invoke(webInput);
+  const comparison = liveComparison('WF1000XM6', webInput, result);
+  assert.equal(comparison.search?.scope, 'web');
+  assert.equal(comparison.sourceCount, 2);
+  assert.deepEqual(comparison.offers.map((offer) => offer.platformId), ['web:retailer.sg', 'web:electronics.sg']);
+  assert.deepEqual(comparison.offers.map((offer) => offer.platform), ['retailer.sg', 'electronics.sg']);
+  assert.ok(comparison.offers.every((offer) => !offer.isOfficial && !offer.shippingKnown));
+  assert.match(writeFallbackAnswer(comparison), /全网搜索.*2 个网站/);
+});
+
+test('web tool refuses unsafe, mismatched and excluded website sources', async () => {
+  const invalid = [
+    { sourceHost: 'other.sg' }, { sourceHost: undefined },
+    { sourceHost: '127.0.0.1', url: 'https://127.0.0.1/product' },
+    { sourceHost: 'shop.local', url: 'https://shop.local/product' },
+    { sourceHost: 'shop.internal', url: 'https://shop.internal/product' },
+    { url: 'http://www.retailer.sg/product' }, { url: 'https://user@www.retailer.sg/product' },
+    { url: 'https://www.retailer.sg:8443/product' }, { market: 'MY' }, { currency: 'USD' }, { price: 101 },
+  ];
+  for (const patch of invalid) {
+    await assert.rejects(webTool([{ ...webListing(), price: 99, ...patch }]).invoke({ ...webInput, maxPrice: 100 }));
+  }
+  for (const [platform, host] of [['shopee', 'shopee.com.my'], ['shopee', 'shope.ee'], ['lazada', 'lazada.co.th'],
+    ['amazon-sg', 'amazon.com'], ['amazon-sg', 'amzn.to'], ['tiktok', 'shop-tokopedia.com'], ['tokopedia', 'tokopedia.com'], ['tiki', 'tiki.vn']] as const) {
+    await assert.rejects(webTool([webListing(host)]).invoke({ ...webInput, excludedPlatforms: [platform] }), /无效报价/);
+  }
+  await assert.rejects(webTool([webListing()], { scope: 'platforms', platforms: ['lazada'] }).invoke(webInput), /不一致/);
+  await assert.rejects(webTool([webListing()]).invoke({ ...webInput, scope: 'platforms', platforms: ['lazada'] }));
+});
+
+test('web result limit allows up to twelve listings and rejects excess', async () => {
+  const listings = Array.from({ length: 12 }, (_, index) => ({ ...webListing(), itemId: String(index) }));
+  assert.equal((await webTool(listings).invoke(webInput)).listings.length, 12);
+  await assert.rejects(webTool([...listings, webListing()]).invoke(webInput));
+});
+
+test('unconfigured web discovery is explicit instead of pretending that no product exists', async () => {
+  const result = await webTool([], { summary: { requests: 1, matched: 0, skipped: 0, failed: 1,
+    failureCodes: ['SERP_NOT_CONFIGURED'] } }).invoke(webInput);
+  const comparison = liveComparison('WF1000XM6', webInput, result);
+  assert.equal(comparison.search?.errorCode, 'SERP_NOT_CONFIGURED');
+  assert.equal(comparison.search?.status, 'failed');
+  assert.match(writeFallbackAnswer(comparison), /全网搜索接口尚未配置/);
+  assert.doesNotMatch(writeFallbackAnswer(comparison), /暂未找到/);
 });

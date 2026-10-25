@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import type { Comparison } from '../shared/types.ts';
 
-type Payload = { market: string; platforms: string[]; query: string; model?: string };
+type Payload = { market: string; scope?: 'web' | 'platforms'; platforms: string[]; excludedPlatforms?: string[]; query: string; model?: string };
 type RequestRecord = { path: string; authorization?: string; payload: Payload };
 type Event = { name: string; data: Record<string, unknown> };
 type ResultMode = 'not_found' | 'failed' | 'http_error' | 'invalid_price' | 'wrong_model' | 'valid';
@@ -22,6 +22,8 @@ const crawler = createServer(async (request, response) => {
   let raw = '';
   for await (const chunk of request) raw += chunk;
   const payload = JSON.parse(raw) as Payload;
+  // Match the real crawler tool contract: direct platform lists are already filtered.
+  if (payload.scope !== 'web') assert.equal(payload.excludedPlatforms, undefined);
   requests.push({ path: request.url || '', authorization: request.headers.authorization, payload });
 
   if (request.url !== '/search') {
@@ -38,11 +40,12 @@ const crawler = createServer(async (request, response) => {
   }
   const matched = mode === 'invalid_price' || mode === 'wrong_model' || mode === 'valid';
   response.end(JSON.stringify({
-    ok: true, market: payload.market, platforms: payload.platforms, query: payload.query, model: payload.model,
+    ok: true, market: payload.market, scope: payload.scope, platforms: payload.platforms, query: payload.query, model: payload.model,
     listings: matched ? [{
-      platform: payload.platforms[0], market: payload.market,
+      platform: payload.scope === 'web' ? 'web' : payload.platforms.includes('lazada') ? 'lazada' : payload.platforms[0],
+      ...(payload.scope === 'web' ? { sourceHost: 'retailer.sg' } : {}), market: payload.market,
       itemId: 'fixture-item-001', title: mode === 'wrong_model' ? 'Sony WH-1000XM5' : payload.model || payload.query,
-      url: 'https://www.lazada.sg/products/fixture-item-001.html',
+      url: payload.scope === 'web' ? 'https://www.retailer.sg/products/fixture-item-001.html' : 'https://www.lazada.sg/products/fixture-item-001.html',
       price: mode === 'invalid_price' ? -399 : 399, currency: 'SGD',
       shippingFee: 5, discount: 10, rating: 4.8, reviews: 42,
       seller: 'Fixture Store', inStock: true, isOfficial: false,
@@ -69,13 +72,16 @@ process.env.LLM_API_KEY = '';
 process.env.CRAWLER_TOOL_URL = await listen(crawler);
 process.env.CRAWLER_TOOL_TOKEN = 'model-search-test-token';
 process.env.CRAWLER_TOOL_DEFAULT_PLATFORMS = 'lazada';
+process.env.CRAWLER_SEARCH_SCOPE = 'platforms';
 
 const { app } = await import('./index.ts');
+const { config } = await import('./config.ts');
 const { db, dbPath } = await import('./db.ts');
 const server = createServer(app);
 const baseUrl = await listen(server);
 
 beforeEach(() => {
+  config.crawlerTool.searchScope = 'platforms';
   mode = 'not_found';
   searchGate = undefined;
   onSearchEntered = undefined;
@@ -167,10 +173,12 @@ test('unknown full model searches before answering instead of the old catalog fa
   const result = await pending;
   assert.deepEqual(requests.slice(start), [{
     path: '/search', authorization: 'Bearer model-search-test-token',
-    payload: { market: 'SG', platforms: ['lazada'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
+    payload: { market: 'SG', scope: 'platforms', platforms: ['shopee', 'lazada', 'amazon-sg'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
   }]);
-  assertSearch(result, ['lazada'], 'not_found');
-  assert.match(result.answer, /已搜索.*Lazada/);
+  assertSearch(result, ['shopee', 'lazada', 'amazon-sg'], 'not_found');
+  assert.equal(result.comparison.search?.scope, 'platforms');
+  assert.match(result.answer, /Shopee.*Lazada.*Amazon SG/);
+  assert.doesNotMatch(result.answer, /全网搜索/);
   assert.match(result.answer, /WF-1000XM6/);
   assert.doesNotMatch(result.answer, /XM5|iPhone/);
   assertNoInventedResults(result);
@@ -186,8 +194,90 @@ test('platform, price and retry followups retain the missing model and requested
   }
   assert.deepEqual(requests.slice(start).map(({ path, payload }) => ({ path, payload })),
     Array.from({ length: 3 }, () => ({
-      path: '/search', payload: { market: 'SG', platforms: ['shopee'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
+      path: '/search', payload: { market: 'SG', scope: 'platforms', platforms: ['shopee'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
     })));
+});
+
+test('explicit platform restriction, exclusions, followups and reset keep the requested search scope', async () => {
+  const first = await ask('只看 Lazada 的 WF1000XM6');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['lazada']);
+  assert.equal(requests.at(-1)?.payload.scope, 'platforms');
+  const prices = await ask('价格呢', { conversationId: first.conversationId });
+  assert.equal(prices.comparison.search?.scope, 'platforms');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['lazada']);
+  const excluded = await ask('不要 Shopee', { conversationId: first.conversationId });
+  assert.equal(excluded.comparison.search?.scope, 'platforms');
+  assert.deepEqual(excluded.comparison.search?.excludedPlatforms, ['shopee']);
+  assert.equal(excluded.comparison.platformFilter, undefined);
+  for (const message of ['价格呢', '重试']) {
+    const followup = await ask(message, { conversationId: first.conversationId });
+    assert.equal(followup.comparison.search?.scope, 'platforms');
+    assert.deepEqual(requests.at(-1)?.payload.platforms, ['lazada', 'amazon-sg']);
+    assert.deepEqual(followup.comparison.search?.excludedPlatforms, ['shopee']);
+    assert.equal(requests.at(-1)?.payload.excludedPlatforms, undefined);
+    assert.equal(requests.at(-1)?.payload.model, 'WF-1000XM6');
+  }
+  const anotherExcluded = await ask('排除 TikTok', { conversationId: first.conversationId });
+  assert.deepEqual(anotherExcluded.comparison.search?.excludedPlatforms, ['shopee', 'tiktok']);
+  const reset = await ask('恢复全部平台', { conversationId: first.conversationId });
+  assert.equal(reset.comparison.search?.scope, 'platforms');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['shopee', 'lazada', 'amazon-sg']);
+  assert.equal(requests.at(-1)?.payload.excludedPlatforms, undefined);
+});
+
+test('Chinese and English web search requests reset restrictions without losing the previous product', async () => {
+  const first = await ask('只看 Lazada 的 WF1000XM6');
+  for (const message of ['全网搜索', '全网搜', '所有网站', 'search the web', 'all websites']) {
+    await ask('只看 Lazada', { conversationId: first.conversationId });
+    const result = await ask(message, { conversationId: first.conversationId });
+    assert.equal(result.comparison.search?.scope, 'platforms');
+    assert.equal(result.comparison.search?.model, 'WF-1000XM6');
+    assert.deepEqual(requests.at(-1)?.payload.platforms, ['shopee', 'lazada', 'amazon-sg']);
+    assert.equal(requests.at(-1)?.payload.query, 'WF-1000XM6');
+  }
+});
+
+test('English exclusion followups retain exclusions and query on retry', async () => {
+  const first = await ask('WF1000XM6');
+  for (const message of ['exclude Shopee', "don't use Lazada", 'without TikTok Shop']) {
+    const result = await ask(message, { conversationId: first.conversationId });
+    assert.equal(result.comparison.search?.scope, 'platforms');
+    assert.equal(requests.at(-1)?.payload.query, 'WF-1000XM6');
+  }
+  const retry = await ask('retry', { conversationId: first.conversationId });
+  assert.deepEqual(retry.comparison.search?.excludedPlatforms, ['shopee', 'lazada', 'tiktok']);
+  assert.equal(requests.at(-1)?.payload.excludedPlatforms, undefined);
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['amazon-sg']);
+  await ask('search the web', { conversationId: first.conversationId });
+  assert.equal(requests.at(-1)?.payload.excludedPlatforms, undefined);
+  const bothExcluded = await ask('exclude Shopee and Lazada', { conversationId: first.conversationId });
+  assert.equal(requests.at(-1)?.payload.query, 'WF-1000XM6');
+  assert.deepEqual(bothExcluded.comparison.search?.excludedPlatforms, ['lazada', 'shopee']);
+});
+
+test('default multi-platform discovery is market-scoped and ignores legacy Lazada-only refresh config', async () => {
+  assert.deepEqual(config.crawlerTool.defaultPlatforms, ['lazada']);
+  for (const market of ['MY', 'TH', 'ID', 'PH', 'VN']) {
+    const result = await ask('WF1000XM6', { market });
+    assert.equal(result.comparison.search?.scope, 'platforms');
+    assert.deepEqual(requests.at(-1)?.payload.platforms, ['shopee', 'lazada']);
+  }
+});
+
+test('web discovery is opt-in while explicit supported platform restrictions still work', async () => {
+  config.crawlerTool.searchScope = 'web';
+  const first = await ask('WF1000XM6');
+  assert.equal(first.comparison.search?.scope, 'web');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, []);
+  await ask('不要 Shopee', { conversationId: first.conversationId });
+  assert.equal(requests.at(-1)?.payload.scope, 'web');
+  assert.deepEqual(requests.at(-1)?.payload.excludedPlatforms, ['shopee']);
+  await ask('只看 Lazada', { conversationId: first.conversationId });
+  assert.equal(requests.at(-1)?.payload.scope, 'platforms');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['lazada']);
+  await ask('全网搜', { conversationId: first.conversationId });
+  assert.equal(requests.at(-1)?.payload.scope, 'web');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, []);
 });
 
 test('new explicit model does not inherit a previous product just because the query mentions price', async () => {
@@ -260,6 +350,12 @@ test('unsupported market/platform cannot silently fall back to another platform 
   assert.equal(requests.length, start);
   assert.equal(unsupportedCrawler.comparison.search?.status, 'unavailable');
   assertNoInventedResults(unsupportedCrawler);
+
+  const mixedUnsupported = await ask('只看 Lazada 和 TikTok Shop 的 WF1000XM6');
+  assert.equal(requests.length, start);
+  assert.equal(mixedUnsupported.comparison.search?.status, 'unavailable');
+  assert.deepEqual(mixedUnsupported.comparison.unsupportedPlatforms, ['tiktok']);
+  assertNoInventedResults(mixedUnsupported);
 });
 
 test('malformed or wrong-model live listings never become comparison prices', async () => {
@@ -320,7 +416,7 @@ test('verified live listings are compared directly with an empty catalog and nev
   const start = requests.length;
   const result = await ask('帮我找一下wf1000xm6');
   assert.equal(result.comparison.kind, 'comparison');
-  assertSearch(result, ['lazada'], 'matched');
+  assertSearch(result, ['shopee', 'lazada', 'amazon-sg'], 'matched');
   assert.match(result.comparison.product?.name || '', /WF-1000XM6/);
   assert.equal(result.comparison.offers.length, 1);
   assert.equal(result.comparison.offers[0].platformId, 'lazada');
@@ -340,7 +436,7 @@ test('verified live listings are compared directly with an empty catalog and nev
   assert.equal(known.comparison.offers[0].finalPrice, 394);
   assert.deepEqual(requests.slice(repeatedStart).map(({ path, payload }) => ({ path, payload })), [{
     path: '/search',
-    payload: { market: 'SG', platforms: ['lazada'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
+    payload: { market: 'SG', scope: 'platforms', platforms: ['shopee', 'lazada', 'amazon-sg'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
   }]);
   assert.equal((await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM products'))?.count, 0);
   assert.equal((await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM offers'))?.count, 0);

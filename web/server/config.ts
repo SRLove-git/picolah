@@ -48,11 +48,12 @@ export const config = {
     provider: process.env.LLM_PROVIDER || 'DeepSeek',
   },
   crawlerTool: {
+    searchScope: (process.env.CRAWLER_SEARCH_SCOPE === 'web' ? 'web' : 'platforms') as 'web' | 'platforms',
     url: (process.env.CRAWLER_TOOL_URL || '').replace(/\/+$/, ''),
     token: process.env.CRAWLER_TOOL_TOKEN || '',
     timeoutMs: Math.max(10_000, num(process.env.CRAWLER_TOOL_TIMEOUT_MS, 420_000)),
     maxProducts: Math.min(4, Math.max(1, num(process.env.CRAWLER_TOOL_MAX_PRODUCTS, 2))),
-    defaultPlatforms: (process.env.CRAWLER_TOOL_DEFAULT_PLATFORMS || 'lazada')
+    defaultPlatforms: (process.env.CRAWLER_TOOL_DEFAULT_PLATFORMS || 'shopee,lazada,amazon-sg')
       .split(',')
       .map((platform) => platform.trim().toLowerCase())
       .filter(Boolean),

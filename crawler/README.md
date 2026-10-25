@@ -1,21 +1,28 @@
 # Picolah Crawler
 
-独立爬虫进程：用 [Bright Data](https://brightdata.com) 采集东南亚电商平台的商品报价，标准化后写入网站的价格库。
+独立爬虫进程：用 [Bright Data](https://brightdata.com) 为聊天实时并行搜索 Shopee、Lazada、Amazon SG 的商品报价，同时保留独立的目录商品批量采集、入库流程。Amazon 适配器目前仅支持新加坡市场，其余市场默认查询 Shopee 和 Lazada。
 
-网站（`../web/`）只负责校验、入库、比价和展示，不在 Web 进程里执行采集；Agent 可以通过带 Bearer 鉴权的内网工具服务请求本项目运行一次真实采集。报价仍只通过 `POST /api/v1/ingest/offers` 入库，契约见 [`../docs/ingest-api.md`](../docs/ingest-api.md)。
+网站（`../web/`）不在 Web 进程里执行采集；Agent 通过带 Bearer 鉴权的内网工具服务执行实时 `POST /search`，不查商品/报价库、不将结果写库。只有独立的批量采集流程通过 `POST /api/v1/ingest/offers` 入库，契约见 [`../docs/ingest-api.md`](../docs/ingest-api.md)。
 
 ## 状态
 
 | 平台 | 状态 | 抓取方式 |
 | --- | --- | --- |
-| Lazada（六国） | ✅ SG 实测通过，其余市场同一模板待逐国验证 | Web Unlocker API 抓搜索页 HTML |
-| Shopee（六国） | ✅ 数据集免登录（需在 Bright Data 开通）；未开通时回退到登录 cookie | Marketplace Dataset API（`Shopee - products`） |
-| Amazon SG | ✅ SG 实测解析 | Web Unlocker API 抓搜索页 HTML（也支持代理池） |
+| 可选全网扩展（`scope: web`） | 未激活；需另外开通专用 SERP API zone 后实测 | SERP API 发现链接 → Web Unlocker 商品页 → JSON-LD 核价 |
+| Lazada（六国） | 历史 SG 样例实测通过，本轮未真实请求；其余市场待逐国验证 | Web Unlocker API 抓搜索页 HTML |
+| Shopee（六国） | 已实现；当前未配置 dataset / 登录态，需授权后验证 | Marketplace Dataset API（`Shopee - products`）或登录浏览器 |
+| Amazon SG | 历史 SG 样例实测解析，本轮未真实请求 | Web Unlocker API 抓搜索页 HTML（也支持代理池） |
 | TikTok Shop / Tokopedia / Tiki | ⏳ 未实现 | 预留 `PlatformAdapter` 接口 |
 
 > Shopee 对自动化流量会重定向到 `/verify/traffic/error`（提示登录）或滑块验证码，Web Unlocker/浏览器直接搜索拿不到商品。推荐开通 Bright Data 的 **Shopee - products** 数据集，用 Filter 接口按型号取结构化记录，全程不需要 Shopee 登录；数据集未配置时仍可使用下面的登录 cookie 兜底。
 
 ## 工作方式
+
+聊天搜索默认 `CRAWLER_SEARCH_SCOPE=platforms`：`POST /search` → 并行查询所选市场支持的 Shopee / Lazada / Amazon SG → 校验商品、型号、币种和来源报价 → 直接返回聊天。未指定平台时跨这些适配器搜索；明确指定平台时只查指定项。Amazon 目前仅支持 SG，不对其他市场返回新加坡报价。全程不访问商品目录或旧价格，也不入库。
+
+需要不限平台的网站发现时，可另行配置 `scope: web` 的 SERP 扩展；它不是默认路径，尚需专用 zone 授权和真实验证，见下方「可选全网扩展」。
+
+以下是独立 CLI `/crawl` 的目录批量采集流程，不参与聊天搜索：
 
 ```text
 GET /api/catalog            网站商品目录（productId 天然对齐）
@@ -77,9 +84,21 @@ curl -H "Authorization: Bearer $CRAWLER_TOOL_TOKEN" \
   http://127.0.0.1:8790/crawl
 ```
 
-`/crawl` 保留原有目录商品批量采集和入库流程；对话使用独立的纯实时 `POST /search`，不读取商品目录、不查询已有报价、不创建商品或写入报价。它使用同样的 Bearer 鉴权，请求为 `{"market":"SG","platforms":["lazada"],"query":"Sony WF-1000XM6","model":"WF-1000XM6"}`；`query` 为 2–120 字符商品搜索词（不能是网址），`model` 为可选的完整型号保护。普通商品名如 `iPhone 17 Pro 256GB` 可以只传 `query`。
+`/crawl` 保留原有目录商品批量采集和入库流程；对话使用独立的纯实时 `POST /search`，不读取商品目录、不查询已有报价、不创建商品或写入报价。它使用同样的 Bearer 鉴权，SG 跨平台搜索请求为 `{"scope":"platforms","market":"SG","platforms":["shopee","lazada","amazon-sg"],"query":"Sony WF-1000XM6","model":"WF-1000XM6"}`。服务端要求平台路径明确传入 `platforms`，Web Agent 会按默认范围和用户筛选生成该列表；只查 Lazada 时使用 `"platforms":["lazada"]`。`query` 为 2–120 字符商品搜索词（不能是网址），`model` 为可选的完整型号保护。普通商品名如 `iPhone 17 Pro 256GB` 可以省略 `model`。
 
-两个接口共用单进程忙碌保护，同一时间只跑一轮。每次至多搜索 3 个已实现的平台，各执行一次适配器搜索；每个平台最多返回 3 条去重且校验过的原始来源报价，总计不超过 9 条。严格检查查询文字、数字与版本/容量；有完整型号时额外检查 WF/WH、代际等差异，并过滤配件、二手/翻新、无库存、错误币种和域名。响应为 `{"ok":true,"market":"SG","platforms":["lazada"],"query":"...","model":"...","summary":{"requests":1,"matched":0,"skipped":1,"failed":0},"listings":[]}`；没有结果就返回空列表，不补库内商品、不推测品牌或价格。适配器原有重试与供应商计费仍适用，单元测试通过注入搜索依赖运行，不使用真实凭据。
+两个接口共用单进程忙碌保护，同一时间只跑一轮。平台搜索每次至多并行执行 3 个已实现的平台适配器；每个平台最多返回 3 条去重且校验过的原始来源报价，总计不超过 9 条。严格检查查询文字、数字与版本/容量；有完整型号时额外检查 WF/WH、代际等差异，并过滤配件、二手/翻新、无库存、错误币种和域名。没有可验证报价就不返回价格，不补库内商品、不推测品牌或价格；单个平台失败不能冒充已查完所有平台，未配置、抓取失败、解析失败与成功但无匹配结果分别报告，失败不等于商品不存在。单元测试通过注入搜索依赖运行，不使用真实凭据。
+
+### 可选全网扩展
+
+此路径仅在选择 `scope: web` 时使用，目前不默认启用，也不会自动为账号开通付费服务。需用户另行授权开通专用 **SERP API zone**，再将其名称填入 `crawler/.env` 的 `BRIGHTDATA_SERP_ZONE`（默认空）。它与 `BRIGHTDATA_ZONE` 的 Web Unlocker 区是两个不同用途的 zone，不能互相替代；共用 API token。未开通并配置前不能完成真实多网站搜索验证，缺失时返回 `SERP_NOT_CONFIGURED`，不会悄悄退回 Lazada 并声称已搜索全网。
+
+- 先执行一次 SERP 请求，按所选市场搜索多个来源的公开链接；最多检查 30 条 organic 结果，保留最多 12 个候选，每个主机最多 2 条并优先覆盖不同来源。
+- 再通过 Web Unlocker 抓取最多 8 个商品页，并发最多 3 个。单轮最多 **1 次 SERP + 8 次商品页请求**；SERP 最多 45 秒、无自动重试，请求可能产生 Bright Data 费用。
+- 搜索摘要只用于发现链接，不能作为售价。商品页当前只接受可验证的 JSON-LD `Product` 与单一 `Offer`；校验币种、型号和来源链接，过滤多规格区间价、配件和不同型号，运费等缺失字段保持未知。
+- 「全网」表示搜索范围不限于单个平台，不保证覆盖所有网站或解析每个结果。没有结构化报价、需要登录或被拦截的页面可能无法提供报价；搜索/解析失败不能用来断言商品不存在。
+- 查询全程不查库、不写库。用户明确指定平台时仍走原有平台适配器，其重试规则和请求费用独立适用。
+
+接口格式依据 [Bright Data SERP API 官方文档](https://docs.brightdata.com/api-reference/rest-api/serp/serp-api)。真实验证需要账号已开通可用的 SERP zone；离线测试只证明解析、筛选和请求边界，不证明供应商授权或真实网站可抓取。
 
 ### Lazada：页面解析与恢复
 
@@ -109,8 +128,7 @@ pnpm crawl --market SG --platform shopee --product sony-wh1000xm5 --dry-run
 ```
 
 适配器会调用 `POST /datasets/filter`（`title includes 型号` + `domain includes shopee.sg`），
-轮询快照完成后下载 CSV，映射成统一的 `Offer` 再入库。同一个型号在一次进程内会缓存筛选结果，
-避免重复创建快照。
+轮询快照完成后下载 CSV。聊天实时搜索直接返回校验过的原始报价，不入库；独立 CLI 才映射成 `Offer` 后按流程入库。不再使用进程生命周期内无限期的报价缓存，每次实时搜索会创建新快照并可能重新计费。
 
 > 注意：`/datasets/list` 里的目录 id 只是 Marketplace 目录，未开通时调用会返回 404；
 > 必须使用**开通后账号里的** dataset id。若返回 400 `This dataset does not support collection`，
@@ -126,6 +144,8 @@ pnpm shopee:login --market=SG
 
 会弹出一个真实的 Chrome 窗口（默认直连，登录更稳），手动登录 Shopee SG 后脚本自动把 cookie 保存到
 `crawler/.shopee-state.SG.json`（已 gitignore）。每个市场单独登录一次即可（`--market=MY` 等）。
+
+未配置数据集、又没有通过本地检查的同市场登录 cookie 时，搜索立即返回 `SHOPEE_LOGIN_REQUIRED`，不会先连接收费的远程浏览器。本地检查只检查 cookie 名称、市场、非空值和声明过期时间，不能证明服务器仍认可授权：过期、登录墙和验证码仍会明确报错，不能把它们当成商品不存在。默认 `auto` 优先使用本地 Chrome / Edge，没有本地浏览器时才回退远程；也可显式选择 `brightdata`。远程若不支持应用登录状态或市场上下文，会返回 `BROWSER_CONTEXT_FAILED`，不会静默丢弃这些设置。
 
 ```bash
 pnpm crawl --market SG --platform shopee --product sony-wh1000xm5 --dry-run
@@ -181,6 +201,10 @@ BRIGHTDATA_API_TOKEN=...
 BRIGHTDATA_TRANSPORT=api
 BRIGHTDATA_ZONE=web_unlocker1
 
+# 可选 scope:web 扩展；必须另行开通专用 SERP API zone，不能复用 web_unlocker1
+# 默认空，默认跨平台搜索无需此项；选 scope:web 但未配置时明确报错
+BRIGHTDATA_SERP_ZONE=
+
 # proxy 模式（可选）
 BRIGHTDATA_PROXY_ZONE=isp_proxy1
 BRIGHTDATA_PROXY_PASSWORD=...
@@ -214,6 +238,7 @@ BRIGHTDATA_SHOPEE_DATASET_LIMIT=50
 > **Lazada 适配器会强制使用 `api` 模式**：实测 ISP 代理只能拿到 Lazada 的 JS 空壳（58KB、无商品卡片），Web Unlocker 才能拿到完整搜索页（1.8MB、带 40 个商品）。`BRIGHTDATA_TRANSPORT` 只作为其他平台/自定义抓取的默认值；Amazon SG 用默认通道即可。
 
 - **Web Unlocker** 走 REST：`POST https://api.brightdata.com/request`，`format=raw` 直接拿 HTML。
+- **SERP API** 使用专用 `BRIGHTDATA_SERP_ZONE` 搜索发现链接，商品价格随后由 Web Unlocker 读取商品页验证；不能把 Web Unlocker 或 Browser zone 当 SERP zone 使用。
 - **Scraping Browser** 走 CDP：`wss://brd-customer-<id>-zone-<zone>:<password>@<host>:<port>`，用 `playwright-core` 连接，无需本地浏览器；可按市场加 `-country-sg` 之类的出口标记。
 - **本地 Chrome**（Shopee 默认）：自动检测 Chrome / Edge，走 ISP 代理（`CRAWLER_LOCAL_PROXY=on`）；登录脚本默认直连，避免代理不稳定。
 - `CRAWLER_BROWSER=auto|local|brightdata` 控制用哪个浏览器；`auto` 有本地 Chrome 就用本地，否则用 Scraping Browser。
@@ -246,12 +271,16 @@ x-brd-error: Auth Failed (code: ip_blacklisted)
 
 ## 费用与频控
 
-一次搜索 = 一次 Bright Data 请求（会产生费用）。默认 `--limit 5`、`--concurrency 2`，不会自动重试整轮；校验失败/匹配不到的请求不会写库。跑全量前先用 `--dry-run` 和 `--limit` 估算。
+聊天默认并行跨平台搜索，按各适配器的请求、数据集和重试规则计费；不能把一次聊天等同于一次 HTTP 请求。可选 `scope: web` 每轮最多 1 次 SERP 和 8 次商品页请求，页面并发上限 3；这些请求也可能产生供应商费用。两种聊天路径均不写库。
+
+独立 CLI 默认 `--limit 5`、`--concurrency 2`，不会自动重试整轮；校验失败/匹配不到的请求不会写库。跑批量前先用 `--dry-run` 和 `--limit` 估算。
 
 Shopee 数据集模式按**筛选返回的记录数**计费（`BRIGHTDATA_SHOPEE_DATASET_LIMIT`，默认 50 条/次），不是按请求数；先用 `pnpm shopee:dataset-check` 跑一个型号确认结果和费用。
 
 ## 已知限制
 
+- 默认跨平台搜索覆盖 Shopee、Lazada 和 Amazon SG（仅 SG）；能否成功取到数据仍取决于各自授权、登录、页面结构和库存状态，失败必须单独报告。
+- 可选 `scope: web` 扩展需要专用 SERP API zone，当前未激活；另行开通和配置之后还需真实端到端验证。通用商品页解析只支持可验证的单一 JSON-LD Offer，不承诺所有网站都能抓取、所有结果都能解析。
 - Shopee 推荐走**数据集免登录**（`BRIGHTDATA_SHOPEE_DATASET_ID`）；数据集按记录计费，且只覆盖数据集声明支持的市场。数据集未配置时才回退到**一次性人工登录**：Shopee 会对自动化流量返回 `/verify/traffic/error` 或滑块验证码，用 `shopee:login` 保存 cookie 后即可。登录状态存在 `crawler/.shopee-state.<market>.json`，过期后重跑登录。
 - Shopee 的登录捕获依赖本地 Chrome（Windows 自带 Chrome/Edge 即可）；纯服务器环境需要先装 Chrome，或把本地生成的 state 文件拷过去并设置 `SHOPEE_STORAGE_STATE`。
 - Lazada 依赖页面结构（`data-qa-locator="product-item"`、`ooOxS` 价格 class、JSON-LD ItemList）；平台改版后需要更新 `src/platforms/lazada.ts` 里的选择器。

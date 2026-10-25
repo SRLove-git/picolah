@@ -131,5 +131,24 @@ test('no-match and provider failure are completed statuses with no invented resu
   assert.deepEqual(empty.summary, { requests: 1, matched: 0, skipped: 1, failed: 0 });
   const failed = await discoverProduct(options, { search: async () => { throw new Error('provider down'); } });
   assert.deepEqual(failed.listings, []);
-  assert.deepEqual(failed.summary, { requests: 1, matched: 0, skipped: 0, failed: 1 });
+  assert.deepEqual(failed.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'] });
+});
+
+test('all three marketplaces start in parallel and partial failure does not discard other quotes', async () => {
+  const started: string[] = [];
+  const finish: Array<() => void> = [];
+  const pending = discoverProduct({ ...options, scope: 'platforms', platforms: ['shopee', 'lazada', 'amazon-sg'] }, {
+    search: async (platform) => {
+      started.push(platform);
+      await new Promise<void>((resolve) => finish.push(resolve));
+      if (platform === 'shopee') throw Object.assign(new Error('login required'), { code: 'SHOPEE_LOGIN_REQUIRED' });
+      return [listing({ platform, url: platform === 'amazon-sg' ? 'https://www.amazon.sg/dp/B012345678' : listing().url })];
+    },
+  });
+  assert.deepEqual(started, ['shopee', 'lazada', 'amazon-sg']);
+  finish.reverse().forEach((resolve) => resolve());
+  const result = await pending;
+  assert.equal(result.scope, 'platforms');
+  assert.deepEqual(result.listings.map((item) => item.platform), ['lazada', 'amazon-sg']);
+  assert.deepEqual(result.summary, { requests: 3, matched: 2, skipped: 0, failed: 1, failedPlatforms: ['shopee'] });
 });

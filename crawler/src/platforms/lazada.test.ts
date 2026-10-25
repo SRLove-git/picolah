@@ -81,7 +81,7 @@ test('live discovery reports a blocked Lazada page as failed rather than not fou
     }),
   });
   assert.deepEqual(result.listings, []);
-  assert.deepEqual(result.summary, { requests: 1, matched: 0, skipped: 0, failed: 1 });
+  assert.deepEqual(result.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'] });
 });
 
 test('captured current Lazada cards retain source-bound model, price and URL', () => {

@@ -199,7 +199,9 @@ pnpm dev
 pnpm crawler:tool  # 另一个终端
 ```
 
-`web/.env` 和 `crawler/.env` 的 `CRAWLER_TOOL_TOKEN` 必须一致。默认实时搜索 Lazada；用户指定 Shopee / Amazon SG 时，仅在当前市场及爬虫适配器支持时调用。每个平台最多返回 3 条来源报价。工具失败或空结果都不回退价格库。未配置工具时明确提示不可用；未提供商品条件时先澄清，不执行无目标抓取。
+`web/.env` 和 `crawler/.env` 的 `CRAWLER_TOOL_TOKEN` 必须一致。默认并行实时搜索当前市场已接入的平台：新加坡为 Shopee、Lazada、Amazon SG，其他市场为 Shopee、Lazada。用户明确指定平台时保留该限制；排除平台、追问和“全部平台 / 全网搜”重置会保持或恢复当前支持的多平台范围，不会默默改回单一 Lazada。每个平台最多返回 3 条来源报价。工具失败或空结果都不回退价格库。未配置工具时明确提示不可用；未提供商品条件时先澄清，不执行无目标抓取。
+
+跨网站搜索作为可选扩展：显式设置 `CRAWLER_SEARCH_SCOPE=web`，并在爬虫侧配置 Bright Data SERP API 后，默认请求才使用 `scope: web`。未配置 SERP 时明确提示“全网搜索接口尚未配置”，不会伪装成已完成全网搜索；也不会暗中改用平台结果。网站报价显示实际来源域名，不自动标记为官方商家。
 
 - Key 只存在服务端，前端拿不到。
 - 未配置 LLM Key 时仍调用实时工具，回答使用本次工具结果生成确定性摘要。
@@ -398,7 +400,8 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 | `CRAWLER_TOOL_TOKEN` | 空 | Web 与爬虫工具之间的共享密钥 |
 | `CRAWLER_TOOL_TIMEOUT_MS` | `420000` | 工具等待上限；覆盖 Bright Data 最坏情况下的超时与重试窗口 |
 | `CRAWLER_TOOL_MAX_PRODUCTS` | `2` | 一次对话最多实时抓取的已确认商品数（最高 4） |
-| `CRAWLER_TOOL_DEFAULT_PLATFORMS` | `lazada` | 用户没点名平台时允许调用的默认真实平台 |
+| `CRAWLER_SEARCH_SCOPE` | `platforms` | 默认直查当前市场的 Shopee、Lazada、Amazon SG；`web` 显式启用已配置 SERP 的跨网站搜索 |
+| `CRAWLER_TOOL_DEFAULT_PLATFORMS` | `shopee,lazada,amazon-sg` | 兼容旧版本保留的配置；当前聊天实时搜索使用市场已接入平台，不受旧单平台配置限制 |
 | `DATABASE_URL` | 空 | 设置后使用 PostgreSQL；空则使用 SQLite |
 | `DATABASE_POOL_SIZE` | `10` | PostgreSQL 连接池上限 |
 | `PICOLAH_DB_PATH` | `data/picolah.db` | SQLite 数据库路径（仅未设置 `DATABASE_URL` 时） |

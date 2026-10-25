@@ -7,11 +7,12 @@ export function PlatformBadge({
   platformId: string;
   size?: number;
 }) {
+  const sourceName = platformId.replace(/^web:/, '');
   const platform = PLATFORMS[platformId] || {
-    short: platformId.slice(0, 1).toUpperCase(),
+    short: sourceName.slice(0, 1).toUpperCase(),
     color: '#6f675b',
     tint: '#f2ede4',
-    name: platformId,
+    name: sourceName,
   };
   return (
     <span
@@ -33,5 +34,5 @@ export function PlatformBadge({
 
 export function PlatformLabel({ platformId }: { platformId: string }) {
   const platform = PLATFORMS[platformId];
-  return <span>{platform?.name || platformId}</span>;
+  return <span>{platform?.name || platformId.replace(/^web:/, '')}</span>;
 }

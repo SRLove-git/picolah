@@ -60,6 +60,7 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
     }
   }
   let query = message.normalize('NFKC');
+  query = query.replace(/全网(?:搜索|搜)?|所有网站|\b(?:search\s+the\s+web|across\s+the\s+web|all\s+(?:websites|sites|platforms))\b/gi, ' ');
   query = query.replace(/\b(?:lazada|shopee|tiktok(?:\s*shop)?|amazon(?:\s*sg)?|tokopedia|tiki|official(?:\s*(?:store|shop))?)\b|来赞达|虾皮|抖音(?:商城)?|亚马逊|品牌官网|官网/gi, ' ');
   for (const market of Object.values(MARKETS)) {
     query = query.replaceAll(market.nameZh, ' ').replace(new RegExp(`\\b${market.nameEn}\\b`, 'gi'), ' ')
@@ -68,9 +69,11 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
   query = query
     .replace(/(?:帮我|请|我想|我要|想要)?(?:找一下|找一找|查一下|搜一下|看看|找找|找|查找|搜索|查|搜|买|购买|推荐一下|推荐)/g, ' ')
     .replace(/哪里买最便宜|哪里最便宜|在哪里买|哪里买|多少钱|什么价格|最新价格|实时价格|价格|报价|比价|最便宜|便宜|贵不贵|怎么样|值得买吗|划算吗|只有|只看|不要|不看|排除|去掉|移除|恢复全部平台|全部平台|所有平台|取消筛选|不限平台|换成|换到|切换到|重试|再试|刷新/g, ' ')
-    .replace(/\b(?:please|find|search|show|buy|me|for|price|prices|cheapest|cheap|compare|retry|refresh|only|on|in|the|how much|does|cost)\b/gi, ' ')
+    .replace(/\bdon['’]t\b/gi, ' ')
+    .replace(/\b(?:please|find|search|show|buy|me|for|price|prices|cheapest|cheap|compare|retry|refresh|only|on|in|the|how much|does|cost|exclude|excluding|except|without|avoid|not|no|do|from|use|include)\b/gi, ' ')
     .replace(/^[\s的在呢吗一下那这款它]+|[\s的在呢吗]+$/g, '')
-    .replace(/[，。！？、?!,;；:：]/g, ' ').replace(/\s+/g, ' ').trim();
+    .replace(/[，。！？、?!,;；:：]/g, ' ').replace(/\s+/g, ' ').trim()
+    .replace(/^(?:(?:and|or|和|与|及|以及)|[&\s])+$/gi, '');
   if (!query || /^(?:哪个|这个|那|它|它们|这些|再|重新|try again)$/i.test(query)) {
     if (previousQuery) return { query: previousQuery, model: extractSearchModel(previousQuery) ?? undefined,
       ...(previous?.search?.maxPrice ? { maxPrice: previous.search.maxPrice } : {}), ...budget };

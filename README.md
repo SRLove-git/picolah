@@ -6,12 +6,12 @@ Picolah 是一个面向东南亚市场的比价工作台：问一句想买的东
 
 除了比价，它还提供：邮箱账户与登录、从真实比价/跳转行为生成的匿名购物画像、关注清单与目标价提醒、价格历史与 30 日低、联盟出站链接、爬虫数据新鲜度与 `/api/health` 健康检查。
 
-仓库按业务拆成两个项目，两者只通过 HTTP 数据接入契约耦合：爬虫采集 → `POST /api/v1/ingest/offers` → 网站校验、入库、比价、展示。
+仓库按业务拆成两个项目，通过 HTTP 协作：聊天使用爬虫 `POST /search` 实时并行查询 Shopee、Lazada、Amazon SG（仅 SG）并核验报价，不查旧商品/报价库、不写库；独立批量采集仍通过 `POST /api/v1/ingest/offers` 入库。
 
 | 目录 | 业务 | 状态 | 内容 |
 | --- | --- | --- | --- |
 | [`web/`](web/README.md) | 网站 | 运行中 | React 工作台 + Express API + SQLite；账户、比价、购物画像、关注提醒、联盟出站 |
-| [`crawler/`](crawler/README.md) | 爬虫 | 基础版 | Bright Data 采集各平台报价；Lazada 已实测（SG），Shopee 数据集免登录（需开通），未开通可登录兜底 |
+| [`crawler/`](crawler/README.md) | 爬虫 | 基础版 | 默认并行查询 Shopee / Lazada / Amazon SG；可选 SERP 全网扩展未激活，需另行授权开通 |
 
 ![Picolah welcome](web/docs/preview/welcome.png)
 
@@ -58,6 +58,12 @@ pnpm mock:once     # 只推一批，适合冒烟测试
 ```
 
 真实爬虫（需要先配置 `crawler/.env` 里的 Bright Data 凭据）：
+
+聊天默认 `CRAWLER_SEARCH_SCOPE=platforms`，并行查询所选市场的 Shopee、Lazada、Amazon SG；Amazon 目前仅支持新加坡。指定平台时只查选定项，各平台失败独立报告，不混入旧库价格。
+
+可选 `scope: web` 扩展尚未激活，需要用户另行授权开通并填写专用 `BRIGHTDATA_SERP_ZONE`（默认空，不能用 Web Unlocker zone 替代）。该扩展单轮最多 1 次 SERP + 8 个商品页请求，并发最多 3；仅返回通过型号、币种和单一 JSON-LD Offer 验证的报价，不能保证所有网站可解析。缺少配置或解析失败会明确报告，不退回单个平台冒充全网搜索，也不等于商品不存在。详见 [可选全网扩展](crawler/README.md#可选全网扩展)。
+
+以下命令是独立的目录批量采集流程，不是聊天实时搜索：
 
 ```bash
 pnpm crawl --list

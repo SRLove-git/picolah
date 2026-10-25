@@ -56,11 +56,15 @@ test('chat keeps, excludes and resets platform filters without losing the produc
   assert.ok(inherited.comparison.offers.every((offer: any) => offer.platformId === 'lazada'));
 
   const excluded = await ask('不要 Shopee', 'SG', first.conversationId);
-  assert.equal(excluded.comparison.platformFilter.includes('shopee'), false);
+  assert.equal(excluded.comparison.platformFilter, undefined);
+  assert.equal(excluded.comparison.search.scope, 'platforms');
+  assert.deepEqual(excluded.comparison.search.excludedPlatforms, ['shopee']);
   assert.ok(excluded.comparison.offers.every((offer: any) => offer.platformId !== 'shopee'));
 
   const reset = await ask('恢复全部平台', 'SG', first.conversationId);
   assert.equal(reset.comparison.platformFilter, undefined);
+  assert.equal(reset.comparison.search.scope, 'platforms');
+  assert.equal(reset.comparison.search.excludedPlatforms, undefined);
   assert.equal(reset.comparison.search.model, 'WH-1000XM5');
   assert.deepEqual(reset.comparison.offers, []);
   assert.doesNotMatch(reset.answer, /S\$|我查了|价格库里/);

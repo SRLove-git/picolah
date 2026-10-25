@@ -240,17 +240,17 @@ export function resolvePlatformDirective(
   market: CountryCode,
   previous: string[] = [],
 ): PlatformDirective {
-  if (/全部平台|所有平台|取消(?:平台)?筛选|不限平台|都看|恢复全部/i.test(text)) {
+  const mentioned = detectRequestedPlatforms(text);
+  if (!mentioned.length && /全部平台|所有平台|取消(?:平台)?筛选|不限平台|都看|恢复全部|全网(?:搜索|搜)?|所有网站|\b(?:search\s+the\s+web|across\s+the\s+web|all\s+(?:websites|sites|platforms))\b/i.test(text)) {
     return { mode: 'reset', mentioned: [], platformIds: [], unsupported: [] };
   }
 
-  const mentioned = detectRequestedPlatforms(text);
   if (!mentioned.length) {
     return { mode: 'none', mentioned: [], platformIds: [...previous], unsupported: [] };
   }
 
   const supported = [...MARKETS[market].platformIds, 'official'];
-  const exclude = /不要|不看|排除|去掉|移除|除了.+(?:都看|之外)/i.test(text);
+  const exclude = /不要|不看|排除|去掉|移除|除了.+(?:都看|之外)|\b(?:exclude|excluding|except|without|avoid|not|no)\b|\bdon['’]t\s+(?:show|use|include|search)\b/i.test(text);
   if (exclude) {
     return {
       mode: 'exclude',
