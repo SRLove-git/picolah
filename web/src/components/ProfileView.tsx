@@ -24,6 +24,7 @@ import { getProfile, resetProfile } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
+import { VideoProfileCard } from './VideoProfileCard';
 
 interface ProfileViewProps {
   onStart: () => void;
@@ -149,7 +150,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
         description={t('profile.subtitle')}
         onOpenSidebar={onOpenSidebar}
       >
-        {hasData && (
+        {(hasData || profile?.video?.hasData) && (
           <button
             type="button"
             className="pc-outline-button"
@@ -163,6 +164,9 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
       </PageHeader>
 
       <div className="pc-page-body persona-body">
+        {!loading && !error && profile?.video?.hasData && (
+          <VideoProfileCard profile={profile.video} onReset={() => void handleReset()} resetting={resetting} />
+        )}
         {loading ? (
           <div className="persona-loading">
             <span className="persona-orbit" aria-hidden="true" />
@@ -178,7 +182,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
               {t('profile.retry')}
             </button>
           </div>
-        ) : !hasData ? (
+        ) : !hasData ? (profile?.video?.hasData ? null : (
           <div className="persona-empty">
             <div className="persona-empty-art">
               <Capybara size={132} />
@@ -198,7 +202,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
               {t('profile.emptyPrivacy')}
             </div>
           </div>
-        ) : (
+        )) : (
           <>
             <div className="persona-hero" style={{ '--persona-accent': persona?.accent } as React.CSSProperties}>
               <span className="persona-hero-glow" aria-hidden="true" />

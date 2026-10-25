@@ -17,6 +17,8 @@ services:
       # The website source now lives under /app/web, but the SQLite file keeps
       # using the host mount at /app/data so existing deployments keep their DB.
       PICOLAH_DB_PATH: /app/data/picolah.db
+      CRAWLER_TOOL_URL: http://crawler-tool:8790
+      CRAWLER_TOOL_TOKEN: ${CRAWLER_TOOL_TOKEN}
     # Bind only to the docker_default bridge gateway: reachable by the shared
     # 443 nginx-lb (which lives on that network) and by the host, not the internet.
     ports:
@@ -83,8 +85,7 @@ services:
         max-size: "5m"
         max-file: "2"
 
-  # Stand-in for the future crawler app: nudges demo prices and pushes real
-  # ingest batches, so the gateway panel and price history stay alive.
+  # Demo-only price nudger; enable/disable separately from the real crawler tool.
   mock-crawler:
     image: picolah:latest
     container_name: picolah-mock
@@ -108,4 +109,43 @@ services:
       driver: json-file
       options:
         max-size: "10m"
+        max-file: "3"
+
+  # Internal, authenticated LangChain tool target. It performs a real crawl
+  # only when the user explicitly asks for live/fresh prices.
+  crawler-tool:
+    build:
+      context: .
+      dockerfile: crawler/Dockerfile
+    image: picolah-crawler-tool:latest
+    container_name: picolah-crawler-tool
+    restart: unless-stopped
+    profiles: ["crawler"]
+    depends_on:
+      picolah:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PICOLAH_API_BASE: http://picolah:8787
+      PICOLAH_INGEST_KEY: ${INGEST_API_KEY}
+      CRAWLER_TOOL_HOST: 0.0.0.0
+      CRAWLER_TOOL_PORT: 8790
+      CRAWLER_TOOL_TOKEN: ${CRAWLER_TOOL_TOKEN}
+    expose:
+      - "8790"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8790/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
         max-file: "3"

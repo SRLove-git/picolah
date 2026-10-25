@@ -87,7 +87,9 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
               priceMode={priceMode}
               onAsk={onAsk}
               title={
-                comparison.kind === 'recommendation'
+                comparison.search
+                  ? t('chat.liveResults')
+                  : comparison.kind === 'recommendation'
                   ? t('chat.recommended')
                   : comparison.product
                     ? t('chat.noOffers')
@@ -120,7 +122,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
           >
             <ThumbsDown size={14} />
           </button>
-          <span className="assistant-actions-meta">{t('chat.source')} · {relativeTime(message.createdAt)}</span>
+          <span className="assistant-actions-meta">{t(comparison?.search ? 'chat.liveSource' : 'chat.source')} · {relativeTime(message.createdAt)}</span>
         </div>
       </div>
     </article>
@@ -171,7 +173,9 @@ export function StreamingMessage({
               <span className="thinking-orb" aria-hidden="true">
                 <span />
               </span>
-              <span className="thinking-status">{status || t('chat.searching')}</span>
+              <span className="thinking-status">
+                {!status || status === '正在搜索商品信息' ? t('chat.searching') : status}
+              </span>
               <span className="thinking-dots" aria-hidden="true">
                 <i />
                 <i />
@@ -184,10 +188,10 @@ export function StreamingMessage({
               <span style={{ width: '58%' }} />
             </div>
             <div className="thinking-tools" aria-hidden="true">
-              <span>{t('chat.source')}</span>
-              <span>{t('chat.shipping')}</span>
-              <span>{t('chat.coupon')}</span>
-              <span>{t('chat.trend')}</span>
+              <span>{t('chat.liveSource')}</span>
+              <span>{t('comparison.priceMetric')}</span>
+              <span>{t('comparison.ratingMetric')}</span>
+              <span>{t('comparison.reviewMetric')}</span>
             </div>
           </div>
         )}

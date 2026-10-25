@@ -1,8 +1,8 @@
 const USER_KEY = 'picolah.userId';
 
 /**
- * Anonymous, browser-local identity. There is no account system yet, so the
- * shopping profile must never leave this device unless the user exports it.
+ * Browser-local anonymous identity for server-stored shopping/video signals.
+ * Signed-in requests use the authenticated account; login merges this profile.
  */
 export function getUserId(): string {
   if (typeof window === 'undefined') return '';

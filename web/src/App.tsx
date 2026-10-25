@@ -369,7 +369,7 @@ function AppWorkspace() {
       };
 
       setMessages((previous) => [...previous, optimisticUser]);
-      setStream({ status: t('app.understanding'), text: '', comparison: null, startedAt: Date.now() });
+      setStream({ status: t('chat.searching'), text: '', comparison: null, startedAt: Date.now() });
       setChatError(null);
       setSidebarOpen(false);
       setView('chat');
@@ -663,13 +663,15 @@ function AppWorkspace() {
 
         {view === 'account' && (
           <AccountView
-            config={config}
             market={market}
             priceMode={priceMode}
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
-            onOpenGateway={() => setGatewayOpen(true)}
             onOpenSidebar={() => setSidebarOpen(true)}
+            onOpenProfile={() => navigate('profile')}
+            onOpenReels={() => navigate('reels')}
+            onOpenHome={() => navigate('home')}
+            onAsk={(query) => void sendMessage(query)}
             notify={notify}
           />
         )}

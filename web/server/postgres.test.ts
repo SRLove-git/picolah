@@ -23,7 +23,13 @@ test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => 
   await socket.start();
 
   process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
+  // PGlite's socket fixture accepts one connection; queue concurrent feed reads.
+  process.env.DATABASE_POOL_SIZE = '1';
   process.env.NODE_ENV = 'test';
+  process.env.AUTH_REQUIRED = 'false';
+  process.env.LLM_API_KEY = '';
+  process.env.CRAWLER_TOOL_URL = '';
+  process.env.CRAWLER_TOOL_TOKEN = '';
 
   let httpServer: import('node:http').Server | undefined;
   const { db } = await import('./db.ts');
@@ -31,6 +37,8 @@ test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => 
   const auth = await import('./auth.ts');
   const profile = await import('./profile.ts');
   const watchlist = await import('./watchlist.ts');
+  const reels = await import('./reels.ts');
+  const { REELS } = await import('../shared/reels.ts');
 
   t.after(async () => {
     if (httpServer?.listening) {
@@ -88,6 +96,47 @@ test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => 
 
   const user = await auth.createUser({ email: 'pg@example.com', passwordHash: 'hash', displayName: 'PG' });
   assert.equal((await auth.findUserByEmail('pg@example.com'))?.id, user.id);
+
+  const reelOwner = 'pg-reels-anonymous';
+  const watchedReel = REELS[0];
+  const watchEvent = {
+    eventId: 'pg-watch-first',
+    sessionId: 'pg-reel-session',
+    reelId: watchedReel.id,
+    type: 'watch' as const,
+    market: 'SG' as const,
+    watchMs: 4000,
+  };
+  await reels.recordReelEvent(reelOwner, watchEvent);
+  await reels.recordReelEvent(reelOwner, watchEvent);
+  await reels.recordReelEvent(reelOwner, { ...watchEvent, eventId: 'pg-watch-second', watchMs: 9000 });
+  await reels.recordReelEvent(reelOwner, {
+    eventId: 'pg-like-first', sessionId: watchEvent.sessionId,
+    reelId: watchedReel.id, type: 'like', market: 'SG',
+  });
+  const video = await reels.getVideoProfile(reelOwner);
+  assert.equal(video.views, 1);
+  assert.equal(video.watchedMs, 9000);
+  assert.equal(video.likes, 1);
+  assert.equal((await reels.getReelFeed(reelOwner, 'SG')).items.find((item) => item.id === watchedReel.id)?.liked, true);
+
+  assert.equal(await reels.mergeVideoProfile(reelOwner, user.id), 2);
+  assert.equal((await reels.getVideoProfile(reelOwner)).hasData, false);
+  const accountVideo = await reels.getVideoProfile(user.id);
+  assert.equal(accountVideo.views, 1);
+  assert.equal(accountVideo.watchedMs, 9000);
+  assert.equal(accountVideo.likes, 1);
+  assert.equal(await reels.mergeVideoProfile(reelOwner, user.id), 0);
+  assert.equal((await profile.getShoppingProfile(user.id)).video.likes, 1);
+  await reels.resetVideoProfile(user.id);
+  assert.equal((await reels.getVideoProfile(user.id)).hasData, false);
+  assert.ok((await reels.getReelFeed(user.id, 'SG')).items.every((item) => !item.liked));
+
+  // Reset must remove the receipt and session as well as the aggregate state.
+  await reels.recordReelEvent(user.id, watchEvent);
+  assert.equal((await reels.getVideoProfile(user.id)).watchedMs, 4000);
+  await profile.resetProfile(user.id);
+  assert.equal((await reels.getVideoProfile(user.id)).hasData, false);
 
   const { app } = await import('./index.ts');
   httpServer = app.listen(0, '127.0.0.1');

@@ -43,8 +43,21 @@ export const config = {
     apiKey: process.env.LLM_API_KEY || '',
     baseUrl: (process.env.LLM_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, ''),
     model: process.env.LLM_MODEL || 'deepseek-chat',
+    intentModel: process.env.LLM_INTENT_MODEL || process.env.LLM_MODEL || 'deepseek-chat',
+    visionModel: process.env.LLM_VISION_MODEL || 'deepseek-flash',
     provider: process.env.LLM_PROVIDER || 'DeepSeek',
+  },
+  crawlerTool: {
+    url: (process.env.CRAWLER_TOOL_URL || '').replace(/\/+$/, ''),
+    token: process.env.CRAWLER_TOOL_TOKEN || '',
+    timeoutMs: Math.max(10_000, num(process.env.CRAWLER_TOOL_TIMEOUT_MS, 420_000)),
+    maxProducts: Math.min(4, Math.max(1, num(process.env.CRAWLER_TOOL_MAX_PRODUCTS, 2))),
+    defaultPlatforms: (process.env.CRAWLER_TOOL_DEFAULT_PLATFORMS || 'lazada')
+      .split(',')
+      .map((platform) => platform.trim().toLowerCase())
+      .filter(Boolean),
   },
 };
 
 export const llmConfigured = Boolean(config.llm.apiKey);
+export const crawlerToolConfigured = Boolean(config.crawlerTool.url && config.crawlerTool.token);

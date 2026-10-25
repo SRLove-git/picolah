@@ -52,6 +52,9 @@ export const config = {
   ingestKey: process.env.PICOLAH_INGEST_KEY || 'pcl_dev_crawler_key',
   source: process.env.CRAWLER_SOURCE || 'picolah-crawler',
   concurrency: numberEnv('CRAWLER_CONCURRENCY', 2, 1, 6),
+  toolHost: process.env.CRAWLER_TOOL_HOST || '127.0.0.1',
+  toolPort: numberEnv('CRAWLER_TOOL_PORT', 8790, 1, 65535),
+  toolToken: process.env.CRAWLER_TOOL_TOKEN?.trim() || '',
   /** Set CRAWLER_LOCAL_PROXY=off to let local Chrome use the direct connection. */
   localProxyEnabled: !/^(off|0|false|no)$/i.test((process.env.CRAWLER_LOCAL_PROXY || '').trim()),
   brightData,

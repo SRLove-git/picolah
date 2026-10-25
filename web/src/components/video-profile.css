@@ -1,0 +1,27 @@
+.video-profile-card { margin-bottom: 20px; }
+.video-profile-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.video-profile-stats > div { display: flex; flex-direction: column; gap: 5px; }
+.video-profile-stats strong { color: var(--pc-ink); font-size: 22px; font-variant-numeric: tabular-nums; }
+.video-profile-stats span { color: var(--pc-muted); font-size: 11px; }
+.video-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.video-profile-interests h4 { margin: 0 0 12px; font-size: 13px; }
+.video-profile-interests ul { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.video-profile-interests li { display: grid; grid-template-columns: minmax(60px, 1fr) 2fr 36px; align-items: center; gap: 10px; font-size: 12px; }
+.video-profile-interests li > span:first-child { overflow-wrap: anywhere; }
+.video-profile-interests small { text-align: right; color: var(--pc-muted); font-variant-numeric: tabular-nums; }
+.video-profile-track { height: 5px; overflow: hidden; background: var(--pc-line); border-radius: 5px; }
+.video-profile-track i { display: block; height: 100%; border-radius: inherit; background: var(--pc-pink); }
+.video-profile-labels { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; color: var(--pc-muted); font-size: 12px; }
+.video-profile-tag { padding: 4px 9px; border-radius: 999px; background: var(--pc-pink-wash); color: var(--pc-ink-soft); }
+.video-profile-history { margin-top: 20px; border-top: 1px solid var(--pc-line); padding-top: 14px; }
+.video-profile-history summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+.video-profile-history ul { padding: 0; list-style: none; }
+.video-profile-history li { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; font-size: 12px; }
+.video-profile-history small { color: var(--pc-muted); flex-shrink: 0; }
+.video-profile-interests p, .video-profile-footer p { font-size: 12px; line-height: 1.6; color: var(--pc-muted); }
+.video-profile-footer { margin-top: 20px; border-top: 1px solid var(--pc-line); padding-top: 12px; }
+@media (max-width: 620px) {
+  .video-profile-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 10px; }
+  .video-profile-grid { grid-template-columns: 1fr; gap: 20px; }
+  .video-profile-history li { flex-direction: column; gap: 4px; }
+}

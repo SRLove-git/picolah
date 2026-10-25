@@ -13,11 +13,11 @@ const CONTENT = {
     zh: [
       {
         title: '我们收集什么',
-        body: '账户邮箱、密码哈希（不保存明文）、匿名浏览器标识、比价事件（商品、市场、平台、价格、点击）、关注清单与价格提醒，以及你与比价助手的历史对话。',
+        body: '账户邮箱、密码哈希（不保存明文）、匿名浏览器标识、比价事件（商品、市场、平台、价格、点击）、短视频观看时长与互动（点赞、收藏、关注、分享、不感兴趣）、关注清单与价格提醒，以及你与比价助手的历史对话。画像事件保存在服务端，登录后会合并到账号。',
       },
       {
         title: '为什么收集',
-        body: '用于生成你的购物画像与偏好、发送你主动设置的价格提醒、改进比价结果，以及防止滥用。我们不会出售你的个人信息。',
+        body: '用于生成你的购物与视频兴趣画像、调整短视频推荐、发送你主动设置的价格提醒、改进比价结果，以及防止滥用。我们不会出售你的个人信息。',
       },
       {
         title: '保存多久',
@@ -25,7 +25,7 @@ const CONTENT = {
       },
       {
         title: '你的权利',
-        body: '你可以在账户页导出全部个人数据，或输入密码删除账户。删除后不可恢复。若需更正或投诉，请联系 privacy@picolah.com。',
+        body: '你可以在购物画像页重置购物与短视频记录，在账户页导出个人数据，或输入密码删除账户。删除后不可恢复。若需更正或投诉，请联系 privacy@picolah.com。',
       },
       {
         title: '第三方',
@@ -35,11 +35,11 @@ const CONTENT = {
     en: [
       {
         title: 'What we collect',
-        body: 'Your account email, a password hash (never the plain password), an anonymous browser id, comparison events (product, market, platform, price, clicks), watchlist and price alerts, and your chat history with the comparison assistant.',
+        body: 'Your account email, a password hash (never the plain password), an anonymous browser id, comparison events (product, market, platform, price, clicks), short-video watch time and interactions (likes, saves, follows, shares, not interested), watchlist and price alerts, and chat history. Profile events are stored on the server and merged into your account when you sign in.',
       },
       {
         title: 'Why we collect it',
-        body: 'To build your shopping profile and preferences, deliver alerts you asked for, improve comparisons, and prevent abuse. We do not sell your personal information.',
+        body: 'To build your shopping and video-interest profile, personalize your video feed, deliver alerts you asked for, improve comparisons, and prevent abuse. We do not sell your personal information.',
       },
       {
         title: 'How long we keep it',
@@ -47,7 +47,7 @@ const CONTENT = {
       },
       {
         title: 'Your rights',
-        body: 'You can export all personal data or delete your account from the account page. Deletion is permanent. For corrections or complaints, contact privacy@picolah.com.',
+        body: 'You can reset shopping and video history from your profile, export personal data or delete your account from the account page. Deletion is permanent. For corrections or complaints, contact privacy@picolah.com.',
       },
       {
         title: 'Third parties',

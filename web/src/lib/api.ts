@@ -303,7 +303,16 @@ export async function markAllAlertsRead(): Promise<void> {
   await fetch('/api/alerts/read-all', { method: 'POST', headers: userHeaders() });
 }
 
-export function outboundUrl(offer: { id: string; url: string }): string {
+export function outboundUrl(offer: { id: string; url: string; source?: 'live' }): string {
+  if (offer.source === 'live') {
+    // Live listings have not been registered in the local offers table.
+    try {
+      const url = new URL(offer.url);
+      return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : '';
+    } catch {
+      return '';
+    }
+  }
   return isMockMode() ? offer.url : `/go/${encodeURIComponent(offer.id)}`;
 }
 

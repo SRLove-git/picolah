@@ -12,4 +12,8 @@ web/dist
 web/data
 web/mock-state
 web/.env
-crawler
+crawler/.env
+crawler/node_modules
+crawler/.shopee-state*.json
+crawler/.chrome-shopee-profile
+crawler/.tmp

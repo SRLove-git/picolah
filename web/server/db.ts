@@ -142,6 +142,42 @@ const SQLITE_SCHEMA = `
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS reel_sessions (
+    user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    session_id TEXT NOT NULL,
+    reel_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, session_id),
+    UNIQUE (user_id, session_id, reel_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS reel_event_receipts (
+    user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    event_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    reel_id TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, event_id),
+    FOREIGN KEY (user_id, session_id, reel_id) REFERENCES reel_sessions(user_id, session_id, reel_id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS reel_events (
+    user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    state_key TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    reel_id TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('view', 'watch', 'like', 'unlike', 'save', 'unsave', 'follow', 'unfollow', 'share', 'not_interested', 'compare')),
+    market TEXT NOT NULL,
+    watch_ms INTEGER NOT NULL DEFAULT 0 CHECK (watch_ms >= 0 AND watch_ms <= 3600000),
+    ended INTEGER NOT NULL DEFAULT 0 CHECK (ended IN (0, 1)),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, state_key),
+    FOREIGN KEY (user_id, session_id, reel_id) REFERENCES reel_sessions(user_id, session_id, reel_id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS watchlist (
     id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL,
@@ -177,6 +213,9 @@ const SQLITE_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
   CREATE INDEX IF NOT EXISTS idx_price_points_offer ON price_points(offer_id, recorded_at);
   CREATE INDEX IF NOT EXISTS idx_user_events_user_created ON user_events(user_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_reel_events_user_updated ON reel_events(user_id, updated_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_reel_events_reel_updated ON reel_events(reel_id, updated_at DESC);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_reel_events_session_type ON reel_events(user_id, session_id, type) WHERE type IN ('view', 'watch');
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_watchlist_owner ON watchlist(owner_id, market);
   CREATE INDEX IF NOT EXISTS idx_price_alerts_owner ON price_alerts(owner_id, created_at DESC);
@@ -196,6 +235,25 @@ function applySqliteMigrations(handle: DatabaseSync): void {
 class SqliteDatabase implements Database {
   readonly kind = 'sqlite' as const;
   private readonly handle: DatabaseSync;
+  private queue: Promise<unknown> = Promise.resolve();
+
+  private serialized<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.queue.then(operation);
+    this.queue = result.catch(() => undefined);
+    return result;
+  }
+
+  private executor(): DbExecutor {
+    return {
+      all: async <T = Row>(sql: string, params: readonly unknown[] = []) =>
+        this.handle.prepare(sql).all(...(params as never[])) as T[],
+      get: async <T = Row>(sql: string, params: readonly unknown[] = []) =>
+        this.handle.prepare(sql).get(...(params as never[])) as T | undefined,
+      run: async (sql: string, params: readonly unknown[] = []) => ({
+        changes: Number(this.handle.prepare(sql).run(...(params as never[])).changes),
+      }),
+    };
+  }
 
   constructor(path: string) {
     this.handle = new DatabaseSync(path);
@@ -204,31 +262,35 @@ class SqliteDatabase implements Database {
   }
 
   async all<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T[]> {
-    return this.handle.prepare(sql).all(...(params as never[])) as T[];
+    return this.serialized(() => this.executor().all<T>(sql, params));
   }
 
   async get<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T | undefined> {
-    return this.handle.prepare(sql).get(...(params as never[])) as T | undefined;
+    return this.serialized(() => this.executor().get<T>(sql, params));
   }
 
   async run(sql: string, params: readonly unknown[] = []): Promise<{ changes: number }> {
-    const result = this.handle.prepare(sql).run(...(params as never[]));
-    return { changes: Number(result.changes) };
+    return this.serialized(() => this.executor().run(sql, params));
   }
 
   async transaction<T>(fn: (tx: DbExecutor) => Promise<T>): Promise<T> {
-    this.handle.exec('BEGIN IMMEDIATE');
-    try {
-      const value = await fn(this);
-      this.handle.exec('COMMIT');
-      return value;
-    } catch (error) {
-      this.handle.exec('ROLLBACK');
-      throw error;
-    }
+    // Async callbacks must not allow another request to enter the same SQLite
+    // connection mid-transaction. The callback receives an unqueued executor.
+    return this.serialized(async () => {
+      this.handle.exec('BEGIN IMMEDIATE');
+      try {
+        const value = await fn(this.executor());
+        this.handle.exec('COMMIT');
+        return value;
+      } catch (error) {
+        this.handle.exec('ROLLBACK');
+        throw error;
+      }
+    });
   }
 
   async close(): Promise<void> {
+    await this.queue;
     this.handle.close();
   }
 }

@@ -129,6 +129,42 @@ CREATE TABLE IF NOT EXISTS watchlist (
   UNIQUE (owner_id, product_id, market)
 );
 
+CREATE TABLE IF NOT EXISTS reel_sessions (
+  user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL,
+  reel_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, session_id),
+  UNIQUE (user_id, session_id, reel_id)
+);
+
+CREATE TABLE IF NOT EXISTS reel_event_receipts (
+  user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  event_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  reel_id TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, event_id),
+  FOREIGN KEY (user_id, session_id, reel_id) REFERENCES reel_sessions(user_id, session_id, reel_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reel_events (
+  user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  state_key TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  reel_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('view', 'watch', 'like', 'unlike', 'save', 'unsave', 'follow', 'unfollow', 'share', 'not_interested', 'compare')),
+  market TEXT NOT NULL,
+  watch_ms INTEGER NOT NULL DEFAULT 0 CHECK (watch_ms >= 0 AND watch_ms <= 3600000),
+  ended INTEGER NOT NULL DEFAULT 0 CHECK (ended IN (0, 1)),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, state_key),
+  FOREIGN KEY (user_id, session_id, reel_id) REFERENCES reel_sessions(user_id, session_id, reel_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS price_alerts (
   id TEXT PRIMARY KEY,
   owner_id TEXT NOT NULL,
@@ -150,6 +186,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id
 CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_price_points_offer ON price_points(offer_id, recorded_at);
 CREATE INDEX IF NOT EXISTS idx_user_events_user_created ON user_events(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reel_events_user_updated ON reel_events(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reel_events_reel_updated ON reel_events(reel_id, updated_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reel_events_session_type ON reel_events(user_id, session_id, type) WHERE type IN ('view', 'watch');
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_watchlist_owner ON watchlist(owner_id, market);
 CREATE INDEX IF NOT EXISTS idx_price_alerts_owner ON price_alerts(owner_id, created_at DESC);

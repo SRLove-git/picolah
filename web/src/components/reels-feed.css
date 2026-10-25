@@ -1,0 +1,64 @@
+.pc-reels-feed-status {
+  position: relative;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  min-height: 22px;
+  padding: 0 16px 4px;
+  color: #e3d7e5;
+  font-size: 11px;
+}
+
+.pc-reels-feed-status button,
+.pc-reels-empty button {
+  margin-left: 6px;
+  padding: 3px 9px;
+  color: #fff;
+  background: #ffffff16;
+  border: 1px solid #ffffff35;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pc-reels-empty {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  flex: 1;
+  gap: 14px;
+  padding: 30px;
+  text-align: center;
+}
+
+.pc-reels-empty h2 { font-size: 20px; }
+.pc-reels-empty p { max-width: 320px; color: #bdadbf; line-height: 1.6; }
+.pc-reel-reason {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 7px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  background: #fff9;
+  color: #392b3c;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.pc-reel-reason > span { font-weight: 700; }
+.pc-reel-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pc-reel.is-paused .pc-reel-orb,
+.pc-reel.is-paused .pc-reel-art { animation-play-state: paused; }
+.pc-reels button:disabled { opacity: .5; cursor: default; }
+.pc-reel-dismiss small { max-width: 58px; line-height: 1.2; }
+.pc-reel.has-video .pc-reel-index { padding: 3px 6px; border-radius: 6px; background: #fffc; }
+.pc-reel.has-video .pc-reel-segment { background: #fff8; }
+.pc-reel.has-video .pc-reel-segment span { background: #fff; }
+@media (max-height: 700px) {
+  .pc-reel-reason { font-size: 8px; }
+}

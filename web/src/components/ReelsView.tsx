@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BadgeCheck,
@@ -13,14 +13,20 @@ import {
   Play,
   Send,
   Sparkles,
+  ThumbsDown,
   Volume2,
   VolumeX,
 } from 'lucide-react';
 import type { CountryCode } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
-import { REELS, compactCount } from '../lib/reels';
+import type { ReelEventInput, ReelEventType, ReelFeedItem } from '../../shared/reels';
+import { compactCount } from '../lib/reels';
+import { recordReelEvent } from '../lib/reels-api';
+import { useReelFeed } from '../lib/use-reel-feed';
+import { useReelPlayback } from '../lib/use-reel-playback';
 import { Capybara } from './PicolahMark';
 import { ProductArt } from './ProductArt';
+import './reels-feed.css';
 
 interface ReelsViewProps {
   market: CountryCode;
@@ -33,36 +39,15 @@ interface ReelsViewProps {
 function ReelProgress({
   count,
   index,
-  playing,
+  progress,
   onSelect,
-  onComplete,
 }: {
   count: number;
   index: number;
-  playing: boolean;
+  progress: number;
   onSelect: (index: number) => void;
-  onComplete: () => void;
 }) {
   const { t } = useTranslation();
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    setProgress(0);
-  }, [index]);
-
-  useEffect(() => {
-    if (!playing) return;
-    const timer = window.setInterval(() => {
-      setProgress((value) => Math.min(100, value + 0.8));
-    }, 130);
-    return () => window.clearInterval(timer);
-  }, [playing, index]);
-
-  useEffect(() => {
-    if (!playing || progress < 100) return;
-    const timer = window.setTimeout(onComplete, 220);
-    return () => window.clearTimeout(timer);
-  }, [playing, progress, onComplete]);
 
   return (
     <div className="pc-reel-progress" role="group" aria-label={t('reels.progress')}>
@@ -93,45 +78,93 @@ export function ReelsView({
   notify,
 }: ReelsViewProps) {
   const { t, i18n } = useTranslation();
-  const [index, setIndex] = useState(() => Math.min(Math.max(initialIndex, 0), REELS.length - 1));
+  const feed = useReelFeed(market, initialIndex);
+  const { items, index, visit, goTo } = feed;
   const [playing, setPlaying] = useState(true);
-  const [liked, setLiked] = useState<Record<string, boolean>>({});
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [muted, setMuted] = useState(true);
-  const [following, setFollowing] = useState<Record<string, boolean>>({});
+  const [pending, setPending] = useState(false);
+  const [failedAction, setFailedAction] = useState<{
+    event: ReelEventInput; item: ReelFeedItem; patch?: Partial<ReelFeedItem>;
+  } | null>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const [mediaState, setMediaState] = useState({ key: '', playing: false });
+  const reel = items[index];
+  const mediaKey = `${market}-${reel?.id}-${visit}`;
+  const nextReel = useCallback(() => goTo(index + 1), [goTo, index]);
+  const playback = useReelPlayback({ reel, market, visit, playing,
+    mediaPlaying: mediaState.key === mediaKey && mediaState.playing, onComplete: nextReel,
+    onFinalWatchSaved: feed.rerankAfterWatch });
+  const isLiked = reel?.liked ?? false;
+  const isSaved = reel?.saved ?? false;
+  const isFollowing = reel?.following ?? false;
 
-  const reel = REELS[index];
-  const isLiked = Boolean(liked[reel.id]);
-  const isSaved = Boolean(saved[reel.id]);
-  const isFollowing = Boolean(following[reel.handle]);
+  useEffect(() => {
+    const element = video.current;
+    if (!element) return;
+    let active = true;
+    const sync = () => {
+      if (playing && document.visibilityState === 'visible') {
+        void element.play().catch(() => { if (active) setPlaying(false); });
+      } else element.pause();
+    };
+    sync();
+    document.addEventListener('visibilitychange', sync);
+    return () => { active = false; element.pause(); document.removeEventListener('visibilitychange', sync); };
+  }, [mediaKey, playing]);
 
-  const goTo = (next: number) => {
-    setIndex((next + REELS.length) % REELS.length);
-  };
+  async function submitAction(action: NonNullable<typeof failedAction>) {
+    if (pending) return;
+    setPending(true);
+    setFailedAction(null);
+    try {
+      await recordReelEvent(action.event);
+      if (action.event.type === 'not_interested') feed.hide(action.item.id);
+      else feed.update(action.item, action.patch ?? {});
+    } catch {
+      setFailedAction(action);
+    } finally {
+      setPending(false);
+    }
+  }
 
-  const nextReel = useCallback(() => {
-    setIndex((value) => (value + 1) % REELS.length);
-  }, []);
+  function feedback(type: ReelEventType, patch?: Partial<ReelFeedItem>) {
+    const event = playback.createEvent(type);
+    if (event && reel) void submitAction({ event, item: reel, patch });
+  }
 
   async function share() {
+    const event = playback.createEvent('share');
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#reels`);
       notify(t('reels.linkCopied'));
+      if (event) {
+        try {
+          await recordReelEvent(event, true);
+          void feed.refresh();
+        } catch { notify(t('reels.activityFailed')); }
+      }
     } catch {
       notify(t('reels.linkFailed'));
     }
   }
 
+  function compare() {
+    if (!reel) return;
+    const event = playback.createEvent('compare');
+    if (event) void recordReelEvent(event, true).catch(() => notify(t('reels.activityFailed')));
+    onAsk(reel.query);
+  }
+
   return (
     <section className="pc-reels" aria-label={t('reels.label')}>
-      <div
+      {reel && <div
         className="pc-reels-ambient"
         aria-hidden="true"
         style={{
           background: `radial-gradient(circle at 50% 45%, ${reel.gradient[0]}66, transparent 45%),
             radial-gradient(circle at 20% 80%, ${reel.gradient[1]}44, transparent 40%)`,
         }}
-      />
+      />}
 
       <header className="pc-reels-head">
         <button
@@ -156,6 +189,7 @@ export function ReelsView({
           <button
             type="button"
             className="pc-reels-round"
+            disabled={!reel}
             onClick={() => setPlaying((value) => !value)}
             aria-label={t(playing ? 'reels.pause' : 'reels.play')}
           >
@@ -164,9 +198,10 @@ export function ReelsView({
           <button
             type="button"
             className="pc-reels-round"
+            disabled={!reel}
             onClick={() => {
               setMuted((value) => !value);
-              notify(t(muted ? 'reels.soundDemo' : 'reels.muted'));
+              if (!reel?.videoUrl) notify(t(muted ? 'reels.soundDemo' : 'reels.muted'));
             }}
             aria-label={t(muted ? 'reels.soundOn' : 'reels.mute')}
           >
@@ -175,6 +210,14 @@ export function ReelsView({
         </div>
       </header>
 
+      <div className="pc-reels-feed-status" role="status" aria-live="polite">
+        {feed.loading && <span>{t('reels.loading')}</span>}
+        {feed.error && <span>{t('reels.loadFailed')} <button onClick={() => void feed.retry()}>{t('reels.retry')}</button></span>}
+        {failedAction && <span>{t('reels.actionFailed')} <button disabled={pending} onClick={() => void submitAction(failedAction)}>{t('reels.retry')}</button></span>}
+        {playback.trackingFailed && <span>{t('reels.activityFailed')} <button onClick={playback.retryTracking}>{t('reels.retry')}</button></span>}
+      </div>
+      {!reel && !feed.loading && !feed.error && <div className="pc-reels-empty"><Sparkles size={28} /><h2>{t('reels.emptyTitle')}</h2><p>{t('reels.emptyHint')}</p><button onClick={() => void feed.refresh()}>{t('reels.refresh')}</button></div>}
+      {reel && <>
       <div className="pc-reels-stage">
         <button
           type="button"
@@ -186,7 +229,8 @@ export function ReelsView({
         </button>
 
         <article
-          className="pc-reel"
+          className={`pc-reel ${playback.visiblePlaying ? '' : 'is-paused'} ${reel.videoUrl ? 'has-video' : ''}`}
+          data-reel-id={reel.id}
           style={
             {
               '--reel-accent': reel.accent,
@@ -195,30 +239,49 @@ export function ReelsView({
           }
         >
           <div className="pc-reel-grain" aria-hidden="true" />
+          {reel.videoUrl && <video
+            key={mediaKey}
+            ref={video}
+            className="pc-reel-video"
+            src={reel.videoUrl}
+            muted={muted}
+            playsInline
+            preload="metadata"
+            onPlaying={() => setMediaState({ key: mediaKey, playing: true })}
+            onPause={() => setMediaState({ key: mediaKey, playing: false })}
+            onWaiting={() => setMediaState({ key: mediaKey, playing: false })}
+            onStalled={() => setMediaState({ key: mediaKey, playing: false })}
+            onEnded={playback.mediaEnded}
+            onError={() => { setMediaState({ key: mediaKey, playing: false }); setPlaying(false); notify(t('reels.videoFailed')); }}
+            onTimeUpdate={(event) => {
+              const element = event.currentTarget;
+              if (Number.isFinite(element.duration) && element.duration > 0) playback.setProgress(element.currentTime / element.duration * 100);
+            }}
+          />}
           <div className="pc-reel-top">
             <ReelProgress
-              count={REELS.length}
+              count={items.length}
               index={index}
-              playing={playing}
+              progress={playback.progress}
               onSelect={goTo}
-              onComplete={nextReel}
             />
             <div className="pc-reel-topline">
               <span className="pc-reel-tag">
                 <Sparkles size={11} />
-                {t('reels.review')}
+                {t(reel.videoUrl ? 'reels.review' : 'reels.demoClip')}
               </span>
               <span className="pc-reel-index">
-                {String(index + 1).padStart(2, '0')} / {String(REELS.length).padStart(2, '0')}
+                {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
               </span>
             </div>
+            <div className="pc-reel-reason"><span>{t('reels.why')}</span>{i18n.language.startsWith('en') ? reel.reason.labelEn : reel.reason.labelZh}</div>
           </div>
 
-          <div className="pc-reel-scene" aria-hidden="true">
+          {!reel.videoUrl && <div className="pc-reel-scene" aria-hidden="true">
             <span className="pc-reel-orb pc-reel-orb-1" />
             <span className="pc-reel-orb pc-reel-orb-2" />
             <span className="pc-reel-ring" />
-            <div className={`pc-reel-art ${playing ? 'is-playing' : ''}`}>
+            <div className={`pc-reel-art ${playback.visiblePlaying ? 'is-playing' : ''}`}>
               <ProductArt visual={reel.visual} size={280} />
             </div>
             <span className="pc-reel-price-tag">
@@ -229,7 +292,7 @@ export function ReelsView({
               {MARKETS[reel.market].flag} {i18n.language === 'en' ? MARKETS[reel.market].nameEn : MARKETS[reel.market].nameZh}
             </span>
             <span className="pc-reel-sticker">{t('reels.worth')}</span>
-          </div>
+          </div>}
 
           <button
             type="button"
@@ -244,13 +307,15 @@ export function ReelsView({
             <button
               type="button"
               className={`pc-reel-action ${isLiked ? 'is-active' : ''}`}
-              onClick={() => setLiked((value) => ({ ...value, [reel.id]: !isLiked }))}
+              onClick={() => feedback(isLiked ? 'unlike' : 'like', { liked: !isLiked, likes: Math.max(0, reel.likes + (isLiked ? -1 : 1)) })}
+              disabled={pending}
+              aria-pressed={isLiked}
               aria-label={t('reels.like')}
             >
               <span>
                 <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
               </span>
-              <small>{compactCount(reel.likes + (isLiked ? 1 : 0))}</small>
+              <small>{compactCount(reel.likes)}</small>
             </button>
             <button
               type="button"
@@ -272,7 +337,9 @@ export function ReelsView({
             <button
               type="button"
               className={`pc-reel-action ${isSaved ? 'is-active pc-reel-saved' : ''}`}
-              onClick={() => setSaved((value) => ({ ...value, [reel.id]: !isSaved }))}
+              onClick={() => feedback(isSaved ? 'unsave' : 'save', { saved: !isSaved })}
+              disabled={pending}
+              aria-pressed={isSaved}
               aria-label={t('reels.save')}
             >
               <span>
@@ -280,9 +347,7 @@ export function ReelsView({
               </span>
               <small>{t('reels.save')}</small>
             </button>
-            <span className="pc-reel-avatar">
-              <Capybara variant="face" size={30} />
-            </span>
+            <button type="button" className="pc-reel-action pc-reel-dismiss" disabled={pending} onClick={() => feedback('not_interested')} aria-label={t('reels.notInterested')}><span><ThumbsDown size={20} /></span><small>{t('reels.notInterested')}</small></button>
           </div>
 
           <div className="pc-reel-bottom">
@@ -302,9 +367,9 @@ export function ReelsView({
               <button
                 type="button"
                 className={`pc-follow ${isFollowing ? 'is-following' : ''}`}
-                onClick={() =>
-                  setFollowing((value) => ({ ...value, [reel.handle]: !isFollowing }))
-                }
+                disabled={pending}
+                aria-pressed={isFollowing}
+                onClick={() => feedback(isFollowing ? 'unfollow' : 'follow', { following: !isFollowing })}
               >
                 {t(isFollowing ? 'reels.following' : 'reels.follow')}
               </button>
@@ -323,7 +388,7 @@ export function ReelsView({
               <button
                 type="button"
                 className="pc-reel-cta"
-                onClick={() => onAsk(`${reel.query}`)}
+                onClick={compare}
               >
                 <span>{t('reels.compare')}</span>
                 <Sparkles size={13} />
@@ -341,6 +406,7 @@ export function ReelsView({
           <ChevronDown size={20} />
         </button>
       </div>
+      </>}
 
       <footer className="pc-reels-foot">
         <span>

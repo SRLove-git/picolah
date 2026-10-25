@@ -1,18 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowUp,
   ImagePlus,
   Loader2,
   Mic,
-  Plus,
-  Sparkles,
   Square,
   X,
 } from 'lucide-react';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
 import { prepareImage } from '../lib/image';
+import { getComposerInputHeight, shouldSubmitComposerKey } from '../lib/composer-input';
 import { MarketPicker, PriceModePicker } from './Controls';
 
 interface PromptComposerProps {
@@ -61,6 +60,14 @@ interface SpeechRecognitionLike {
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
+function disposeRecognition(recognition: SpeechRecognitionLike | null) {
+  if (!recognition) return;
+  recognition.onresult = null;
+  recognition.onerror = null;
+  recognition.onend = null;
+  recognition.abort();
+}
+
 function readRecognitionCtor(): SpeechRecognitionCtor | null {
   if (typeof window === 'undefined') return null;
   const scope = window as unknown as {
@@ -73,7 +80,6 @@ function readRecognitionCtor(): SpeechRecognitionCtor | null {
 export function PromptComposer({
   market,
   priceMode,
-  config,
   busy,
   loadingConversation = false,
   inputRef,
@@ -94,23 +100,45 @@ export function PromptComposer({
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef('');
+  const imagePendingRef = useRef(false);
+  const errorId = useId();
   const marketInfo = MARKETS[market];
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = inputRef.current;
     if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${Math.min(element.scrollHeight, 176)}px`;
-  }, [value, inputRef]);
+    const resize = () => {
+      element.style.height = '0px';
+      const maxHeight = Number.parseFloat(getComputedStyle(element).maxHeight) || 176;
+      element.style.height = `${getComposerInputHeight(element.scrollHeight, maxHeight)}px`;
+      element.style.overflowY = element.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    };
+    resize();
+    let width = element.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const nextWidth = element.getBoundingClientRect().width;
+      if (nextWidth === width) return;
+      width = nextWidth;
+      resize();
+    });
+    observer.observe(element);
+    window.addEventListener('resize', resize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', resize);
+    };
+  }, [value, inputRef, variant, i18n.language]);
 
   useEffect(() => {
     return () => {
-      recognitionRef.current?.abort();
+      disposeRecognition(recognitionRef.current);
+      recognitionRef.current = null;
     };
   }, []);
 
   async function handleFile(file: File | null | undefined) {
-    if (!file || busy || loadingConversation) return;
+    if (!file || busy || loadingConversation || imagePendingRef.current) return;
+    imagePendingRef.current = true;
     setImageError(null);
     setImageBusy(true);
     try {
@@ -119,17 +147,18 @@ export function PromptComposer({
     } catch (error) {
       setImageError(error instanceof Error ? error.message : t('composer.imageError'));
     } finally {
+      imagePendingRef.current = false;
       setImageBusy(false);
     }
   }
 
   function submit() {
     const text = value.trim() || (attachment ? t('composer.imageQuery') : '');
-    if (!text || busy || loadingConversation || imageBusy) return;
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-    }
+    if (!text || busy || loadingConversation || imagePendingRef.current) return;
+    // A stopped recognizer can still deliver its final result after submission.
+    disposeRecognition(recognitionRef.current);
+    recognitionRef.current = null;
+    setListening(false);
     onSend(text, attachment?.dataUrl);
     setValue('');
     setAttachment(null);
@@ -141,18 +170,22 @@ export function PromptComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (
-      event.key === 'Enter' &&
-      !event.shiftKey &&
-      !event.nativeEvent.isComposing &&
-      !composingRef.current
-    ) {
+    if (shouldSubmitComposerKey({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      ctrlKey: event.ctrlKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+      isComposing: event.nativeEvent.isComposing,
+      keyCode: event.nativeEvent.keyCode,
+    }, composingRef.current)) {
       event.preventDefault();
       submit();
     }
   }
 
   function toggleVoice() {
+    if (busy || loadingConversation || imageBusy) return;
     setVoiceError(null);
     if (listening) {
       recognitionRef.current?.stop();
@@ -201,16 +234,12 @@ export function PromptComposer({
 
   const canSend =
     Boolean(value.trim() || attachment) && !busy && !loadingConversation && !imageBusy;
-  const modelLabel = config?.llmConfigured
-    ? config.llmProvider === 'DeepSeek'
-      ? 'DeepSeek'
-      : config.llmProvider
-    : 'Picolah AI';
 
   return (
     <div className={`pc-composer pc-composer-${variant}`}>
       <form
         className={`pc-composer-card ${busy ? 'is-busy' : ''} ${listening ? 'is-listening' : ''}`}
+        aria-busy={imageBusy || loadingConversation}
         onSubmit={(event) => {
           event.preventDefault();
           submit();
@@ -260,8 +289,11 @@ export function PromptComposer({
           </div>
         )}
 
-        {imageError && <div className="pc-composer-error">{imageError}</div>}
-        {voiceError && <div className="pc-composer-error">{voiceError}</div>}
+        {(imageError || voiceError) && (
+          <div id={errorId} className="pc-composer-error" role="alert">
+            {imageError || voiceError}
+          </div>
+        )}
 
         <div className="pc-composer-input">
           <textarea
@@ -277,6 +309,8 @@ export function PromptComposer({
                   })
             }
             aria-label={t('composer.inputLabel')}
+            aria-describedby={imageError || voiceError ? errorId : undefined}
+            readOnly={loadingConversation}
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={handleKeyDown}
             onCompositionStart={() => {
@@ -322,39 +356,19 @@ export function PromptComposer({
               aria-label={t('composer.upload')}
               title={t('composer.upload')}
             >
-              {imageBusy ? <Loader2 size={18} className="pc-spin" /> : <Plus size={19} />}
-            </button>
-            <button
-              type="button"
-              className="pc-image-tool"
-              onClick={() => fileRef.current?.click()}
-              disabled={busy || imageBusy || loadingConversation}
-              aria-label={t('composer.upload')}
-              title={t('composer.upload')}
-            >
-              <ImagePlus size={16} />
-              <span>{t('composer.image')}</span>
+              {imageBusy ? <Loader2 size={19} className="pc-spin" /> : <ImagePlus size={20} />}
             </button>
             <MarketPicker market={market} onChange={onMarketChange} compact />
-            <PriceModePicker priceMode={priceMode} onChange={onPriceModeChange} />
+            <PriceModePicker priceMode={priceMode} onChange={onPriceModeChange} compact />
           </div>
 
           <div className="pc-composer-actions">
-            <span
-              className="pc-model-pill"
-              title={
-                config?.llmConfigured
-                  ? `${config.llmProvider} · ${config.llmModel}`
-                  : t('composer.localSummary')
-              }
-            >
-              <Sparkles size={13} />
-              <span>{modelLabel}</span>
-            </span>
             <button
               type="button"
               className={`pc-mic ${listening ? 'is-listening' : ''}`}
               onClick={toggleVoice}
+              disabled={busy || loadingConversation || imageBusy}
+              aria-pressed={listening}
               aria-label={t(listening ? 'composer.stopVoice' : 'composer.voice')}
               title={t(listening ? 'composer.stopVoice' : 'composer.voice')}
             >

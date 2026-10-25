@@ -14,6 +14,8 @@ import type {
 import { MARKETS, PLATFORMS } from '../shared/types.ts';
 import { db } from './db.ts';
 import { getProduct } from './repo.ts';
+import type { VideoProfile } from '../shared/reels.ts';
+import { getVideoProfile, mergeVideoProfile, resetVideoProfile } from './reels.ts';
 
 interface EventRow {
   id: string;
@@ -188,10 +190,11 @@ function categoryLabel(value: string): { labelZh: string; labelEn: string } {
   return { labelZh: value, labelEn: CATEGORY_EN[value] || value };
 }
 
-function emptyProfile(userId: string, user?: UserRow | null): ShoppingProfile {
+function emptyProfile(userId: string, video: VideoProfile, user?: UserRow | null): ShoppingProfile {
   const stamp = nowIso();
   return {
-    hasData: false,
+    hasData: video.hasData,
+    video,
     user: {
       anonymousId: userId,
       firstSeen: user?.created_at || stamp,
@@ -250,8 +253,9 @@ export async function mergeAnonymousProfile(anonymousId: string, accountId: stri
   const exists = await db.get('SELECT 1 FROM app_users WHERE id = ?', [anonymous]);
   if (!exists) return 0;
   const result = await db.run('UPDATE user_events SET user_id = ? WHERE user_id = ?', [account, anonymous]);
+  const videoEvents = await mergeVideoProfile(anonymous, account);
   await db.run('DELETE FROM app_users WHERE id = ?', [anonymous]);
-  return Number(result.changes);
+  return Number(result.changes) + videoEvents;
 }
 
 async function insertEvent(input: {
@@ -368,6 +372,7 @@ export async function recordOfferClick(userId: string, event: OfferClickEvent): 
 }
 
 export async function getShoppingProfile(userId: string): Promise<ShoppingProfile> {
+  const video = await getVideoProfile(userId);
   const user = await db.get<UserRow>('SELECT id, created_at, last_seen_at FROM app_users WHERE id = ?', [userId]);
   const events = await db.all<EventRow>(
     `SELECT id, type, market, product_id, category, brand, platform_id, price,
@@ -378,7 +383,7 @@ export async function getShoppingProfile(userId: string): Promise<ShoppingProfil
     [userId],
   );
 
-  if (!events.length) return emptyProfile(userId, user);
+  if (!events.length) return emptyProfile(userId, video, user);
 
   const markets = new Map<string, { labelZh: string; labelEn: string; count: number }>();
   const platforms = new Map<string, { labelZh: string; labelEn: string; count: number }>();
@@ -534,6 +539,7 @@ export async function getShoppingProfile(userId: string): Promise<ShoppingProfil
 
   return {
     hasData: true,
+    video,
     user: {
       anonymousId: userId,
       firstSeen,
@@ -621,5 +627,6 @@ function toActivity(event: EventRow): ProfileActivity {
 }
 
 export async function resetProfile(userId: string): Promise<void> {
+  await resetVideoProfile(userId);
   await db.run('DELETE FROM user_events WHERE user_id = ?', [userId]);
 }

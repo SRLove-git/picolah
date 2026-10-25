@@ -2,7 +2,7 @@
 
 独立爬虫进程：用 [Bright Data](https://brightdata.com) 采集东南亚电商平台的商品报价，标准化后写入网站的价格库。
 
-网站（`../web/`）只负责校验、入库、比价和展示，不执行采集；两边只通过 `POST /api/v1/ingest/offers` 通信，契约见 [`../docs/ingest-api.md`](../docs/ingest-api.md)。
+网站（`../web/`）只负责校验、入库、比价和展示，不在 Web 进程里执行采集；Agent 可以通过带 Bearer 鉴权的内网工具服务请求本项目运行一次真实采集。报价仍只通过 `POST /api/v1/ingest/offers` 入库，契约见 [`../docs/ingest-api.md`](../docs/ingest-api.md)。
 
 ## 状态
 
@@ -65,6 +65,29 @@ pnpm crawl --market SG --platform amazon-sg --product sony-wh1000xm5 --dry-run
 ```bash
 pnpm crawl --market SG --platform lazada --product sony-wh1000xm5
 ```
+
+供 LangChain Agent 调用的内网工具服务：
+
+```bash
+# crawler/.env 与 web/.env 使用同一个 CRAWLER_TOOL_TOKEN
+pnpm crawler:tool
+curl -H "Authorization: Bearer $CRAWLER_TOOL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"market":"SG","platforms":["lazada"],"productIds":["sony-wh1000xm5"]}' \
+  http://127.0.0.1:8790/crawl
+```
+
+`/crawl` 保留原有目录商品批量采集和入库流程；对话使用独立的纯实时 `POST /search`，不读取商品目录、不查询已有报价、不创建商品或写入报价。它使用同样的 Bearer 鉴权，请求为 `{"market":"SG","platforms":["lazada"],"query":"Sony WF-1000XM6","model":"WF-1000XM6"}`；`query` 为 2–120 字符商品搜索词（不能是网址），`model` 为可选的完整型号保护。普通商品名如 `iPhone 17 Pro 256GB` 可以只传 `query`。
+
+两个接口共用单进程忙碌保护，同一时间只跑一轮。每次至多搜索 3 个已实现的平台，各执行一次适配器搜索；每个平台最多返回 3 条去重且校验过的原始来源报价，总计不超过 9 条。严格检查查询文字、数字与版本/容量；有完整型号时额外检查 WF/WH、代际等差异，并过滤配件、二手/翻新、无库存、错误币种和域名。响应为 `{"ok":true,"market":"SG","platforms":["lazada"],"query":"...","model":"...","summary":{"requests":1,"matched":0,"skipped":1,"failed":0},"listings":[]}`；没有结果就返回空列表，不补库内商品、不推测品牌或价格。适配器原有重试与供应商计费仍适用，单元测试通过注入搜索依赖运行，不使用真实凭据。
+
+### Lazada：页面解析与恢复
+
+优先读取商品卡片的明确售价；页面中的独立 JSON-LD `Product + Offer` 也可解析，不再必须依附固定 DOM 类名。区间价、多规格聚合报价和促销金额不作为确定售价。来源链接必须属于对应市场，完整型号的重复别名可以合并识别，但不同型号、代际仍严格排除。
+
+Web Unlocker 返回无法解析的页面、空响应或暂时网络错误时，最多再请求一次，并启用 [Bright Data 的 JavaScript rendering 参数](https://docs.brightdata.com/products/web-unlocker/features#force-javascript-rendering-with-a-browser)。每次请求最多 90 秒，关闭内层重试，最多 2 次请求；明确无结果、权限/IP 拒绝和验证码页面不盲目重试。每次真实请求可能产生供应商费用。日志只记录响应长度、是否已渲染和错误代码，不输出完整 HTML 或凭据。
+
+`src/platforms/fixtures/lazada-sg-search.html` 是真实搜索页面的缩减商品卡片样本，已去除脚本、图片和跟踪属性；回归测试覆盖部分页面恢复、价格/来源校验及型号隔离，不使用真实凭据。
 
 ### Shopee：数据集免登录（推荐）
 

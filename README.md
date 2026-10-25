@@ -21,11 +21,11 @@ Picolah 是一个面向东南亚市场的比价工作台：问一句想买的东
 picolah/
 ├── web/                     # 网站项目（React + Express + SQLite / PostgreSQL）
 │   ├── src/                 # React 工作台
-│   ├── server/              # API、入库校验、比价查询、LLM 调用
+│   ├── server/              # API、入库校验、比价查询、LangChain agent
 │   ├── shared/              # 前后端共用的类型、目录、匹配与格式化
 │   ├── mock/                # 模拟爬虫（真实爬虫开工前的开发替身）
 │   └── docs/preview/        # 界面截图
-├── crawler/                 # 爬虫项目（Bright Data + 本地浏览器）
+├── crawler/                 # 爬虫项目（Bright Data + 内网 LangChain Tool 服务）
 │   ├── src/                 # 平台适配器、匹配、价格解析、入库
 │   ├── scripts/             # Shopee 数据集检查 / 一次性登录
 │   └── README.md
@@ -92,6 +92,7 @@ pnpm crawl --market SG --platform shopee --product sony-wh1000xm5 --dry-run
 | `pnpm seed` | 清空并重建演示库 |
 | `pnpm mock` / `pnpm mock:once` | 模拟爬虫常驻 / 推一批 |
 | `pnpm crawl --market SG --platform lazada --limit 3` | 真实爬虫（Bright Data，见 [crawler/README](crawler/README.md)） |
+| `pnpm crawler:tool` | 启动仅供 Agent 调用的真实爬虫工具服务（需配置双方 token） |
 | `pnpm shopee:dataset-check --market=SG` | 检查 Shopee 数据集是否已开通，并打印前几条结果 |
 | `pnpm shopee:login --market=SG` | 数据集未配置时的兜底：Shopee 一次性登录，保存 cookie 供爬虫复用 |
 | `pnpm test` | 匹配、目录完整性、比价与格式化测试 |

@@ -137,6 +137,11 @@ export interface PricePoint {
 }
 
 export interface Offer {
+  source?: 'live';
+  shippingKnown?: boolean;
+  discountKnown?: boolean;
+  ratingKnown?: boolean;
+  reviewsKnown?: boolean;
   id: string;
   productId: string;
   platformId: string;
@@ -178,6 +183,15 @@ export interface Comparison {
   sourceCount: number;
   platformFilter?: string[];
   unsupportedPlatforms?: string[];
+  /** Terminal outcome of an actual model search; pending is sent through SSE status. */
+  search?: {
+    query?: string;
+    maxPrice?: number;
+    model: string;
+    platforms: string[];
+    failedPlatforms?: number;
+    status: 'matched' | 'not_found' | 'failed' | 'unavailable';
+  };
 }
 
 export interface ChatMessage {
@@ -292,6 +306,7 @@ export interface ProfileActivity {
 }
 
 export interface ShoppingProfile {
+  video: import('./reels.ts').VideoProfile;
   hasData: boolean;
   user: {
     anonymousId: string;

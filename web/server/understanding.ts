@@ -1,5 +1,8 @@
 import type { CountryCode, Product } from '../shared/types.ts';
 import { MARKETS } from '../shared/types.ts';
+import { z } from 'zod';
+import { invokeStructuredAgent, type AgentMessage } from './agent/langchain.ts';
+import { config } from './config.ts';
 import { formatMoney } from './format.ts';
 import { findProduct } from './query.ts';
 import { getOffers, listProducts } from './repo.ts';
@@ -78,6 +81,30 @@ const VISION_SYSTEM_PROMPT = `你是 Picolah 的商品视觉识别器和导购�
 输出 JSON 形状：
 {"intent":"compare|recommend","matchedProductId":null,"recommendedProductIds":[],"category":null,"budget":null,"budgetCurrency":null,"recognition":{"name":"","brand":null,"model":null,"category":null,"confidence":0.8,"keywords":[],"notes":""},"reason":"一句话"}`;
 
+const intentSchema = z.enum(['compare', 'recommend', 'smalltalk', 'offtopic']);
+const baseUnderstandingSchema = z.object({
+  intent: intentSchema,
+  matchedProductId: z.string().nullable(),
+  recommendedProductIds: z.array(z.string()).max(4),
+  category: z.string().nullable(),
+  budget: z.number().positive().nullable(),
+  budgetCurrency: z.string().nullable(),
+  reason: z.string().optional(),
+});
+const recognitionSchema = z.object({
+  name: z.string(),
+  brand: z.string().nullable(),
+  model: z.string().nullable(),
+  category: z.string().nullable(),
+  confidence: z.number().min(0).max(1),
+  keywords: z.array(z.string()).max(6),
+  notes: z.string(),
+});
+const visionUnderstandingSchema = baseUnderstandingSchema.extend({
+  intent: z.enum(['compare', 'recommend']),
+  recognition: recognitionSchema,
+});
+
 async function buildCatalog(market: CountryCode): Promise<CatalogItem[]> {
   const products = await listProducts();
   const catalog: CatalogItem[] = [];
@@ -99,66 +126,6 @@ async function buildCatalog(market: CountryCode): Promise<CatalogItem[]> {
     });
   }
   return catalog;
-}
-
-function extractJson(content: string): unknown {
-  const trimmed = content
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
-  if (start === -1 || end <= start) throw new Error('LLM did not return a JSON object');
-  return JSON.parse(trimmed.slice(start, end + 1));
-}
-
-async function requestJson(
-  messages: unknown[],
-  model: string,
-  maxTokens: number,
-  timeoutMs: number,
-): Promise<unknown> {
-  const apiKey = process.env.LLM_API_KEY || '';
-  if (!apiKey) throw new Error('LLM_API_KEY is not configured');
-  const baseUrl = (process.env.LLM_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-        temperature: 0,
-        max_tokens: maxTokens,
-        response_format: { type: 'json_object' },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const detail = (await response.text()).slice(0, 300);
-      throw new Error(`LLM understanding failed (${response.status}): ${detail}`);
-    }
-
-    const body = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-      error?: { message?: string };
-    };
-    if (body.error?.message) throw new Error(body.error.message);
-    const content = body.choices?.[0]?.message?.content;
-    if (!content) throw new Error('LLM understanding returned no content');
-    return extractJson(content);
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 function asString(value: unknown, maxLength = 80): string | null {
@@ -282,7 +249,7 @@ export async function understandQuery(options: {
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }): Promise<UnderstandingResult> {
   const { query, market, image, localProduct } = options;
-  if (!process.env.LLM_API_KEY) return { understanding: null, error: 'LLM_API_KEY is not configured' };
+  if (!config.llm.apiKey) return { understanding: null, error: 'LLM_API_KEY is not configured' };
 
   const catalog = await buildCatalog(market);
   const marketInfo = MARKETS[market];
@@ -304,21 +271,24 @@ ${JSON.stringify(catalog, null, 2)}
 
   try {
     if (image) {
-      const value = await requestJson(
-        [
-          { role: 'system', content: VISION_SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: `${context}\n\n请识别图片里的商品，并按规则选择 catalog 商品。` },
-              { type: 'image_url', image_url: { url: image } },
-            ],
-          },
-        ],
-        process.env.LLM_VISION_MODEL || 'deepseek-flash',
-        900,
-        45_000,
-      );
+      const messages: AgentMessage[] = [
+        { role: 'system', content: VISION_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: `${context}\n\n请识别图片里的商品，并按规则选择 catalog 商品。` },
+            { type: 'image_url', image_url: { url: image } },
+          ],
+        },
+      ];
+      const value = await invokeStructuredAgent({
+        messages,
+        schema: visionUnderstandingSchema,
+        name: 'PicolahVisionUnderstanding',
+        model: config.llm.visionModel,
+        maxTokens: 900,
+        timeoutMs: 45_000,
+      });
       const understanding = await normalizeUnderstanding(value, catalog, true);
       if (understanding.intent === 'compare' && understanding.recognitionProductId) {
         understanding.matchedProductId = understanding.recognitionProductId;
@@ -326,15 +296,17 @@ ${JSON.stringify(catalog, null, 2)}
       return { understanding };
     }
 
-    const value = await requestJson(
-      [
+    const value = await invokeStructuredAgent({
+      messages: [
         { role: 'system', content: TEXT_SYSTEM_PROMPT },
         { role: 'user', content: `${context}\n\n请按规则输出 JSON。` },
       ],
-      process.env.LLM_INTENT_MODEL || process.env.LLM_MODEL || 'deepseek-chat',
-      700,
-      20_000,
-    );
+      schema: baseUnderstandingSchema,
+      name: 'PicolahTextUnderstanding',
+      model: config.llm.intentModel,
+      maxTokens: 700,
+      timeoutMs: 20_000,
+    });
     const understanding = await normalizeUnderstanding(value, catalog, false);
     if (understanding.intent === 'compare' && localProduct) {
       understanding.matchedProductId = localProduct.id;

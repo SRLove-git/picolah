@@ -3,6 +3,9 @@ import { after, test } from 'node:test';
 
 process.env.NODE_ENV = 'test';
 process.env.PICOLAH_DB_PATH = ':memory:';
+process.env.CRAWLER_TOOL_URL = '';
+process.env.CRAWLER_TOOL_TOKEN = '';
+process.env.LLM_API_KEY = '';
 
 const { app } = await import('./index.ts');
 const server = await new Promise<import('node:http').Server>((resolve) => {
@@ -42,7 +45,9 @@ async function ask(message: string, market = 'SG', conversationId?: string) {
 test('chat keeps, excludes and resets platform filters without losing the product', async () => {
   const first = await ask('Sony WH-1000XM5 在新加坡多少钱');
   const lazada = await ask('只看 Lazada', 'SG', first.conversationId);
-  assert.equal(lazada.comparison.product.id, 'sony-wh1000xm5');
+  assert.equal(lazada.comparison.search.model, 'WH-1000XM5');
+  assert.equal(lazada.comparison.search.status, 'unavailable');
+  assert.equal(lazada.comparison.product, null);
   assert.deepEqual(lazada.comparison.platformFilter, ['lazada']);
   assert.ok(lazada.comparison.offers.every((offer: any) => offer.platformId === 'lazada'));
 
@@ -56,7 +61,9 @@ test('chat keeps, excludes and resets platform filters without losing the produc
 
   const reset = await ask('恢复全部平台', 'SG', first.conversationId);
   assert.equal(reset.comparison.platformFilter, undefined);
-  assert.ok(reset.comparison.offers.some((offer: any) => offer.platformId === 'shopee'));
+  assert.equal(reset.comparison.search.model, 'WH-1000XM5');
+  assert.deepEqual(reset.comparison.offers, []);
+  assert.doesNotMatch(reset.answer, /S\$|我查了|价格库里/);
 });
 
 test('chat explains when a requested platform is unavailable in the market', async () => {

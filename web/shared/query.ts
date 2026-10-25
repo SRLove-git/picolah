@@ -1,5 +1,6 @@
 import type { CountryCode, Product } from './types.ts';
 import { MARKETS } from './types.ts';
+import { compactModel, explicitModelCodes } from './model-search.ts';
 
 const COUNTRY_WORDS: Record<CountryCode, string[]> = {
   SG: ['新加坡', '狮城', 'singapore', 'sg'],
@@ -149,6 +150,11 @@ function matchProduct(text: string, product: Product): ProductMatch {
   const normalized = normalize(text);
   const compactText = compact(text);
   if (hasVariantConflict(text, product)) return { product: null, score: 0, matchedOn: '' };
+  const requestedModels = explicitModelCodes(text).map(compactModel);
+  const productModels = [product.name, ...product.aliases].flatMap(explicitModelCodes).map(compactModel);
+  if (requestedModels.length && productModels.length && !requestedModels.some((model) => productModels.includes(model))) {
+    return { product: null, score: 0, matchedOn: '' };
+  }
 
   const candidates = [
     { value: product.name, kind: 'name' },

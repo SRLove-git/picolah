@@ -120,11 +120,13 @@ export function PriceModePicker({
   onChange,
   direction = 'up',
   tone = 'light',
+  compact = false,
 }: {
   priceMode: PriceMode;
   onChange: (mode: PriceMode) => void;
   direction?: 'up' | 'down';
   tone?: 'light' | 'ghost';
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -146,7 +148,7 @@ export function PriceModePicker({
         title={mode.hint}
       >
         <Icon size={14} strokeWidth={1.9} />
-        <span className="pc-picker-label">{mode.label}</span>
+        <span className="pc-picker-label">{compact ? t(`controls.${priceMode}.short`, { defaultValue: mode.label }) : mode.label}</span>
         <ChevronDown size={13} className={open ? 'is-flipped' : ''} />
       </button>
 
