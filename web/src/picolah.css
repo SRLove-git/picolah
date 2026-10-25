@@ -7633,3 +7633,53 @@
   font-size: 10px;
   line-height: 1.5;
 }
+
+/* --------------------------------------------------------------------------
+   Accessibility: keyboard-first skip link and visible focus.
+   -------------------------------------------------------------------------- */
+.pc-skip-link {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  z-index: 1000;
+  transform: translate(-50%, -160%);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--pc-shadow-float);
+  transition: transform 160ms ease;
+}
+
+.pc-skip-link:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 3px solid var(--pc-pink);
+  outline-offset: 3px;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+.pc-app :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--pc-pink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-skip-link {
+    transition: none;
+  }
+}
+
+.pc-view-loading {
+  display: grid;
+  place-items: center;
+  min-height: 55vh;
+  color: var(--pc-muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}

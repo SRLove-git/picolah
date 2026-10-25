@@ -18,6 +18,8 @@ export const config = {
   sessionCookie: 'picolah_session',
   sessionDays: num(process.env.SESSION_DAYS, 30),
   ingestKey: process.env.INGEST_API_KEY || 'pcl_dev_crawler_key',
+  /** When set, /metrics requires `Authorization: Bearer <token>`. */
+  metricsToken: process.env.METRICS_TOKEN || '',
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
     .split(',')
     .map((origin) => origin.trim())

@@ -33,6 +33,9 @@ Picolah 把比价做成一件轻松的小事。首页像 Google 一样干净，�
 - **可操作的网关面板**：数据源状态、最近入库、接口地址、字段契约和 curl 示例都在界面内。
 - **响应式界面**：桌面为 252px 侧栏 + 主工作区；1100px 以下收成图标栏；820px 以下切换为抽屉式导航与单列卡片。
 - **可运行的 mock**：`pnpm mock` 是一支模拟爬虫，按市场轮询把真实格式的批次推进来，价格、库存、今日更新和 30 日曲线都会持续变化；`?mock=1` 则完全离线，只用前端内置数据跑通整套工作台。
+- **账号与个人数据**：注册 / 登录 / 登出、匿名购物画像、关注清单与降价提醒、账号数据导出与注销；隐私政策和服务条款从侧栏可直接打开。
+- **PWA 与可访问性**：Web App Manifest、生产环境 Service Worker（只缓存静态资源）、跳到主要内容链接、键盘焦点样式和 reduced-motion 适配。
+- **可观测性**：`/metrics` 暴露 Prometheus 文本指标（请求量、5xx、延迟直方图、在途请求、内存/运行时长）；生产需配置 `METRICS_TOKEN`。
 
 ## 界面预览
 
@@ -253,7 +256,7 @@ web/                         # 网站项目（@picolah/web）
 │   ├── components/          # 侧栏、顶栏、比价卡、数据接入抽屉、国旗 / 商品插画
 │   ├── lib/                 # API / SSE 客户端、格式化
 │   ├── App.tsx              # 会话状态、流式消息、导航
-│   └── styles.css           # 设计系统与响应式
+│   └── picolah.css          # 设计系统与响应式
 ├── server/
 │   ├── index.ts             # Express 入口与静态资源托管
 │   ├── db.ts                # node:sqlite 初始化和 schema
@@ -261,8 +264,9 @@ web/                         # 网站项目（@picolah/web）
 │   ├── repo.ts              # 商品 / 报价 / 会话查询
 │   ├── query.ts             # 国家识别、商品别名匹配（包 shared/query）
 │   ├── llm.ts               # OpenAI-compatible SSE 流
+│   ├── metrics.ts           # Prometheus 指标
 │   ├── copy.ts              # 本地兜底摘要器（转 shared/copy）
-│   └── routes/              # chat / conversations / config / ingest
+│   └── routes/              # chat / conversations / config / ingest / auth / watchlist / out
 ├── shared/
 │   ├── catalog.ts           # 28 个商品 + 报价生成器（服务端 / 模拟爬虫 / 前端共用）
 │   ├── comparison.ts        # 从内存报价组装 Comparison
@@ -272,7 +276,8 @@ web/                         # 网站项目（@picolah/web）
 ├── mock/crawler.ts          # 模拟爬虫：定时向 ingest API 推批次（真实爬虫开工前使用）
 ├── src/lib/mock-backend.ts  # 纯前端离线 mock（?mock=1）
 ├── docs/preview/            # 界面截图
-├── public/                  # 字体、伪装首页、robots.txt
+├── db/postgres.sql          # PostgreSQL DDL（迁移用，运行时仍默认 SQLite）
+├── public/                  # 字体、伪装首页、manifest、Service Worker、robots.txt
 ├── package.json             # @picolah/web
 └── data/                    # SQLite（首次运行自动生成，已 gitignore）
 ```
@@ -358,6 +363,7 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 | `HOST` | `127.0.0.1` | 监听地址；容器内设为 `0.0.0.0` |
 | `INGEST_API_KEY` | `pcl_dev_crawler_key` | 爬虫写入密钥，生产必须更换 |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | 允许跨域的来源，逗号分隔 |
+| `METRICS_TOKEN` | 空 | 设置后 `/metrics` 需要 `Authorization: Bearer <token>`；生产未设置则返回 404 |
 | `LLM_API_KEY` | 空 | 空则启用本地摘要 |
 | `LLM_BASE_URL` | `https://api.deepseek.com` | OpenAI-compatible base URL |
 | `LLM_MODEL` | `deepseek-chat` | 回答生成模型名 |
@@ -375,8 +381,8 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 
 ## 安全与边界
 
-- 这是单工作区演示应用，**会话接口没有登录鉴权**。正式上线前需要加用户体系，并把会话 / 网关状态限制到管理员。
-- 生产环境务必更换 `INGEST_API_KEY`；建议再加 IP allowlist、请求签名、速率限制和审计日志。
+- 生产默认开启账号体系（`AUTH_REQUIRED=true`），会话使用 HttpOnly Cookie；本地开发为方便演示默认关闭。正式上线还应把数据源网关限制到管理员。
+- 生产环境务必更换 `INGEST_API_KEY` 和 `METRICS_TOKEN`；建议再加 IP allowlist、请求签名、速率限制和审计日志。
 - 上传图片会发送给配置的视觉模型，并保存在 SQLite 消息元数据中；生产环境应改用对象存储、签名 URL 和明确的保留 / 删除策略。
 - 演示报价、店铺名和平台链接都是生成数据，链接指向平台搜索页。真实上线时应只展示爬虫回传的真实商品 URL。
 - 当前为 SQLite 单进程模型。多实例部署时建议换 PostgreSQL，并把价格点写入改成异步队列。
@@ -384,11 +390,10 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 
 ## 接下来可以做什么
 
-- 商品级价格提醒和「到价通知」。
 - 一次比较多款商品，或按类目做价格带分布。
 - 接入真实类目树、规格（SKU）和图片 CDN。
-- 爬虫批次监控、失败重试和异常价格检测（价格突降 / 突涨）。
-- 用户账户、收藏、分享卡片和协作工作区。
+- TikTok Shop / 更多 Amazon 站点接入；PostgreSQL 双驱动迁移（见 [`docs/postgres.md`](../docs/postgres.md)）。
+- Playwright E2E、k6 压测和 Sentry/OTel 外部追踪。
 - 对 LLM 回答做引用校验，把每句建议绑定到 `offerId`。
 
 ## License

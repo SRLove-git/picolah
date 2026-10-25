@@ -1,0 +1,33 @@
+{
+  "name": "Picolah 比价工作台",
+  "short_name": "Picolah",
+  "description": "面向东南亚的 AI 比价工作台，一次提问看清六个市场的到手价。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fbf7f2",
+  "theme_color": "#fbf7f2",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "productivity"],
+  "shortcuts": [
+    {
+      "name": "首页",
+      "short_name": "首页",
+      "url": "/#home"
+    },
+    {
+      "name": "关注清单",
+      "short_name": "关注",
+      "url": "/#watchlist"
+    }
+  ]
+}

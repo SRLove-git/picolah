@@ -22,6 +22,8 @@
     "shopee:dataset-check": "npm --prefix crawler run shopee:dataset-check --",
     "shopee:login": "npm --prefix crawler run shopee:login --",
     "test": "npm --prefix web run test",
-    "typecheck": "npm --prefix web run typecheck"
+    "typecheck": "npm --prefix web run typecheck",
+    "e2e:api": "node scripts/e2e-api.mjs",
+    "load:smoke": "k6 run scripts/load.k6.js"
   }
 }

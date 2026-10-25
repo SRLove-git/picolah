@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -14,15 +14,16 @@ import { getConfig, getConversation, getConversations, streamChat } from './lib/
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
-import { ReelsView } from './components/ReelsView';
-import { MessagesView } from './components/MessagesView';
-import { ProfileView } from './components/ProfileView';
-import { LegalView } from './components/LegalView';
-import { WatchlistView } from './components/WatchlistView';
-import { AccountView } from './components/AccountView';
 import { IngestDrawer } from './components/IngestDrawer';
 import { AuthView } from './components/AuthView';
 import { useSession } from './lib/session';
+
+const ReelsView = lazy(() => import('./components/ReelsView').then((module) => ({ default: module.ReelsView })));
+const MessagesView = lazy(() => import('./components/MessagesView').then((module) => ({ default: module.MessagesView })));
+const ProfileView = lazy(() => import('./components/ProfileView').then((module) => ({ default: module.ProfileView })));
+const LegalView = lazy(() => import('./components/LegalView').then((module) => ({ default: module.LegalView })));
+const WatchlistView = lazy(() => import('./components/WatchlistView').then((module) => ({ default: module.WatchlistView })));
+const AccountView = lazy(() => import('./components/AccountView').then((module) => ({ default: module.AccountView })));
 
 const MARKET_KEY = 'picolah.market';
 const PRICE_MODE_KEY = 'picolah.priceMode';
@@ -540,6 +541,9 @@ function AppWorkspace() {
 
   return (
     <div className={`pc-app ${sidebarOpen ? 'is-sidebar-open' : ''}`}>
+      <a className="pc-skip-link" href="#main-content">
+        {i18n.language.startsWith('zh') ? '跳到主要内容' : 'Skip to main content'}
+      </a>
       <div
         className={`pc-sidebar-scrim ${sidebarOpen ? 'is-open' : ''}`}
         onClick={() => setSidebarOpen(false)}
@@ -552,7 +556,14 @@ function AppWorkspace() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="pc-main">
+      <main className="pc-main" id="main-content" tabIndex={-1}>
+        <Suspense
+          fallback={
+            <div className="pc-view-loading" role="status">
+              <span>pico…</span>
+            </div>
+          }
+        >
         {view === 'home' && (
           <HomeView
             market={market}
@@ -653,6 +664,7 @@ function AppWorkspace() {
             notify={notify}
           />
         )}
+        </Suspense>
       </main>
 
       {toast && (

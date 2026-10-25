@@ -15,6 +15,7 @@ import { watchlistRouter, alertsRouter } from './routes/watchlist.ts';
 import { outRouter } from './routes/out.ts';
 import { accountRouter } from './routes/account.ts';
 import { attachUser, requireAuth } from './auth.ts';
+import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
 seedDatabase(false);
 
@@ -25,6 +26,15 @@ app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Frame-Options', 'DENY');
+  if (config.isProduction) {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; " +
+        "img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; " +
+        "connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'",
+    );
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+  }
   next();
 });
 
@@ -56,7 +66,22 @@ app.use((req, res, next) => {
   }
   corsMiddleware(req, res, next);
 });
+app.use(metricsMiddleware);
 app.use(express.json({ limit: '8mb' }));
+
+app.get('/metrics', (req, res) => {
+  if (config.metricsToken) {
+    const header = req.header('authorization') || '';
+    if (header !== `Bearer ${config.metricsToken}`) {
+      res.status(401).type('text').send('Unauthorized');
+      return;
+    }
+  } else if (config.isProduction) {
+    res.status(404).type('text').send('Not found');
+    return;
+  }
+  res.type('text/plain; version=0.0.4; charset=utf-8').send(renderMetrics());
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({
