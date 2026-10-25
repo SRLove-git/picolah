@@ -90,6 +90,7 @@ services:
     image: picolah:latest
     container_name: picolah-mock
     restart: unless-stopped
+    profiles: ["mock"]
     depends_on:
       picolah:
         condition: service_healthy
@@ -111,8 +112,8 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Internal, authenticated LangChain tool target. It performs a real crawl
-  # only when the user explicitly asks for live/fresh prices.
+  # Internal, authenticated LangChain tool target for every product comparison.
+  # Start explicitly with --profile crawler; this service does not schedule crawls.
   crawler-tool:
     build:
       context: .

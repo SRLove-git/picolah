@@ -4,6 +4,8 @@ data/
 mock-state/
 .env
 .env.local
+/deploy/production.env
+/deploy/*.key
 .shopee-state*.json
 .chrome-shopee-profile/
 .DS_Store

@@ -3,11 +3,13 @@
 ## 启动与健康检查
 
 ```bash
-docker compose up -d --build
+docker compose --profile crawler up -d --build picolah crawler-tool
 curl -fsS http://127.0.0.1:8787/api/health
 ```
 
 `/api/health` 返回数据库状态、数据新鲜度、最近一次爬虫批次和告警积压；生产环境请把它接进探活与监控。容器健康检查已经内置在 `docker-compose.yml`。
+
+模拟价格进程只在显式启用 `mock` profile 时运行，生产真实比价部署不应启动它。加密环境配置保存在 `deploy/production.env.enc`；解密密钥须在仓库之外单独保管，使用方法见 `deploy/README.md`。
 
 ## 账户与访问控制
 

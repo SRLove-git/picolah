@@ -58,7 +58,7 @@ curl -s -b /tmp/jar -o /dev/null -w '%{http_code}\n' https://picolah.com/api/con
 ```bash
 cd /opt/picolah
 
-docker compose up -d --build     # deploy / redeploy both services
+docker compose --profile crawler up -d --build picolah crawler-tool
 docker compose logs -f --tail 100
 docker compose restart
 docker compose ps
@@ -66,7 +66,7 @@ docker compose ps
 # mock crawler (price movement)
 docker compose logs -f mock-crawler
 docker compose stop mock-crawler   # freeze demo prices
-docker compose start mock-crawler
+docker compose --profile mock up -d mock-crawler  # explicit demo-only opt-in
 
 # health
 curl -s http://172.20.0.1:8787/api/health
@@ -165,3 +165,41 @@ picolah block. `deploy/apply-nginx.sh` is idempotent and restores it:
 ```
 
 It is also installed in root's crontab every 10 minutes as a self-heal.
+
+## Encrypted environment backup
+
+Commit only `deploy/production.env.enc`, never plaintext `.env` files or the
+decryption key. `scripts/env-vault.mjs` uses Node's AES-256-GCM with a new random
+12-byte nonce per encryption, a 16-byte authentication tag, and authenticated
+format/version/algorithm metadata. The key is a random **32-byte binary file**,
+kept outside this repository with permissions `600`. Back it up separately in
+a secure location: losing it makes the encrypted configuration unrecoverable.
+
+The key directory must already exist. To create the key once and encrypt an
+existing production configuration (replace the example paths):
+
+```bash
+node scripts/env-vault.mjs encrypt \
+  --input /private/deploy/production.env \
+  --output deploy/production.env.enc \
+  --key-file /private/keys/picolah-production.key --generate-key
+```
+
+On subsequent updates, omit `--generate-key` and add `--force` to intentionally
+replace the encrypted backup. Transfer the key separately over a secure channel;
+do not put it in Git, command arguments, logs, or alongside a public download.
+On the server, after securely installing the key outside the checkout:
+
+```bash
+node scripts/env-vault.mjs decrypt \
+  --input deploy/production.env.enc --output .env \
+  --key-file /root/.config/picolah/production.key
+node --test scripts/env-vault.test.mjs
+```
+
+Decrypting refuses to overwrite an existing `.env` unless `--force` is explicitly
+added. Authentication is checked before any plaintext is written; failed checks
+leave an existing output unchanged. Outputs use permissions `600`. Input is
+limited to 1 MiB; symlink files, shared input/key/output files, keys inside this
+checkout (including symlinked parent paths), malformed envelopes, and keys with
+unsafe permissions are rejected. Keep plaintext configuration ignored by Git.
