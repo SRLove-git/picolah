@@ -13,7 +13,12 @@ import {
   getProduct,
   updateConversationTitle,
 } from '../repo.ts';
-import { findProducts, isContextualFollowUp, parseQuery } from '../query.ts';
+import {
+  findProducts,
+  isContextualFollowUp,
+  parseQuery,
+  resolvePlatformDirective,
+} from '../query.ts';
 import { writeFallbackAnswer } from '../copy.ts';
 import { streamLlmAnswer } from '../llm.ts';
 import { understandQuery, type Understanding } from '../understanding.ts';
@@ -48,14 +53,46 @@ function resolveComparison(
   localProducts: Product[],
   message: string,
   market: CountryCode,
+  platformIds: string[],
+  unsupportedPlatforms: string[],
 ): Comparison {
+  // A platform-only follow-up (for example, "只看 Lazada") is a deterministic
+  // filter command, not a new product query. Keep the inherited product even
+  // if an external intent model classifies the short sentence differently.
+  if (platformIds.length && localProducts.length) {
+    if (localProducts.length > 1) {
+      return buildRecommendationComparison({
+        query: message,
+        market,
+        productIds: localProducts.map((product) => product.id),
+        platformIds,
+        unsupportedPlatforms,
+      });
+    }
+    return buildComparison({
+      query: message,
+      market,
+      product: localProducts[0],
+      kind: 'comparison',
+      platformIds,
+      unsupportedPlatforms,
+    });
+  }
+
   const matchedProduct =
     understanding?.intent === 'compare' && understanding.matchedProductId
       ? getProduct(understanding.matchedProductId)
       : null;
 
   if (matchedProduct) {
-    return buildComparison({ query: message, market, product: matchedProduct, kind: 'comparison' });
+    return buildComparison({
+      query: message,
+      market,
+      product: matchedProduct,
+      kind: 'comparison',
+      platformIds,
+      unsupportedPlatforms,
+    });
   }
 
   if (understanding?.intent === 'recommend') {
@@ -67,12 +104,24 @@ function resolveComparison(
       productIds.unshift(understanding.recognitionProductId);
     }
     if (productIds.length > 0) {
-      return buildRecommendationComparison({ query: message, market, productIds });
+      return buildRecommendationComparison({
+        query: message,
+        market,
+        productIds,
+        platformIds,
+        unsupportedPlatforms,
+      });
     }
   }
 
   if (understanding?.intent === 'smalltalk' || understanding?.intent === 'offtopic') {
-    return buildComparison({ query: message, market, product: null });
+    return buildComparison({
+      query: message,
+      market,
+      product: null,
+      platformIds,
+      unsupportedPlatforms,
+    });
   }
 
   if (localProducts.length > 1) {
@@ -80,20 +129,39 @@ function resolveComparison(
       query: message,
       market,
       productIds: localProducts.map((product) => product.id),
+      platformIds,
+      unsupportedPlatforms,
     });
   }
 
   if (localProducts[0]) {
-    return buildComparison({ query: message, market, product: localProducts[0], kind: 'comparison' });
+    return buildComparison({
+      query: message,
+      market,
+      product: localProducts[0],
+      kind: 'comparison',
+      platformIds,
+      unsupportedPlatforms,
+    });
   }
 
-  return buildComparison({ query: message, market, product: null });
+  return buildComparison({
+    query: message,
+    market,
+    product: null,
+    platformIds,
+    unsupportedPlatforms,
+  });
+}
+
+function previousComparison(messages: ChatMessage[]): Comparison | null {
+  return [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.comparison)?.comparison ?? null;
 }
 
 function previousComparedProducts(messages: ChatMessage[]): Product[] {
-  const previous = [...messages]
-    .reverse()
-    .find((message) => message.role === 'assistant' && message.comparison)?.comparison;
+  const previous = previousComparison(messages);
   if (!previous || previous.kind === 'suggestions' || previous.kind === 'empty') return [];
   const ids = previous.product
     ? [previous.product.id]
@@ -188,6 +256,9 @@ chatRouter.post('/', async (req, res) => {
     : contextualProducts(message, previousComparedProducts(priorMessages));
   const localProducts = explicitProducts.length ? explicitProducts : inheritedProducts;
   const localProduct = localProducts[0] || query.product;
+  const previousFilter = previousComparison(priorMessages)?.platformFilter ?? [];
+  const platformDirective = resolvePlatformDirective(message, query.market, previousFilter);
+  const requestedPlatforms = platformDirective.platformIds;
 
   const userId = randomUUID();
   addMessage({
@@ -265,7 +336,14 @@ chatRouter.post('/', async (req, res) => {
     }
   }
 
-  const comparison = resolveComparison(understanding, localProducts, message, query.market);
+  const comparison = resolveComparison(
+    understanding,
+    localProducts,
+    message,
+    query.market,
+    requestedPlatforms,
+    platformDirective.unsupported,
+  );
   const hasOffers = Boolean(comparison.product && comparison.offers.length > 0);
   const isConversational =
     understanding?.intent === 'smalltalk' || understanding?.intent === 'offtopic';

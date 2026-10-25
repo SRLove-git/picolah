@@ -17,7 +17,7 @@
     "mock": "tsx mock/crawler.ts",
     "mock:once": "tsx mock/crawler.ts --once",
     "seed": "tsx server/seed.ts --force",
-    "test": "tsx --test server/query.test.ts",
+    "test": "tsx --test server/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

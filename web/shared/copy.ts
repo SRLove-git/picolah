@@ -1,5 +1,5 @@
 import type { Comparison, Offer } from './types.ts';
-import { MARKETS } from './types.ts';
+import { MARKETS, PLATFORMS } from './types.ts';
 import { formatMoney } from './format.ts';
 
 function sortByFinal(offers: Offer[]): Offer[] {
@@ -10,6 +10,13 @@ function sortByFinal(offers: Offer[]): Offer[] {
 export function writeFallbackAnswer(comparison: Comparison): string {
   const { product, market } = comparison;
   const marketName = MARKETS[market].nameZh;
+
+  if (comparison.unsupportedPlatforms?.length) {
+    const platforms = comparison.unsupportedPlatforms
+      .map((id) => PLATFORMS[id]?.name || id)
+      .join('、');
+    return `${marketName}当前不支持 **${platforms}** 的报价。请切换到该平台支持的市场，或改看当前市场的其他平台。`;
+  }
 
   if (comparison.kind === 'recommendation' && comparison.alternatives.length) {
     const examples = comparison.alternatives
@@ -28,6 +35,12 @@ export function writeFallbackAnswer(comparison: Comparison): string {
   }
 
   if (!product) {
+    if (comparison.platformFilter?.length) {
+      const platforms = comparison.platformFilter
+        .map((id) => PLATFORMS[id]?.name || id)
+        .join('、');
+      return `已切换为只看 **${platforms}**。请先告诉我具体商品或型号，我再按这个平台帮你查价。`;
+    }
     const examples = comparison.alternatives
       .slice(0, 2)
       .map((item) => `**${item.product.name}**`)

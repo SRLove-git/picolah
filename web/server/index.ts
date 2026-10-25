@@ -160,11 +160,13 @@ app.use(
   },
 );
 
-app.listen(config.port, config.host, () => {
-  console.log(`\n  Picolah API   http://${config.host}:${config.port}`);
-  console.log(`  Price DB      ${dbPath}`);
-  console.log(`  LLM           ${llmConfigured ? `${config.llm.provider} / ${config.llm.model}` : 'local writer (set LLM_API_KEY to enable)'}`);
-  console.log(
-    `  Crawler key   ${config.ingestKey === 'pcl_dev_crawler_key' ? 'using development default' : 'configured'}\n`,
-  );
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(config.port, config.host, () => {
+    console.log(`\n  Picolah API   http://${config.host}:${config.port}`);
+    console.log(`  Price DB      ${dbPath}`);
+    console.log(`  LLM           ${llmConfigured ? `${config.llm.provider} / ${config.llm.model}` : 'local writer (set LLM_API_KEY to enable)'}`);
+    console.log(
+      `  Crawler key   ${config.ingestKey === 'pcl_dev_crawler_key' ? 'using development default' : 'configured'}\n`,
+    );
+  });
+}

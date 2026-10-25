@@ -119,28 +119,23 @@ export function getRegionalOfferCount(productId?: string): number {
   return Number(row?.count || 0);
 }
 
-function bestOfferFor(productId: string, country: CountryCode): Offer | null {
-  const rows = db
-    .prepare(
-      'SELECT * FROM offers WHERE product_id = ? AND country = ? AND in_stock = 1 ORDER BY final_price ASC LIMIT 1',
-    )
-    .all(productId, country) as Row[];
-  if (!rows[0]) return null;
-  return mapOffer(rows[0], getPriceHistory(String(rows[0].id)));
+function bestOfferFor(productId: string, country: CountryCode, platformIds: string[] = []): Offer | null {
+  const offers = getOffers(productId, country);
+  return offers.find((offer) => !platformIds.length || platformIds.includes(offer.platformId)) || null;
 }
 
-function getAlternatives(product: Product, market: CountryCode): ComparisonAlternative[] {
+function getAlternatives(product: Product, market: CountryCode, platformIds: string[] = []): ComparisonAlternative[] {
   const all = listProducts().filter((candidate) => candidate.id !== product.id);
   const sameCategory = all.filter((candidate) => candidate.category === product.category);
   const rest = all.filter((candidate) => candidate.category !== product.category);
   return [...sameCategory, ...rest].slice(0, 3).map((candidate) => ({
     product: candidate,
-    offer: bestOfferFor(candidate.id, market),
+    offer: bestOfferFor(candidate.id, market, platformIds),
     market,
   }));
 }
 
-function getSuggestions(market: CountryCode): ComparisonAlternative[] {
+function getSuggestions(market: CountryCode, platformIds: string[] = []): ComparisonAlternative[] {
   const preferred = ['sony-wh1000xm5', 'iphone-15-128', 'skii-facial-essence-230', 'airpods-pro-2'];
   const products = listProducts();
   const ordered = [
@@ -149,7 +144,7 @@ function getSuggestions(market: CountryCode): ComparisonAlternative[] {
   ] as Product[];
   return ordered.slice(0, 4).map((product) => ({
     product,
-    offer: bestOfferFor(product.id, market),
+    offer: bestOfferFor(product.id, market, platformIds),
     market,
   }));
 }
@@ -159,11 +154,20 @@ export function buildComparison(options: {
   market: CountryCode;
   product: Product | null;
   kind?: Comparison['kind'];
+  platformIds?: string[];
+  unsupportedPlatforms?: string[];
 }): Comparison {
   const { query, market, product } = options;
-  const offers = product ? getOffers(product.id, market) : [];
+  const platformIds = options.platformIds ?? [];
+  const offers = product
+    ? getOffers(product.id, market).filter(
+        (offer) => !platformIds.length || platformIds.includes(offer.platformId),
+      )
+    : [];
   const kind = options.kind || (product ? 'comparison' : 'suggestions');
-  const alternatives = product ? getAlternatives(product, market) : getSuggestions(market);
+  const alternatives = product
+    ? getAlternatives(product, market, platformIds)
+    : getSuggestions(market, platformIds);
   const latest = offers.reduce((max, offer) => (offer.lastSeen > max ? offer.lastSeen : max), '');
   return {
     kind,
@@ -172,9 +176,13 @@ export function buildComparison(options: {
     product,
     offers,
     alternatives,
-    totalOffers: getRegionalOfferCount(product?.id),
+    totalOffers: platformIds.length ? offers.length : getRegionalOfferCount(product?.id),
     updatedAt: latest || new Date().toISOString(),
     sourceCount: new Set(offers.map((offer) => offer.platformId)).size,
+    platformFilter: platformIds.length ? platformIds : undefined,
+    unsupportedPlatforms: options.unsupportedPlatforms?.length
+      ? options.unsupportedPlatforms
+      : undefined,
   };
 }
 
@@ -182,6 +190,8 @@ export function buildRecommendationComparison(options: {
   query: string;
   market: CountryCode;
   productIds: string[];
+  platformIds?: string[];
+  unsupportedPlatforms?: string[];
 }): Comparison {
   const chosen: Product[] = [];
   for (const id of options.productIds) {
@@ -193,10 +203,10 @@ export function buildRecommendationComparison(options: {
   const alternatives: ComparisonAlternative[] = chosen.length
     ? chosen.map((product) => ({
         product,
-        offer: bestOfferFor(product.id, options.market),
+        offer: bestOfferFor(product.id, options.market, options.platformIds),
         market: options.market,
       }))
-    : getSuggestions(options.market);
+    : getSuggestions(options.market, options.platformIds);
 
   const lastSeen = alternatives.reduce(
     (max, item) => (item.offer && item.offer.lastSeen > max ? item.offer.lastSeen : max),
@@ -210,11 +220,17 @@ export function buildRecommendationComparison(options: {
     product: null,
     offers: [],
     alternatives,
-    totalOffers: getRegionalOfferCount(),
+    totalOffers: options.platformIds?.length
+      ? alternatives.filter((item) => item.offer).length
+      : getRegionalOfferCount(),
     updatedAt: lastSeen || new Date().toISOString(),
     sourceCount: new Set(
       alternatives.flatMap((item) => (item.offer ? [item.offer.platformId] : [])),
     ).size,
+    platformFilter: options.platformIds?.length ? options.platformIds : undefined,
+    unsupportedPlatforms: options.unsupportedPlatforms?.length
+      ? options.unsupportedPlatforms
+      : undefined,
   };
 }
 

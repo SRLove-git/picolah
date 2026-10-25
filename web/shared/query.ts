@@ -201,9 +201,65 @@ export function findProduct(text: string, products: Product[]): ProductMatch {
 export function isContextualFollowUp(text: string): boolean {
   const normalized = normalize(text);
   if (!normalized || normalized.length > 40) return false;
-  return /(?:那|这个|这款|它|它们|这些|第[一二三四1234]个|前者|后者|黑色|白色|颜色|容量|版本|官方|保修|运费|库存|便宜|价格|值得|怎么样|还有|呢|对比)/i.test(
+  return /(?:那|这个|这款|它|它们|这些|第[一二三四1234]个|前者|后者|黑色|白色|颜色|容量|版本|官方|保修|运费|库存|便宜|价格|值得|怎么样|还有|呢|对比|只看|全部平台|所有平台|取消筛选|不限平台|lazada|来赞达|shopee|虾皮|tiktok|抖音|amazon|亚马逊|tokopedia|tiki|品牌官网|官网)/i.test(
     normalized,
   );
+}
+
+const PLATFORM_WORDS: Array<[string, RegExp]> = [
+  ['lazada', /\blazada\b|来赞达/i],
+  ['shopee', /\bshopee\b|虾皮/i],
+  ['tiktok', /\btiktok(?:\s*shop)?\b|抖音(?:商城)?/i],
+  ['amazon-sg', /\bamazon(?:\s*sg)?\b|亚马逊/i],
+  ['tokopedia', /\btokopedia\b/i],
+  ['tiki', /\btiki\b/i],
+  ['official', /\bofficial\s*(?:store|shop)?\b|品牌官网|官网/i],
+];
+
+export function detectRequestedPlatforms(text: string): string[] {
+  return PLATFORM_WORDS.filter(([, pattern]) => pattern.test(text)).map(([id]) => id);
+}
+
+export type PlatformDirectiveMode = 'none' | 'include' | 'exclude' | 'reset';
+
+export interface PlatformDirective {
+  mode: PlatformDirectiveMode;
+  mentioned: string[];
+  platformIds: string[];
+  unsupported: string[];
+}
+
+export function resolvePlatformDirective(
+  text: string,
+  market: CountryCode,
+  previous: string[] = [],
+): PlatformDirective {
+  if (/全部平台|所有平台|取消(?:平台)?筛选|不限平台|都看|恢复全部/i.test(text)) {
+    return { mode: 'reset', mentioned: [], platformIds: [], unsupported: [] };
+  }
+
+  const mentioned = detectRequestedPlatforms(text);
+  if (!mentioned.length) {
+    return { mode: 'none', mentioned: [], platformIds: [...previous], unsupported: [] };
+  }
+
+  const supported = [...MARKETS[market].platformIds, 'official'];
+  const exclude = /不要|不看|排除|去掉|移除|除了.+(?:都看|之外)/i.test(text);
+  if (exclude) {
+    return {
+      mode: 'exclude',
+      mentioned,
+      platformIds: supported.filter((id) => !mentioned.includes(id)),
+      unsupported: [],
+    };
+  }
+
+  return {
+    mode: 'include',
+    mentioned,
+    platformIds: mentioned,
+    unsupported: mentioned.filter((id) => !supported.includes(id)),
+  };
 }
 
 export interface ParsedQuery {

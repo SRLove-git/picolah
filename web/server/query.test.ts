@@ -7,7 +7,7 @@ import { MARKETS, COUNTRY_CODES } from '../shared/types.ts';
 import { buildCatalogComparison, buildCatalogSuggestions } from '../shared/comparison.ts';
 
 process.env.PICOLAH_DB_PATH = ':memory:';
-const { detectMarket, findProduct, findProducts, isContextualFollowUp } = await import('./query.ts');
+const { detectMarket, detectRequestedPlatforms, findProduct, findProducts, isContextualFollowUp, resolvePlatformDirective } = await import('./query.ts');
 
 const products = PRODUCTS.map(({ baseSgd: _baseSgd, ...product }) => product);
 
@@ -108,6 +108,39 @@ test('recognizes short contextual follow-up questions', () => {
   assert.equal(isContextualFollowUp('那黑色的呢？'), true);
   assert.equal(isContextualFollowUp('第二个有没有官方店'), true);
   assert.equal(isContextualFollowUp('推荐一款适合跑步的新耳机'), false);
+  assert.equal(isContextualFollowUp('只看lazada的'), true);
+  assert.deepEqual(detectRequestedPlatforms('只看 Lazada 的'), ['lazada']);
+  assert.deepEqual(detectRequestedPlatforms('对比 Shopee 和 Amazon SG'), ['shopee', 'amazon-sg']);
+  assert.deepEqual(detectRequestedPlatforms('只看虾皮'), ['shopee']);
+  assert.deepEqual(detectRequestedPlatforms('只看 TikTok Shop / 抖音'), ['tiktok']);
+  assert.deepEqual(detectRequestedPlatforms('只看 Tokopedia 和 Tiki'), ['tokopedia', 'tiki']);
+  assert.deepEqual(detectRequestedPlatforms('只看品牌官网'), ['official']);
+  assert.equal(findProduct('只看 Lazada 的', products).product, null);
+  assert.equal(findProduct('只看 Shopee 和 TikTok Shop', products).product, null);
+});
+
+test('keeps, excludes and resets platform filters across follow-up turns', () => {
+  const lazada = resolvePlatformDirective('只看 Lazada', 'SG');
+  assert.deepEqual(lazada.platformIds, ['lazada']);
+  assert.equal(lazada.mode, 'include');
+
+  const inherited = resolvePlatformDirective('哪个最便宜', 'SG', lazada.platformIds);
+  assert.deepEqual(inherited.platformIds, ['lazada']);
+  assert.equal(inherited.mode, 'none');
+
+  const excluded = resolvePlatformDirective('不要 Shopee', 'SG', inherited.platformIds);
+  assert.equal(excluded.mode, 'exclude');
+  assert.equal(excluded.platformIds.includes('shopee'), false);
+  assert.equal(excluded.platformIds.includes('lazada'), true);
+
+  const reset = resolvePlatformDirective('恢复全部平台', 'SG', excluded.platformIds);
+  assert.deepEqual(reset.platformIds, []);
+  assert.equal(reset.mode, 'reset');
+});
+
+test('marks platforms that are unavailable in the selected market', () => {
+  const amazonInMalaysia = resolvePlatformDirective('只看 Amazon', 'MY');
+  assert.deepEqual(amazonInMalaysia.unsupported, ['amazon-sg']);
 });
 
 test('does not mistake a brand or category for a concrete product model', () => {

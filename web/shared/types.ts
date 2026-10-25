@@ -174,6 +174,8 @@ export interface Comparison {
   totalOffers: number;
   updatedAt: string;
   sourceCount: number;
+  platformFilter?: string[];
+  unsupportedPlatforms?: string[];
 }
 
 export interface ChatMessage {
