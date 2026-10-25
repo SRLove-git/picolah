@@ -10,6 +10,7 @@ import {
 import { config } from '../config.ts';
 import { db } from '../db.ts';
 import { getProduct } from '../repo.ts';
+import { evaluateWatchlist } from '../watchlist.ts';
 
 export const ingestRouter = Router();
 
@@ -41,6 +42,7 @@ const offerSchema = z
     itemPrice: z.number().finite().positive().max(1_000_000_000_000),
     shippingFee: z.number().finite().min(0).max(1_000_000_000).default(0),
     discount: z.number().finite().min(0).max(1_000_000_000).default(0),
+    landedPriceConfidence: z.enum(['exact', 'estimated']).default('estimated'),
     url: z
       .string()
       .url()
@@ -170,14 +172,15 @@ ingestRouter.post('/offers', (req, res) => {
   const insertOffer = db.prepare(`
     INSERT INTO offers (
       id, external_id, source, product_id, platform_id, seller, country, currency,
-      item_price, shipping_fee, discount, final_price, url, rating, reviews,
+      item_price, shipping_fee, discount, final_price, landed_price_confidence, url, rating, reviews,
       in_stock, is_official, last_seen, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const updateOffer = db.prepare(`
     UPDATE offers SET
       product_id = ?, platform_id = ?, seller = ?, country = ?, currency = ?,
-      item_price = ?, shipping_fee = ?, discount = ?, final_price = ?, url = ?,
+      item_price = ?, shipping_fee = ?, discount = ?, final_price = ?,
+      landed_price_confidence = ?, url = ?,
       rating = ?, reviews = ?, in_stock = ?, is_official = ?, last_seen = ?, updated_at = ?
     WHERE id = ?
   `);
@@ -228,6 +231,7 @@ ingestRouter.post('/offers', (req, res) => {
           roundMoney(offer.shippingFee, currency),
           roundMoney(offer.discount, currency),
           finalPrice,
+          offer.landedPriceConfidence,
           offer.url,
           offer.rating,
           offer.reviews,
@@ -253,6 +257,7 @@ ingestRouter.post('/offers', (req, res) => {
           roundMoney(offer.shippingFee, currency),
           roundMoney(offer.discount, currency),
           finalPrice,
+          offer.landedPriceConfidence,
           offer.url,
           offer.rating,
           offer.reviews,
@@ -279,6 +284,11 @@ ingestRouter.post('/offers', (req, res) => {
       now,
     );
     db.exec('COMMIT');
+    try {
+      evaluateWatchlist(country as CountryCode);
+    } catch (watchError) {
+      console.warn('[ingest] watchlist evaluation failed:', watchError);
+    }
   } catch (error) {
     db.exec('ROLLBACK');
     console.error('[ingest] failed:', error);

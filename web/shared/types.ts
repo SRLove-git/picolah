@@ -147,6 +147,8 @@ export interface Offer {
   itemPrice: number;
   shippingFee: number;
   discount: number;
+  /** exact only when the source exposed both shipping and discount. */
+  landedPriceConfidence?: 'exact' | 'estimated';
   finalPrice: number;
   url: string;
   rating: number;
@@ -339,3 +341,28 @@ export type StreamEvent =
   | { type: 'delta'; data: { text: string } }
   | { type: 'done'; data: { messageId: string; conversationId: string } }
   | { type: 'error'; data: { message: string } };
+
+export interface WatchlistItem {
+  id: string;
+  product: Product;
+  market: CountryCode;
+  targetPrice: number | null;
+  currency: string;
+  currentPrice: number | null;
+  currentOffer: Offer | null;
+  met: boolean;
+  createdAt: string;
+}
+
+export interface PriceAlert {
+  id: string;
+  type: 'target' | 'drop';
+  productId: string;
+  productName: string;
+  market: CountryCode;
+  price: number;
+  currency: string;
+  url: string;
+  read: boolean;
+  createdAt: string;
+}

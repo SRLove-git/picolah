@@ -10,6 +10,11 @@ import { conversationsRouter } from './routes/conversations.ts';
 import { catalogRouter, configRouter } from './routes/config.ts';
 import { ingestRouter } from './routes/ingest.ts';
 import { profileRouter } from './routes/profile.ts';
+import { authRouter } from './routes/auth.ts';
+import { watchlistRouter, alertsRouter } from './routes/watchlist.ts';
+import { outRouter } from './routes/out.ts';
+import { accountRouter } from './routes/account.ts';
+import { attachUser, requireAuth } from './auth.ts';
 
 seedDatabase(false);
 
@@ -72,12 +77,18 @@ app.use('/api', (req, res, next) => {
   res.status(404).json({ error: 'NOT_FOUND' });
 });
 
+app.use('/api', attachUser);
+app.use('/api/auth', authRouter);
 app.use('/api/config', configRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/conversations', conversationsRouter);
-app.use('/api/catalog', catalogRouter);
-app.use('/api/profile', profileRouter);
+app.use('/api/chat', requireAuth, chatRouter);
+app.use('/api/conversations', requireAuth, conversationsRouter);
+app.use('/api/catalog', requireAuth, catalogRouter);
+app.use('/api/profile', requireAuth, profileRouter);
+app.use('/api/watchlist', requireAuth, watchlistRouter);
+app.use('/api/alerts', requireAuth, alertsRouter);
+app.use('/api/account', requireAuth, accountRouter);
 app.use('/api/v1/ingest', ingestRouter);
+app.use('/go', attachUser, outRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'NOT_FOUND', message: 'API 路由不存在' });

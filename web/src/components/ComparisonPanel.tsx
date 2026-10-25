@@ -1,4 +1,5 @@
-import { ArrowUpRight, BadgeCheck, Clock3 } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, BellPlus, Clock3 } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
 import type { ComparisonAlternative, CountryCode, Offer, PriceMode } from '../../shared/types';
@@ -9,7 +10,7 @@ import {
   relativeTime,
   sortOffers,
 } from '../lib/format';
-import { recordOfferClick } from '../lib/api';
+import { addWatchlist, outboundUrl } from '../lib/api';
 import { PlatformBadge } from './PlatformBadge';
 import { Sparkline } from './Sparkline';
 import { Capybara } from './PicolahMark';
@@ -113,6 +114,7 @@ function Breakdown({ offer, country, mode }: { offer: Offer; country: CountryCod
 
 export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps) {
   const { t, i18n } = useTranslation();
+  const [watched, setWatched] = useState(false);
   const { product, market } = comparison;
   if (!product) return null;
 
@@ -122,6 +124,15 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
   const lowestPrice = comparison.offers.length
     ? Math.min(...comparison.offers.map((offer) => offer.finalPrice))
     : 0;
+
+  const watch = async () => {
+    try {
+      await addWatchlist(product.id, market);
+      setWatched(true);
+    } catch {
+      setWatched(false);
+    }
+  };
 
   return (
     <div className="comparison-card">
@@ -137,6 +148,16 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
             <strong>{formatMoney(offerValue(best, priceMode), market)}</strong>
           </div>
         )}
+        <button
+          type="button"
+          className={`pc-watch-add ${watched ? 'is-watched' : ''}`}
+          onClick={() => void watch()}
+          disabled={watched}
+          title={t('watchlist.add')}
+        >
+          <BellPlus size={14} />
+          {watched ? t('watchlist.watching') : t('watchlist.add')}
+        </button>
       </div>
 
       <div className="comparison-toolbar is-compact">
@@ -163,21 +184,10 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                 <a
                   className={`offer-row ${index === 0 ? 'is-best' : ''}`}
                   key={offer.id}
-                  href={offer.url}
+                  href={outboundUrl(offer)}
                   target="_blank"
                   rel="noreferrer noopener"
                   style={{ animationDelay: `${index * 55}ms` }}
-                  onClick={() => {
-                    void recordOfferClick({
-                      type: 'offer_click',
-                      market,
-                      productId: product.id,
-                      platformId: offer.platformId,
-                      price: offer.finalPrice,
-                      isLowest: offer.finalPrice === lowestPrice,
-                      position: index + 1,
-                    });
-                  }}
                 >
                   <span className={`offer-rank ${index === 0 ? 'is-first' : ''}`}>
                     {String(index + 1).padStart(2, '0')}
@@ -220,6 +230,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
               );
             })}
           </div>
+          <p className="pc-affiliate-note">{t('comparison.affiliate')}</p>
         </>
       ) : (
         <div className="comparison-empty">

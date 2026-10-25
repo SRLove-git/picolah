@@ -9,6 +9,7 @@
   },
   "scripts": {
     "crawl": "tsx src/index.ts",
+    "crawl:schedule": "tsx src/scheduler.ts",
     "shopee:dataset-check": "tsx scripts/shopee-dataset-check.ts",
     "shopee:login": "tsx scripts/shopee-login.ts",
     "typecheck": "tsc --noEmit",

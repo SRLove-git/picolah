@@ -44,8 +44,10 @@ function toOffer(product: CatalogProduct, listing: RawListing): MarketOffer {
     seller: listing.seller?.trim() || listing.platform,
     currency: listing.currency,
     itemPrice: listing.price,
-    shippingFee: 0,
-    discount: 0,
+    shippingFee: listing.shippingFee ?? 0,
+    discount: listing.discount ?? 0,
+    landedPriceConfidence:
+      listing.shippingFee !== undefined && listing.discount !== undefined ? 'exact' : 'estimated',
     url: listing.url,
     rating: Math.round((listing.rating ?? 0) * 100) / 100,
     reviews: Math.max(0, Math.round(listing.reviews ?? 0)),

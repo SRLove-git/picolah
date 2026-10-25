@@ -34,6 +34,21 @@ function decodeEntities(text: string): string {
     .replace(/&nbsp;/g, ' ');
 }
 
+function extractShippingFee(card: string, decimals: 0 | 2): number | undefined {
+  if (/free\s*(?:shipping|delivery)|免运费|包邮/i.test(card)) return 0;
+  const match = card.match(
+    /(?:shipping|delivery|运费|配送)[^<]{0,60}?((?:S\$|RM|฿|₱|Rp|\$)\s?[\d.,]+)/i,
+  );
+  return match ? (parsePrice(match[1], decimals) ?? undefined) : undefined;
+}
+
+function extractFixedDiscount(card: string, decimals: 0 | 2): number | undefined {
+  const match = card.match(
+    /((?:S\$|RM|฿|₱|Rp|\$)\s?[\d.,]+)\s*(?:off|discount|优惠)/i,
+  );
+  return match ? (parsePrice(match[1], decimals) ?? undefined) : undefined;
+}
+
 function parseJsonLd(html: string): Map<string, JsonLdProductMeta> {
   const result = new Map<string, JsonLdProductMeta>();
   const blocks = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
@@ -122,6 +137,8 @@ export function parseLazadaSearch(html: string, market: MarketCode): RawListing[
       url,
       price,
       currency: marketConfig.currency,
+      shippingFee: extractShippingFee(card, marketConfig.decimals),
+      discount: extractFixedDiscount(card, marketConfig.decimals),
       rating: meta?.rating,
       reviews: meta?.reviews,
       seller: 'Lazada',

@@ -37,6 +37,27 @@ services:
         max-size: "20m"
         max-file: "3"
 
+  # Optional daily SQLite backup. Start with: docker compose --profile backup up -d
+  backup:
+    image: picolah:latest
+    container_name: picolah-backup
+    restart: unless-stopped
+    profiles: ["backup"]
+    depends_on:
+      picolah:
+        condition: service_healthy
+    environment:
+      PICOLAH_DB_PATH: /app/data/picolah.db
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+    volumes:
+      - ./data:/app/data
+    command: ["sh", "-c", "while true; do sh scripts/backup-db.sh; sleep 86400; done"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   # Stand-in for the future crawler app: nudges demo prices and pushes real
   # ingest batches, so the gateway panel and price history stay alive.
   mock-crawler:

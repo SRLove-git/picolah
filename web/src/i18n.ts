@@ -6,7 +6,7 @@ const resources = {
     translation: {
       app: { title: 'Picolah · 购物之前 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
       language: { switch: 'Switch to English', short: 'EN' },
-      nav: { main: '主导航', home: '首页', reels: '短视频', profile: '画像', messages: '消息', account: '账号', close: '关闭导航' },
+      nav: { main: '主导航', home: '首页', watchlist: '关注', reels: '短视频', profile: '画像', messages: '消息', account: '账号', close: '关闭导航' },
       home: {
         label: '首页', openNav: '打开导航', mascotAction: '和 Picolah 互动并开始比价',
         mascotHello: '先 pico，再买。', mascotReady: '告诉我想买什么吧。',
@@ -48,8 +48,9 @@ const resources = {
         watched: '看过的视频', watchedHint: '最近观看的商品测评短视频', browsing: '浏览记录', browsingHint: '最近打开过的商品和比价结果',
         likes: '点赞记录', likesHint: '你点过赞的视频和内容', saved: '收藏内容', savedHint: '保存过的商品、报价和视频', noActivity: '暂无{{label}}，后续记录会显示在这里',
         source: '爬虫数据源', sourceHint: '独立爬虫同步价格，网站只读价格库。', online: '在线', connecting: '连接中', endpoint: '同步接口', lastSync: '上次同步', waiting: '等待首批数据', latest: '最新一批', batch: '{{received}} 收到 / {{upserted}} 更新', today: '今日新增', offers: '{{count}} 条', manage: '管理数据源',
-        security: '账号与安全', securityHint: '当前工作区的登录状态和安全设置。', username: '用户名', loginMethod: '登录方式', emailCode: '邮箱验证码', email: '绑定邮箱', plan: '方案', free: '免费', recentLogin: '最近登录', localLogin: '刚刚 · 本机浏览器', changePassword: '修改密码', logout: '退出登录',
-        passwordNotice: '演示工作区：验证码登录和改密还没有接后端', logoutNotice: '这是本地演示工作区，退出登录暂未启用',
+        security: '账号与安全', securityHint: '当前工作区的登录状态和安全设置。', username: '用户名', loginMethod: '登录方式', emailPassword: '邮箱 + 密码', emailCode: '邮箱验证码', email: '绑定邮箱', plan: '方案', free: '免费', recentLogin: '最近登录', localLogin: '刚刚 · 本机浏览器', changePassword: '修改密码', logout: '退出登录',
+        privacy: '隐私与数据', privacyHint: '导出或删除你的个人数据。', export: '导出我的数据', deleteLabel: '删除账户', deletePlaceholder: '输入密码确认', deleteWarning: '删除后画像、关注和提醒会一并清除，且不可恢复。', delete: '永久删除', deleting: '删除中…', deleteDone: '账户已删除', deleteFailed: '删除失败，请检查密码后重试',
+        passwordNotice: '修改密码功能尚未开放，请使用注册邮箱与当前密码登录', logoutNotice: '已退出登录',
       },
       profile: {
         title: '购物画像', subtitle: '从你的比价与点击里，慢慢读懂你的购物习惯。',
@@ -70,11 +71,25 @@ const resources = {
         reset: '清空画像', resetting: '正在清空…', resetDone: '画像已清空',
         resetConfirm: '清空后，购物画像和足迹会从这台设备删除，确定吗？',
       },
+      watchlist: {
+        label: '关注与提醒', eyebrow: 'WATCHLIST', title: '把想买的东西放进来',
+        body: '降价时，Picolah 会在这里留一条提醒；点开就能回到最低报价。',
+        items: '件商品', alerts: '价格提醒', markAll: '全部已读', targetHit: '到目标价', priceDrop: '价格下降',
+        emptyTitle: '还没有关注任何商品', emptyBody: '在比价卡上点“关注”，或者在对话里让我帮你盯着一个商品。',
+        target: '目标价', anyDrop: '任意降价', noOffer: '当前市场暂无在售报价', low30d: '30 日低',
+        reached: '已到目标价', watching: '正在关注', remove: '取消关注', add: '关注',
+      },
+      legal: {
+        privacy: '隐私政策',
+        terms: '服务条款',
+        updated: '最后更新：2026 年 10 月',
+        contact: '隐私与数据问题请联系',
+      },
       reels: {
         label: 'Reels 商品测评', progress: '短片进度', clip: '第 {{count}} 个短片', openNav: '打开导航', subtitle: '商品测评 · 好价短片', autoplay: '自动播放中', paused: '已暂停', pause: '暂停', play: '播放', soundOn: '打开声音', mute: '静音', prev: '上一个', next: '下一个', review: '测评', todayLow: '今日最低', worth: '值得 pico', like: '喜欢', comment: '评论', share: '分享', save: '收藏', following: '已关注', follow: '关注', currentDeal: '同款当前好价', compare: '去比价', currentMarket: '当前市场', demoPrice: '短片中的价格为演示数据', navigate: '上下滑动 / 点击箭头切换',
         linkCopied: 'Reels 链接已复制，去分享给朋友吧', linkFailed: '链接复制失败，可以手动分享页面地址', soundDemo: '已打开声音（演示短片暂无音轨）', muted: '已静音', comments: '这条短片有 {{count}} 条评论，先去看看同款价格吧',
       },
-      comparison: { item: '商品', shipping: '运费', freeShipping: '包邮', coupon: '券', updated: '更新于', seller: '在售平台 / 店铺', trend: '近 30 天', official: '官方', best: '最低', reviews: '评价', low: '30日低', visit: '去平台', unavailable: '{{market}}暂时没有在售报价', unavailableHint: '价格库还没有覆盖这个市场，或者报价刚刚下架。可以切换市场，或看看下面的同类选择。', currentMarket: '当前市场', noOffer: '暂无报价', seeAlso: '也可以看看', askCheapest: '{{product}} 在{{market}}哪里买最便宜？', chartTitle: '报价一眼对比', chartHint: '柱长显示本组相对差异', priceMetric: '价格', ratingMetric: '评分', reviewMetric: '评论数', lowerBetter: '越低越好', higherBetter: '越高越好' },
+      comparison: { item: '商品', shipping: '运费', freeShipping: '包邮', coupon: '券', updated: '更新于', seller: '在售平台 / 店铺', trend: '近 30 天', official: '官方', best: '最低', reviews: '评价', low: '30日低', visit: '去平台', affiliate: '部分购买链接为联盟链接，我们可能获得佣金，不影响你的价格和排序。', unavailable: '{{market}}暂时没有在售报价', unavailableHint: '价格库还没有覆盖这个市场，或者报价刚刚下架。可以切换市场，或看看下面的同类选择。', currentMarket: '当前市场', noOffer: '暂无报价', seeAlso: '也可以看看', askCheapest: '{{product}} 在{{market}}哪里买最便宜？', chartTitle: '报价一眼对比', chartHint: '柱长显示本组相对差异', priceMetric: '价格', ratingMetric: '评分', reviewMetric: '评论数', lowerBetter: '越低越好', higherBetter: '越高越好' },
       controls: {
         changeMarket: '切换比价市场', selectMarket: '选择市场', market: '比价市场', localCurrency: '价格按本地货币展示，不自动换汇',
         priceBasis: '价格口径', fourTypes: '4 种',
@@ -89,7 +104,7 @@ const resources = {
     translation: {
       app: { title: 'Picolah · Pico before you buy', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
       language: { switch: '切换为中文', short: '中' },
-      nav: { main: 'Main navigation', home: 'Home', reels: 'Reels', profile: 'Profile', messages: 'Messages', account: 'Account', close: 'Close navigation' },
+      nav: { main: 'Main navigation', home: 'Home', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Messages', account: 'Account', close: 'Close navigation' },
       home: {
         label: 'Home', openNav: 'Open navigation', mascotAction: 'Interact with Picolah and start comparing',
         mascotHello: 'Pico before you buy.', mascotReady: 'Tell me what you want to buy.',
@@ -131,8 +146,9 @@ const resources = {
         watched: 'Watched videos', watchedHint: 'Recently watched product reviews', browsing: 'Browsing history', browsingHint: 'Recently opened products and comparisons',
         likes: 'Likes', likesHint: 'Videos and content you liked', saved: 'Saved items', savedHint: 'Saved products, offers, and videos', noActivity: 'No {{label}} yet. Future activity will appear here.',
         source: 'Crawler data source', sourceHint: 'An independent crawler syncs prices; the site only reads the database.', online: 'Online', connecting: 'Connecting', endpoint: 'Sync endpoint', lastSync: 'Last sync', waiting: 'Waiting for first batch', latest: 'Latest batch', batch: '{{received}} received / {{upserted}} updated', today: 'Added today', offers: '{{count}} offers', manage: 'Manage data source',
-        security: 'Account & security', securityHint: 'Login status and security settings for this workspace.', username: 'Username', loginMethod: 'Login method', emailCode: 'Email verification code', email: 'Linked email', plan: 'Plan', free: 'Free', recentLogin: 'Recent login', localLogin: 'Just now · This browser', changePassword: 'Change password', logout: 'Log out',
-        passwordNotice: 'Demo workspace: login and password changes are not connected to a backend', logoutNotice: 'This is a local demo workspace; logout is not enabled',
+        security: 'Account & security', securityHint: 'Login status and security settings for this workspace.', username: 'Username', loginMethod: 'Login method', emailPassword: 'Email + password', emailCode: 'Email verification code', email: 'Linked email', plan: 'Plan', free: 'Free', recentLogin: 'Recent login', localLogin: 'Just now · This browser', changePassword: 'Change password', logout: 'Log out',
+        privacy: 'Privacy & data', privacyHint: 'Export or delete your personal data.', export: 'Export my data', deleteLabel: 'Delete account', deletePlaceholder: 'Enter your password', deleteWarning: 'Your profile, watchlist and alerts are removed permanently and cannot be recovered.', delete: 'Delete permanently', deleting: 'Deleting…', deleteDone: 'Account deleted', deleteFailed: 'Could not delete the account. Check your password.',
+        passwordNotice: 'Password changes are not available yet. Sign in with your registered email and current password.', logoutNotice: 'Signed out',
       },
       profile: {
         title: 'Shopping DNA', subtitle: 'A profile that learns how you shop, one comparison at a time.',
@@ -153,11 +169,25 @@ const resources = {
         reset: 'Clear profile', resetting: 'Clearing…', resetDone: 'Profile cleared',
         resetConfirm: 'This removes your shopping profile and footprint from this device. Continue?',
       },
+      watchlist: {
+        label: 'Watchlist & alerts', eyebrow: 'WATCHLIST', title: 'Keep an eye on what you want',
+        body: 'When the price drops, Picolah leaves an alert here with a link to the best offer.',
+        items: 'items', alerts: 'Price alerts', markAll: 'Mark all read', targetHit: 'Target reached', priceDrop: 'Price dropped',
+        emptyTitle: 'Nothing on your watchlist yet', emptyBody: 'Tap “Watch” on a comparison, or ask me to keep an eye on a product.',
+        target: 'Target', anyDrop: 'Any drop', noOffer: 'No active offer in this market', low30d: '30-day low',
+        reached: 'Target reached', watching: 'Watching', remove: 'Remove', add: 'Watch',
+      },
+      legal: {
+        privacy: 'Privacy Policy',
+        terms: 'Terms of Service',
+        updated: 'Last updated: October 2026',
+        contact: 'Privacy and data questions:',
+      },
       reels: {
         label: 'Product review Reels', progress: 'Reel progress', clip: 'Reel {{count}}', openNav: 'Open navigation', subtitle: 'Product reviews · quick deals', autoplay: 'Autoplaying', paused: 'Paused', pause: 'Pause', play: 'Play', soundOn: 'Turn sound on', mute: 'Mute', prev: 'Previous', next: 'Next', review: 'Review', todayLow: "Today's low", worth: 'Worth a pico', like: 'Like', comment: 'Comment', share: 'Share', save: 'Save', following: 'Following', follow: 'Follow', currentDeal: 'Current deal for this item', compare: 'Compare', currentMarket: 'Current market', demoPrice: 'Prices in Reels are demo data', navigate: 'Swipe or use the arrows to switch',
         linkCopied: 'Reels link copied—share it with a friend', linkFailed: 'Could not copy the link. Share the page URL manually.', soundDemo: 'Sound is on (demo Reels have no audio track)', muted: 'Muted', comments: 'This Reel has {{count}} comments. Compare the product price next.',
       },
-      comparison: { item: 'Item', shipping: 'Shipping', freeShipping: 'Free', coupon: 'Coupon', updated: 'Updated', seller: 'Platform / seller', trend: 'Last 30 days', official: 'Official', best: 'Best', reviews: 'reviews', low: '30-day low', visit: 'Visit store', unavailable: 'No active offers in {{market}}', unavailableHint: 'This market is not covered yet, or its offers have just ended. Switch markets or try a similar product below.', currentMarket: 'Current market', noOffer: 'No offers', seeAlso: 'You may also like', askCheapest: 'Where is {{product}} cheapest in {{market}}?', chartTitle: 'Offers at a glance', chartHint: 'Bar lengths show relative differences in this group', priceMetric: 'Price', ratingMetric: 'Rating', reviewMetric: 'Reviews', lowerBetter: 'Lower is better', higherBetter: 'Higher is better' },
+      comparison: { item: 'Item', shipping: 'Shipping', freeShipping: 'Free', coupon: 'Coupon', updated: 'Updated', seller: 'Platform / seller', trend: 'Last 30 days', official: 'Official', best: 'Best', reviews: 'reviews', low: '30-day low', visit: 'Visit store', affiliate: 'Some purchase links are affiliate links. We may earn a commission; your price and ranking are unaffected.', unavailable: 'No active offers in {{market}}', unavailableHint: 'This market is not covered yet, or its offers have just ended. Switch markets or try a similar product below.', currentMarket: 'Current market', noOffer: 'No offers', seeAlso: 'You may also like', askCheapest: 'Where is {{product}} cheapest in {{market}}?', chartTitle: 'Offers at a glance', chartHint: 'Bar lengths show relative differences in this group', priceMetric: 'Price', ratingMetric: 'Rating', reviewMetric: 'Reviews', lowerBetter: 'Lower is better', higherBetter: 'Higher is better' },
       controls: {
         changeMarket: 'Change comparison market', selectMarket: 'Select market', market: 'Comparison market', localCurrency: 'Prices use local currencies with no automatic conversion',
         priceBasis: 'Price basis', fourTypes: '4 types',

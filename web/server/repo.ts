@@ -13,9 +13,15 @@ import type {
   ProductVisual,
 } from '../shared/types.ts';
 import { MARKETS, PLATFORMS } from '../shared/types.ts';
+import { config } from './config.ts';
 import { db } from './db.ts';
 
 type Row = Record<string, any>;
+
+function freshnessCutoff(): string | null {
+  if (config.offerFreshnessHours <= 0) return null;
+  return new Date(Date.now() - config.offerFreshnessHours * 3_600_000).toISOString();
+}
 
 function parseJson<T>(value: unknown, fallback: T): T {
   if (typeof value !== 'string' || !value) return fallback;
@@ -53,6 +59,8 @@ export function mapOffer(row: Row, history: PricePoint[] = []): Offer {
     itemPrice: Number(row.item_price),
     shippingFee: Number(row.shipping_fee),
     discount: Number(row.discount),
+    landedPriceConfidence:
+      row.landed_price_confidence === 'exact' ? 'exact' : 'estimated',
     finalPrice,
     url: String(row.url),
     rating: Number(row.rating),
@@ -100,23 +108,41 @@ export function getPriceHistory(offerId: string): PricePoint[] {
 }
 
 export function getOffers(productId: string, country: CountryCode, includeOutOfStock = false): Offer[] {
-  const rows = db
-    .prepare(
-      `SELECT * FROM offers
-       WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
-       ORDER BY final_price ASC`,
-    )
-    .all(productId, country) as Row[];
+  const cutoff = freshnessCutoff();
+  const rows = cutoff
+    ? (db
+        .prepare(
+          `SELECT * FROM offers
+           WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
+             AND last_seen >= ?
+           ORDER BY final_price ASC`,
+        )
+        .all(productId, country, cutoff) as Row[])
+    : (db
+        .prepare(
+          `SELECT * FROM offers
+           WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
+           ORDER BY final_price ASC`,
+        )
+        .all(productId, country) as Row[]);
   return rows.map((row) => mapOffer(row, getPriceHistory(String(row.id))));
 }
 
 export function getRegionalOfferCount(productId?: string): number {
+  const cutoff = freshnessCutoff();
+  const fresh = cutoff ? 'AND last_seen >= ?' : '';
   const row = productId
-    ? (db
-        .prepare('SELECT COUNT(*) AS count FROM offers WHERE product_id = ? AND in_stock = 1')
-        .get(productId) as Row)
-    : (db.prepare('SELECT COUNT(*) AS count FROM offers WHERE in_stock = 1').get() as Row);
-  return Number(row?.count || 0);
+    ? (cutoff
+        ? db
+            .prepare(`SELECT COUNT(*) AS count FROM offers WHERE product_id = ? AND in_stock = 1 ${fresh}`)
+            .get(productId, cutoff)
+        : db
+            .prepare('SELECT COUNT(*) AS count FROM offers WHERE product_id = ? AND in_stock = 1')
+            .get(productId))
+    : (cutoff
+        ? db.prepare(`SELECT COUNT(*) AS count FROM offers WHERE in_stock = 1 ${fresh}`).get(cutoff)
+        : db.prepare('SELECT COUNT(*) AS count FROM offers WHERE in_stock = 1').get()) as Row;
+  return Number((row as Row)?.count || 0);
 }
 
 function bestOfferFor(productId: string, country: CountryCode, platformIds: string[] = []): Offer | null {

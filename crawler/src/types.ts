@@ -18,6 +18,10 @@ export interface RawListing {
   url: string;
   price: number;
   currency: string;
+  /** Known shipping amount; undefined means the source did not expose it. */
+  shippingFee?: number;
+  /** Known fixed discount/voucher amount; undefined means unknown. */
+  discount?: number;
   rating?: number;
   reviews?: number;
   seller?: string;
@@ -36,6 +40,8 @@ export interface Offer {
   itemPrice: number;
   shippingFee: number;
   discount: number;
+  /** 'exact' only when the source exposed shipping and discount. */
+  landedPriceConfidence?: 'exact' | 'estimated';
   url: string;
   rating: number;
   reviews: number;

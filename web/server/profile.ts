@@ -210,7 +210,12 @@ function emptyProfile(userId: string, user?: UserRow | null): ShoppingProfile {
   };
 }
 
-export function requestUserId(request: { header(name: string): string | undefined }): string | null {
+export function requestUserId(request: {
+  header(name: string): string | undefined;
+  user?: { id: string };
+}): string | null {
+  const accountId = String(request.user?.id || '').trim();
+  if (/^[a-zA-Z0-9_-]{8,80}$/.test(accountId)) return accountId;
   const raw = String(request.header('x-picolah-user') || '').trim();
   return /^[a-zA-Z0-9_-]{8,80}$/.test(raw) ? raw : null;
 }

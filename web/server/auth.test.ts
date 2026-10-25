@@ -1,0 +1,116 @@
+import assert from 'node:assert/strict';
+import { after, test } from 'node:test';
+
+process.env.NODE_ENV = 'test';
+process.env.AUTH_REQUIRED = 'true';
+process.env.PICOLAH_DB_PATH = ':memory:';
+
+const { app } = await import('./index.ts');
+const server = await new Promise<import('node:http').Server>((resolve) => {
+  const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
+});
+const address = server.address();
+if (!address || typeof address === 'string') throw new Error('test server did not bind a TCP port');
+const baseUrl = `http://127.0.0.1:${address.port}`;
+
+after(
+  () =>
+    new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    }),
+);
+
+function cookieFrom(response: Response): string {
+  const cookie = response.headers.get('set-cookie');
+  assert.ok(cookie, 'expected a session cookie');
+  return cookie.split(';')[0];
+}
+
+async function register(email: string, password = 'correct horse 9') {
+  return fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password, displayName: 'Test Pico' }),
+  });
+}
+
+test('registers, authenticates and logs out with an http-only session', async () => {
+  const email = `profile-${Date.now()}@example.com`;
+  const created = await register(email);
+  assert.equal(created.status, 201);
+  const createdBody = (await created.json()) as { user: { id: string; email: string }; required: boolean };
+  assert.equal(createdBody.required, true);
+  assert.equal(createdBody.user.email, email);
+  assert.equal('password_hash' in createdBody.user, false);
+
+  const cookie = cookieFrom(created);
+  const me = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
+  assert.equal(me.status, 200);
+  const session = (await me.json()) as { user: { email: string } | null };
+  assert.equal(session.user?.email, email);
+
+  const duplicate = await register(email);
+  assert.equal(duplicate.status, 409);
+
+  const logout = await fetch(`${baseUrl}/api/auth/logout`, { method: 'POST', headers: { cookie } });
+  assert.equal(logout.status, 200);
+  const afterLogout = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
+  const afterBody = (await afterLogout.json()) as { user: null };
+  assert.equal(afterBody.user, null);
+
+  const login = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: 'correct horse 9' }),
+  });
+  assert.equal(login.status, 200);
+  cookieFrom(login);
+});
+
+test('rejects invalid credentials and short passwords', async () => {
+  const email = `invalid-${Date.now()}@example.com`;
+  const short = await register(email, 'short');
+  assert.equal(short.status, 422);
+
+  const missing = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: 'wrong password' }),
+  });
+  assert.equal(missing.status, 401);
+});
+
+test('requires a session for private API routes when auth is on', async () => {
+  const response = await fetch(`${baseUrl}/api/conversations`);
+  assert.equal(response.status, 401);
+});
+
+test('exports and deletes the signed-in account with password confirmation', async () => {
+  const email = `privacy-${Date.now()}@example.com`;
+  const created = await register(email);
+  assert.equal(created.status, 201);
+  const cookie = cookieFrom(created);
+
+  const exported = await fetch(`${baseUrl}/api/account/export`, { headers: { cookie } });
+  assert.equal(exported.status, 200);
+  const body = (await exported.json()) as { account: { email: string }; profile: unknown };
+  assert.equal(body.account.email, email);
+  assert.ok(body.profile);
+
+  const wrong = await fetch(`${baseUrl}/api/account`, {
+    method: 'DELETE',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ password: 'wrong password' }),
+  });
+  assert.equal(wrong.status, 401);
+
+  const deleted = await fetch(`${baseUrl}/api/account`, {
+    method: 'DELETE',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ password: 'correct horse 9' }),
+  });
+  assert.equal(deleted.status, 200);
+
+  const me = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
+  assert.equal(((await me.json()) as { user: null }).user, null);
+});

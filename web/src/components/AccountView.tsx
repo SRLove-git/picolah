@@ -6,19 +6,25 @@ import {
   ChevronRight,
   Clock3,
   Database,
+  Download,
   Globe2,
   Heart,
   LogOut,
   Pencil,
   PlaySquare,
   Settings2,
+  ShieldCheck,
   Sparkles,
+  Trash2,
   Wallet,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
+import { deleteAccount } from '../lib/api';
 import { PRICE_MODES, relativeTime } from '../lib/format';
+import { useSession } from '../lib/session';
 import { CountryFlag } from './CountryFlag';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
@@ -52,8 +58,26 @@ export function AccountView({
   notify,
 }: AccountViewProps) {
   const { t, i18n } = useTranslation();
+  const { user, logout } = useSession();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const marketInfo = MARKETS[market];
   const lastRun = config?.gateway.lastRun;
+
+  const removeAccount = async () => {
+    if (!deletePassword) return;
+    setDeleting(true);
+    try {
+      await deleteAccount(deletePassword);
+      notify(t('account.deleteDone'));
+      logout();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : t('account.deleteFailed'));
+    } finally {
+      setDeleting(false);
+      setDeletePassword('');
+    }
+  };
 
   return (
     <section className="pc-page pc-profile-page" aria-label={t('account.label')}>
@@ -88,6 +112,7 @@ export function AccountView({
                 {t('account.workspace')}
                 <BadgeCheck size={18} />
               </h2>
+              {user ? <p className="pc-profile-email">{user.email}</p> : null}
             </div>
             <button
               type="button"
@@ -265,15 +290,15 @@ export function AccountView({
               </span>
               <span>
                 <small>{t('account.username')}</small>
-                <strong>@picolah.sea</strong>
+                <strong>{user?.displayName || 'Pico'}</strong>
               </span>
               <span>
                 <small>{t('account.loginMethod')}</small>
-                <strong>{t('account.emailCode')}</strong>
+                <strong>{t('account.emailPassword')}</strong>
               </span>
               <span>
                 <small>{t('account.email')}</small>
-                <strong>hello@picolah.sea</strong>
+                <strong>{user?.email || '—'}</strong>
               </span>
               <span>
                 <small>{t('account.plan')}</small>
@@ -298,11 +323,53 @@ export function AccountView({
               <button
                 type="button"
                 className="pc-text-button is-danger"
-                onClick={() => notify(t('account.logoutNotice'))}
+                onClick={() => void logout()}
               >
                 <LogOut size={14} />
                 {t('account.logout')}
               </button>
+            </div>
+          </details>
+
+          <details className="pc-profile-card pc-profile-privacy">
+            <summary>
+              <span className="pc-profile-card-icon tone-mint">
+                <ShieldCheck size={17} />
+              </span>
+              <div>
+                <h3>{t('account.privacy')}</h3>
+                <p>{t('account.privacyHint')}</p>
+              </div>
+              <ChevronDown size={17} className="pc-collapse-chevron" />
+            </summary>
+            <div className="pc-privacy-actions">
+              <a className="pc-outline-button" href="/api/account/export" download>
+                <Download size={14} />
+                {t('account.export')}
+              </a>
+              <div className="pc-danger-zone">
+                <label htmlFor="pc-delete-password">{t('account.deleteLabel')}</label>
+                <div>
+                  <input
+                    id="pc-delete-password"
+                    type="password"
+                    value={deletePassword}
+                    onChange={(event) => setDeletePassword(event.target.value)}
+                    placeholder={t('account.deletePlaceholder')}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="pc-text-button is-danger"
+                    disabled={!deletePassword || deleting}
+                    onClick={() => void removeAccount()}
+                  >
+                    <Trash2 size={14} />
+                    {deleting ? t('account.deleting') : t('account.delete')}
+                  </button>
+                </div>
+                <small>{t('account.deleteWarning')}</small>
+              </div>
             </div>
           </details>
         </div>

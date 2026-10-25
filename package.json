@@ -18,6 +18,7 @@
     "mock": "npm --prefix web run mock",
     "mock:once": "npm --prefix web run mock:once",
     "crawl": "npm --prefix crawler run crawl --",
+    "crawl:schedule": "npm --prefix crawler run crawl:schedule --",
     "shopee:dataset-check": "npm --prefix crawler run shopee:dataset-check --",
     "shopee:login": "npm --prefix crawler run shopee:login --",
     "test": "npm --prefix web run test",

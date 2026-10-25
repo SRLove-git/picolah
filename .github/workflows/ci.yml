@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LLM_API_KEY: ''
+      AUTH_REQUIRED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Website typecheck, tests and build
+        run: |
+          pnpm --filter @picolah/web run typecheck
+          pnpm --filter @picolah/web run test
+          pnpm --filter @picolah/web run build
+      - name: Crawler typecheck and tests
+        run: |
+          pnpm --filter @picolah/crawler run typecheck
+          pnpm --filter @picolah/crawler run test

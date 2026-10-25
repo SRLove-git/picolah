@@ -46,6 +46,53 @@ export async function getConfig(): Promise<AppConfig> {
   return getJson<AppConfig>('/api/config');
 }
 
+export interface SessionUser {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export interface SessionState {
+  user: SessionUser | null;
+  required: boolean;
+}
+
+export async function getSession(): Promise<SessionState> {
+  return getJson<SessionState>('/api/auth/me');
+}
+
+export async function login(email: string, password: string): Promise<SessionState> {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as SessionState;
+}
+
+export async function register(
+  email: string,
+  password: string,
+  displayName?: string,
+): Promise<SessionState> {
+  const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ email, password, displayName }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as SessionState;
+}
+
+export async function logout(): Promise<void> {
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: userHeaders(),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+}
+
 export async function getConversations(): Promise<ConversationSummary[]> {
   if (isMockMode()) return (await import('./mock-backend')).mockGetConversations();
   const data = await getJson<{ conversations: ConversationSummary[] }>('/api/conversations');
@@ -186,4 +233,61 @@ export async function streamChat(
   } finally {
     await reader.cancel().catch(() => undefined);
   }
+}
+
+export async function getWatchlist(market?: string): Promise<{ items: import('../../shared/types').WatchlistItem[]; unread: number }> {
+  if (isMockMode()) return { items: [], unread: 0 };
+  return getJson(`/api/watchlist${market ? `?market=${encodeURIComponent(market)}` : ''}`);
+}
+
+export async function addWatchlist(
+  productId: string,
+  market: string,
+  targetPrice?: number,
+): Promise<import('../../shared/types').WatchlistItem> {
+  const response = await fetch('/api/watchlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ productId, market, targetPrice: targetPrice ?? null }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as { item: import('../../shared/types').WatchlistItem };
+  return data.item;
+}
+
+export async function removeWatchlist(id: string): Promise<void> {
+  const response = await fetch(`/api/watchlist/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: userHeaders(),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+}
+
+export async function getAlerts(): Promise<{ alerts: import('../../shared/types').PriceAlert[]; unread: number }> {
+  if (isMockMode()) return { alerts: [], unread: 0 };
+  return getJson('/api/alerts');
+}
+
+export async function markAlertRead(id: string): Promise<void> {
+  await fetch(`/api/alerts/${encodeURIComponent(id)}/read`, {
+    method: 'POST',
+    headers: userHeaders(),
+  });
+}
+
+export async function markAllAlertsRead(): Promise<void> {
+  await fetch('/api/alerts/read-all', { method: 'POST', headers: userHeaders() });
+}
+
+export function outboundUrl(offer: { id: string; url: string }): string {
+  return isMockMode() ? offer.url : `/go/${encodeURIComponent(offer.id)}`;
+}
+
+export async function deleteAccount(password: string): Promise<void> {
+  const response = await fetch('/api/account', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
 }

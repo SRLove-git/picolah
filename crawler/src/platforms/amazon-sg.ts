@@ -21,6 +21,18 @@ function attribute(block: string, pattern: RegExp): string {
   return decodeAmazonHtml(block.match(pattern)?.[1] ?? '');
 }
 
+function extractAmazonShipping(block: string): number | undefined {
+  if (/free\s+(?:delivery|shipping)/i.test(block)) return 0;
+  const match = block.match(/(?:S\$|SGD)\s?([\d.,]+)\s*(?:delivery|shipping)/i);
+  return match ? Number(match[1].replace(/,/g, '')) : undefined;
+}
+
+function extractAmazonDiscount(block: string): number | undefined {
+  const match = block.match(/(?:save|coupon)[^<]{0,80}?(?:S\$|SGD)\s?([\d.,]+)/i)
+    ?? block.match(/(?:S\$|SGD)\s?([\d.,]+)\s*(?:coupon|off)/i);
+  return match ? Number(match[1].replace(/,/g, '')) : undefined;
+}
+
 /** Parse only complete, priced Amazon search cards; matching happens centrally. */
 export function parseAmazonSearch(html: string): RawListing[] {
   const starts = [...html.matchAll(/<div\b[^>]*\brole="listitem"[^>]*\bdata-asin="([A-Z0-9]{10})"[^>]*>/gi)];
@@ -43,6 +55,8 @@ export function parseAmazonSearch(html: string): RawListing[] {
     const reviews = Number(attribute(block, /aria-label="([\d,]+) ratings?"/i).replace(/,/g, ''));
     if (!title || !Number.isFinite(price) || price <= 0) continue;
 
+    const shippingFee = extractAmazonShipping(block);
+    const discount = extractAmazonDiscount(block);
     listings.push({
       platform: 'amazon-sg',
       market: 'SG',
@@ -51,6 +65,8 @@ export function parseAmazonSearch(html: string): RawListing[] {
       url: `https://www.amazon.sg/dp/${itemId}`,
       price,
       currency: 'SGD',
+      ...(shippingFee !== undefined ? { shippingFee } : {}),
+      ...(discount !== undefined ? { discount } : {}),
       rating: Number.isFinite(rating) ? rating : undefined,
       reviews: Number.isFinite(reviews) ? reviews : undefined,
       seller: 'Amazon SG',

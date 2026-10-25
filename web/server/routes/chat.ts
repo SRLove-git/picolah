@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import type { ChatMessage, Comparison, CountryCode, Product } from '../../shared/types.ts';
-import { COUNTRY_CODES, MARKETS } from '../../shared/types.ts';
+import { COUNTRY_CODES, MARKETS, PLATFORMS } from '../../shared/types.ts';
 import { llmConfigured } from '../config.ts';
 import {
   buildComparison,
@@ -422,6 +422,17 @@ chatRouter.post('/', async (req, res) => {
   if (!answer.trim()) {
     answer = writeFallbackAnswer(comparison);
     sse(res, 'delta', { text: answer });
+  }
+
+  const unsupportedPlatforms = comparison.unsupportedPlatforms ?? [];
+  if (unsupportedPlatforms.length > 0 && !answer.includes('当前不支持')) {
+    const marketName = MARKETS[comparison.market]?.nameZh ?? '';
+    const names = unsupportedPlatforms
+      .map((platformId) => `**${PLATFORMS[platformId]?.name ?? platformId}**`)
+      .join('、');
+    const note = `\n\n${marketName}当前不支持 ${names}。`;
+    answer += note;
+    sse(res, 'delta', { text: note });
   }
 
   const assistantMessageId = addMessage({

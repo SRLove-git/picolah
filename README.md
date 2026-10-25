@@ -4,11 +4,13 @@
 
 Picolah 是一个面向东南亚市场的比价工作台：问一句想买的东西，它会把六个市场（SG / MY / TH / ID / PH / VN）的在售报价、运费和券后价摊开，告诉你最低价、和次低价差多少，以及要不要为官方店多付一点。
 
+除了比价，它还提供：邮箱账户与登录、从真实比价/跳转行为生成的匿名购物画像、关注清单与目标价提醒、价格历史与 30 日低、联盟出站链接、爬虫数据新鲜度与 `/api/health` 健康检查。
+
 仓库按业务拆成两个项目，两者只通过 HTTP 数据接入契约耦合：爬虫采集 → `POST /api/v1/ingest/offers` → 网站校验、入库、比价、展示。
 
 | 目录 | 业务 | 状态 | 内容 |
 | --- | --- | --- | --- |
-| [`web/`](web/README.md) | 网站 | 运行中 | React 工作台 + Express API + SQLite；对话比价、数据源网关、演示数据 |
+| [`web/`](web/README.md) | 网站 | 运行中 | React 工作台 + Express API + SQLite；账户、比价、购物画像、关注提醒、联盟出站 |
 | [`crawler/`](crawler/README.md) | 爬虫 | 基础版 | Bright Data 采集各平台报价；Lazada 已实测（SG），Shopee 数据集免登录（需开通），未开通可登录兜底 |
 
 ![Picolah welcome](web/docs/preview/welcome.png)
@@ -143,6 +145,7 @@ docker compose up -d --build
 - [网站说明](web/README.md)：功能、视觉、LLM 配置、环境变量、安全边界
 - [爬虫说明](crawler/README.md)：Bright Data 配置、命令、匹配策略、平台状态
 - [数据接入契约](docs/ingest-api.md)：字段、校验、幂等、错误码
+- [运维手册](docs/operations.md)：账户、备份、联盟、提醒、爬虫调度、CI
 - [部署说明](deploy/README.md)：Docker、隐藏入口、nginx、TLS
 
 ## License

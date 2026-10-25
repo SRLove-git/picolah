@@ -1,8 +1,8 @@
-import { Clapperboard, Fingerprint, Home, Languages, Send, X } from 'lucide-react';
+import { Bell, Clapperboard, Fingerprint, Home, Languages, Send, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BrandLockup, Capybara } from './PicolahMark';
 
-export type AppView = 'home' | 'messages' | 'reels' | 'profile' | 'account' | 'chat';
+export type AppView = 'home' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
@@ -13,6 +13,7 @@ interface AppSidebarProps {
 
 const NAV = [
   { key: 'home' as const, labelKey: 'nav.home', Icon: Home },
+  { key: 'watchlist' as const, labelKey: 'nav.watchlist', Icon: Bell },
   { key: 'reels' as const, labelKey: 'nav.reels', Icon: Clapperboard },
   { key: 'profile' as const, labelKey: 'nav.profile', Icon: Fingerprint },
   { key: 'messages' as const, labelKey: 'nav.messages', Icon: Send },
@@ -74,6 +75,14 @@ export function AppSidebar({
       </nav>
 
       <footer className="pc-side-foot">
+        <div className="pc-legal-links">
+          <button type="button" onClick={() => onNavigate('privacy')}>
+            {t('legal.privacy')}
+          </button>
+          <button type="button" onClick={() => onNavigate('terms')}>
+            {t('legal.terms')}
+          </button>
+        </div>
         <button
           type="button"
           className="pc-language-toggle"

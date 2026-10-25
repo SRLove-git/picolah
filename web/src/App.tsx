@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -17,8 +17,12 @@ import { ChatView } from './components/ChatView';
 import { ReelsView } from './components/ReelsView';
 import { MessagesView } from './components/MessagesView';
 import { ProfileView } from './components/ProfileView';
+import { LegalView } from './components/LegalView';
+import { WatchlistView } from './components/WatchlistView';
 import { AccountView } from './components/AccountView';
 import { IngestDrawer } from './components/IngestDrawer';
+import { AuthView } from './components/AuthView';
+import { useSession } from './lib/session';
 
 const MARKET_KEY = 'picolah.market';
 const PRICE_MODE_KEY = 'picolah.priceMode';
@@ -30,7 +34,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'messages', 'reels', 'profile', 'account'];
+const PAGE_VIEWS: AppView[] = ['home', 'watchlist', 'messages', 'reels', 'profile', 'account', 'privacy', 'terms'];
 
 function readStorage(key: string): string | null {
   try {
@@ -70,6 +74,28 @@ function initialView(): AppView {
 }
 
 export default function App() {
+  return (
+    <SessionGate>
+      <AppWorkspace />
+    </SessionGate>
+  );
+}
+
+function SessionGate({ children }: { children: ReactNode }) {
+  const { user, required, loading } = useSession();
+
+  if (loading) {
+    return (
+      <div className="pc-auth-loading" role="status">
+        <span>pico…</span>
+      </div>
+    );
+  }
+  if (required && !user) return <AuthView />;
+  return <>{children}</>;
+}
+
+function AppWorkspace() {
   const { t, i18n } = useTranslation();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -569,6 +595,14 @@ export default function App() {
           />
         )}
 
+        {view === 'watchlist' && (
+          <WatchlistView
+            market={market}
+            onOpenSidebar={() => setSidebarOpen(true)}
+            notify={notify}
+          />
+        )}
+
         {view === 'reels' && (
           <ReelsView
             market={market}
@@ -585,6 +619,14 @@ export default function App() {
             onOpenSidebar={() => setSidebarOpen(true)}
             notify={notify}
           />
+        )}
+
+        {view === 'privacy' && (
+          <LegalView kind="privacy" onOpenSidebar={() => setSidebarOpen(true)} />
+        )}
+
+        {view === 'terms' && (
+          <LegalView kind="terms" onOpenSidebar={() => setSidebarOpen(true)} />
         )}
 
         {view === 'messages' && (

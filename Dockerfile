@@ -18,6 +18,7 @@ RUN pnpm build
 # ---- runtime: Node + tsx serving the API and the built frontend ----
 FROM node:24-alpine AS runtime
 WORKDIR /app
+RUN apk add --no-cache sqlite
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=8787
@@ -30,6 +31,7 @@ COPY --from=build /app/web/server ./web/server
 COPY --from=build /app/web/shared ./web/shared
 COPY --from=build /app/web/mock ./web/mock
 COPY --from=build /app/web/dist ./web/dist
+COPY scripts ./scripts
 
 EXPOSE 8787
 CMD ["./web/node_modules/.bin/tsx", "web/server/index.ts"]
