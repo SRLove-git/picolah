@@ -22,14 +22,16 @@ export {
 export type { ParsedQuery, ProductMatch };
 
 /** Database-backed wrappers around the pure matchers in shared/query.ts. */
-export function findProduct(text: string, products = listProducts()): ProductMatch {
-  return findProductIn(text, products);
+export async function findProduct(text: string, products?: Awaited<ReturnType<typeof listProducts>>): Promise<ProductMatch> {
+  const catalog = products ?? (await listProducts());
+  return findProductIn(text, catalog);
 }
 
-export function findProducts(text: string, products = listProducts()): ProductMatch[] {
-  return findProductsIn(text, products);
+export async function findProducts(text: string, products?: Awaited<ReturnType<typeof listProducts>>): Promise<ProductMatch[]> {
+  const catalog = products ?? (await listProducts());
+  return findProductsIn(text, catalog);
 }
 
-export function parseQuery(message: string, fallbackMarket: CountryCode): ParsedQuery {
-  return parseQueryIn(message, fallbackMarket, listProducts());
+export async function parseQuery(message: string, fallbackMarket: CountryCode): Promise<ParsedQuery> {
+  return parseQueryIn(message, fallbackMarket, await listProducts());
 }

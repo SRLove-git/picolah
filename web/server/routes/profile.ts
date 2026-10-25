@@ -20,15 +20,15 @@ const offerClickSchema = z.object({
   position: z.number().int().min(1).max(50).default(1),
 });
 
-profileRouter.get('/', (req, res) => {
+profileRouter.get('/', async (req, res) => {
   const userId = requestUserId(req);
   if (!userId) {
-    return res.json({ profile: getShoppingProfile('') });
+    return res.json({ profile: await getShoppingProfile('') });
   }
-  res.json({ profile: getShoppingProfile(userId) });
+  res.json({ profile: await getShoppingProfile(userId) });
 });
 
-profileRouter.post('/events', (req, res) => {
+profileRouter.post('/events', async (req, res) => {
   const userId = requestUserId(req);
   if (!userId) return res.status(204).end();
 
@@ -41,7 +41,7 @@ profileRouter.post('/events', (req, res) => {
   }
 
   try {
-    recordOfferClick(userId, parsed.data);
+    await recordOfferClick(userId, parsed.data);
   } catch (error) {
     console.warn(
       '[profile] failed to record offer click:',
@@ -51,8 +51,8 @@ profileRouter.post('/events', (req, res) => {
   res.status(204).end();
 });
 
-profileRouter.delete('/', (req, res) => {
+profileRouter.delete('/', async (req, res) => {
   const userId = requestUserId(req);
-  if (userId) resetProfile(userId);
+  if (userId) await resetProfile(userId);
   res.status(204).end();
 });

@@ -25,7 +25,7 @@ Picolah 把比价做成一件轻松的小事。首页像 Google 一样干净，�
 - **对话式比价**：SSE 流式回答，助手先定位商品与市场，再展示结构化的平台报价卡。
 - **四种价格口径**：顶部和输入框都能切换「到手价 / 商品价 / 含运费 / 30 日低」，列表会按当前口径重新排序并高亮对应数字。
 - **六国本地化**：新加坡、马来西亚、泰国、印度尼西亚、菲律宾、越南；本地货币、当地主流平台和国旗图标。
-- **真实对话持久化**：SQLite 存储会话、消息、商品、报价、价格点和爬虫批次；从「消息」列表可以继续任意一段对话。
+- **真实对话持久化**：SQLite（默认）或 PostgreSQL 存储会话、消息、商品、报价、价格点和爬虫批次；从「消息」列表可以继续任意一段对话。
 - **独立数据接入**：带 Bearer 鉴权的批量写接口，按 `source + externalId` 幂等 upsert，整批原子写入。
 - **LLM 接入**：兼容 OpenAI 协议的 Chat Completions（默认 DeepSeek）。价格检索始终在本地完成，模型只拿到价格库里的数据；比价建议严格基于报价，打招呼、没匹配到型号等对话也由模型自然回应。没有配置 Key 时自动使用本地摘要器。
 - **模型意图路由**：每条消息先由模型判断「比价 / 推荐 / 打招呼 / 闲聊」，抽取品类、预算和品牌；本地关键词匹配保留为兜底。
@@ -131,7 +131,7 @@ pnpm seed
 │  Shopee / Lazada /  │         标准化批次 (JSON)           │  offers                  │
 │  TikTok Shop / ...  │                                    │                          │
 └─────────────────────┘                                    │  Node.js + Express       │
-                                                           │  SQLite (node:sqlite)    │
+                                                           │  SQLite / PostgreSQL     │
 ┌─────────────────────┐        REST + SSE                  │                          │
 │  React 工作台        │  ◀──────────────────────────────▶  │  商品 / 报价 / 价格点     │
 │  Vite + TypeScript  │       /api/chat, /api/conversations│  对话 / 批次              │
@@ -194,7 +194,7 @@ LLM_VISION_MODEL=gpt-4.1-mini
 - 意图解析和图片识别分别使用 `LLM_INTENT_MODEL` / `LLM_VISION_MODEL`，默认 `deepseek-chat` / `deepseek-flash`。
 - 系统提示词要求模型只能引用价格库数据：比价建议限制为 2–3 段、220 字以内，推荐和引导语不超过 220 字。
 - `POST /api/chat` 额外接受可选 `image`（`data:image/...;base64,...`）。前端会先把图片压到最长边 1280px、体积不超过 3MB，支持 JPG / PNG / WebP；手机浏览器可直接调用相机拍照。
-- 图片会发送给视觉模型，并以压缩后的 data URL 保存在 SQLite 消息元数据里，刷新后仍能看到。生产环境建议换成对象存储 + 签名 URL，并增加保留策略。
+- 图片会发送给视觉模型，并以压缩后的 data URL 保存在数据库的消息元数据里，刷新后仍能看到。生产环境建议换成对象存储 + 签名 URL，并增加保留策略。
 
 ## 数据接入
 
@@ -260,7 +260,7 @@ web/                         # 网站项目（@picolah/web）
 │   └── picolah.css          # 设计系统与响应式
 ├── server/
 │   ├── index.ts             # Express 入口与静态资源托管
-│   ├── db.ts                # node:sqlite 初始化和 schema
+│   ├── db.ts                # SQLite / PostgreSQL 双驱动、schema 与迁移
 │   ├── seed.ts              # 演示目录同步 + 示例对话
 │   ├── repo.ts              # 商品 / 报价 / 会话查询
 │   ├── query.ts             # 国家识别、商品别名匹配（包 shared/query）
@@ -277,7 +277,7 @@ web/                         # 网站项目（@picolah/web）
 ├── mock/crawler.ts          # 模拟爬虫：定时向 ingest API 推批次（真实爬虫开工前使用）
 ├── src/lib/mock-backend.ts  # 纯前端离线 mock（?mock=1）
 ├── docs/preview/            # 界面截图
-├── db/postgres.sql          # PostgreSQL DDL（迁移用，运行时仍默认 SQLite）
+├── db/postgres.sql          # PostgreSQL DDL（设置 DATABASE_URL 时自动执行）
 ├── public/                  # 字体、伪装首页、manifest、Service Worker、robots.txt
 ├── package.json             # @picolah/web
 └── data/                    # SQLite（首次运行自动生成，已 gitignore）
@@ -306,7 +306,7 @@ web/                         # 网站项目（@picolah/web）
 
 picolah 的演示数据有三个层次，都用 `shared/catalog.ts` 这一份目录：
 
-1. **seed**：首次启动把 28 个商品、588 条报价和 8 段示例对话写进 SQLite，报价的
+1. **seed**：首次启动把 28 个商品、588 条报价和 8 段示例对话写进数据库（SQLite 默认），报价的
    `externalId` 就是 `mock-<market>-<product>-<platform>`，与模拟爬虫的幂等键一致。
 2. **模拟爬虫**：`pnpm mock` 按市场轮询，每次挑 8 条报价做小幅价格游走、偶发闪购折扣和
    库存切换，再以正常 ingest 批次写回；更新的是同一批报价，不会产生重复行。
@@ -329,7 +329,7 @@ NODE_ENV=production HOST=0.0.0.0 pnpm start
 
 仓库根目录自带 `Dockerfile` 与 `docker-compose.yml`：多阶段构建前端，运行时用 `tsx`
 同时托管 API 与 `dist/`，SQLite 挂载到根目录的 `./data`（容器内通过 `PICOLAH_DB_PATH`
-指向 `/app/data/picolah.db`，所以已有部署的数据库不用迁移）。
+指向 `/app/data/picolah.db`，所以已有部署的数据库不用迁移）。设置 `DATABASE_URL` 后改用 PostgreSQL。
 
 ```bash
 cp deploy/.env.example .env   # 填 LLM_API_KEY、INGEST_API_KEY
@@ -381,7 +381,9 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 | `LLM_INTENT_MODEL` | `deepseek-chat` | 意图解析模型名 |
 | `LLM_VISION_MODEL` | `deepseek-flash` | 图片识别模型名（需支持图片输入） |
 | `LLM_PROVIDER` | `DeepSeek` | 界面上显示的服务商名 |
-| `PICOLAH_DB_PATH` | `data/picolah.db` | 可选数据库路径 |
+| `DATABASE_URL` | 空 | 设置后使用 PostgreSQL；空则使用 SQLite |
+| `DATABASE_POOL_SIZE` | `10` | PostgreSQL 连接池上限 |
+| `PICOLAH_DB_PATH` | `data/picolah.db` | SQLite 数据库路径（仅未设置 `DATABASE_URL` 时） |
 | `VITE_MOCK` | 空 | 构建时设为 `1`，前端默认进入离线 mock（运行时 `?mock=1` 等效） |
 | `MOCK_INTERVAL_MS` | `120000` | 模拟爬虫批次间隔 |
 | `MOCK_BATCH_SIZE` | `8` | 模拟爬虫每批报价数（1–100） |
@@ -394,16 +396,16 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 
 - 生产默认开启账号体系（`AUTH_REQUIRED=true`），会话使用 HttpOnly Cookie；本地开发为方便演示默认关闭。正式上线还应把数据源网关限制到管理员。
 - 生产环境务必更换 `INGEST_API_KEY` 和 `METRICS_TOKEN`；建议再加 IP allowlist、请求签名、速率限制和审计日志。
-- 上传图片会发送给配置的视觉模型，并保存在 SQLite 消息元数据中；生产环境应改用对象存储、签名 URL 和明确的保留 / 删除策略。
+- 上传图片会发送给配置的视觉模型，并保存在数据库的消息元数据中；生产环境应改用对象存储、签名 URL 和明确的保留 / 删除策略。
 - 演示报价、店铺名和平台链接都是生成数据，链接指向平台搜索页。真实上线时应只展示爬虫回传的真实商品 URL。
-- 当前为 SQLite 单进程模型。多实例部署时建议换 PostgreSQL，并把价格点写入改成异步队列。
+- 单机默认 SQLite；多实例或更高并发部署时设置 `DATABASE_URL` 切换 PostgreSQL（连接池默认 10）。价格点写入仍是同步落库，超高吞吐时应改为异步队列。
 - 比价结果仅供参考，页面已展示「以商家页面为准」的提示。
 
 ## 接下来可以做什么
 
 - 一次比较多款商品，或按类目做价格带分布。
 - 接入真实类目树、规格（SKU）和图片 CDN。
-- TikTok Shop / 更多 Amazon 站点接入；PostgreSQL 双驱动迁移（见 [`docs/postgres.md`](../docs/postgres.md)）。
+- TikTok Shop / 更多 Amazon 站点接入；PostgreSQL 已在运行时支持，生产切库按 [`docs/postgres.md`](../docs/postgres.md) 做压测与恢复演练。
 - k6 持续压测和 Sentry/OTel 外部追踪；`docs/observability.md` 已给出指标与告警基线。
 - 对 LLM 回答做引用校验，把每句建议绑定到 `offerId`；`scripts/llm-eval.mjs` 先覆盖价格编造、提示词注入和非东南亚市场四类回归。
 

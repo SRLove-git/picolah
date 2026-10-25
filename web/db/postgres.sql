@@ -1,5 +1,5 @@
--- Picolah PostgreSQL schema (target shape; the app currently runs on SQLite).
--- Apply with: psql "$DATABASE_URL" -f web/db/postgres.sql
+-- Picolah PostgreSQL schema (runtime schema when DATABASE_URL is set).
+-- Applied automatically by web/server/db.ts, or manually: psql "$DATABASE_URL" -f web/db/postgres.sql
 -- Keep TEXT timestamps so the existing API can switch drivers without changing payloads.
 
 CREATE TABLE IF NOT EXISTS products (

@@ -5,22 +5,22 @@ import { COUNTRY_LIST } from '../../shared/types.ts';
 
 export const configRouter = Router();
 
-configRouter.get('/', (_req, res) => {
+configRouter.get('/', async (_req, res) => {
   res.json({
     llmConfigured,
     llmProvider: config.llm.provider,
     llmModel: config.llm.model,
     markets: COUNTRY_LIST,
-    gateway: getGatewayStats(),
+    gateway: await getGatewayStats(),
   });
 });
 
 export const catalogRouter = Router();
 
-catalogRouter.get('/', (req, res) => {
+catalogRouter.get('/', async (req, res) => {
   const rawQuery = String(req.query.q || '').trim().toLowerCase();
   const rawCategory = String(req.query.category || '').trim();
-  const all = listProducts();
+  const all = await listProducts();
   const categories = [...new Set(all.map((product) => product.category))].sort((a, b) =>
     a.localeCompare(b, 'zh-CN'),
   );

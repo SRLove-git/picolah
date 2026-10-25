@@ -32,6 +32,15 @@ docker compose --profile backup up -d
 
 备份写入 `data/backups/picolah-<utc>.db.gz`，默认保留 7 份，可用 `BACKUP_KEEP` 调整。恢复时停掉 API，解压后替换 `data/picolah.db`（同时删除旧的 `-wal` / `-shm` 文件）。
 
+设置 `DATABASE_URL` 后改用 PostgreSQL 备份：
+
+```bash
+pg_dump "$DATABASE_URL" --format=custom --file="backup-$(date +%F).dump"
+pg_restore --clean --if-exists --dbname="$DATABASE_URL" backup-2026-10-25.dump
+```
+
+把 `pg_dump` 放进 cron 或使用云数据库自动备份，并定期做恢复演练。
+
 ## 联盟链接
 
 `/go/:offerId` 是唯一的出站入口。配置以下任意环境变量即可给对应平台追加联盟参数，模板支持 `{url}`、`{rawUrl}`、`{platform}`：

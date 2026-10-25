@@ -61,7 +61,7 @@ test('evaluates a target and exposes an unread alert', async () => {
   const createdBody = (await created.json()) as { item: { currentPrice: number } };
   assert.ok(createdBody.item.currentPrice > 0);
 
-  const alertsCreated = evaluateWatchlist('SG');
+  const alertsCreated = await evaluateWatchlist('SG');
   assert.ok(alertsCreated >= 1);
 
   const alerts = await fetch(`${baseUrl}/api/alerts`, { headers });

@@ -220,13 +220,14 @@ export function requestUserId(request: {
   return /^[a-zA-Z0-9_-]{8,80}$/.test(raw) ? raw : null;
 }
 
-export function ensureUser(userId: string): void {
+export async function ensureUser(userId: string): Promise<void> {
   const stamp = nowIso();
-  db.prepare(
+  await db.run(
     `INSERT INTO app_users (id, created_at, last_seen_at)
      VALUES (?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at`,
-  ).run(userId, stamp, stamp);
+    [userId, stamp, stamp],
+  );
 }
 
 /**
@@ -235,7 +236,7 @@ export function ensureUser(userId: string): void {
  * who compares first and signs up later keeps the persona instead of starting
  * from zero. The anonymous app_users row is removed afterwards.
  */
-export function mergeAnonymousProfile(anonymousId: string, accountId: string): number {
+export async function mergeAnonymousProfile(anonymousId: string, accountId: string): Promise<number> {
   const anonymous = String(anonymousId || '').trim();
   const account = String(accountId || '').trim();
   if (
@@ -245,15 +246,15 @@ export function mergeAnonymousProfile(anonymousId: string, accountId: string): n
   ) {
     return 0;
   }
-  ensureUser(account);
-  const exists = db.prepare('SELECT 1 FROM app_users WHERE id = ?').get(anonymous);
+  await ensureUser(account);
+  const exists = await db.get('SELECT 1 FROM app_users WHERE id = ?', [anonymous]);
   if (!exists) return 0;
-  const result = db.prepare('UPDATE user_events SET user_id = ? WHERE user_id = ?').run(account, anonymous);
-  db.prepare('DELETE FROM app_users WHERE id = ?').run(anonymous);
+  const result = await db.run('UPDATE user_events SET user_id = ? WHERE user_id = ?', [account, anonymous]);
+  await db.run('DELETE FROM app_users WHERE id = ?', [anonymous]);
   return Number(result.changes);
 }
 
-function insertEvent(input: {
+async function insertEvent(input: {
   userId: string;
   type: 'comparison' | 'offer_click';
   market: CountryCode;
@@ -266,13 +267,13 @@ function insertEvent(input: {
   isLowest?: boolean | null;
   position?: number | null;
   metadata?: Record<string, unknown>;
-}): void {
-  db.prepare(
+}): Promise<void> {
+  await db.run(
     `INSERT INTO user_events
       (id, user_id, type, market, product_id, category, brand, platform_id, price,
        currency, is_lowest, position, metadata, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
+    [
     randomUUID(),
     input.userId,
     input.type,
@@ -287,6 +288,7 @@ function insertEvent(input: {
     input.position ?? null,
     input.metadata ? JSON.stringify(input.metadata) : null,
     nowIso(),
+    ],
   );
 }
 
@@ -294,14 +296,14 @@ function insertEvent(input: {
  * Store a meaningful comparison. Chit-chat / empty suggestion screens are not
  * recorded: they say nothing about a shopping habit.
  */
-export function recordComparisonEvent(
+export async function recordComparisonEvent(
   userId: string,
   comparison: Comparison,
   conversationId?: string | null,
-): void {
+): Promise<void> {
   const product = comparison.product;
   if (!product && comparison.kind !== 'recommendation') return;
-  ensureUser(userId);
+  await ensureUser(userId);
 
   const alternatives = product
     ? []
@@ -321,7 +323,7 @@ export function recordComparisonEvent(
     : `${alternatives[0]?.productName || '推荐商品'}${alternatives.length > 1 ? ` 等 ${alternatives.length} 款` : ''}`;
   const titleEn = titleZh;
 
-  insertEvent({
+  await insertEvent({
     userId,
     type: 'comparison',
     market: comparison.market,
@@ -342,11 +344,11 @@ export function recordComparisonEvent(
   });
 }
 
-export function recordOfferClick(userId: string, event: OfferClickEvent): void {
-  const product = event.productId ? getProduct(event.productId) : null;
+export async function recordOfferClick(userId: string, event: OfferClickEvent): Promise<void> {
+  const product = event.productId ? await getProduct(event.productId) : null;
   const platform = PLATFORMS[event.platformId];
-  ensureUser(userId);
-  insertEvent({
+  await ensureUser(userId);
+  await insertEvent({
     userId,
     type: 'offer_click',
     market: event.market,
@@ -365,19 +367,16 @@ export function recordOfferClick(userId: string, event: OfferClickEvent): void {
   });
 }
 
-export function getShoppingProfile(userId: string): ShoppingProfile {
-  const user = db
-    .prepare('SELECT id, created_at, last_seen_at FROM app_users WHERE id = ?')
-    .get(userId) as UserRow | undefined;
-  const events = db
-    .prepare(
-      `SELECT id, type, market, product_id, category, brand, platform_id, price,
-              currency, is_lowest, position, metadata, created_at
-         FROM user_events
-        WHERE user_id = ?
-        ORDER BY created_at DESC`,
-    )
-    .all(userId) as unknown as EventRow[];
+export async function getShoppingProfile(userId: string): Promise<ShoppingProfile> {
+  const user = await db.get<UserRow>('SELECT id, created_at, last_seen_at FROM app_users WHERE id = ?', [userId]);
+  const events = await db.all<EventRow>(
+    `SELECT id, type, market, product_id, category, brand, platform_id, price,
+            currency, is_lowest, position, metadata, created_at
+       FROM user_events
+      WHERE user_id = ?
+      ORDER BY created_at DESC`,
+    [userId],
+  );
 
   if (!events.length) return emptyProfile(userId, user);
 
@@ -621,6 +620,6 @@ function toActivity(event: EventRow): ProfileActivity {
   };
 }
 
-export function resetProfile(userId: string): void {
-  db.prepare('DELETE FROM user_events WHERE user_id = ?').run(userId);
+export async function resetProfile(userId: string): Promise<void> {
+  await db.run('DELETE FROM user_events WHERE user_id = ?', [userId]);
 }

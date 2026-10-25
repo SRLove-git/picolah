@@ -88,7 +88,7 @@ function roundMoney(value: number, currency: string): number {
   return Math.round(value * 100) / 100;
 }
 
-ingestRouter.post('/offers', (req, res) => {
+ingestRouter.post('/offers', async (req, res) => {
   if (!isAuthorized(req.header('authorization'))) {
     res.setHeader('WWW-Authenticate', 'Bearer realm="picolah-ingest"');
     return res.status(401).json({ ok: false, error: 'UNAUTHORIZED', message: '缺少或错误的数据接入密钥' });
@@ -133,7 +133,7 @@ ingestRouter.post('/offers', (req, res) => {
   const payloadProductIds = new Set(products.map((product) => product.id));
   const knownProductIds = new Set(payloadProductIds);
   for (const offer of offers) {
-    if (!knownProductIds.has(offer.productId) && getProduct(offer.productId)) {
+    if (!knownProductIds.has(offer.productId) && await getProduct(offer.productId)) {
       knownProductIds.add(offer.productId);
     }
   }
@@ -154,154 +154,156 @@ ingestRouter.post('/offers', (req, res) => {
   let created = 0;
   let updated = 0;
 
-  const upsertProduct = db.prepare(`
-    INSERT INTO products (id, name, brand, category, tagline, visual, specs, aliases, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
-      brand = excluded.brand,
-      category = excluded.category,
-      tagline = excluded.tagline,
-      visual = excluded.visual,
-      specs = excluded.specs,
-      aliases = excluded.aliases,
-      updated_at = excluded.updated_at
-  `);
-
-  const findOffer = db.prepare('SELECT id FROM offers WHERE source = ? AND external_id = ?');
-  const insertOffer = db.prepare(`
-    INSERT INTO offers (
-      id, external_id, source, product_id, platform_id, seller, country, currency,
-      item_price, shipping_fee, discount, final_price, landed_price_confidence, url, rating, reviews,
-      in_stock, is_official, last_seen, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  const updateOffer = db.prepare(`
-    UPDATE offers SET
-      product_id = ?, platform_id = ?, seller = ?, country = ?, currency = ?,
-      item_price = ?, shipping_fee = ?, discount = ?, final_price = ?,
-      landed_price_confidence = ?, url = ?,
-      rating = ?, reviews = ?, in_stock = ?, is_official = ?, last_seen = ?, updated_at = ?
-    WHERE id = ?
-  `);
-  const insertPoint = db.prepare(
-    'INSERT OR REPLACE INTO price_points (offer_id, recorded_at, price) VALUES (?, ?, ?)',
-  );
-  const insertRun = db.prepare(`
-    INSERT INTO ingest_runs (id, source, country, received, upserted, status, message, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  db.exec('BEGIN');
   try {
-    for (const product of products) {
-      upsertProduct.run(
-        product.id,
-        product.name,
-        product.brand,
-        product.category,
-        product.tagline,
-        product.visual,
-        product.specs,
-        JSON.stringify(product.aliases),
-        now,
-        now,
-      );
-    }
-
-    for (const offer of offers) {
-      const currency = market.currency;
-      const finalPrice = roundMoney(
-        offer.itemPrice + offer.shippingFee - offer.discount,
-        currency,
-      );
-      const seenAt = offer.capturedAt ? new Date(offer.capturedAt).toISOString() : now;
-      const existing = findOffer.get(source, offer.externalId) as { id: string } | undefined;
-      let offerId: string;
-
-      if (existing) {
-        offerId = existing.id;
-        updateOffer.run(
-          offer.productId,
-          offer.platformId,
-          offer.seller,
-          country,
-          currency,
-          roundMoney(offer.itemPrice, currency),
-          roundMoney(offer.shippingFee, currency),
-          roundMoney(offer.discount, currency),
-          finalPrice,
-          offer.landedPriceConfidence,
-          offer.url,
-          offer.rating,
-          offer.reviews,
-          offer.inStock ? 1 : 0,
-          offer.isOfficial ? 1 : 0,
-          seenAt,
-          now,
-          offerId,
+    const result = await db.transaction(async (tx) => {
+      for (const product of products) {
+        await tx.run(
+          `INSERT INTO products (id, name, brand, category, tagline, visual, specs, aliases, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             name = excluded.name,
+             brand = excluded.brand,
+             category = excluded.category,
+             tagline = excluded.tagline,
+             visual = excluded.visual,
+             specs = excluded.specs,
+             aliases = excluded.aliases,
+             updated_at = excluded.updated_at`,
+          [
+            product.id,
+            product.name,
+            product.brand,
+            product.category,
+            product.tagline,
+            product.visual,
+            product.specs,
+            JSON.stringify(product.aliases),
+            now,
+            now,
+          ],
         );
-        updated += 1;
-      } else {
-        offerId = randomUUID();
-        insertOffer.run(
-          offerId,
-          offer.externalId,
-          source,
-          offer.productId,
-          offer.platformId,
-          offer.seller,
-          country,
-          currency,
-          roundMoney(offer.itemPrice, currency),
-          roundMoney(offer.shippingFee, currency),
-          roundMoney(offer.discount, currency),
-          finalPrice,
-          offer.landedPriceConfidence,
-          offer.url,
-          offer.rating,
-          offer.reviews,
-          offer.inStock ? 1 : 0,
-          offer.isOfficial ? 1 : 0,
-          seenAt,
-          now,
-          now,
-        );
-        created += 1;
       }
 
-      insertPoint.run(offerId, seenAt, finalPrice);
-    }
+      for (const offer of offers) {
+        const currency = market.currency;
+        const finalPrice = roundMoney(
+          offer.itemPrice + offer.shippingFee - offer.discount,
+          currency,
+        );
+        const seenAt = offer.capturedAt ? new Date(offer.capturedAt).toISOString() : now;
+        const existing = await tx.get<{ id: string }>(
+          'SELECT id FROM offers WHERE source = ? AND external_id = ?',
+          [source, offer.externalId],
+        );
+        let offerId: string;
 
-    insertRun.run(
-      runId,
-      source,
-      country,
-      offers.length,
-      offers.length,
-      'ok',
-      `接收 ${offers.length} 条，新增 ${created} 条，更新 ${updated} 条`,
-      now,
-    );
-    db.exec('COMMIT');
-    try {
-      evaluateWatchlist(country as CountryCode);
-    } catch (watchError) {
-      console.warn('[ingest] watchlist evaluation failed:', watchError);
-    }
+        if (existing) {
+          offerId = existing.id;
+          await tx.run(
+            `UPDATE offers SET
+               product_id = ?, platform_id = ?, seller = ?, country = ?, currency = ?,
+               item_price = ?, shipping_fee = ?, discount = ?, final_price = ?,
+               landed_price_confidence = ?, url = ?,
+               rating = ?, reviews = ?, in_stock = ?, is_official = ?, last_seen = ?, updated_at = ?
+             WHERE id = ?`,
+            [
+              offer.productId,
+              offer.platformId,
+              offer.seller,
+              country,
+              currency,
+              roundMoney(offer.itemPrice, currency),
+              roundMoney(offer.shippingFee, currency),
+              roundMoney(offer.discount, currency),
+              finalPrice,
+              offer.landedPriceConfidence,
+              offer.url,
+              offer.rating,
+              offer.reviews,
+              offer.inStock ? 1 : 0,
+              offer.isOfficial ? 1 : 0,
+              seenAt,
+              now,
+              offerId,
+            ],
+          );
+          updated += 1;
+        } else {
+          offerId = randomUUID();
+          await tx.run(
+            `INSERT INTO offers (
+               id, external_id, source, product_id, platform_id, seller, country, currency,
+               item_price, shipping_fee, discount, final_price, landed_price_confidence, url, rating, reviews,
+               in_stock, is_official, last_seen, created_at, updated_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              offerId,
+              offer.externalId,
+              source,
+              offer.productId,
+              offer.platformId,
+              offer.seller,
+              country,
+              currency,
+              roundMoney(offer.itemPrice, currency),
+              roundMoney(offer.shippingFee, currency),
+              roundMoney(offer.discount, currency),
+              finalPrice,
+              offer.landedPriceConfidence,
+              offer.url,
+              offer.rating,
+              offer.reviews,
+              offer.inStock ? 1 : 0,
+              offer.isOfficial ? 1 : 0,
+              seenAt,
+              now,
+              now,
+            ],
+          );
+          created += 1;
+        }
+
+        await tx.run(
+          `INSERT INTO price_points (offer_id, recorded_at, price) VALUES (?, ?, ?)
+           ON CONFLICT(offer_id, recorded_at) DO UPDATE SET price = excluded.price`,
+          [offerId, seenAt, finalPrice],
+        );
+      }
+
+      await tx.run(
+        `INSERT INTO ingest_runs (id, source, country, received, upserted, status, message, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          runId,
+          source,
+          country,
+          offers.length,
+          offers.length,
+          'ok',
+          `接收 ${offers.length} 条，新增 ${created} 条，更新 ${updated} 条`,
+          now,
+        ],
+      );
+      return { created, updated };
+    });
+    created = result.created;
+    updated = result.updated;
   } catch (error) {
-    db.exec('ROLLBACK');
     console.error('[ingest] failed:', error);
     try {
-      insertRun.run(
-        randomUUID(),
-        source,
-        country,
-        offers.length,
-        0,
-        'failed',
-        error instanceof Error ? error.message.slice(0, 300) : 'unknown error',
-        now,
+      await db.run(
+        `INSERT INTO ingest_runs (id, source, country, received, upserted, status, message, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          randomUUID(),
+          source,
+          country,
+          offers.length,
+          0,
+          'failed',
+          error instanceof Error ? error.message.slice(0, 300) : 'unknown error',
+          now,
+        ],
       );
     } catch {
       // Keep the API response useful even if logging the failed run also fails.
@@ -311,6 +313,12 @@ ingestRouter.post('/offers', (req, res) => {
       error: 'INGEST_FAILED',
       message: '写入价格库失败，整批数据已回滚。',
     });
+  }
+
+  try {
+    await evaluateWatchlist(country as CountryCode);
+  } catch (watchError) {
+    console.warn('[ingest] watchlist evaluation failed:', watchError);
   }
 
   return res.json({

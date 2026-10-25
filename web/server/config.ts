@@ -24,6 +24,9 @@ export const config = {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
+  /** PostgreSQL DSN. When set, the app uses PostgreSQL instead of SQLite. */
+  databaseUrl: process.env.DATABASE_URL || '',
+  dbPoolSize: num(process.env.DATABASE_POOL_SIZE, 10),
   dbPath: process.env.PICOLAH_DB_PATH || '',
   offerFreshnessHours: num(process.env.OFFER_FRESHNESS_HOURS, 24),
   /** Optional outbound webhook for price alerts (Slack/Telegram bridge/email worker). */

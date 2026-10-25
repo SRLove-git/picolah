@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { CountryCode } from '../shared/types.ts';
 import { DEMO_CONVERSATIONS } from '../shared/demo-conversations.ts';
 import { generateOffers, PRODUCTS, type GeneratedOffer } from '../shared/catalog.ts';
-import { db, dbPath } from './db.ts';
+import { db, dbPath, type DbExecutor } from './db.ts';
 import { addMessage, buildComparison, createConversationWithId, getProduct } from './repo.ts';
 import { parseQuery } from './query.ts';
 import { writeFallbackAnswer } from './copy.ts';
@@ -29,20 +29,21 @@ const insertProductSql = `
 `;
 
 const insertOfferSql = `
-  INSERT OR IGNORE INTO offers (
+  INSERT INTO offers (
     id, external_id, source, product_id, platform_id, seller, country, currency,
     item_price, shipping_fee, discount, final_price, url, rating, reviews,
     in_stock, is_official, last_seen, created_at, updated_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT (source, external_id) DO NOTHING
 `;
 
-function writeOffers(offers: GeneratedOffer[], now: string): void {
-  const insertOffer = db.prepare(insertOfferSql);
-  const insertPoint = db.prepare(
-    'INSERT OR REPLACE INTO price_points (offer_id, recorded_at, price) VALUES (?, ?, ?)',
-  );
+async function writeOffers(
+  offers: GeneratedOffer[],
+  now: string,
+  executor: DbExecutor = db,
+): Promise<void> {
   for (const offer of offers) {
-    insertOffer.run(
+    await executor.run(insertOfferSql, [
       offer.id,
       externalIdFor(offer),
       MOCK_SOURCE,
@@ -63,17 +64,20 @@ function writeOffers(offers: GeneratedOffer[], now: string): void {
       offer.lastSeen,
       now,
       now,
-    );
+    ]);
     for (const point of offer.history) {
-      insertPoint.run(offer.id, point.date, point.price);
+      await executor.run(
+        `INSERT INTO price_points (offer_id, recorded_at, price) VALUES (?, ?, ?)
+         ON CONFLICT(offer_id, recorded_at) DO UPDATE SET price = excluded.price`,
+        [offer.id, point.date, point.price],
+      );
     }
   }
 }
 
-function upsertProducts(now: string): void {
-  const statement = db.prepare(insertProductSql);
+async function upsertProducts(now: string, executor: DbExecutor = db): Promise<void> {
   for (const product of PRODUCTS) {
-    statement.run(
+    await executor.run(insertProductSql, [
       product.id,
       product.name,
       product.brand,
@@ -84,7 +88,7 @@ function upsertProducts(now: string): void {
       JSON.stringify(product.aliases),
       now,
       now,
-    );
+    ]);
   }
 }
 
@@ -93,111 +97,113 @@ function upsertProducts(now: string): void {
  * Rewrite them to the crawler's identity so the mock crawler updates in place
  * instead of inserting duplicate offers.
  */
-function adoptLegacySeedOffers(): number {
-  const legacy = db
-    .prepare("SELECT id, product_id, country, platform_id FROM offers WHERE source = 'seed' AND external_id IS NULL")
-    .all() as { id: string; product_id: string; country: string; platform_id: string }[];
+async function adoptLegacySeedOffers(executor: DbExecutor = db): Promise<number> {
+  const legacy = await executor.all<{
+    id: string;
+    product_id: string;
+    country: string;
+    platform_id: string;
+  }>("SELECT id, product_id, country, platform_id FROM offers WHERE source = 'seed' AND external_id IS NULL");
 
-  const findExisting = db.prepare('SELECT id FROM offers WHERE source = ? AND external_id = ?');
-  const update = db.prepare('UPDATE offers SET source = ?, external_id = ? WHERE id = ?');
-  const remove = db.prepare('DELETE FROM offers WHERE id = ?');
   let adopted = 0;
-
   for (const row of legacy) {
     const externalId = `mock-${row.country.toLowerCase()}-${row.product_id}-${row.platform_id}`;
-    const clash = findExisting.get(MOCK_SOURCE, externalId) as { id: string } | undefined;
+    const clash = await executor.get<{ id: string }>(
+      'SELECT id FROM offers WHERE source = ? AND external_id = ?',
+      [MOCK_SOURCE, externalId],
+    );
     if (clash && clash.id !== row.id) {
-      remove.run(row.id);
+      await executor.run('DELETE FROM offers WHERE id = ?', [row.id]);
       continue;
     }
-    update.run(MOCK_SOURCE, externalId, row.id);
+    await executor.run('UPDATE offers SET source = ?, external_id = ? WHERE id = ?', [
+      MOCK_SOURCE,
+      externalId,
+      row.id,
+    ]);
     adopted += 1;
   }
   return adopted;
 }
 
-function syncCatalog(): { added: number } {
+async function syncCatalog(): Promise<{ added: number }> {
   const now = new Date().toISOString();
-  upsertProducts(now);
-  adoptLegacySeedOffers();
-
-  const existing = new Set(
-    (db.prepare('SELECT id FROM offers').all() as { id: string }[]).map((row) => row.id),
-  );
-  const missing = generateOffers().filter((offer) => !existing.has(offer.id));
-  writeOffers(missing, now);
-  return { added: missing.length };
+  let added = 0;
+  await db.transaction(async (tx) => {
+    await upsertProducts(now, tx);
+    await adoptLegacySeedOffers(tx);
+    const existing = new Set(
+      (await tx.all<{ id: string }>('SELECT id FROM offers')).map((row) => row.id),
+    );
+    const missing = generateOffers().filter((offer) => !existing.has(offer.id));
+    await writeOffers(missing, now, tx);
+    added = missing.length;
+  });
+  return { added };
 }
 
-export function seedDatabase(force = false): {
+export async function seedDatabase(force = false): Promise<{
   seeded: boolean;
   offers: number;
   conversations: number;
   added?: number;
-} {
+}> {
   const productCount = Number(
-    (db.prepare('SELECT COUNT(*) AS count FROM products').get() as { count: number }).count,
+    (await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM products'))?.count || 0,
   );
 
   if (productCount > 0 && !force) {
-    const { added } = syncCatalog();
+    const { added } = await syncCatalog();
     return { seeded: false, offers: 0, conversations: 0, added };
   }
 
   const offers = generateOffers();
   const now = new Date().toISOString();
 
-  db.exec('BEGIN');
-  try {
+  await db.transaction(async (tx) => {
     if (force) {
-      db.exec(`
-        DELETE FROM messages;
-        DELETE FROM conversations;
-        DELETE FROM ingest_runs;
-        DELETE FROM price_points;
-        DELETE FROM offers;
-        DELETE FROM products;
-      `);
+      await tx.run('DELETE FROM messages');
+      await tx.run('DELETE FROM conversations');
+      await tx.run('DELETE FROM ingest_runs');
+      await tx.run('DELETE FROM price_points');
+      await tx.run('DELETE FROM offers');
+      await tx.run('DELETE FROM products');
     }
 
-    upsertProducts(now);
-    writeOffers(offers, now);
+    await upsertProducts(now, tx);
+    await writeOffers(offers, now, tx);
 
-    db.prepare(
+    await tx.run(
       `INSERT INTO ingest_runs (id, source, country, received, upserted, status, message, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      randomUUID(),
-      MOCK_SOURCE,
-      'SG',
-      offers.length,
-      offers.length,
-      'ok',
-      '演示价格目录已装载',
-      now,
+      [
+        randomUUID(),
+        MOCK_SOURCE,
+        'SG',
+        offers.length,
+        offers.length,
+        'ok',
+        '演示价格目录已装载',
+        now,
+      ],
     );
+  });
 
-    db.exec('COMMIT');
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
-
-  const conversations = seedDemoConversations();
+  const conversations = await seedDemoConversations();
   return { seeded: true, offers: offers.length, conversations };
 }
 
-function seedDemoConversations(): number {
+async function seedDemoConversations(): Promise<number> {
   const existing = Number(
-    (db.prepare('SELECT COUNT(*) AS count FROM conversations').get() as { count: number }).count,
+    (await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM conversations'))?.count || 0,
   );
   if (existing > 0) return 0;
 
   let created = 0;
   for (const demo of DEMO_CONVERSATIONS) {
-    const parsed = parseQuery(demo.message, demo.market);
-    const product = parsed.product || getProduct(demo.id);
-    const comparison = buildComparison({
+    const parsed = await parseQuery(demo.message, demo.market as CountryCode);
+    const product = parsed.product || (await getProduct(demo.id));
+    const comparison = await buildComparison({
       query: demo.message,
       market: parsed.market,
       product,
@@ -205,14 +211,14 @@ function seedDemoConversations(): number {
     const answer = writeFallbackAnswer(comparison);
     const createdAt = new Date(Date.now() - demo.hoursAgo * 60 * 60 * 1000).toISOString();
 
-    createConversationWithId(demo.id, parsed.title, parsed.market, createdAt);
-    addMessage({
+    await createConversationWithId(demo.id, parsed.title, parsed.market, createdAt);
+    await addMessage({
       conversationId: demo.id,
       role: 'user',
       content: demo.message,
       createdAt,
     });
-    addMessage({
+    await addMessage({
       conversationId: demo.id,
       role: 'assistant',
       content: answer,
@@ -227,7 +233,7 @@ function seedDemoConversations(): number {
 const invokedDirectly = process.argv[1]?.replace(/\\/g, '/').endsWith('/server/seed.ts');
 if (invokedDirectly) {
   const force = process.argv.includes('--force');
-  const result = seedDatabase(force);
+  const result = await seedDatabase(force);
   console.log(
     result.seeded
       ? `Seeded ${result.offers} offers and ${result.conversations} demo conversations.`

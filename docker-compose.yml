@@ -12,6 +12,8 @@ services:
       - .env
     environment:
       PICOLAH_ENTRY_PATH: ${PICOLAH_ENTRY_PATH:-/7hk9ho}
+      # Set DATABASE_URL in .env to use PostgreSQL; empty keeps SQLite.
+      DATABASE_URL: ${DATABASE_URL:-}
       # The website source now lives under /app/web, but the SQLite file keeps
       # using the host mount at /app/data so existing deployments keep their DB.
       PICOLAH_DB_PATH: /app/data/picolah.db
@@ -37,6 +39,29 @@ services:
         max-size: "20m"
         max-file: "3"
 
+  # Optional PostgreSQL. Start with: docker compose --profile postgres up -d
+  # Then set DATABASE_URL=postgres://picolah:<password>@postgres:5432/picolah in .env
+  postgres:
+    image: postgres:16-alpine
+    container_name: picolah-postgres
+    restart: unless-stopped
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_DB: picolah
+      POSTGRES_USER: picolah
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U picolah -d picolah"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   # Optional daily SQLite backup. Start with: docker compose --profile backup up -d
   backup:
     image: picolah:latest

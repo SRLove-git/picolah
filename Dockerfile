@@ -13,6 +13,7 @@ COPY web/server ./web/server
 COPY web/shared ./web/shared
 COPY web/mock ./web/mock
 COPY web/public ./web/public
+COPY web/db ./web/db
 RUN pnpm build
 
 # ---- runtime: Node + tsx serving the API and the built frontend ----
@@ -30,6 +31,7 @@ COPY --from=build /app/web/tsconfig.json ./web/tsconfig.json
 COPY --from=build /app/web/server ./web/server
 COPY --from=build /app/web/shared ./web/shared
 COPY --from=build /app/web/mock ./web/mock
+COPY --from=build /app/web/db ./web/db
 COPY --from=build /app/web/dist ./web/dist
 COPY scripts ./scripts
 

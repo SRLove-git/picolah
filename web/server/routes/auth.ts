@@ -62,20 +62,20 @@ authRouter.post('/register', async (req, res) => {
   if (!allowAttempt(`register:${key}`, 5, 60 * 60_000)) {
     return res.status(429).json({ error: 'TOO_MANY_REQUESTS', message: '注册过于频繁，请稍后再试。' });
   }
-  if (findUserByEmail(parsed.data.email)) {
+  if (await findUserByEmail(parsed.data.email)) {
     return res.status(409).json({ error: 'EMAIL_TAKEN', message: '这个邮箱已经注册。' });
   }
 
   const passwordHash = await hashPassword(parsed.data.password);
-  const user = createUser({
+  const user = await createUser({
     email: parsed.data.email,
     passwordHash,
     displayName: parsed.data.displayName || parsed.data.email.split('@')[0],
   });
-  const token = createSession(user.id);
+  const token = await createSession(user.id);
   setSessionCookie(res, token, req);
   clearAttempts(key);
-  const mergedEvents = mergeAnonymousProfile(anonymousId(req), user.id);
+  const mergedEvents = await mergeAnonymousProfile(anonymousId(req), user.id);
   return res.status(201).json({ user, required: config.authRequired, mergedEvents });
 });
 
@@ -92,21 +92,21 @@ authRouter.post('/login', async (req, res) => {
     return res.status(429).json({ error: 'TOO_MANY_REQUESTS', message: '尝试次数过多，请 15 分钟后再试。' });
   }
 
-  const row = findUserByEmail(parsed.data.email);
+  const row = await findUserByEmail(parsed.data.email);
   const valid = row ? await verifyPassword(parsed.data.password, row.password_hash) : false;
   if (!row || !valid) {
     return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: '邮箱或密码不正确。' });
   }
 
-  const token = createSession(row.id);
+  const token = await createSession(row.id);
   setSessionCookie(res, token, req);
   clearAttempts(key);
-  const mergedEvents = mergeAnonymousProfile(anonymousId(req), row.id);
+  const mergedEvents = await mergeAnonymousProfile(anonymousId(req), row.id);
   return res.json({ user: publicUser(row), required: config.authRequired, mergedEvents });
 });
 
-authRouter.post('/logout', (req, res) => {
-  destroySession(req);
+authRouter.post('/logout', async (req, res) => {
+  await destroySession(req);
   clearSessionCookie(res);
   return res.json({ ok: true });
 });

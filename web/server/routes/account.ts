@@ -7,16 +7,16 @@ import { deleteOwnerData, listAlerts, listWatchlist } from '../watchlist.ts';
 
 export const accountRouter = Router();
 
-accountRouter.get('/export', (req, res) => {
+accountRouter.get('/export', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'AUTH_REQUIRED', message: '请先登录。' });
   const user = req.user;
   res.setHeader('Content-Disposition', `attachment; filename="picolah-${user.id}.json"`);
   res.json({
     exportedAt: new Date().toISOString(),
     account: user,
-    profile: getShoppingProfile(user.id),
-    watchlist: listWatchlist(`user:${user.id}`),
-    alerts: listAlerts(`user:${user.id}`, 100),
+    profile: await getShoppingProfile(user.id),
+    watchlist: await listWatchlist(`user:${user.id}`),
+    alerts: await listAlerts(`user:${user.id}`, 100),
   });
 });
 
@@ -28,17 +28,17 @@ accountRouter.delete('/', async (req, res) => {
   if (!parsed.success) {
     return res.status(422).json({ error: 'VALIDATION_ERROR', message: '请输入账户密码确认删除。' });
   }
-  const row = findUserByEmail(req.user.email);
+  const row = await findUserByEmail(req.user.email);
   if (!row || !(await verifyPassword(parsed.data.password, row.password_hash))) {
     return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: '密码不正确。' });
   }
 
   const userId = req.user.id;
-  deleteOwnerData(`user:${userId}`);
-  resetProfile(userId);
-  db.prepare('DELETE FROM app_users WHERE id = ?').run(userId);
-  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  await deleteOwnerData(`user:${userId}`);
+  await resetProfile(userId);
+  await db.run('DELETE FROM app_users WHERE id = ?', [userId]);
+  await db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
+  await db.run('DELETE FROM users WHERE id = ?', [userId]);
 
   res.clearCookie('picolah_session');
   return res.json({ ok: true });

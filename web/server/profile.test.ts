@@ -37,9 +37,9 @@ function comparisonFixture(): Comparison {
   };
 }
 
-function cleanup(userId: string): void {
-  resetProfile(userId);
-  db.prepare('DELETE FROM app_users WHERE id = ?').run(userId);
+async function cleanup(userId: string): Promise<void> {
+  await resetProfile(userId);
+  await db.run('DELETE FROM app_users WHERE id = ?', [userId]);
 }
 
 test('requestUserId only accepts anonymous ids of a safe shape', () => {
@@ -49,13 +49,13 @@ test('requestUserId only accepts anonymous ids of a safe shape', () => {
   assert.equal(requestUserId({ header: () => undefined }), null);
 });
 
-test('records a comparison and a lowest-price click into a persona', () => {
+test('records a comparison and a lowest-price click into a persona', async () => {
   const userId = `test-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  cleanup(userId);
+  await cleanup(userId);
 
   try {
-    recordComparisonEvent(userId, comparisonFixture(), 'conversation-1');
-    recordOfferClick(userId, {
+    await recordComparisonEvent(userId, comparisonFixture(), 'conversation-1');
+    await recordOfferClick(userId, {
       type: 'offer_click',
       market: 'SG',
       productId: 'sony-wh1000xm5',
@@ -65,7 +65,7 @@ test('records a comparison and a lowest-price click into a persona', () => {
       position: 1,
     });
 
-    const profile = getShoppingProfile(userId);
+    const profile = await getShoppingProfile(userId);
     assert.equal(profile.hasData, true);
     assert.equal(profile.totals.comparisons, 1);
     assert.equal(profile.totals.clicks, 1);
@@ -79,25 +79,25 @@ test('records a comparison and a lowest-price click into a persona', () => {
     assert.equal(profile.budget?.currency, 'SGD');
     assert.equal(profile.persona?.key, 'deal_hunter');
   } finally {
-    cleanup(userId);
+    await cleanup(userId);
   }
 });
 
-test('reset keeps the anonymous user but clears every shopping signal', () => {
+test('reset keeps the anonymous user but clears every shopping signal', async () => {
   const userId = `test-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  cleanup(userId);
+  await cleanup(userId);
 
   try {
-    recordComparisonEvent(userId, comparisonFixture(), 'conversation-2');
-    assert.equal(getShoppingProfile(userId).hasData, true);
+    await recordComparisonEvent(userId, comparisonFixture(), 'conversation-2');
+    assert.equal((await getShoppingProfile(userId)).hasData, true);
 
-    resetProfile(userId);
+    await resetProfile(userId);
 
-    const cleared = getShoppingProfile(userId);
+    const cleared = await getShoppingProfile(userId);
     assert.equal(cleared.hasData, false);
     assert.equal(cleared.totals.comparisons, 0);
     assert.equal(cleared.recent.length, 0);
   } finally {
-    cleanup(userId);
+    await cleanup(userId);
   }
 });

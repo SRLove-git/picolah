@@ -36,14 +36,14 @@ type AlertRow = {
   created_at: string;
 };
 
-function currentOffer(productId: string, market: CountryCode) {
-  return getOffers(productId, market)[0] ?? null;
+async function currentOffer(productId: string, market: CountryCode) {
+  return (await getOffers(productId, market))[0] ?? null;
 }
 
-function mapWatch(row: WatchRow): WatchlistItem | null {
-  const product = getProduct(row.product_id);
+async function mapWatch(row: WatchRow): Promise<WatchlistItem | null> {
+  const product = await getProduct(row.product_id);
   if (!product) return null;
-  const offer = currentOffer(product.id, row.market as CountryCode);
+  const offer = await currentOffer(product.id, row.market as CountryCode);
   return {
     id: row.id,
     product,
@@ -57,67 +57,63 @@ function mapWatch(row: WatchRow): WatchlistItem | null {
   };
 }
 
-export function countWatchlist(owner: string): number {
-  const row = db.prepare('SELECT COUNT(*) AS count FROM watchlist WHERE owner_id = ?').get(owner) as {
-    count: number;
-  };
-  return row.count;
+export async function countWatchlist(owner: string): Promise<number> {
+  const row = await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM watchlist WHERE owner_id = ?', [owner]);
+  return Number(row?.count || 0);
 }
 
-export function listWatchlist(owner: string, market?: CountryCode): WatchlistItem[] {
-  const rows = (
-    market
-      ? db
-          .prepare('SELECT * FROM watchlist WHERE owner_id = ? AND market = ? ORDER BY created_at DESC')
-          .all(owner, market)
-      : db.prepare('SELECT * FROM watchlist WHERE owner_id = ? ORDER BY created_at DESC').all(owner)
-  ) as WatchRow[];
-  return rows.map(mapWatch).filter((item): item is WatchlistItem => Boolean(item));
+export async function listWatchlist(owner: string, market?: CountryCode): Promise<WatchlistItem[]> {
+  const rows = market
+    ? await db.all<WatchRow>('SELECT * FROM watchlist WHERE owner_id = ? AND market = ? ORDER BY created_at DESC', [owner, market])
+    : await db.all<WatchRow>('SELECT * FROM watchlist WHERE owner_id = ? ORDER BY created_at DESC', [owner]);
+  const items: WatchlistItem[] = [];
+  for (const row of rows) {
+    const item = await mapWatch(row);
+    if (item) items.push(item);
+  }
+  return items;
 }
 
-export function addWatchlist(
+export async function addWatchlist(
   owner: string,
   productId: string,
   market: CountryCode,
   targetPrice: number | null,
-): WatchlistItem | null {
-  const product = getProduct(productId);
+): Promise<WatchlistItem | null> {
+  const product = await getProduct(productId);
   if (!product) return null;
   const currency = MARKETS[market].currency;
-  const offer = currentOffer(productId, market);
+  const offer = await currentOffer(productId, market);
   const now = new Date().toISOString();
-  db.prepare(
+  await db.run(
     `INSERT INTO watchlist (id, owner_id, product_id, market, target_price, currency, last_price, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(owner_id, product_id, market) DO UPDATE SET
        target_price = excluded.target_price,
        updated_at = excluded.updated_at`,
-  ).run(
-    randomUUID(),
-    owner,
-    productId,
-    market,
-    targetPrice,
-    currency,
-    offer?.finalPrice ?? null,
-    now,
-    now,
+    [
+      randomUUID(),
+      owner,
+      productId,
+      market,
+      targetPrice,
+      currency,
+      offer?.finalPrice ?? null,
+      now,
+      now,
+    ],
   );
-  const row = db
-    .prepare('SELECT * FROM watchlist WHERE owner_id = ? AND product_id = ? AND market = ?')
-    .get(owner, productId, market) as WatchRow;
-  return mapWatch(row);
+  const row = await db.get<WatchRow>('SELECT * FROM watchlist WHERE owner_id = ? AND product_id = ? AND market = ?', [owner, productId, market]);
+  return row ? await mapWatch(row) : null;
 }
 
-export function removeWatchlist(owner: string, id: string): boolean {
-  const result = db.prepare('DELETE FROM watchlist WHERE id = ? AND owner_id = ?').run(id, owner);
+export async function removeWatchlist(owner: string, id: string): Promise<boolean> {
+  const result = await db.run('DELETE FROM watchlist WHERE id = ? AND owner_id = ?', [id, owner]);
   return result.changes > 0;
 }
 
-export function listAlerts(owner: string, limit = 30): PriceAlert[] {
-  const rows = db
-    .prepare('SELECT * FROM price_alerts WHERE owner_id = ? ORDER BY created_at DESC LIMIT ?')
-    .all(owner, Math.min(Math.max(limit, 1), 100)) as AlertRow[];
+export async function listAlerts(owner: string, limit = 30): Promise<PriceAlert[]> {
+  const rows = await db.all<AlertRow>('SELECT * FROM price_alerts WHERE owner_id = ? ORDER BY created_at DESC LIMIT ?', [owner, Math.min(Math.max(limit, 1), 100)]);
   return rows.map((row) => ({
     id: row.id,
     type: row.type,
@@ -132,25 +128,18 @@ export function listAlerts(owner: string, limit = 30): PriceAlert[] {
   }));
 }
 
-export function unreadAlertCount(owner: string): number {
-  const row = db
-    .prepare('SELECT COUNT(*) AS count FROM price_alerts WHERE owner_id = ? AND read_at IS NULL')
-    .get(owner) as { count: number };
+export async function unreadAlertCount(owner: string): Promise<number> {
+  const row = await db.get<{ count: number }>('SELECT COUNT(*) AS count FROM price_alerts WHERE owner_id = ? AND read_at IS NULL', [owner]);
   return Number(row?.count || 0);
 }
 
-export function markAlertRead(owner: string, id: string): boolean {
-  const result = db
-    .prepare('UPDATE price_alerts SET read_at = ? WHERE id = ? AND owner_id = ? AND read_at IS NULL')
-    .run(new Date().toISOString(), id, owner);
+export async function markAlertRead(owner: string, id: string): Promise<boolean> {
+  const result = await db.run('UPDATE price_alerts SET read_at = ? WHERE id = ? AND owner_id = ? AND read_at IS NULL', [new Date().toISOString(), id, owner]);
   return result.changes > 0;
 }
 
-export function markAllAlertsRead(owner: string): void {
-  db.prepare('UPDATE price_alerts SET read_at = ? WHERE owner_id = ? AND read_at IS NULL').run(
-    new Date().toISOString(),
-    owner,
-  );
+export async function markAllAlertsRead(owner: string): Promise<void> {
+  await db.run('UPDATE price_alerts SET read_at = ? WHERE owner_id = ? AND read_at IS NULL', [new Date().toISOString(), owner]);
 }
 
 function notifyWebhook(alert: PriceAlert): void {
@@ -170,16 +159,14 @@ function notifyWebhook(alert: PriceAlert): void {
  * is reached, or when the best landed price drops at least 2% versus the last
  * evaluated price. Cooldown avoids a new alert on every ingest cycle.
  */
-export function evaluateWatchlist(market: CountryCode): number {
-  const rows = db
-    .prepare('SELECT * FROM watchlist WHERE market = ?')
-    .all(market) as WatchRow[];
+export async function evaluateWatchlist(market: CountryCode): Promise<number> {
+  const rows = await db.all<WatchRow>('SELECT * FROM watchlist WHERE market = ?', [market]);
   let created = 0;
   const now = new Date();
   for (const row of rows) {
-    const offer = currentOffer(row.product_id, market);
+    const offer = await currentOffer(row.product_id, market);
     if (!offer) continue;
-    const product = getProduct(row.product_id);
+    const product = await getProduct(row.product_id);
     if (!product) continue;
     const targetMet = row.target_price != null && offer.finalPrice <= row.target_price;
     const dropped = row.last_price != null && offer.finalPrice < row.last_price * 0.98;
@@ -198,47 +185,48 @@ export function evaluateWatchlist(market: CountryCode): number {
         read: false,
         createdAt: now.toISOString(),
       };
-      db.prepare(
+      await db.run(
         `INSERT INTO price_alerts
           (id, owner_id, watchlist_id, type, product_id, product_name, market, price, currency, url, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).run(
-        alert.id,
-        row.owner_id,
-        row.id,
-        alert.type,
-        alert.productId,
-        alert.productName,
-        alert.market,
-        alert.price,
-        alert.currency,
-        alert.url,
-        alert.createdAt,
+        [
+          alert.id,
+          row.owner_id,
+          row.id,
+          alert.type,
+          alert.productId,
+          alert.productName,
+          alert.market,
+          alert.price,
+          alert.currency,
+          alert.url,
+          alert.createdAt,
+        ],
       );
-      db.prepare('UPDATE watchlist SET last_alert_at = ?, last_price = ?, updated_at = ? WHERE id = ?').run(
+      await db.run('UPDATE watchlist SET last_alert_at = ?, last_price = ?, updated_at = ? WHERE id = ?', [
         alert.createdAt,
         offer.finalPrice,
         alert.createdAt,
         row.id,
-      );
+      ]);
       notifyWebhook(alert);
       created += 1;
     } else if (row.last_price !== offer.finalPrice) {
-      db.prepare('UPDATE watchlist SET last_price = ?, updated_at = ? WHERE id = ?').run(
+      await db.run('UPDATE watchlist SET last_price = ?, updated_at = ? WHERE id = ?', [
         offer.finalPrice,
         now.toISOString(),
         row.id,
-      );
+      ]);
     }
   }
   return created;
 }
 
-export function deleteOwnerData(owner: string): void {
-  const watchIds = db.prepare('SELECT id FROM watchlist WHERE owner_id = ?').all(owner) as { id: string }[];
+export async function deleteOwnerData(owner: string): Promise<void> {
+  const watchIds = await db.all<{ id: string }>('SELECT id FROM watchlist WHERE owner_id = ?', [owner]);
   for (const row of watchIds) {
-    db.prepare('DELETE FROM price_alerts WHERE watchlist_id = ?').run(row.id);
+    await db.run('DELETE FROM price_alerts WHERE watchlist_id = ?', [row.id]);
   }
-  db.prepare('DELETE FROM price_alerts WHERE owner_id = ?').run(owner);
-  db.prepare('DELETE FROM watchlist WHERE owner_id = ?').run(owner);
+  await db.run('DELETE FROM price_alerts WHERE owner_id = ?', [owner]);
+  await db.run('DELETE FROM watchlist WHERE owner_id = ?', [owner]);
 }

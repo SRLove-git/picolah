@@ -19,7 +19,7 @@ Picolah 是一个面向东南亚市场的比价工作台：问一句想买的东
 
 ```text
 picolah/
-├── web/                     # 网站项目（React + Express + SQLite）
+├── web/                     # 网站项目（React + Express + SQLite / PostgreSQL）
 │   ├── src/                 # React 工作台
 │   ├── server/              # API、入库校验、比价查询、LLM 调用
 │   ├── shared/              # 前后端共用的类型、目录、匹配与格式化

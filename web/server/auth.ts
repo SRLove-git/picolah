@@ -50,23 +50,22 @@ export async function verifyPassword(password: string, stored: string): Promise<
   return derived.length === expected.length && timingSafeEqual(derived, expected);
 }
 
-export function findUserByEmail(email: string): UserRow | undefined {
-  return db
-    .prepare('SELECT id, email, password_hash, display_name FROM users WHERE email = ?')
-    .get(normalizeEmail(email)) as UserRow | undefined;
+export async function findUserByEmail(email: string): Promise<UserRow | undefined> {
+  return db.get<UserRow>('SELECT id, email, password_hash, display_name FROM users WHERE email = ?', [normalizeEmail(email)]);
 }
 
 export function publicUser(row: { id: string; email: string; display_name: string }): AccountUser {
   return { id: row.id, email: row.email, displayName: row.display_name };
 }
 
-export function createUser(input: { email: string; passwordHash: string; displayName: string }): AccountUser {
+export async function createUser(input: { email: string; passwordHash: string; displayName: string }): Promise<AccountUser> {
   const id = randomBytes(16).toString('hex');
   const now = new Date().toISOString();
-  db.prepare(
+  await db.run(
     `INSERT INTO users (id, email, password_hash, display_name, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, normalizeEmail(input.email), input.passwordHash, input.displayName, now, now);
+    [id, normalizeEmail(input.email), input.passwordHash, input.displayName, now, now],
+  );
   return { id, email: normalizeEmail(input.email), displayName: input.displayName };
 }
 
@@ -85,43 +84,43 @@ function cookieToken(request: Request): string | null {
   return null;
 }
 
-export function createSession(userId: string): string {
+export async function createSession(userId: string): Promise<string> {
   const token = randomBytes(32).toString('base64url');
   const now = new Date();
   const expires = new Date(now.getTime() + config.sessionDays * 86_400_000);
-  db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now.toISOString());
-  db.prepare(
+  await db.run('DELETE FROM sessions WHERE expires_at <= ?', [now.toISOString()]);
+  await db.run(
     `INSERT INTO sessions (token_hash, user_id, created_at, expires_at, last_seen_at)
      VALUES (?, ?, ?, ?, ?)`,
-  ).run(tokenHash(token), userId, now.toISOString(), expires.toISOString(), now.toISOString());
+    [tokenHash(token), userId, now.toISOString(), expires.toISOString(), now.toISOString()],
+  );
   return token;
 }
 
-export function sessionUser(request: Request): AccountUser | null {
+export async function sessionUser(request: Request): Promise<AccountUser | null> {
   const token = cookieToken(request);
   if (!token) return null;
-  const row = db
-    .prepare(
-      `SELECT u.id, u.email, u.display_name, s.expires_at
-       FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.token_hash = ?`,
-    )
-    .get(tokenHash(token)) as
-    | { id: string; email: string; display_name: string; expires_at: string }
-    | undefined;
+  const row = await db.get<{ id: string; email: string; display_name: string; expires_at: string }>(
+    `SELECT u.id, u.email, u.display_name, s.expires_at
+     FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.token_hash = ?`,
+    [tokenHash(token)],
+  );
   if (!row) return null;
   if (Date.parse(row.expires_at) <= Date.now()) {
-    db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash(token));
+    await db.run('DELETE FROM sessions WHERE token_hash = ?', [tokenHash(token)]);
     return null;
   }
-  db.prepare('UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?')
-    .run(new Date().toISOString(), tokenHash(token));
+  await db.run('UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?', [
+    new Date().toISOString(),
+    tokenHash(token),
+  ]);
   return { id: row.id, email: row.email, displayName: row.display_name };
 }
 
-export function destroySession(request: Request): void {
+export async function destroySession(request: Request): Promise<void> {
   const token = cookieToken(request);
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash(token));
+  if (token) await db.run('DELETE FROM sessions WHERE token_hash = ?', [tokenHash(token)]);
 }
 
 function secureRequest(request: Request): boolean {
@@ -143,8 +142,8 @@ export function clearSessionCookie(response: Response): void {
   response.clearCookie(config.sessionCookie, { path: '/' });
 }
 
-export function attachUser(request: Request, _response: Response, next: NextFunction): void {
-  request.user = sessionUser(request) ?? undefined;
+export async function attachUser(request: Request, _response: Response, next: NextFunction): Promise<void> {
+  request.user = (await sessionUser(request)) ?? undefined;
   next();
 }
 

@@ -1,17 +1,30 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { Pool, type PoolClient } from 'pg';
 import { config } from './config.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+/** SQLite file path. Ignored when DATABASE_URL points at PostgreSQL. */
 export const dbPath = config.dbPath || join(here, '..', 'data', 'picolah.db');
 
-mkdirSync(dirname(dbPath), { recursive: true });
+export type Row = Record<string, unknown>;
 
-export const db = new DatabaseSync(dbPath);
+export interface DbExecutor {
+  all<T = Row>(sql: string, params?: readonly unknown[]): Promise<T[]>;
+  get<T = Row>(sql: string, params?: readonly unknown[]): Promise<T | undefined>;
+  run(sql: string, params?: readonly unknown[]): Promise<{ changes: number }>;
+}
 
-db.exec(`
+export interface Database extends DbExecutor {
+  kind: 'sqlite' | 'postgres';
+  transaction<T>(fn: (tx: DbExecutor) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+}
+
+const SQLITE_SCHEMA = `
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
   PRAGMA busy_timeout = 5000;
@@ -167,14 +180,134 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_watchlist_owner ON watchlist(owner_id, market);
   CREATE INDEX IF NOT EXISTS idx_price_alerts_owner ON price_alerts(owner_id, created_at DESC);
-`);
+`;
 
-/** Additive migrations for databases created before a column existed. */
-for (const [table, column, definition] of [
-  ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
-] as const) {
-  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-  if (!columns.some((item) => item.name === column)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+function applySqliteMigrations(handle: DatabaseSync): void {
+  for (const [table, column, definition] of [
+    ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
+  ] as const) {
+    const columns = handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!columns.some((item) => item.name === column)) {
+      handle.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
   }
+}
+
+class SqliteDatabase implements Database {
+  readonly kind = 'sqlite' as const;
+  private readonly handle: DatabaseSync;
+
+  constructor(path: string) {
+    this.handle = new DatabaseSync(path);
+    this.handle.exec(SQLITE_SCHEMA);
+    applySqliteMigrations(this.handle);
+  }
+
+  async all<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T[]> {
+    return this.handle.prepare(sql).all(...(params as never[])) as T[];
+  }
+
+  async get<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T | undefined> {
+    return this.handle.prepare(sql).get(...(params as never[])) as T | undefined;
+  }
+
+  async run(sql: string, params: readonly unknown[] = []): Promise<{ changes: number }> {
+    const result = this.handle.prepare(sql).run(...(params as never[]));
+    return { changes: Number(result.changes) };
+  }
+
+  async transaction<T>(fn: (tx: DbExecutor) => Promise<T>): Promise<T> {
+    this.handle.exec('BEGIN IMMEDIATE');
+    try {
+      const value = await fn(this);
+      this.handle.exec('COMMIT');
+      return value;
+    } catch (error) {
+      this.handle.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async close(): Promise<void> {
+    this.handle.close();
+  }
+}
+
+function postgresSql(sql: string): string {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+class PostgresExecutor implements DbExecutor {
+  constructor(private readonly client: Pool | PoolClient) {}
+
+  async all<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T[]> {
+    const result = await this.client.query(postgresSql(sql), params as unknown[]);
+    return result.rows as T[];
+  }
+
+  async get<T = Row>(sql: string, params: readonly unknown[] = []): Promise<T | undefined> {
+    const result = await this.client.query(postgresSql(sql), params as unknown[]);
+    return result.rows[0] as T | undefined;
+  }
+
+  async run(sql: string, params: readonly unknown[] = []): Promise<{ changes: number }> {
+    const result = await this.client.query(postgresSql(sql), params as unknown[]);
+    return { changes: result.rowCount ?? 0 };
+  }
+}
+
+class PostgresDatabase extends PostgresExecutor implements Database {
+  readonly kind = 'postgres' as const;
+
+  constructor(private readonly pool: Pool) {
+    super(pool);
+  }
+
+  static async connect(connectionString: string): Promise<PostgresDatabase> {
+    const pool = new Pool({
+      connectionString,
+      max: Math.max(1, config.dbPoolSize),
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30_000,
+    });
+    pool.on('error', (error) => console.error('[db] idle PostgreSQL client error:', error.message));
+    const schema = readFileSync(join(here, '..', 'db', 'postgres.sql'), 'utf8');
+    await pool.query(schema);
+    return new PostgresDatabase(pool);
+  }
+
+  async transaction<T>(fn: (tx: DbExecutor) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const value = await fn(new PostgresExecutor(client));
+      await client.query('COMMIT');
+      return value;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.pool.end();
+  }
+}
+
+async function createDatabase(): Promise<Database> {
+  if (config.databaseUrl) {
+    return PostgresDatabase.connect(config.databaseUrl);
+  }
+  mkdirSync(dirname(dbPath), { recursive: true });
+  return new SqliteDatabase(dbPath);
+}
+
+export const db: Database = await createDatabase();
+
+/** Backwards-compatible helper for health/debug output. */
+export function databaseKind(): 'sqlite' | 'postgres' {
+  return db.kind;
 }

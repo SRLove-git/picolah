@@ -49,14 +49,14 @@ function validateImage(value: string | null | undefined): string | undefined {
   return value;
 }
 
-function resolveComparison(
+async function resolveComparison(
   understanding: Understanding | null,
   localProducts: Product[],
   message: string,
   market: CountryCode,
   platformIds: string[],
   unsupportedPlatforms: string[],
-): Comparison {
+): Promise<Comparison> {
   // A platform-only follow-up (for example, "只看 Lazada") is a deterministic
   // filter command, not a new product query. Keep the inherited product even
   // if an external intent model classifies the short sentence differently.
@@ -82,7 +82,7 @@ function resolveComparison(
 
   const matchedProduct =
     understanding?.intent === 'compare' && understanding.matchedProductId
-      ? getProduct(understanding.matchedProductId)
+      ? await getProduct(understanding.matchedProductId)
       : null;
 
   if (matchedProduct) {
@@ -161,13 +161,18 @@ function previousComparison(messages: ChatMessage[]): Comparison | null {
     .find((message) => message.role === 'assistant' && message.comparison)?.comparison ?? null;
 }
 
-function previousComparedProducts(messages: ChatMessage[]): Product[] {
+async function previousComparedProducts(messages: ChatMessage[]): Promise<Product[]> {
   const previous = previousComparison(messages);
   if (!previous || previous.kind === 'suggestions' || previous.kind === 'empty') return [];
   const ids = previous.product
     ? [previous.product.id]
     : previous.alternatives.map((item) => item.product.id);
-  return ids.map((id) => getProduct(id)).filter((product): product is Product => Boolean(product));
+  const products: Product[] = [];
+  for (const id of ids) {
+    const product = await getProduct(id);
+    if (product) products.push(product);
+  }
+  return products;
 }
 
 function contextualProducts(message: string, previous: Product[]): Product[] {
@@ -235,27 +240,27 @@ chatRouter.post('/', async (req, res) => {
 
   let conversation = null;
   if (conversationId) {
-    conversation = getConversation(conversationId);
+    conversation = await getConversation(conversationId);
     if (!conversation) {
       return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND', message: '对话不存在' });
     }
   }
 
-  const query = parseQuery(message, market);
+  const query = await parseQuery(message, market);
   const title = image ? `图片找货 · ${MARKETS[query.market].nameZh}` : query.title;
   let priorMessages: ChatMessage[] = [];
   if (!conversation) {
-    conversation = createConversation(title, query.market);
+    conversation = await createConversation(title, query.market);
   } else if ('messages' in conversation) {
     priorMessages = conversation.messages;
   }
 
-  const explicitProducts = findProducts(message)
+  const explicitProducts = (await findProducts(message))
     .map((match) => match.product)
     .filter((product): product is Product => Boolean(product));
   const inheritedProducts = explicitProducts.length
     ? []
-    : contextualProducts(message, previousComparedProducts(priorMessages));
+    : contextualProducts(message, await previousComparedProducts(priorMessages));
   const localProducts = explicitProducts.length ? explicitProducts : inheritedProducts;
   const localProduct = localProducts[0] || query.product;
   const previousFilter = previousComparison(priorMessages)?.platformFilter ?? [];
@@ -312,7 +317,7 @@ chatRouter.post('/', async (req, res) => {
       ? `${understanding.category}推荐 · ${marketName}`
       : `${query.cleaned.replace(/\s+/g, ' ').slice(0, 24)} · ${marketName}`;
     if (nextTitle !== conversation.title) {
-      updateConversationTitle(conversation.id, nextTitle);
+      await updateConversationTitle(conversation.id, nextTitle);
       conversation.title = nextTitle;
       sse(res, 'meta', {
         conversationId: conversation.id,
@@ -338,7 +343,7 @@ chatRouter.post('/', async (req, res) => {
     }
   }
 
-  const comparison = resolveComparison(
+  const comparison = await resolveComparison(
     understanding,
     localProducts,
     message,
@@ -348,7 +353,7 @@ chatRouter.post('/', async (req, res) => {
   );
   if (profileUserId) {
     try {
-      recordComparisonEvent(profileUserId, comparison, conversation.id);
+      await recordComparisonEvent(profileUserId, comparison, conversation.id);
     } catch (error) {
       console.warn(
         '[profile] failed to record comparison:',
@@ -435,7 +440,7 @@ chatRouter.post('/', async (req, res) => {
     sse(res, 'delta', { text: note });
   }
 
-  const assistantMessageId = addMessage({
+  const assistantMessageId = await addMessage({
     conversationId: conversation.id,
     role: 'assistant',
     content: answer,

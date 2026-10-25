@@ -78,11 +78,13 @@ const VISION_SYSTEM_PROMPT = `你是 Picolah 的商品视觉识别器和导购�
 输出 JSON 形状：
 {"intent":"compare|recommend","matchedProductId":null,"recommendedProductIds":[],"category":null,"budget":null,"budgetCurrency":null,"recognition":{"name":"","brand":null,"model":null,"category":null,"confidence":0.8,"keywords":[],"notes":""},"reason":"一句话"}`;
 
-function buildCatalog(market: CountryCode): CatalogItem[] {
-  return listProducts().map((product) => {
-    const offers = getOffers(product.id, market);
+async function buildCatalog(market: CountryCode): Promise<CatalogItem[]> {
+  const products = await listProducts();
+  const catalog: CatalogItem[] = [];
+  for (const product of products) {
+    const offers = await getOffers(product.id, market);
     const best = offers[0] || null;
-    return {
+    catalog.push({
       id: product.id,
       name: product.name,
       brand: product.brand,
@@ -94,8 +96,9 @@ function buildCatalog(market: CountryCode): CatalogItem[] {
       platform: best?.platform ?? null,
       officialStore: best?.isOfficial ?? false,
       offerCount: offers.length,
-    };
-  });
+    });
+  }
+  return catalog;
 }
 
 function extractJson(content: string): unknown {
@@ -211,11 +214,11 @@ function normalizeIds(value: unknown, catalog: CatalogItem[]): string[] {
   return result;
 }
 
-function normalizeUnderstanding(
+async function normalizeUnderstanding(
   value: unknown,
   catalog: CatalogItem[],
   image: boolean,
-): Understanding {
+): Promise<Understanding> {
   const raw = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const intents: Intent[] = ['compare', 'recommend', 'smalltalk', 'offtopic'];
   let intent: Intent = intents.includes(raw.intent as Intent)
@@ -251,7 +254,7 @@ function normalizeUnderstanding(
     ]
       .filter(Boolean)
       .join(' ');
-    recognitionProductId = findProduct(recognitionText).product?.id || matchedProductId;
+    recognitionProductId = (await findProduct(recognitionText)).product?.id || matchedProductId;
   }
 
   return {
@@ -281,7 +284,7 @@ export async function understandQuery(options: {
   const { query, market, image, localProduct } = options;
   if (!process.env.LLM_API_KEY) return { understanding: null, error: 'LLM_API_KEY is not configured' };
 
-  const catalog = buildCatalog(market);
+  const catalog = await buildCatalog(market);
   const marketInfo = MARKETS[market];
   const localMatch = localProduct
     ? { id: localProduct.id, name: localProduct.name, brand: localProduct.brand }
@@ -316,7 +319,7 @@ ${JSON.stringify(catalog, null, 2)}
         900,
         45_000,
       );
-      const understanding = normalizeUnderstanding(value, catalog, true);
+      const understanding = await normalizeUnderstanding(value, catalog, true);
       if (understanding.intent === 'compare' && understanding.recognitionProductId) {
         understanding.matchedProductId = understanding.recognitionProductId;
       }
@@ -332,7 +335,7 @@ ${JSON.stringify(catalog, null, 2)}
       700,
       20_000,
     );
-    const understanding = normalizeUnderstanding(value, catalog, false);
+    const understanding = await normalizeUnderstanding(value, catalog, false);
     if (understanding.intent === 'compare' && localProduct) {
       understanding.matchedProductId = localProduct.id;
     }

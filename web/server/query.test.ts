@@ -11,7 +11,7 @@ const { detectMarket, detectRequestedPlatforms, findProduct, findProducts, isCon
 
 const products = PRODUCTS.map(({ baseSgd: _baseSgd, ...product }) => product);
 
-test('demo catalog covers every market and every platform of that market', () => {
+test('demo catalog covers every market and every platform of that market', async () => {
   const offers = generateOffers();
   const expected = COUNTRY_CODES.reduce(
     (total, code) => total + PRODUCTS.length * MARKETS[code].platformIds.length,
@@ -31,7 +31,7 @@ test('demo catalog covers every market and every platform of that market', () =>
   }
 });
 
-test('comparison builder sorts landed prices and keeps a 30-day low', () => {
+test('comparison builder sorts landed prices and keeps a 30-day low', async () => {
   const offers = generateOffers();
   const product = products.find((item) => item.id === 'sony-wh1000xm5')!;
   const comparison = buildCatalogComparison({
@@ -53,7 +53,7 @@ test('comparison builder sorts landed prices and keeps a 30-day low', () => {
   assert.equal(comparison.alternatives.length, 3);
 });
 
-test('suggestions are returned when nothing matches', () => {
+test('suggestions are returned when nothing matches', async () => {
   const offers = generateOffers();
   const comparison = buildCatalogSuggestions({
     query: '伴手礼',
@@ -66,45 +66,45 @@ test('suggestions are returned when nothing matches', () => {
   assert.ok(comparison.alternatives.every((item) => item.offer !== null));
 });
 
-test('detects named markets and cities in Chinese and English', () => {
+test('detects named markets and cities in Chinese and English', async () => {
   assert.equal(detectMarket('Sony XM5 在泰国哪里买最便宜？', 'SG'), 'TH');
   assert.equal(detectMarket('吉隆坡的 iPhone 15 报价', 'SG'), 'MY');
   assert.equal(detectMarket('Which AirPods deal is best in Manila?', 'SG'), 'PH');
   assert.equal(detectMarket('Singapore or Malaysia?', 'VN'), 'SG');
 });
 
-test('uses the selected market when no market is mentioned', () => {
+test('uses the selected market when no market is mentioned', async () => {
   assert.equal(detectMarket('Sony XM5 哪里买最便宜？', 'MY'), 'MY');
   assert.equal(detectMarket('Find me a cheap coffee machine', 'ID'), 'ID');
 });
 
-test('does not confuse English words with two-letter country codes', () => {
+test('does not confuse English words with two-letter country codes', async () => {
   assert.equal(detectMarket('checking with a friend', 'SG'), 'SG');
   assert.equal(detectMarket('which id should I use?', 'MY'), 'MY');
   assert.equal(detectMarket('my budget is 500', 'SG'), 'SG');
   assert.equal(detectMarket('I am in SG this week', 'MY'), 'SG');
 });
 
-test('matches product aliases and specific model names', () => {
-  assert.equal(findProduct('Sony WH-1000XM5 在马来西亚', products).product?.id, 'sony-wh1000xm5');
-  assert.equal(findProduct('AirPods Pro 2 划算吗？', products).product?.id, 'airpods-pro-2');
-  assert.equal(findProduct('越南小米空气炸锅 6L 降价了吗？', products).product?.id, 'xiaomi-air-fryer-6l');
-  assert.equal(findProduct('菲律宾 New Balance 530 多少钱', products).product?.id, 'new-balance-530');
-  assert.equal(findProduct('SK-II 神仙水比价', products).product?.id, 'skii-facial-essence-230');
-  assert.equal(findProduct('索尼 WH 1000 XM 5 多少钱', products).product?.id, 'sony-wh1000xm5');
-  assert.equal(findProduct('iphone16pro 256 gb 新加坡价格', products).product?.id, 'iphone-16-pro-256');
-  assert.equal(findProduct('华为 watch-gt-5 46 mm', products).product?.id, 'huawei-watch-gt5');
-  assert.equal(findProduct('Airpod Pro 2 多少钱', products).product?.id, 'airpods-pro-2');
+test('matches product aliases and specific model names', async () => {
+  assert.equal((await findProduct('Sony WH-1000XM5 在马来西亚', products)).product?.id, 'sony-wh1000xm5');
+  assert.equal((await findProduct('AirPods Pro 2 划算吗？', products)).product?.id, 'airpods-pro-2');
+  assert.equal((await findProduct('越南小米空气炸锅 6L 降价了吗？', products)).product?.id, 'xiaomi-air-fryer-6l');
+  assert.equal((await findProduct('菲律宾 New Balance 530 多少钱', products)).product?.id, 'new-balance-530');
+  assert.equal((await findProduct('SK-II 神仙水比价', products)).product?.id, 'skii-facial-essence-230');
+  assert.equal((await findProduct('索尼 WH 1000 XM 5 多少钱', products)).product?.id, 'sony-wh1000xm5');
+  assert.equal((await findProduct('iphone16pro 256 gb 新加坡价格', products)).product?.id, 'iphone-16-pro-256');
+  assert.equal((await findProduct('华为 watch-gt-5 46 mm', products)).product?.id, 'huawei-watch-gt5');
+  assert.equal((await findProduct('Airpod Pro 2 多少钱', products)).product?.id, 'airpods-pro-2');
 });
 
-test('finds multiple explicitly named products without collapsing to one', () => {
+test('finds multiple explicitly named products without collapsing to one', async () => {
   assert.deepEqual(
-    findProducts('Sony XM5 和 Bose QC Ultra 哪个好', products).map((item) => item.product?.id),
+    (await findProducts('Sony XM5 和 Bose QC Ultra 哪个好', products)).map((item) => item.product?.id),
     ['bose-qc-ultra', 'sony-wh1000xm5'],
   );
 });
 
-test('recognizes short contextual follow-up questions', () => {
+test('recognizes short contextual follow-up questions', async () => {
   assert.equal(isContextualFollowUp('那黑色的呢？'), true);
   assert.equal(isContextualFollowUp('第二个有没有官方店'), true);
   assert.equal(isContextualFollowUp('推荐一款适合跑步的新耳机'), false);
@@ -115,11 +115,11 @@ test('recognizes short contextual follow-up questions', () => {
   assert.deepEqual(detectRequestedPlatforms('只看 TikTok Shop / 抖音'), ['tiktok']);
   assert.deepEqual(detectRequestedPlatforms('只看 Tokopedia 和 Tiki'), ['tokopedia', 'tiki']);
   assert.deepEqual(detectRequestedPlatforms('只看品牌官网'), ['official']);
-  assert.equal(findProduct('只看 Lazada 的', products).product, null);
-  assert.equal(findProduct('只看 Shopee 和 TikTok Shop', products).product, null);
+  assert.equal((await findProduct('只看 Lazada 的', products)).product, null);
+  assert.equal((await findProduct('只看 Shopee 和 TikTok Shop', products)).product, null);
 });
 
-test('keeps, excludes and resets platform filters across follow-up turns', () => {
+test('keeps, excludes and resets platform filters across follow-up turns', async () => {
   const lazada = resolvePlatformDirective('只看 Lazada', 'SG');
   assert.deepEqual(lazada.platformIds, ['lazada']);
   assert.equal(lazada.mode, 'include');
@@ -138,29 +138,29 @@ test('keeps, excludes and resets platform filters across follow-up turns', () =>
   assert.equal(reset.mode, 'reset');
 });
 
-test('marks platforms that are unavailable in the selected market', () => {
+test('marks platforms that are unavailable in the selected market', async () => {
   const amazonInMalaysia = resolvePlatformDirective('只看 Amazon', 'MY');
   assert.deepEqual(amazonInMalaysia.unsupported, ['amazon-sg']);
 });
 
-test('does not mistake a brand or category for a concrete product model', () => {
-  assert.equal(findProduct('Sony 耳机有什么推荐', products).product, null);
-  assert.equal(findProduct('苹果手机哪个比较好', products).product, null);
-  assert.equal(findProduct('想买一个空气炸锅', products).product, null);
-  assert.equal(findProduct('蓝牙音箱推荐', products).product, null);
+test('does not mistake a brand or category for a concrete product model', async () => {
+  assert.equal((await findProduct('Sony 耳机有什么推荐', products)).product, null);
+  assert.equal((await findProduct('苹果手机哪个比较好', products)).product, null);
+  assert.equal((await findProduct('想买一个空气炸锅', products)).product, null);
+  assert.equal((await findProduct('蓝牙音箱推荐', products)).product, null);
 });
 
-test('rejects unknown models and conflicting capacity variants', () => {
-  assert.equal(findProduct('Sony WH-1000XM6 哪里便宜', products).product, null);
-  assert.equal(findProduct('iPhone 15 256GB 多少钱', products).product, null);
-  assert.equal(findProduct('小米空气炸锅 5L', products).product, null);
+test('rejects unknown models and conflicting capacity variants', async () => {
+  assert.equal((await findProduct('Sony WH-1000XM6 哪里便宜', products)).product, null);
+  assert.equal((await findProduct('iPhone 15 256GB 多少钱', products)).product, null);
+  assert.equal((await findProduct('小米空气炸锅 5L', products)).product, null);
 });
 
-test('falls back to suggestions when no product matches', () => {
-  assert.equal(findProduct('我想买一个适合露营的礼物', products).product, null);
+test('falls back to suggestions when no product matches', async () => {
+  assert.equal((await findProduct('我想买一个适合露营的礼物', products)).product, null);
 });
 
-test('formats local currencies without losing the market signal', () => {
+test('formats local currencies without losing the market signal', async () => {
   assert.equal(formatMoney(400, 'SG'), 'S$400.00');
   assert.equal(formatMoney(1204.9, 'MY'), 'RM 1,204.90');
   assert.equal(formatMoney(12575000, 'ID'), 'Rp 12.575.000');

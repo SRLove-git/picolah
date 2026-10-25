@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import cors from 'cors';
 import express from 'express';
 import { config, llmConfigured } from './config.ts';
-import { dbPath } from './db.ts';
+import { db, dbPath } from './db.ts';
 import { seedDatabase } from './seed.ts';
 import { chatRouter } from './routes/chat.ts';
 import { conversationsRouter } from './routes/conversations.ts';
@@ -17,7 +17,7 @@ import { accountRouter } from './routes/account.ts';
 import { attachUser, requireAuth } from './auth.ts';
 import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
-seedDatabase(false);
+await seedDatabase(false);
 
 export const app = express();
 
@@ -83,10 +83,19 @@ app.get('/metrics', (req, res) => {
   res.type('text/plain; version=0.0.4; charset=utf-8').send(renderMetrics());
 });
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    ok: true,
+app.get('/api/health', async (_req, res) => {
+  let databaseOk = false;
+  try {
+    await db.get('SELECT 1 AS ok');
+    databaseOk = true;
+  } catch (error) {
+    console.error('[health] database check failed:', error instanceof Error ? error.message : error);
+  }
+  res.status(databaseOk ? 200 : 503).json({
+    ok: databaseOk,
     service: 'picolah-api',
+    database: db.kind,
+    databaseOk,
     llmConfigured,
     time: new Date().toISOString(),
   });
@@ -200,12 +209,22 @@ app.use(
 );
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(config.port, config.host, () => {
+  const server = app.listen(config.port, config.host, () => {
     console.log(`\n  Picolah API   http://${config.host}:${config.port}`);
-    console.log(`  Price DB      ${dbPath}`);
+    console.log(`  Price DB      ${db.kind === 'postgres' ? 'PostgreSQL (DATABASE_URL)' : dbPath}`);
     console.log(`  LLM           ${llmConfigured ? `${config.llm.provider} / ${config.llm.model}` : 'local writer (set LLM_API_KEY to enable)'}`);
     console.log(
       `  Crawler key   ${config.ingestKey === 'pcl_dev_crawler_key' ? 'using development default' : 'configured'}\n`,
     );
   });
+
+  const shutdown = (signal: string) => {
+    console.log(`\n[server] ${signal} received, shutting down`);
+    server.close(() => {
+      void db.close().finally(() => process.exit(0));
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
