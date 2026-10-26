@@ -33,6 +33,12 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     if (comparison.search.errorCode === 'SERP_NOT_CONFIGURED') {
       return `全网搜索接口尚未配置，暂时无法为 **${model}** 发起跨网站搜索；这不代表没有在售商品。请先配置 Bright Data SERP API，或明确指定已接入的平台。`;
     }
+    if (comparison.search.errorCode === 'CRAWLER_QUEUE_FULL') {
+      return `当前搜索请求较多，**${model}** 尚未进入搜索队列。请稍后重试；这不代表没有匹配商品。`;
+    }
+    if (comparison.search.errorCode === 'CRAWLER_QUEUE_TIMEOUT') {
+      return `**${model}** 的搜索排队超时，尚未开始抓取商品。请稍后重试；这不代表没有匹配商品。`;
+    }
     if (status === 'failed') {
       return `**${model}** 的商品信息搜索暂时未完成，${comparison.search.failedSources?.length ? comparison.search.failedSources.join('、') : '平台'}连接或数据读取失败。请稍后重试；这不代表该型号没有在售商品。`;
     }

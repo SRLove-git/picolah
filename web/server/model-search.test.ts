@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { explicitModelCodes, extractSearchModel } from '../shared/model-search.ts';
+import { canonicalModelCode, explicitModelCodes, extractSearchModel } from '../shared/model-search.ts';
 import { findProduct } from '../shared/query.ts';
 import { catalogProducts } from '../shared/catalog.ts';
-import { createModelSearchTool } from './agent/tools/model-search.ts';
+import { createModelSearchTool, liveSearchInputSchema, ModelSearchError } from './agent/tools/model-search.ts';
 import { liveComparison } from './agent/live-comparison.ts';
 import { writeFallbackAnswer } from '../shared/copy.ts';
 
@@ -19,6 +19,23 @@ test('extracts the exact requested full model, without shopping phrases', () => 
   assert.equal(extractSearchModel('WF1000XM6 vs WH1000XM6'), null);
   assert.deepEqual(explicitModelCodes('WF1000XM6 和 WF-1000XM6'), ['WF-1000XM6']);
   assert.deepEqual(explicitModelCodes('WF1000XM6 WF-1000XM6'), ['WF-1000XM6']);
+});
+
+test('CH-family models retain their terminal letter without absorbing the brand or shopping constraints', () => {
+  for (const model of ['whch720n', 'WH CH720N', 'WH-CH720N', 'WH CH 720 N', 'ＷＨＣＨ７２０Ｎ']) {
+    assert.equal(extractSearchModel(model), 'WH-CH720N');
+    assert.equal(canonicalModelCode(model), 'WH-CH720N');
+    assert.equal(extractSearchModel(`Sony ${model} 黑色，预算 500 SGD`), 'WH-CH720N');
+    assert.equal(extractSearchModel(`帮我找索尼${model}，只看 Lazada`), 'WH-CH720N');
+  }
+  assert.deepEqual(explicitModelCodes('WHCH720N、WH CH720N、WH-CH720N'), ['WH-CH720N']);
+  assert.equal(extractSearchModel('WHCH720N 和 WHCH710N'), null);
+  assert.equal(extractSearchModel('WH-CH720N 保护套'), null);
+  for (const text of ['Sony 500', 'Lazada 500', 'Shopee 500', 'budget 500', 'under 500', 'SGD500', '推荐500以内的耳机']) {
+    assert.deepEqual(explicitModelCodes(text), [], text);
+    assert.equal(canonicalModelCode(text), null, text);
+  }
+  assert.equal(canonicalModelCode('Sony WH-CH720N'), null);
 });
 
 test('complete model prefixes override short catalog aliases', () => {
@@ -56,6 +73,58 @@ test('model search rejects mismatched responses and hides raw provider errors', 
   })).invoke(input), /不一致/);
   await assert.rejects(create(Response.json({ message: 'private-provider-secret' }, { status: 500 })).invoke(input),
     (error: Error) => /HTTP 500/.test(error.message) && !error.message.includes('private-provider-secret'));
+});
+
+test('tool schema and title verification support canonical, compact and spaced CH model spellings', async () => {
+  let title = 'Sony WH CH720N Wireless Headphones';
+  const seen: string[] = [];
+  const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+    fetchImpl: (async (_url, init) => {
+      const input = JSON.parse(String(init?.body));
+      seen.push(input.model);
+      return Response.json({ ...input, ok: true, summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
+        listings: [{ platform: 'lazada', market: 'SG', itemId: 'ch720n', title,
+          url: 'https://www.lazada.sg/products/ch720n.html', price: 159, currency: 'SGD', inStock: true }] });
+    }) as typeof fetch });
+  for (const model of ['WH-CH720N', 'whch720n', 'WH CH720N', 'WH CH 720 N']) {
+    const input = { market: 'SG' as const, platforms: ['lazada' as const], query: model, model };
+    assert.equal(liveSearchInputSchema.parse(input).model, 'WH-CH720N');
+    for (const spelling of ['WH-CH720N', 'WHCH720N', 'WH CH720N', 'ＷＨＣＨ７２０Ｎ']) {
+      title = `Sony ${spelling} Wireless Headphones`;
+      assert.equal((await search.invoke(input)).listings.length, 1);
+    }
+  }
+  assert.ok(seen.every((model) => model === 'WH-CH720N'));
+  const input = { market: 'SG' as const, platforms: ['lazada' as const], query: 'WH-CH720N', model: 'WH-CH720N' };
+  for (const wrongModel of ['WH-CH710N', 'WH-CH720', 'WH-CH720N2', 'WH-CH720NB']) {
+    title = `Sony ${wrongModel} Wireless Headphones`;
+    await assert.rejects(search.invoke(input), /型号不一致/);
+  }
+  for (const model of ['Sony WH-CH720N', 'SGD500', 'Lazada500', 'WHCH720N WH1000XM6']) {
+    assert.equal(liveSearchInputSchema.safeParse({ ...input, model }).success, false, model);
+  }
+});
+
+test('queue overload and timeout receive safe typed errors without leaking provider messages', async () => {
+  const input = { market: 'SG' as const, query: 'WH-CH720N', model: 'WH-CH720N', platforms: ['lazada' as const] };
+  for (const [remoteCode, expectedCode] of [
+    ['crawler_queue_full', 'CRAWLER_QUEUE_FULL'], ['crawler_queue_timeout', 'CRAWLER_QUEUE_TIMEOUT'],
+  ] as const) {
+    const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+      fetchImpl: (async () => Response.json({ error: remoteCode, message: 'private-provider-secret' }, { status: 503 })) as typeof fetch });
+    await assert.rejects(search.invoke(input), (error: Error) => error instanceof ModelSearchError &&
+      error.code === expectedCode && !error.message.includes('private-provider-secret'));
+  }
+  for (const response of [
+    Response.json({ error: 'unknown', message: 'private-provider-secret' }, { status: 503 }),
+    new Response('private-provider-secret', { status: 503 }),
+    Response.json({ error: 'crawler_queue_full', message: 'private-provider-secret' }, { status: 500 }),
+  ]) {
+    const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+      fetchImpl: (async () => response) as typeof fetch });
+    await assert.rejects(search.invoke(input), (error: Error) => !(error instanceof ModelSearchError) &&
+      /HTTP 50[03]/.test(error.message) && !error.message.includes('private-provider-secret'));
+  }
 });
 
 test('partial live results disclose failed platforms and do not invent missing fields', () => {

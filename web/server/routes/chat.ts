@@ -11,7 +11,7 @@ import { liveSearchCoverageNote } from '../../shared/copy.ts';
 import { streamLlmAnswer } from '../llm.ts';
 import { recordComparisonEvent, requestUserId } from '../profile.ts';
 import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
-import { modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
+import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
 import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts';
 
@@ -122,6 +122,7 @@ chatRouter.post('/', async (req, res) => {
     } catch (error) {
       console.warn('[chat] live product search failed:', error instanceof Error ? error.message : 'unknown error');
       comparison.search!.status = 'failed';
+      if (error instanceof ModelSearchError) comparison.search!.errorCode = error.code;
     }
   }
 

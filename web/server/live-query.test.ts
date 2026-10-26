@@ -40,13 +40,32 @@ test('a full model is normalized without dropping brand, color or budget constra
   assert.doesNotMatch(variant?.query || '', /WH-1000XM5/);
 });
 
-test('platform-only and retry followups retain the exact prior live query', () => {
+test('platform-only and retry followups retain the prior product and translated constraints', () => {
   const context = previous('iPhone 15 256GB 黑色');
   context.search!.maxPrice = 6000;
   for (const message of ['只看 Shopee', '价格呢', '重试', '恢复全部平台']) {
     const result = liveSearchQuery(message, context);
-    assert.equal(result?.query, context.search?.query);
+    assert.equal(result?.query, 'iPhone 15 256GB Black');
     assert.equal(result?.maxPrice, 6000);
+  }
+});
+
+test('CH720N spellings create one canonical model with independent brand, budget and followup filters', () => {
+  for (const model of ['whch720n', 'WH CH720N', 'WH-CH720N']) {
+    assert.deepEqual(liveSearchQuery(model), { query: 'WH-CH720N', model: 'WH-CH720N' });
+    const request = liveSearchQuery(`帮我找一下索尼 ${model} 黑色，只看 Lazada，预算 200 SGD`);
+    assert.equal(request?.model, 'WH-CH720N');
+    assert.match(request?.query || '', /Sony/i);
+    assert.match(request?.query || '', /WH-CH720N/);
+    assert.match(request?.query || '', /Black|黑色/i);
+    assert.equal(request?.maxPrice, 200);
+    assert.doesNotMatch(request?.query || '', /Lazada|预算|200|SGD/i);
+  }
+  const context = previous('Sony WH-CH720N Black');
+  context.search!.model = 'WH-CH720N';
+  for (const followup of ['只看 Shopee', '价格呢', '重试']) {
+    assert.equal(liveSearchQuery(followup, context)?.model, 'WH-CH720N');
+    assert.equal(liveSearchQuery(followup, context)?.query, 'Sony WH-CH720N Black');
   }
 });
 

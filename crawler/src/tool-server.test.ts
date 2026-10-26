@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
-import { after, test } from 'node:test';
+import { after, test, type TestContext } from 'node:test';
 import type { CrawlOptions } from './pipeline.ts';
 import { createCrawlerToolServer } from './tool-server.ts';
 import type { DiscoveryOptions } from './discovery.ts';
 
 let received: CrawlOptions | null = null;
 let searched: DiscoveryOptions | null = null;
-let finishSearch: (() => void) | null = null;
-let blockSearch = false;
 const server = createCrawlerToolServer({
   token: 'crawler-test-token',
   run: async (options) => {
@@ -16,7 +14,6 @@ const server = createCrawlerToolServer({
   },
   search: async (options) => {
     searched = options;
-    if (blockSearch) await new Promise<void>((resolve) => { finishSearch = resolve; });
     return { ok: true, ...options, listings: [], summary: { requests: 1, matched: 0, skipped: 1, failed: 0 } };
   },
 });
@@ -92,25 +89,6 @@ test('crawler search rejects prose, unsupported platforms and unsupported market
   }
 });
 
-test('discovery and regular crawls share a single bounded busy guard', async () => {
-  blockSearch = true;
-  const pending = fetch(`${baseUrl}/search`, {
-    method: 'POST', headers, body: JSON.stringify({ market: 'SG', platforms: ['lazada'], query: 'WF-1000XM6', model: 'WF-1000XM6' }),
-  });
-  try {
-    for (let attempts = 0; !finishSearch && attempts < 50; attempts += 1) await new Promise((resolve) => setTimeout(resolve, 5));
-    assert.ok(finishSearch, 'discovery request started');
-    const busy = await fetch(`${baseUrl}/crawl`, {
-      method: 'POST', headers, body: JSON.stringify({ market: 'SG', platforms: ['lazada'], productIds: ['sony-wh1000xm5'] }),
-    });
-    assert.equal(busy.status, 409);
-  } finally {
-    blockSearch = false;
-    finishSearch?.();
-    finishSearch = null;
-    await pending;
-  }
-});
 test('crawler tool server requires its bearer token', async () => {
   const response = await fetch(`${baseUrl}/crawl`, { method: 'POST', body: '{}' });
   assert.equal(response.status, 401);
@@ -142,4 +120,294 @@ test('crawler tool server validates and runs a persisted real crawl', async () =
     dryRun: false,
     concurrency: 2,
   });
+});
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+async function queueServer(t: TestContext, options: Omit<Parameters<typeof createCrawlerToolServer>[0], 'token'>) {
+  const instance = createCrawlerToolServer({ token: 'crawler-test-token', maxConcurrentSearches: 1, ...options });
+  await new Promise<void>((resolve) => instance.listen(0, '127.0.0.1', resolve));
+  const bound = instance.address();
+  if (!bound || typeof bound === 'string') throw new Error('test server did not bind');
+  const url = `http://127.0.0.1:${bound.port}`;
+  t.after(() => new Promise<void>((resolve, reject) => {
+    instance.close((error) => (error ? reject(error) : resolve()));
+    instance.closeAllConnections();
+  }));
+  return url;
+}
+
+function postSearch(url: string, query = 'WF-1000XM6', signal?: AbortSignal) {
+  return fetch(`${url}/search`, {
+    method: 'POST', headers, signal,
+    body: JSON.stringify({ market: 'SG', platforms: ['lazada'], query }),
+  });
+}
+
+function discoveryResult(options: DiscoveryOptions) {
+  return { ok: true as const, ...options, listings: [], summary: { requests: 1, matched: 0, skipped: 1, failed: 0 } };
+}
+
+async function queueHealth(url: string) {
+  const response = await fetch(`${url}/health`);
+  assert.equal(response.status, 200);
+  return await response.json() as {
+    ok: boolean; running: boolean; activeSearches: number; crawlRunning: boolean;
+    searchConcurrency: number; queued: number; queueCapacity: number;
+  };
+}
+
+async function waitForQueue(url: string, expected: number) {
+  for (let attempts = 0; attempts < 100; attempts += 1) {
+    const health = await queueHealth(url);
+    if (health.queued === expected) return health;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  assert.fail(`queue did not reach ${expected}`);
+}
+
+test('single-search mode waits in FIFO order without overlapping crawler work', async (t) => {
+  const firstStarted = deferred();
+  const releaseFirst = deferred();
+  t.after(releaseFirst.resolve);
+  const calls: string[] = [];
+  let active = 0;
+  let peakActive = 0;
+  const url = await queueServer(t, { search: async (input) => {
+    active += 1;
+    peakActive = Math.max(peakActive, active);
+    calls.push(input.query);
+    if (calls.length === 1) {
+      firstStarted.resolve();
+      await releaseFirst.promise;
+    }
+    active -= 1;
+    return discoveryResult(input);
+  } });
+  assert.deepEqual(await queueHealth(url), {
+    ok: true, running: false, activeSearches: 0, crawlRunning: false,
+    searchConcurrency: 1, queued: 0, queueCapacity: 8,
+  });
+  const first = postSearch(url, 'WF-1000XM6');
+  await firstStarted.promise;
+  const second = postSearch(url, 'WH-CH720N');
+  assert.equal((await waitForQueue(url, 1)).running, true);
+  const third = postSearch(url, 'iPhone 17 Pro');
+  await waitForQueue(url, 2);
+  assert.deepEqual(calls, ['WF-1000XM6']);
+  releaseFirst.resolve();
+  const responses = await Promise.all([first, second, third]);
+  assert.deepEqual(responses.map((response) => response.status), [200, 200, 200]);
+  assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N', 'iPhone 17 Pro']);
+  assert.equal(peakActive, 1);
+  assert.deepEqual(await queueHealth(url), {
+    ok: true, running: false, activeSearches: 0, crawlRunning: false,
+    searchConcurrency: 1, queued: 0, queueCapacity: 8,
+  });
+});
+
+test('bounded searches execute concurrently and queue only beyond the configured limit', async (t) => {
+  const twoStarted = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const calls: string[] = [];
+  let active = 0;
+  let peakActive = 0;
+  const url = await queueServer(t, { maxConcurrentSearches: 2, search: async (input) => {
+    calls.push(input.query);
+    active += 1;
+    peakActive = Math.max(peakActive, active);
+    if (active === 2) twoStarted.resolve();
+    if (calls.length <= 2) await release.promise;
+    active -= 1;
+    return discoveryResult(input);
+  } });
+  const first = postSearch(url, 'WF-1000XM6');
+  const second = postSearch(url, 'WH-CH720N');
+  await twoStarted.promise;
+  const third = postSearch(url, 'iPhone 17 Pro');
+  const health = await waitForQueue(url, 1);
+  assert.equal(health.activeSearches, 2);
+  assert.equal(health.searchConcurrency, 2);
+  assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N']);
+  release.resolve();
+  assert.deepEqual((await Promise.all([first, second, third])).map((response) => response.status), [200, 200, 200]);
+  assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N', 'iPhone 17 Pro']);
+  assert.equal(peakActive, 2);
+});
+
+test('search and persisted crawl share one queue and preserve crawl write options', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  let crawlInput: CrawlOptions | undefined;
+  const url = await queueServer(t, {
+    search: async (input) => { started.resolve(); await release.promise; return discoveryResult(input); },
+    run: async (input) => {
+      crawlInput = input;
+      return { requests: 1, matched: 1, skipped: 0, failed: 0, offers: [] };
+    },
+  });
+  const search = postSearch(url);
+  await started.promise;
+  const crawl = fetch(`${url}/crawl`, { method: 'POST', headers,
+    body: JSON.stringify({ market: 'SG', platforms: ['lazada'], productIds: ['sony-wh1000xm5'] }) });
+  await waitForQueue(url, 1);
+  assert.equal(crawlInput, undefined);
+  release.resolve();
+  assert.equal((await search).status, 200);
+  assert.equal((await crawl).status, 200);
+  assert.deepEqual(crawlInput, {
+    markets: ['SG'], platforms: ['lazada'], productIds: ['sony-wh1000xm5'], limit: 1, dryRun: false, concurrency: 2,
+  });
+});
+
+test('queue is bounded and unauthorized or invalid requests never take a queue slot', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const calls: string[] = [];
+  const url = await queueServer(t, { maxQueuedRequests: 1, search: async (input) => {
+    calls.push(input.query);
+    started.resolve();
+    await release.promise;
+    return discoveryResult(input);
+  } });
+  const first = postSearch(url);
+  await started.promise;
+  for (const path of ['/search', '/crawl']) {
+    const unauthorized = await fetch(`${url}${path}`, { method: 'POST', body: '{}' });
+    assert.equal(unauthorized.status, 401);
+    const invalid = await fetch(`${url}${path}`, { method: 'POST', headers, body: '{}' });
+    assert.equal(invalid.status, 400);
+    const malformed = await fetch(`${url}${path}`, { method: 'POST', headers, body: '{' });
+    assert.equal(malformed.status, 400);
+  }
+  assert.equal((await queueHealth(url)).queued, 0);
+  const second = postSearch(url, 'WH-CH720N');
+  await waitForQueue(url, 1);
+  const overflow = await postSearch(url, 'iPhone 17 Pro');
+  assert.equal(overflow.status, 503);
+  assert.equal(overflow.headers.get('retry-after'), '5');
+  assert.equal((await overflow.json() as { error: string }).error, 'crawler_queue_full');
+  assert.deepEqual(calls, ['WF-1000XM6']);
+  release.resolve();
+  assert.equal((await first).status, 200);
+  assert.equal((await second).status, 200);
+  assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N']);
+});
+
+test('queued requests expire without running paid work or releasing the active slot', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const calls: string[] = [];
+  const url = await queueServer(t, { queueWaitTimeoutMs: 40, search: async (input) => {
+    calls.push(input.query);
+    started.resolve();
+    await release.promise;
+    return discoveryResult(input);
+  } });
+  const first = postSearch(url);
+  await started.promise;
+  const expired = await postSearch(url, 'WH-CH720N');
+  assert.equal(expired.status, 503);
+  assert.equal((await expired.json() as { error: string }).error, 'crawler_queue_timeout');
+  assert.deepEqual(calls, ['WF-1000XM6']);
+  const health = await queueHealth(url);
+  assert.equal(health.running, true);
+  assert.equal(health.queued, 0);
+  release.resolve();
+  assert.equal((await first).status, 200);
+  assert.equal((await postSearch(url, 'iPhone 17 Pro')).status, 200);
+  assert.deepEqual(calls, ['WF-1000XM6', 'iPhone 17 Pro']);
+});
+
+test('disconnected queued clients are removed without starting their search', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const calls: string[] = [];
+  const url = await queueServer(t, { search: async (input) => {
+    calls.push(input.query);
+    started.resolve();
+    await release.promise;
+    return discoveryResult(input);
+  } });
+  const first = postSearch(url);
+  await started.promise;
+  const controller = new AbortController();
+  const abandoned = postSearch(url, 'WH-CH720N', controller.signal).catch((error: unknown) => error);
+  await waitForQueue(url, 1);
+  controller.abort();
+  const error = await abandoned;
+  assert.ok(error instanceof Error && error.name === 'AbortError');
+  await waitForQueue(url, 0);
+  release.resolve();
+  assert.equal((await first).status, 200);
+  assert.deepEqual(calls, ['WF-1000XM6']);
+});
+
+test('disconnected active clients keep the crawler slot until their job settles', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const calls: string[] = [];
+  const url = await queueServer(t, { search: async (input) => {
+    calls.push(input.query);
+    started.resolve();
+    await release.promise;
+    return discoveryResult(input);
+  } });
+  const controller = new AbortController();
+  const first = postSearch(url, 'WF-1000XM6', controller.signal).catch((error: unknown) => error);
+  await started.promise;
+  controller.abort();
+  const error = await first;
+  assert.ok(error instanceof Error && error.name === 'AbortError');
+  const second = postSearch(url, 'WH-CH720N');
+  const health = await waitForQueue(url, 1);
+  assert.equal(health.running, true);
+  assert.deepEqual(calls, ['WF-1000XM6']);
+  release.resolve();
+  assert.equal((await second).status, 200);
+  assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N']);
+});
+
+test('crawler failure releases the slot to the next queued request', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  const url = await queueServer(t, { search: async (input) => {
+    if (input.query === 'WF-1000XM6') {
+      started.resolve();
+      await release.promise;
+      throw new Error('test upstream failure');
+    }
+    return discoveryResult(input);
+  } });
+  const failed = postSearch(url);
+  await started.promise;
+  const next = postSearch(url, 'WH-CH720N');
+  await waitForQueue(url, 1);
+  release.resolve();
+  assert.equal((await failed).status, 400);
+  assert.equal((await next).status, 200);
+  assert.equal((await queueHealth(url)).running, false);
+});
+
+test('queue limits reject invalid configuration', () => {
+  for (const maxConcurrentSearches of [0, 1.5, 9, Number.NaN]) {
+    assert.throws(() => createCrawlerToolServer({ token: 'test', maxConcurrentSearches }), /maxConcurrentSearches/);
+  }
+  for (const maxQueuedRequests of [-1, 1.5, 101, Number.NaN]) {
+    assert.throws(() => createCrawlerToolServer({ token: 'test', maxQueuedRequests }), /maxQueuedRequests/);
+  }
+  for (const queueWaitTimeoutMs of [0, -1, 420_001, Number.NaN]) {
+    assert.throws(() => createCrawlerToolServer({ token: 'test', queueWaitTimeoutMs }), /queueWaitTimeoutMs/);
+  }
 });

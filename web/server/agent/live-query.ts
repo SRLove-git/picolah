@@ -1,6 +1,7 @@
 import type { Comparison } from '../../shared/types.ts';
 import { MARKETS } from '../../shared/types.ts';
 import { extractSearchModel } from '../../shared/model-search.ts';
+import { normalizeSearchLanguage } from '../../shared/search-language.ts';
 import { z } from 'zod';
 import { invokeStructuredAgent } from './langchain.ts';
 import { config } from '../config.ts';
@@ -21,6 +22,7 @@ export async function visualSearchQuery(image: string, caption: string): Promise
 
 /** Normalize a shopping request without consulting a product catalog. */
 export function liveSearchQuery(message: string, previous?: Comparison | null): { query: string; model?: string; maxPrice?: number } | null {
+  message = message.normalize('NFKC');
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;
@@ -34,18 +36,21 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
       .map((match) => match[0].replace(/(\d)\s+(gb|tb|ml|mm)/i, '$1$2'));
   };
   if (model) {
-    const brand = message.match(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer)\b/i)?.[0]
-      || (/索尼/.test(message) ? 'Sony' : '');
+    const brand = normalizeSearchLanguage(message)
+      .match(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer)\b/i)?.[0] || '';
     return { query: [brand, model, ...variants(message)].filter(Boolean).join(' '), model, ...budget };
   }
   const ordinal = message.match(/第([一二三四1234])个/);
   if (ordinal && previous?.alternatives?.length) {
     const index = '一二三四'.includes(ordinal[1]) ? '一二三四'.indexOf(ordinal[1]) : Number(ordinal[1]) - 1;
     const name = previous.alternatives[index]?.product.name;
-    if (name) return { query: name.slice(0, 120), model: extractSearchModel(name) ?? undefined };
+    const query = name ? normalizeSearchLanguage(name) : '';
+    if (query && query.length <= 120) return { query, model: extractSearchModel(query) ?? undefined };
   }
   if (ordinal) return null;
-  const previousQuery = previous?.search?.query || previous?.search?.model || previous?.product?.name;
+  const previousText = previous?.search?.query || previous?.search?.model || previous?.product?.name;
+  const normalizedPrevious = previousText ? normalizeSearchLanguage(previousText) : '';
+  const previousQuery = normalizedPrevious.length <= 120 ? normalizedPrevious : '';
   // Variant-only followups change constraints without losing the previous product.
   const requestedVariants = variants(message);
   if (previousQuery && requestedVariants.length && /^(?:那|这个|这款|换成|换|要|看|的|呢|吗|\s|黑色|白色|银色|蓝色|粉色|[a-z]+|[0-9.])+[?？]?$/i.test(message)) {
@@ -55,7 +60,9 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
       let base = previousQuery;
       if (requestedVariants.some((value) => /black|white|silver|blue|pink/i.test(value))) base = base.replace(/\b(?:black|white|silver|blue|pink)\b|黑色|白色|银色|蓝色|粉色/gi, '');
       if (requestedVariants.some((value) => /gb|tb/i.test(value))) base = base.replace(/\d+\s*(?:gb|tb)\b/gi, '');
-      return { query: `${base} ${requestedVariants.join(' ')}`.replace(/\s+/g, ' ').trim(), model: extractSearchModel(base) ?? undefined,
+      const query = `${base} ${requestedVariants.join(' ')}`.replace(/\s+/g, ' ').trim();
+      if (query.length > 120) return null;
+      return { query, model: extractSearchModel(base) ?? undefined,
         ...(previous?.search?.maxPrice ? { maxPrice: previous.search.maxPrice } : {}), ...budget };
     }
   }
@@ -81,5 +88,7 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
   }
   if (/^(你好|您好|谢谢|hi|hello|thanks)$/i.test(query)) return null;
   if (query.length < 2 || query.length > 120 || /https?:\/\//i.test(query)) return null;
+  query = normalizeSearchLanguage(query);
+  if (query.length > 120) return null;
   return { query, ...budget };
 }

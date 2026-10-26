@@ -23,9 +23,13 @@ interface ToolServerOptions {
   token: string;
   run?: (options: CrawlOptions) => Promise<CrawlSummary>;
   search?: (options: DiscoveryOptions) => Promise<DiscoveryResult>;
+  maxConcurrentSearches?: number;
+  maxQueuedRequests?: number;
+  queueWaitTimeoutMs?: number;
 }
 
 function json(response: ServerResponse, status: number, body: unknown): void {
+  if (response.destroyed || response.writableEnded) return;
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
@@ -120,11 +124,115 @@ export function createCrawlerToolServer(options: ToolServerOptions) {
   if (!options.token) throw new Error('CRAWLER_TOOL_TOKEN 未配置');
   const run = options.run || crawl;
   const search = options.search || discoverProduct;
-  let running = false;
+  const maxConcurrentSearches = options.maxConcurrentSearches ?? 3;
+  const maxQueuedRequests = options.maxQueuedRequests ?? 8;
+  const queueWaitTimeoutMs = options.queueWaitTimeoutMs ?? 120_000;
+  if (!Number.isSafeInteger(maxConcurrentSearches) || maxConcurrentSearches < 1 || maxConcurrentSearches > 8) {
+    throw new Error('maxConcurrentSearches 必须是 1–8 的整数');
+  }
+  if (!Number.isSafeInteger(maxQueuedRequests) || maxQueuedRequests < 0 || maxQueuedRequests > 100) {
+    throw new Error('maxQueuedRequests 必须是 0–100 的整数');
+  }
+  if (!Number.isSafeInteger(queueWaitTimeoutMs) || queueWaitTimeoutMs < 1 || queueWaitTimeoutMs > 420_000) {
+    throw new Error('queueWaitTimeoutMs 必须是 1–420000 的整数');
+  }
+  interface Job {
+    kind: 'search' | 'crawl';
+    response: ServerResponse;
+    execute: () => Promise<unknown>;
+    errorCode: 'search_failed' | 'crawl_failed';
+    timeout?: ReturnType<typeof setTimeout>;
+    onClose?: () => void;
+  }
+  let activeSearches = 0;
+  let crawlRunning = false;
+  const queue: Job[] = [];
+
+  function cleanup(job: Job): void {
+    if (job.timeout) clearTimeout(job.timeout);
+    if (job.onClose) job.response.off('close', job.onClose);
+  }
+
+  function removeQueuedJob(job: Job): void {
+    const index = queue.indexOf(job);
+    if (index !== -1) queue.splice(index, 1);
+    cleanup(job);
+  }
+
+  function dispatch(): void {
+    while (queue.length) {
+      const next = queue[0];
+      if (next.response.destroyed || next.response.writableEnded) {
+        queue.shift();
+        cleanup(next);
+        continue;
+      }
+      if (next.kind === 'crawl') {
+        if (crawlRunning || activeSearches > 0) return;
+        queue.shift();
+        void execute(next);
+        return;
+      }
+      if (crawlRunning || activeSearches >= maxConcurrentSearches) return;
+      queue.shift();
+      void execute(next);
+    }
+  }
+
+  async function execute(job: Job): Promise<void> {
+    cleanup(job);
+    if (job.kind === 'search') activeSearches += 1;
+    else crawlRunning = true;
+    try {
+      json(job.response, 200, await job.execute());
+    } catch (error) {
+      json(job.response, 400, { error: job.errorCode, message: errorMessage(error) });
+    } finally {
+      // A disconnected active request still owns its slot until its crawler settles.
+      // Releasing it earlier could exceed the paid-request limit or overlap writes.
+      if (job.kind === 'search') activeSearches -= 1;
+      else crawlRunning = false;
+      dispatch();
+    }
+  }
+
+  function enqueue(job: Job): void {
+    if (job.response.destroyed || job.response.writableEnded) return;
+    const canStartNow = queue.length === 0 && (job.kind === 'search'
+      ? !crawlRunning && activeSearches < maxConcurrentSearches
+      : !crawlRunning && activeSearches === 0);
+    if (canStartNow) {
+      void execute(job);
+      return;
+    }
+    if (queue.length >= maxQueuedRequests) {
+      job.response.setHeader('retry-after', '5');
+      json(job.response, 503, { error: 'crawler_queue_full', message: '商品搜索排队人数较多，请稍后重试' });
+      return;
+    }
+    job.onClose = () => removeQueuedJob(job);
+    job.response.once('close', job.onClose);
+    job.timeout = setTimeout(() => {
+      removeQueuedJob(job);
+      job.response.setHeader('retry-after', '5');
+      json(job.response, 503, { error: 'crawler_queue_timeout', message: '商品搜索排队超时，请稍后重试' });
+    }, queueWaitTimeoutMs);
+    job.timeout.unref();
+    queue.push(job);
+    dispatch();
+  }
 
   return createServer(async (request, response) => {
     if (request.method === 'GET' && request.url === '/health') {
-      json(response, 200, { ok: true, running });
+      json(response, 200, {
+        ok: true,
+        running: crawlRunning || activeSearches > 0,
+        activeSearches,
+        crawlRunning,
+        searchConcurrency: maxConcurrentSearches,
+        queued: queue.length,
+        queueCapacity: maxQueuedRequests,
+      });
       return;
     }
     if (request.method !== 'POST' || !['/crawl', '/search'].includes(request.url || '')) {
@@ -135,57 +243,54 @@ export function createCrawlerToolServer(options: ToolServerOptions) {
       json(response, 401, { error: 'unauthorized' });
       return;
     }
-    if (running) {
-      json(response, 409, { error: 'crawler_busy', message: '已有真实爬虫任务正在运行' });
-      return;
-    }
-
-    running = true;
     try {
       if (request.url === '/search') {
         const input = parseSearchRequest(await readBody(request));
-        json(response, 200, await search(input));
+        enqueue({ kind: 'search', response, errorCode: 'search_failed', execute: () => search(input) });
         return;
       }
       const input = parseRequest(await readBody(request));
-      const summary = await run({
-        markets: [input.market],
-        platforms: input.platforms,
-        productIds: input.productIds,
-        limit: input.productIds.length,
-        dryRun: false,
-        concurrency: Math.min(config.concurrency, 2),
-      });
-      json(response, 200, {
-        ok: true,
-        market: input.market,
-        platforms: input.platforms,
-        productIds: input.productIds,
-        summary: {
-          requests: summary.requests,
-          matched: summary.matched,
-          skipped: summary.skipped,
-          failed: summary.failed,
-          offers: summary.offers.map((offer) => ({
-            productId: offer.productId,
-            platformId: offer.platformId,
-            seller: offer.seller,
-            currency: offer.currency,
-            itemPrice: offer.itemPrice,
-            capturedAt: offer.capturedAt,
-          })),
-        },
-      });
+      enqueue({ kind: 'crawl', response, errorCode: 'crawl_failed', execute: async () => {
+        const summary = await run({
+          markets: [input.market],
+          platforms: input.platforms,
+          productIds: input.productIds,
+          limit: input.productIds.length,
+          dryRun: false,
+          concurrency: Math.min(config.concurrency, 2),
+        });
+        return {
+          ok: true,
+          market: input.market,
+          platforms: input.platforms,
+          productIds: input.productIds,
+          summary: {
+            requests: summary.requests,
+            matched: summary.matched,
+            skipped: summary.skipped,
+            failed: summary.failed,
+            offers: summary.offers.map((offer) => ({
+              productId: offer.productId,
+              platformId: offer.platformId,
+              seller: offer.seller,
+              currency: offer.currency,
+              itemPrice: offer.itemPrice,
+              capturedAt: offer.capturedAt,
+            })),
+          },
+        };
+      } });
     } catch (error) {
       json(response, 400, { error: request.url === '/search' ? 'search_failed' : 'crawl_failed', message: errorMessage(error) });
-    } finally {
-      running = false;
     }
   });
 }
 
 async function main(): Promise<void> {
-  const server = createCrawlerToolServer({ token: config.toolToken });
+  const server = createCrawlerToolServer({
+    token: config.toolToken,
+    maxConcurrentSearches: config.toolSearchConcurrency,
+  });
   server.listen(config.toolPort, config.toolHost, () => {
     console.log(`[crawler-tool] listening on http://${config.toolHost}:${config.toolPort}`);
   });

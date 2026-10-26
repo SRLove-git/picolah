@@ -57,6 +57,8 @@ export const config = {
   toolHost: process.env.CRAWLER_TOOL_HOST || '127.0.0.1',
   toolPort: numberEnv('CRAWLER_TOOL_PORT', 8790, 1, 65535),
   toolToken: process.env.CRAWLER_TOOL_TOKEN?.trim() || '',
+  /** Concurrent live searches. Persisted crawls remain exclusive. */
+  toolSearchConcurrency: numberEnv('CRAWLER_TOOL_SEARCH_CONCURRENCY', 3, 1, 8),
   /** Set CRAWLER_LOCAL_PROXY=off to let local Chrome use the direct connection. */
   localProxyEnabled: !/^(off|0|false|no)$/i.test((process.env.CRAWLER_LOCAL_PROXY || '').trim()),
   brightData,

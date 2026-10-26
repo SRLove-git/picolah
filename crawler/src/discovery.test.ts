@@ -16,9 +16,60 @@ function listing(overrides: Partial<RawListing> = {}): RawListing {
 
 test('live search accepts bounded plain query and optional single complete model code', () => {
   assert.equal(normalizeDiscoveryModel('wf-1000xm6'), 'WF-1000XM6');
+  for (const model of ['whch720n', 'WH CH720N', 'WH-CH720N', 'WH CH 720 N', 'WH-CH720 N']) assert.equal(normalizeDiscoveryModel(model), 'WH-CH720N');
+  assert.equal(normalizeDiscoveryModel('WF 1000 XM 6'), 'WF-1000XM6');
   assert.equal(normalizeSearchQuery('  iPhone 17 Pro 256GB  '), 'iPhone 17 Pro 256GB');
   for (const value of ['Sony WF-1000XM6', 'WF-1000XM6 WH-1000XM6', 'XM6', 'iphone 15', 'https://example.com', 'A1000', 'WF1000XM6'.repeat(10)]) assert.throws(() => normalizeDiscoveryModel(value));
   for (const value of ['', 'a', 'a'.repeat(121), 'https://example.com', 'iPhone\n17', '🔎🔎']) assert.throws(() => normalizeSearchQuery(value));
+});
+
+test('CH headphone models match across separators without dropping their terminal variant', () => {
+  const spellings = ['whch720n', 'WH-CH720N', 'WH CH720N', 'WH CH 720 N', 'WH-CH720 N'];
+  for (const query of spellings) {
+    for (const spelling of spellings) {
+      const candidate = listing({ title: `Sony ${spelling} Wireless Headphones` });
+      assert.equal(queryMatchesListing(query, candidate, 'SG', 'lazada'), true, `${query} / ${spelling}`);
+      assert.equal(queryMatchesListing(`Sony ${query}`, candidate, 'SG', 'lazada', 'WH-CH720N'), true, `${query} / ${spelling} with hint`);
+    }
+  }
+  for (const title of [
+    'Sony WH-CH710N Headphones', 'Sony WH-CH720 Headphones', 'Sony WH-CH720NB Headphones',
+    'Sony WH-CH720N / WH-CH710N Headphones', 'Sony WH-CH720N / WH-CH520 Headphones',
+    'Sony WH-CH720N / CH710N Headphones', 'Sony WH-CH720N / 710N Headphones',
+    'Sony WH-CH720N / WF-CH720N Headphones', 'Sony WH-CH720N / WFCH720N Headphones',
+    'Sony WH-CH720N / 720 Headphones', 'Sony WH-CH720N / WH-1000XM6 Headphones',
+    'Sony WH CH 710 N Headphones', 'Sony WH CH 720 NB Headphones',
+    'Sony WH CH 720 N2 Headphones', 'Sony WH-CH720 N / WH-CH710 N Headphones',
+    'Sony WH CH 720 N / CH 710 N Headphones', 'Sony WH CH 720 N / WH-CH520 Headphones',
+  ]) assert.equal(queryMatchesListing('whch720n', listing({ title }), 'SG', 'lazada'), false, title);
+  assert.equal(queryMatchesListing('Sony WH-CH720N Black', listing({ title: 'Sony WHCH720N Silver' }), 'SG', 'lazada'), false);
+  assert.equal(queryMatchesListing('WHCH720N', listing({ title: 'Sony WH-CH720N | WHCH720N | CH720N Headphones' }), 'SG', 'lazada'), true);
+  assert.equal(queryMatchesListing('WHCH520', listing({ title: 'Sony WH-CH520 Noise Cancelling Headphones' }), 'SG', 'lazada'), true);
+});
+
+test('use-case and bundled charging-case phrases do not turn primary headphones into accessories', () => {
+  for (const title of [
+    'Sony WF-1000XM6 Wireless Earbuds for Travel',
+    'Sony WF-1000XM6 Wireless Earbuds with Charging Case',
+    'Sony WF1000XM6 Wireless Earbuds including a Wireless Charging Case',
+    'Sony WF-1000XM6 Wireless Headphones with Carrying Case for Travel',
+  ]) {
+    assert.equal(exactDiscoveryListing(options.model, listing({ title }), 'SG', 'lazada'), true, title);
+    assert.equal(queryMatchesListing('Sony WF1000XM6', listing({ title }), 'SG', 'lazada'), true, title);
+  }
+  assert.equal(queryMatchesListing('Sony headphones', listing({ title: 'Sony WH-CH720N Wireless Headphones for Travel' }), 'SG', 'lazada'), true);
+  for (const title of [
+    'Case for Sony WF-1000XM6 Wireless Earbuds',
+    'Charging Case for Sony WF-1000XM6 Earbuds',
+    'Sony WF-1000XM6 Headphones Carrying Case',
+    'Sony WF-1000XM6 Wireless Earbuds with Charging Case Replacement',
+    'Sony WF-1000XM6 Wireless Earbuds with Charging Case Silicone Cover',
+    'Replacement Ear Pads for Sony WH-CH720N Headphones',
+    'Sony WF-1000XM6 Ear Tips', 'Sony WF-1000XM6 Charger',
+    'Sony WF-1000XM6 Wireless Earbuds with Charging Case / WF-1000XM5',
+  ]) assert.equal(queryMatchesListing('Sony WF1000XM6', listing({ title }), 'SG', 'lazada'), false, title);
+  assert.equal(queryMatchesListing('Sony headphones', listing({ title: 'Replacement Ear Pads for Sony Headphones' }), 'SG', 'lazada'), false);
+  assert.equal(queryMatchesListing('Sony headphones', listing({ title: 'Sony Earbuds with Charging Case' }), 'SG', 'lazada'), false);
 });
 
 test('full model guard rejects adjacent models, ambiguous variants and non-products', () => {

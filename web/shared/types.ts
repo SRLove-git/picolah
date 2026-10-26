@@ -193,7 +193,7 @@ export interface Comparison {
     platforms: string[];
     failedPlatforms?: number;
     failedSources?: string[];
-    errorCode?: 'SERP_NOT_CONFIGURED';
+    errorCode?: 'SERP_NOT_CONFIGURED' | 'CRAWLER_QUEUE_FULL' | 'CRAWLER_QUEUE_TIMEOUT';
     status: 'matched' | 'not_found' | 'failed' | 'unavailable';
   };
 }

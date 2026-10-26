@@ -9,7 +9,7 @@ import type { Comparison } from '../shared/types.ts';
 type Payload = { market: string; scope?: 'web' | 'platforms'; platforms: string[]; excludedPlatforms?: string[]; query: string; model?: string };
 type RequestRecord = { path: string; authorization?: string; payload: Payload };
 type Event = { name: string; data: Record<string, unknown> };
-type ResultMode = 'not_found' | 'failed' | 'http_error' | 'invalid_price' | 'wrong_model' | 'valid';
+type ResultMode = 'not_found' | 'failed' | 'http_error' | 'queue_full' | 'queue_timeout' | 'invalid_price' | 'wrong_model' | 'valid';
 
 const requests: RequestRecord[] = [];
 let mode: ResultMode = 'not_found';
@@ -36,6 +36,13 @@ const crawler = createServer(async (request, response) => {
   response.setHeader('content-type', 'application/json');
   if (mode === 'http_error') {
     response.writeHead(500).end(JSON.stringify({ error: 'mock provider failure' }));
+    return;
+  }
+  if (mode === 'queue_full' || mode === 'queue_timeout') {
+    response.writeHead(503).end(JSON.stringify({
+      error: mode === 'queue_full' ? 'crawler_queue_full' : 'crawler_queue_timeout',
+      message: 'private-provider-secret: unsafe raw queue details',
+    }));
     return;
   }
   const matched = mode === 'invalid_price' || mode === 'wrong_model' || mode === 'valid';
@@ -77,6 +84,7 @@ process.env.CRAWLER_SEARCH_SCOPE = 'platforms';
 const { app } = await import('./index.ts');
 const { config } = await import('./config.ts');
 const { db, dbPath } = await import('./db.ts');
+const { ModelSearchError, modelSearchTool } = await import('./agent/tools/model-search.ts');
 const server = createServer(app);
 const baseUrl = await listen(server);
 
@@ -196,6 +204,21 @@ test('platform, price and retry followups retain the missing model and requested
     Array.from({ length: 3 }, () => ({
       path: '/search', payload: { market: 'SG', scope: 'platforms', platforms: ['shopee'], query: 'WF-1000XM6', model: 'WF-1000XM6' },
     })));
+});
+
+test('compact and spaced CH720N searches call the live tool with a canonical model and accept its results', async () => {
+  mode = 'valid';
+  for (const message of ['whch720n', 'WH CH720N', 'WH-CH720N', '帮我找索尼 WH CH720N']) {
+    const start = requests.length;
+    const result = await ask(message);
+    assert.equal(requests.length, start + 1);
+    assert.equal(requests.at(-1)?.payload.model, 'WH-CH720N');
+    assert.match(requests.at(-1)?.payload.query || '', /WH-CH720N/);
+    assert.equal(result.comparison.search?.status, 'matched');
+    assert.equal(result.comparison.offers.length, 1);
+    assert.match(result.comparison.product?.name || '', /WH-CH720N/);
+    assert.doesNotMatch(result.answer, /价格库|未找到|搜索失败/);
+  }
 });
 
 test('explicit platform restriction, exclusions, followups and reset keep the requested search scope', async () => {
@@ -319,6 +342,36 @@ test('crawler failures are not reported as no matching products', async () => {
       assert.doesNotMatch(result.answer, /暂未找到.*完全匹配/);
       assertNoInventedResults(result);
     }
+  }
+});
+
+test('queue failures survive LangChain invocation and become safe chat errors without stale quotes', async () => {
+  for (const [failureMode, expectedCode, expectedCopy] of [
+    ['queue_full', 'CRAWLER_QUEUE_FULL', /当前搜索请求较多.*尚未进入搜索队列/],
+    ['queue_timeout', 'CRAWLER_QUEUE_TIMEOUT', /搜索排队超时.*尚未开始抓取商品/],
+  ] as const) {
+    mode = 'valid';
+    const first = await ask('WH-CH720N');
+    assert.equal(first.comparison.offers[0].finalPrice, 394);
+
+    mode = failureMode;
+    await assert.rejects(modelSearchTool.invoke({ market: 'SG', scope: 'platforms', platforms: ['lazada'],
+      query: 'WH-CH720N', model: 'WH-CH720N' }), (error: Error) =>
+      error instanceof ModelSearchError && error.code === expectedCode &&
+      !error.message.includes('private-provider-secret'));
+
+    const start = requests.length;
+    const result = await ask('只看 Shopee', { conversationId: first.conversationId });
+    assert.equal(requests.length, start + 1);
+    assert.equal(requests[start].payload.model, 'WH-CH720N');
+    assert.deepEqual(requests[start].payload.platforms, ['shopee']);
+    assert.equal(result.comparison.search?.status, 'failed');
+    assert.equal(result.comparison.search?.errorCode, expectedCode);
+    assert.match(result.answer, expectedCopy);
+    assert.match(result.answer, /请稍后重试.*这不代表没有匹配商品/);
+    assert.doesNotMatch(result.answer, /暂未找到|平台连接或数据读取失败/);
+    assert.doesNotMatch(JSON.stringify(result.events), /private-provider-secret|unsafe raw queue details/);
+    assertNoInventedResults(result);
   }
 });
 

@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { COUNTRY_CODES, MARKETS } from '../../../shared/types.ts';
+import { canonicalModelCode, compactModel } from '../../../shared/model-search.ts';
 import { config } from '../../config.ts';
 
 const platforms = ['lazada', 'shopee', 'amazon-sg'] as const;
@@ -12,7 +13,12 @@ export const liveSearchInputSchema = z.object({
   excludedPlatforms: z.array(z.enum(excludedPlatforms)).max(6).optional(),
   query: z.string().trim().min(2).max(120),
   maxPrice: z.number().finite().positive().max(1e12).optional(),
-  model: z.string().min(6).max(40).regex(/^[A-Z]{2,}-?\d{3,}(?:[A-Z]+\d+)*$/).optional(),
+  model: z.string().trim().min(6).max(40).transform((value, ctx) => {
+    const model = canonicalModelCode(value);
+    if (model) return model;
+    ctx.addIssue({ code: 'custom', message: '请提供完整且唯一的商品型号' });
+    return z.NEVER;
+  }).optional(),
 }).refine((input) => input.scope === 'web' ? input.platforms.length === 0 : input.platforms.length > 0,
   { message: '全网搜索不能附带平台限制，指定平台搜索至少需要一个平台' })
   .refine((input) => input.scope === 'web' || !input.excludedPlatforms?.length,
@@ -58,6 +64,14 @@ const excludedDomains: Record<typeof excludedPlatforms[number], string[]> = {
   tiki: ['tiki.vn'],
 };
 const withinDomain = (host: string, domain: string) => host === domain || host.endsWith(`.${domain}`);
+
+export class ModelSearchError extends Error {
+  constructor(readonly code: 'CRAWLER_QUEUE_FULL' | 'CRAWLER_QUEUE_TIMEOUT') {
+    super(code === 'CRAWLER_QUEUE_FULL' ? '当前搜索较多，请稍后重试' : '搜索等待超时，请稍后重试');
+    this.name = 'ModelSearchError';
+  }
+}
+
 function publicSourceHost(host: string): boolean {
   if (host !== host.toLowerCase() || host.startsWith('www.') || host.length > 253 || !host.includes('.')) return false;
   const labels = host.split('.');
@@ -76,7 +90,15 @@ export function createModelSearchTool(options: {
       headers: { 'content-type': 'application/json', authorization: `Bearer ${options.token}` },
       body: JSON.stringify(input), signal: AbortSignal.timeout(options.timeoutMs ?? 420_000),
     });
-    if (!response.ok) throw new Error(`商品搜索失败（HTTP ${response.status}）`);
+    if (!response.ok) {
+      if (response.status === 503) {
+        const body: unknown = await response.json().catch(() => null);
+        const code = body && typeof body === 'object' && 'error' in body ? body.error : undefined;
+        if (code === 'crawler_queue_full') throw new ModelSearchError('CRAWLER_QUEUE_FULL');
+        if (code === 'crawler_queue_timeout') throw new ModelSearchError('CRAWLER_QUEUE_TIMEOUT');
+      }
+      throw new Error(`商品搜索失败（HTTP ${response.status}）`);
+    }
     const result = resultSchema.parse(await response.json());
     if (result.summary.matched !== result.listings.length) throw new Error('商品搜索结果计数不一致');
     const web = input.scope === 'web';
@@ -103,8 +125,8 @@ export function createModelSearchTool(options: {
         throw new Error('商品搜索返回了无效报价');
       }
       if (input.model) {
-        const full = input.model.replace(/-/g, '').split('').join('[\\s-]*');
-        if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(listing.title)) {
+        const full = compactModel(input.model).split('').join('[\\s-]*');
+        if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(listing.title.normalize('NFKC'))) {
           throw new Error('商品搜索返回的型号不一致');
         }
       }
