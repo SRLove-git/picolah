@@ -8,7 +8,7 @@ import { config, crawlerToolConfigured, llmConfigured } from '../config.ts';
 import { addMessage, createConversation, getConversation } from '../repo.ts';
 import { writeFallbackAnswer } from '../copy.ts';
 import { liveSearchCoverageNote } from '../../shared/copy.ts';
-import { streamLlmAnswer } from '../llm.ts';
+import { streamChatAnswer, streamLlmAnswer } from '../llm.ts';
 import { recordComparisonEvent, requestUserId } from '../profile.ts';
 import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
 import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
@@ -135,10 +135,16 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'status', { label: '正在整理搜索结果…' });
   let answer = '';
   let usedLlm = false;
-  // Error and empty results are deterministic: an LLM cannot invent a successful search.
-  if (llmConfigured && comparison.search?.status === 'matched') {
+  // The LLM writes every reply, but its guard-railed payload only ever sees the real
+  // search outcome, so a failed or empty search is described instead of invented.
+  // Platform/market conflicts stay deterministic, and an unrecognised image keeps the
+  // explicit "补充型号" clarification.
+  const chatOnly = !target && !image;
+  const canAnswer = !comparison.unsupportedPlatforms?.length && (Boolean(target) || chatOnly);
+  if (llmConfigured && canAnswer) {
     try {
-      for await (const delta of streamLlmAnswer(comparison, message)) {
+      const stream = target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
+      for await (const delta of stream) {
         usedLlm = true;
         answer += delta;
         sse(res, 'delta', { text: delta });

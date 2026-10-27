@@ -119,3 +119,12 @@ test('incomplete prior result is safe and legacy product names are only textual 
     query: 'Sony WH-1000XM5', model: 'WH-1000XM5',
   });
 });
+
+test('a measure word left over after the verb is dropped from the search query', () => {
+  assert.deepEqual(liveSearchQuery('我想买个 iPhone'), { query: 'iPhone' });
+  assert.deepEqual(liveSearchQuery('买一个 iPhone 15 128GB'), { query: 'iPhone 15 128GB' });
+  assert.deepEqual(liveSearchQuery('帮我买台 iPhone 15'), { query: 'iPhone 15' });
+  assert.deepEqual(liveSearchQuery('买个耳机'), { query: 'headphones' });
+  // Real words starting with a measure character keep their first character.
+  assert.deepEqual(liveSearchQuery('买个台灯'), { query: '台灯' });
+});

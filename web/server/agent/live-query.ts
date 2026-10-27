@@ -75,6 +75,12 @@ export function liveSearchQuery(message: string, previous?: Comparison | null): 
   }
   query = query
     .replace(/(?:帮我|请|我想|我要|想要)?(?:找一下|找一找|查一下|搜一下|看看|找找|找|查找|搜索|查|搜|买|购买|推荐一下|推荐)/g, ' ')
+    // "我想买个 iPhone" / "买一个 iPhone" leaves a dangling measure word behind.
+    // "个" never starts a product noun, so it is safe to drop unconditionally.
+    .replace(/^\s*(?:[一二两三四五六七八九十百千\d]+\s*)?个\s*/, '')
+    // Other measure words are only dropped when a latin product token follows,
+    // so real words such as 台灯 or 套装 keep their first character.
+    .replace(/^\s*(?:[一二两三四五六七八九十百千\d]+\s*)?[台部件套只双支把张片本辆架副对份]\s*(?=[A-Za-z0-9])/, '')
     .replace(/哪里买最便宜|哪里最便宜|在哪里买|哪里买|多少钱|什么价格|最新价格|实时价格|价格|报价|比价|最便宜|便宜|贵不贵|怎么样|值得买吗|划算吗|只有|只看|不要|不看|排除|去掉|移除|恢复全部平台|全部平台|所有平台|取消筛选|不限平台|换成|换到|切换到|重试|再试|刷新/g, ' ')
     .replace(/\bdon['’]t\b/gi, ' ')
     .replace(/\b(?:please|find|search|show|buy|me|for|price|prices|cheapest|cheap|compare|retry|refresh|only|on|in|the|how much|does|cost|exclude|excluding|except|without|avoid|not|no|do|from|use|include)\b/gi, ' ')

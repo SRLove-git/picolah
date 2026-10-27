@@ -76,3 +76,9 @@ test('chat explains when a requested platform is unavailable in the market', asy
   assert.deepEqual(amazon.comparison.unsupportedPlatforms, ['amazon-sg']);
   assert.match(amazon.answer, /马来西亚当前不支持 \*\*Amazon SG\*\*/);
 });
+
+test('chat sends a clean product name to the crawler after a measure word', async () => {
+  const reply = await ask('我想买个 iPhone');
+  assert.equal(reply.comparison.search.model, 'iPhone');
+  assert.doesNotMatch(reply.answer, /个\s*iPhone/);
+});
