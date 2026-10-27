@@ -11,6 +11,7 @@ import {
   sortOffers,
 } from '../lib/format';
 import { addWatchlist, outboundUrl } from '../lib/api';
+import { useSession } from '../lib/session';
 import { PlatformBadge } from './PlatformBadge';
 import { Sparkline } from './Sparkline';
 import { Capybara } from './PicolahMark';
@@ -126,6 +127,7 @@ function Breakdown({ offer, country, mode }: { offer: Offer; country: CountryCod
 
 export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps) {
   const { t, i18n } = useTranslation();
+  const { user, required, promptLogin } = useSession();
   const [watched, setWatched] = useState(false);
   const { product, market } = comparison;
   if (!product) return null;
@@ -137,11 +139,16 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
   const best = sorted[0];
 
   const watch = async () => {
+    if (required && !user) {
+      promptLogin('watchlist');
+      return;
+    }
     try {
       await addWatchlist(product.id, market);
       setWatched(true);
     } catch {
-      setWatched(false);
+      if (required) promptLogin('watchlist');
+      else setWatched(false);
     }
   };
 

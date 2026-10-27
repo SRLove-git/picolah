@@ -86,6 +86,12 @@ const resources = {
         target: '目标价', anyDrop: '任意降价', noOffer: '当前市场暂无在售报价', low30d: '30 日低',
         reached: '已到目标价', watching: '正在关注', remove: '取消关注', add: '关注',
       },
+      auth: {
+        loginCta: '登录 / 注册',
+        close: '关闭',
+        watchlistTitle: '登录后关注商品价格',
+        watchlistBody: '关注商品和价格提醒需要账户。游客可以照常比价、看测评、逛市场。',
+      },
       legal: {
         privacy: '隐私政策',
         terms: '服务条款',
@@ -198,6 +204,12 @@ const resources = {
         emptyTitle: 'Nothing on your watchlist yet', emptyBody: 'Tap “Watch” on a comparison, or ask me to keep an eye on a product.',
         target: 'Target', anyDrop: 'Any drop', noOffer: 'No active offer in this market', low30d: '30-day low',
         reached: 'Target reached', watching: 'Watching', remove: 'Remove', add: 'Watch',
+      },
+      auth: {
+        loginCta: 'Sign in / Sign up',
+        close: 'Close',
+        watchlistTitle: 'Sign in to watch prices',
+        watchlistBody: 'Watching products and price alerts need an account. Guests can still compare, browse Reels and explore markets.',
       },
       legal: {
         privacy: 'Privacy Policy',

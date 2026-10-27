@@ -81,9 +81,16 @@ test('rejects invalid credentials and short passwords', async () => {
   assert.equal(missing.status, 401);
 });
 
-test('requires a session for private API routes when auth is on', async () => {
-  const response = await fetch(`${baseUrl}/api/conversations`);
-  assert.equal(response.status, 401);
+test('keeps public routes open while account data asks for sign-in', async () => {
+  for (const path of ['/api/conversations', '/api/catalog', '/api/reels']) {
+    const response = await fetch(`${baseUrl}${path}`);
+    assert.equal(response.status, 200, `${path} should stay open to guests`);
+  }
+
+  for (const path of ['/api/watchlist', '/api/alerts', '/api/account/export']) {
+    const response = await fetch(`${baseUrl}${path}`);
+    assert.equal(response.status, 401, `${path} should require an account`);
+  }
 });
 
 test('merges the anonymous shopping profile into the new account', async () => {

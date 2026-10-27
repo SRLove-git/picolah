@@ -12,6 +12,7 @@ import {
   removeWatchlist,
 } from '../lib/api';
 import { formatMoney, relativeTime } from '../lib/format';
+import { useSession } from '../lib/session';
 import { PageHeader } from './PageHeader';
 import { PlatformBadge } from './PlatformBadge';
 import { ProductArt } from './ProductArt';
@@ -25,6 +26,7 @@ interface WatchlistViewProps {
 
 export function WatchlistView({ market, onOpenSidebar, notify }: WatchlistViewProps) {
   const { t, i18n } = useTranslation();
+  const { user, required, promptLogin } = useSession();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [unread, setUnread] = useState(0);
@@ -45,8 +47,8 @@ export function WatchlistView({ market, onOpenSidebar, notify }: WatchlistViewPr
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!(required && !user)) void load();
+  }, [load, required, user]);
 
   const remove = async (id: string) => {
     try {
@@ -63,6 +65,30 @@ export function WatchlistView({ market, onOpenSidebar, notify }: WatchlistViewPr
     setAlerts((current) => current.map((alert) => ({ ...alert, read: true })));
     setUnread(0);
   };
+
+  if (required && !user) {
+    return (
+      <section className="pc-page pc-watchlist-page" aria-label={t('watchlist.label')}>
+        <PageHeader
+          eyebrow="WATCHLIST"
+          title={t('watchlist.label')}
+          onOpenSidebar={onOpenSidebar}
+        />
+        <div className="pc-page-body pc-watchlist-body">
+          <div className="pc-guest-gate">
+            <span className="pc-guest-gate-icon">
+              <Bell size={26} />
+            </span>
+            <h2>{t('auth.watchlistTitle')}</h2>
+            <p>{t('auth.watchlistBody')}</p>
+            <button type="button" className="pc-guest-cta" onClick={() => promptLogin('watchlist')}>
+              {t('auth.loginCta')}
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="pc-page pc-watchlist-page" aria-label={t('watchlist.label')}>

@@ -154,3 +154,15 @@ export function requireAuth(request: Request, response: Response, next: NextFunc
   }
   response.status(401).json({ error: 'UNAUTHORIZED', message: '请先登录。' });
 }
+
+/**
+ * Always require a signed-in account, regardless of AUTH_REQUIRED. Browsing,
+ * chat and comparisons stay open to guests; only account-owned data uses this.
+ */
+export function requireAccount(request: Request, response: Response, next: NextFunction): void {
+  if (request.user) {
+    next();
+    return;
+  }
+  response.status(401).json({ error: 'AUTH_REQUIRED', message: '请先登录。' });
+}

@@ -23,6 +23,9 @@ interface SessionContextValue extends SessionState {
   register: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  loginPrompt: { reason: string } | null;
+  promptLogin: (reason?: string) => void;
+  closeLoginPrompt: () => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -31,6 +34,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SessionState>({ user: null, required: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loginPrompt, setLoginPrompt] = useState<{ reason: string } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -64,9 +68,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setState((current) => ({ ...current, user: null }));
   }, []);
 
+  const promptLogin = useCallback((reason = 'default') => {
+    setLoginPrompt({ reason });
+  }, []);
+
+  const closeLoginPrompt = useCallback(() => {
+    setLoginPrompt(null);
+  }, []);
+
   const value = useMemo<SessionContextValue>(
-    () => ({ ...state, loading, error, login, register, logout, refresh }),
-    [state, loading, error, login, register, logout, refresh],
+    () => ({
+      ...state,
+      loading,
+      error,
+      login,
+      register,
+      logout,
+      refresh,
+      loginPrompt,
+      promptLogin,
+      closeLoginPrompt,
+    }),
+    [state, loading, error, login, register, logout, refresh, loginPrompt, promptLogin, closeLoginPrompt],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

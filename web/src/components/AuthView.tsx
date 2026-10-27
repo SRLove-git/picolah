@@ -38,7 +38,12 @@ const COPY = {
   },
 } as const;
 
-export function AuthView() {
+interface AuthCardProps {
+  onSuccess?: () => void;
+  compact?: boolean;
+}
+
+export function AuthCard({ onSuccess, compact = false }: AuthCardProps) {
   const { i18n } = useTranslation();
   const { login, register } = useSession();
   const text = i18n.language.startsWith('zh') ? COPY.zh : COPY.en;
@@ -56,6 +61,7 @@ export function AuthView() {
     try {
       if (mode === 'login') await login(email, password);
       else await register(email, password, displayName || undefined);
+      onSuccess?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : text.failed);
     } finally {
@@ -64,91 +70,97 @@ export function AuthView() {
   };
 
   return (
-    <main className="pc-auth">
-      <div className="pc-auth-glow" aria-hidden="true" />
-      <div className="pc-auth-card">
-        <div className="pc-auth-mark">
-          <Capybara size={104} />
-        </div>
-        <p className="pc-eyebrow">{text.eyebrow}</p>
-        <h1>{text.title}</h1>
-        <p className="pc-auth-body">{text.body}</p>
+    <div className={`pc-auth-card ${compact ? 'is-compact' : ''}`}>
+      <div className="pc-auth-mark">
+        <Capybara size={compact ? 76 : 104} />
+      </div>
+      <p className="pc-eyebrow">{text.eyebrow}</p>
+      <h1>{text.title}</h1>
+      <p className="pc-auth-body">{text.body}</p>
 
-        <div className="pc-auth-tabs" role="tablist">
-          <button
-            type="button"
-            className={mode === 'login' ? 'is-active' : ''}
-            onClick={() => {
-              setMode('login');
-              setError(null);
-            }}
-          >
-            {text.login}
-          </button>
-          <button
-            type="button"
-            className={mode === 'register' ? 'is-active' : ''}
-            onClick={() => {
-              setMode('register');
-              setError(null);
-            }}
-          >
-            {text.register}
-          </button>
-        </div>
-
-        <form onSubmit={submit} className="pc-auth-form">
-          {mode === 'register' ? (
-            <label>
-              <span>{text.name}</span>
-              <input
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                autoComplete="nickname"
-                maxLength={60}
-              />
-            </label>
-          ) : null}
-          <label>
-            <span>{text.email}</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              placeholder="you@example.com"
-            />
-          </label>
-          <label>
-            <span>{text.password}</span>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder={text.passwordHint}
-            />
-          </label>
-          {error ? <p className="pc-auth-error">{error}</p> : null}
-          <button type="submit" className="pc-auth-submit" disabled={submitting}>
-            {submitting ? '…' : mode === 'login' ? text.submitLogin : text.submitRegister}
-          </button>
-        </form>
-
+      <div className="pc-auth-tabs" role="tablist">
         <button
           type="button"
-          className="pc-auth-switch"
+          className={mode === 'login' ? 'is-active' : ''}
           onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
+            setMode('login');
             setError(null);
           }}
         >
-          {mode === 'login' ? text.switchToRegister : text.switchToLogin}
+          {text.login}
+        </button>
+        <button
+          type="button"
+          className={mode === 'register' ? 'is-active' : ''}
+          onClick={() => {
+            setMode('register');
+            setError(null);
+          }}
+        >
+          {text.register}
         </button>
       </div>
+
+      <form onSubmit={submit} className="pc-auth-form">
+        {mode === 'register' ? (
+          <label>
+            <span>{text.name}</span>
+            <input
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              autoComplete="nickname"
+              maxLength={60}
+            />
+          </label>
+        ) : null}
+        <label>
+          <span>{text.email}</span>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
+        </label>
+        <label>
+          <span>{text.password}</span>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            placeholder={text.passwordHint}
+          />
+        </label>
+        {error ? <p className="pc-auth-error">{error}</p> : null}
+        <button type="submit" className="pc-auth-submit" disabled={submitting}>
+          {submitting ? '…' : mode === 'login' ? text.submitLogin : text.submitRegister}
+        </button>
+      </form>
+
+      <button
+        type="button"
+        className="pc-auth-switch"
+        onClick={() => {
+          setMode(mode === 'login' ? 'register' : 'login');
+          setError(null);
+        }}
+      >
+        {mode === 'login' ? text.switchToRegister : text.switchToLogin}
+      </button>
+    </div>
+  );
+}
+
+export function AuthView() {
+  return (
+    <main className="pc-auth">
+      <div className="pc-auth-glow" aria-hidden="true" />
+      <AuthCard />
     </main>
   );
 }

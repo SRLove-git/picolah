@@ -21,7 +21,7 @@ const PRICE_ICONS = { landed: Wallet, item: Sparkles, shipping: Globe2, history:
 /** Account controls live one level below the profile, with native keyboard-accessible disclosure rows. */
 export function AccountSettings({ market, priceMode, onMarketChange, onPriceModeChange, notify }: AccountSettingsProps) {
   const { t, i18n } = useTranslation();
-  const { user, logout, loading } = useSession();
+  const { user, logout, loading, promptLogin } = useSession();
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -138,7 +138,14 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
               </button>
             </div>
           </>
-        ) : <p className="pc-profile-note">{guestHint}</p>}
+        ) : (
+          <div className="pc-guest-inline">
+            <p className="pc-profile-note">{guestHint}</p>
+            <button type="button" className="pc-guest-cta" onClick={() => promptLogin('account')}>
+              {t('auth.loginCta')}
+            </button>
+          </div>
+        )}
       </details>
 
       <details className="pc-profile-card pc-profile-privacy pc-account-setting">
@@ -153,6 +160,9 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
           ) : (
             <>
               <p className="pc-profile-note">{privacyGuestHint}</p>
+              <button type="button" className="pc-outline-button" onClick={() => promptLogin('account')}>
+                {t('auth.loginCta')}
+              </button>
               <button type="button" className="pc-outline-button" disabled><Download size={14} />{t('account.export')}</button>
             </>
           )}

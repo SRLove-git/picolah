@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -15,7 +15,7 @@ import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
 import { IngestDrawer } from './components/IngestDrawer';
-import { AuthView } from './components/AuthView';
+import { LoginDialog } from './components/LoginDialog';
 import { useSession } from './lib/session';
 
 const ReelsView = lazy(() => import('./components/ReelsView').then((module) => ({ default: module.ReelsView })));
@@ -76,29 +76,12 @@ function initialView(): AppView {
 }
 
 export default function App() {
-  return (
-    <SessionGate>
-      <AppWorkspace />
-    </SessionGate>
-  );
-}
-
-function SessionGate({ children }: { children: ReactNode }) {
-  const { user, required, loading } = useSession();
-
-  if (loading) {
-    return (
-      <div className="pc-auth-loading" role="status">
-        <span>pico…</span>
-      </div>
-    );
-  }
-  if (required && !user) return <AuthView />;
-  return <>{children}</>;
+  return <AppWorkspace />;
 }
 
 function AppWorkspace() {
   const { t, i18n } = useTranslation();
+  const { user, required, promptLogin } = useSession();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -293,6 +276,10 @@ function AppWorkspace() {
   const navigate = useCallback(
     (next: AppView) => {
       setSidebarOpen(false);
+      if (next === 'watchlist' && required && !user) {
+        promptLogin('watchlist');
+        return;
+      }
       if (next === 'home') {
         if (view === 'home' && !messages.length) {
           if (window.matchMedia('(min-width: 821px)').matches) composerRef.current?.focus();
@@ -303,7 +290,7 @@ function AppWorkspace() {
       }
       setView(next);
     },
-    [handleNewChat, messages.length, view],
+    [handleNewChat, messages.length, promptLogin, required, user, view],
   );
 
   const loadConversation = useCallback(
@@ -691,6 +678,8 @@ function AppWorkspace() {
         onClose={() => setGatewayOpen(false)}
         onRefresh={refreshConfig}
       />
+
+      <LoginDialog />
     </div>
   );
 }

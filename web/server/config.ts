@@ -11,7 +11,10 @@ export const config = {
   port: num(process.env.PORT, 8787),
   host: process.env.HOST || '127.0.0.1',
   isProduction: production,
-  /** Production is closed by default; local development stays open for demos. */
+  /**
+   * Guests can always browse, chat and compare. When true, account-owned data
+   * (watchlist, price alerts, account settings) asks the visitor to sign in.
+   */
   authRequired: process.env.AUTH_REQUIRED !== undefined
     ? /^(1|true|yes)$/i.test(process.env.AUTH_REQUIRED)
     : production,

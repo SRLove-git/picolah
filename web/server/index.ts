@@ -15,7 +15,7 @@ import { authRouter } from './routes/auth.ts';
 import { watchlistRouter, alertsRouter } from './routes/watchlist.ts';
 import { outRouter } from './routes/out.ts';
 import { accountRouter } from './routes/account.ts';
-import { attachUser, requireAuth } from './auth.ts';
+import { attachUser, requireAccount, requireAuth } from './auth.ts';
 import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
 await seedDatabase(false);
@@ -115,14 +115,16 @@ app.use('/api', (req, res, next) => {
 app.use('/api', attachUser);
 app.use('/api/auth', authRouter);
 app.use('/api/config', configRouter);
-app.use('/api/chat', requireAuth, chatRouter);
-app.use('/api/conversations', requireAuth, conversationsRouter);
-app.use('/api/catalog', requireAuth, catalogRouter);
-app.use('/api/profile', requireAuth, profileRouter);
-app.use('/api/reels', requireAuth, reelsRouter);
+// Public workspace: guests can browse, chat and compare. Account-owned data
+// (watchlist, alerts, account settings) asks them to sign in instead.
+app.use('/api/chat', chatRouter);
+app.use('/api/conversations', conversationsRouter);
+app.use('/api/catalog', catalogRouter);
+app.use('/api/profile', profileRouter);
+app.use('/api/reels', reelsRouter);
 app.use('/api/watchlist', requireAuth, watchlistRouter);
 app.use('/api/alerts', requireAuth, alertsRouter);
-app.use('/api/account', requireAuth, accountRouter);
+app.use('/api/account', requireAccount, accountRouter);
 app.use('/api/v1/ingest', ingestRouter);
 app.use('/go', attachUser, outRouter);
 

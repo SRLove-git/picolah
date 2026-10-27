@@ -383,7 +383,7 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 | `INGEST_API_KEY` | `pcl_dev_crawler_key` | 爬虫写入密钥，生产必须更换 |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | 允许跨域的来源，逗号分隔 |
 | `METRICS_TOKEN` | 空 | 设置后 `/metrics` 需要 `Authorization: Bearer <token>`；生产未设置则返回 404 |
-| `AUTH_REQUIRED` | 开发 `false`，生产 `true` | 是否强制登录；生产缺失会直接报错，避免裸奔 |
+| `AUTH_REQUIRED` | 开发 `false`，生产 `true` | 游客始终可浏览、比价、对话；为 `true` 时关注清单、降价提醒、账号数据（导出/注销）需要登录（弹窗），为 `false` 时这些能力对匿名访客开放 |
 | `SESSION_TTL_DAYS` | `30` | 会话有效期 |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | 登录/注册限流窗口 |
 | `RATE_LIMIT_MAX` | `10` | 每窗口最多登录/注册请求数 |
@@ -415,7 +415,7 @@ picolah.com 是作为额外 vhost 接入的；证书由主机上的 acme.sh 通�
 
 ## 安全与边界
 
-- 生产默认开启账号体系（`AUTH_REQUIRED=true`），会话使用 HttpOnly Cookie；本地开发为方便演示默认关闭。正式上线还应把数据源网关限制到管理员。
+- 游客始终可以浏览、比价、对话和看测评；生产默认 `AUTH_REQUIRED=true`，关注清单、降价提醒和账号数据（导出/注销）会弹登录窗口，登录会话使用 HttpOnly Cookie。本地开发为方便演示默认关闭（`false`），匿名也能用关注。正式上线还应把数据源网关限制到管理员。
 - 生产环境务必更换 `INGEST_API_KEY` 和 `METRICS_TOKEN`；建议再加 IP allowlist、请求签名、速率限制和审计日志。
 - 上传图片会发送给配置的视觉模型，并保存在数据库的消息元数据中；生产环境应改用对象存储、签名 URL 和明确的保留 / 删除策略。
 - 演示报价、店铺名和平台链接都是生成数据，链接指向平台搜索页。真实上线时应只展示爬虫回传的真实商品 URL。
