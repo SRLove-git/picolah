@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { searchCatalog, type CatalogProduct } from '../lib/api';
 import { PageHeader } from './PageHeader';
-import { ProductArt } from './ProductArt';
 
 interface SearchViewProps {
   market: CountryCode;
@@ -95,39 +94,40 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
           <span>
             {loading ? t('search.loading') : t('search.results', { count: total })}
           </span>
-          <span className="pc-eyebrow">{market}</span>
         </div>
 
         {failed ? (
           <div className="pc-empty-card">
-            <Sparkles size={22} />
             <p>{t('search.error')}</p>
           </div>
         ) : !loading && products.length === 0 ? (
           <div className="pc-empty-card">
-            <Sparkles size={22} />
             <p>{t('search.empty')}</p>
           </div>
         ) : (
-          <div className="pc-search-grid">
+          <ul className="pc-catalog-list">
             {products.map((product) => (
-              <article key={product.id} className="pc-search-card">
-                <ProductArt visual={product.visual} size={92} />
-                <div className="pc-search-card-copy">
-                  <span className="pc-eyebrow">{product.category}</span>
-                  <h2>{product.name}</h2>
-                  <p>{product.specs}</p>
-                </div>
+              <li key={product.id} className="pc-catalog-row">
+                <span className="pc-catalog-initial" aria-hidden="true">
+                  {product.brand.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="pc-catalog-copy">
+                  <strong>{product.name}</strong>
+                  <small>
+                    {product.brand} · {product.category}
+                    {product.specs ? ` · ${product.specs}` : ''}
+                  </small>
+                </span>
                 <button
                   type="button"
-                  className="pc-search-compare"
+                  className="pc-catalog-action"
                   onClick={() => onAsk(product.name)}
                 >
                   {t('search.compare')}
                 </button>
-              </article>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </section>

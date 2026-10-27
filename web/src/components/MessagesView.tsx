@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, MessageCircle, Plus, Search, Sparkles, X } from 'lucide-react';
+import { ChevronRight, MessageCircle, Plus, Search, X } from 'lucide-react';
 import type { AppConfig, ConversationSummary } from '../../shared/types';
-import { MARKETS } from '../../shared/types';
 import { dayGroup, relativeTime, stripMarkdown, truncate } from '../lib/format';
-import { CountryFlag } from './CountryFlag';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
 
@@ -54,7 +52,7 @@ export function MessagesView({
   return (
     <section className="pc-page pc-messages-page" aria-label={t('messages.label')}>
       <PageHeader
-        eyebrow="MESSAGES"
+        eyebrow="PICOLAH"
         title={t('messages.label')}
         description={t('messages.description')}
         onOpenSidebar={onOpenSidebar}
@@ -103,7 +101,6 @@ export function MessagesView({
                     {t(group.label === '今天' ? 'messages.today' : group.label === '昨天' ? 'messages.yesterday' : 'messages.earlier')}
                   </div>
                   {group.items.map((conversation) => {
-                    const marketInfo = MARKETS[conversation.market] || MARKETS.SG;
                     const preview = stripMarkdown(conversation.preview || t('messages.noReply'));
                     return (
                       <button
@@ -122,11 +119,6 @@ export function MessagesView({
                           </span>
                           <span className="pc-msg-preview">{truncate(preview, 72)}</span>
                           <span className="pc-msg-meta">
-                            <CountryFlag code={conversation.market} width={13} />
-                            {i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh}
-                            <i />
-                            {marketInfo.currency}
-                            <i />
                             {t('messages.comparison')}
                           </span>
                         </span>
@@ -155,29 +147,6 @@ export function MessagesView({
         </div>
 
         <aside className="pc-msg-aside">
-          <div className="pc-msg-new-card">
-            <div className="pc-msg-new-art">
-              <Capybara size={112} />
-            </div>
-            <span className="pc-eyebrow">NEW PICO</span>
-            <h3>{t('messages.promptTitle')}</h3>
-            <p>{t('messages.promptBody')}</p>
-            <button type="button" className="pc-primary-button is-wide" onClick={onNew}>
-              <Plus size={15} />
-              {t('messages.launch')}
-            </button>
-            <div className="pc-msg-tips">
-              <span>
-                <Sparkles size={12} />
-                {t('messages.media')}
-              </span>
-              <span>
-                <Sparkles size={12} />
-                {t('messages.calculate')}
-              </span>
-            </div>
-          </div>
-
           <button type="button" className="pc-msg-source-card" onClick={onOpenGateway}>
             <span className={`pc-source-dot ${config ? 'is-live' : ''}`} />
             <span>

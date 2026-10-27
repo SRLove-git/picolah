@@ -108,14 +108,10 @@ export function HomeView({
 
           <Wordmark size={64} className="pc-hero-wordmark" />
           <p className="pc-hero-tagline">
-            {t('home.taglineBefore')}<span>PICO</span>{t('home.taglineAfter')}
+            {t('home.taglineBefore')}<span>{t('home.taglineWord')}</span>{t('home.taglineAfter')}
           </p>
 
           <div className="pc-home-prompt">
-            <div className="pc-home-question">
-              <Sparkles size={13} />
-              {t('home.question')}
-            </div>
             <PromptComposer
               variant="hero"
               market={market}

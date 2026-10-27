@@ -11,6 +11,7 @@ import type {
 } from '../shared/types';
 import { COUNTRY_CODES } from '../shared/types';
 import { getConfig, getConversation, getConversations, streamChat } from './lib/api';
+import { languageForMarket } from './lib/market-language';
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
@@ -505,7 +506,11 @@ function AppWorkspace() {
   const handleMarketChange = useCallback((next: CountryCode) => {
     setMarket(next);
     writeStorage(MARKET_KEY, next);
-  }, []);
+    const nextLanguage = languageForMarket(next, i18n.language);
+    if (!i18n.language.startsWith(nextLanguage)) {
+      void i18n.changeLanguage(nextLanguage);
+    }
+  }, [i18n]);
 
   const handlePriceModeChange = useCallback((next: PriceMode) => {
     setPriceMode(next);
@@ -540,6 +545,8 @@ function AppWorkspace() {
       />
       <AppSidebar
         view={view}
+        market={market}
+        onMarketChange={handleMarketChange}
         open={sidebarOpen}
         onNavigate={navigate}
         onClose={() => setSidebarOpen(false)}

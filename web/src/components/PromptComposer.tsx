@@ -12,7 +12,7 @@ import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { MARKETS } from '../../shared/types';
 import { prepareImage } from '../lib/image';
 import { getComposerInputHeight, shouldSubmitComposerKey } from '../lib/composer-input';
-import { MarketPicker, PriceModePicker } from './Controls';
+import { PriceModePicker } from './Controls';
 
 interface PromptComposerProps {
   market: CountryCode;
@@ -358,11 +358,6 @@ export function PromptComposer({
             >
               {imageBusy ? <Loader2 size={19} className="pc-spin" /> : <ImagePlus size={20} />}
             </button>
-            <MarketPicker market={market} onChange={onMarketChange} compact />
-            <PriceModePicker priceMode={priceMode} onChange={onPriceModeChange} compact />
-          </div>
-
-          <div className="pc-composer-actions">
             <button
               type="button"
               className={`pc-mic ${listening ? 'is-listening' : ''}`}
@@ -374,6 +369,10 @@ export function PromptComposer({
             >
               <Mic size={18} />
             </button>
+            <PriceModePicker priceMode={priceMode} onChange={onPriceModeChange} compact />
+          </div>
+
+          <div className="pc-composer-actions">
             {busy ? (
               <button
                 type="button"

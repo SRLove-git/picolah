@@ -23,6 +23,13 @@ export const config = {
   ingestKey: process.env.INGEST_API_KEY || 'pcl_dev_crawler_key',
   /** When set, /metrics requires `Authorization: Bearer <token>`. */
   metricsToken: process.env.METRICS_TOKEN || '',
+  mail: {
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    from: process.env.MAIL_FROM || 'Picolah <no-reply@picolah.com>',
+    secret: process.env.MAIL_CODE_SECRET || process.env.SESSION_SECRET || 'pcl_dev_mail_secret',
+    /** Without a provider the API returns the code so local/test flows work. */
+    exposeCodes: !production,
+  },
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
     .split(',')
     .map((origin) => origin.trim())

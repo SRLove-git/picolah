@@ -1,11 +1,16 @@
-import { Bell, Clapperboard, Fingerprint, Home, Languages, PawPrint, Search, Send, X } from 'lucide-react';
+import { Fingerprint, Footprints, Home, Languages, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { CountryCode } from '../../shared/types';
+import { useSession } from '../lib/session';
+import { MarketPicker } from './Controls';
 import { BrandLockup, Capybara } from './PicolahMark';
 
 export type AppView = 'home' | 'capybara' | 'search' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
+  market: CountryCode;
+  onMarketChange: (market: CountryCode) => void;
   open: boolean;
   onNavigate: (view: AppView) => void;
   onClose: () => void;
@@ -13,22 +18,23 @@ interface AppSidebarProps {
 
 const NAV = [
   { key: 'home' as const, labelKey: 'nav.home', Icon: Home },
-  { key: 'capybara' as const, labelKey: 'nav.capybara', Icon: PawPrint },
   { key: 'search' as const, labelKey: 'nav.search', Icon: Search },
-  { key: 'watchlist' as const, labelKey: 'nav.watchlist', Icon: Bell },
-  { key: 'reels' as const, labelKey: 'nav.reels', Icon: Clapperboard },
-  { key: 'profile' as const, labelKey: 'nav.profile', Icon: Fingerprint },
-  { key: 'messages' as const, labelKey: 'nav.messages', Icon: Send },
+  { key: 'messages' as const, labelKey: 'nav.messages', Icon: Footprints },
+  { key: 'capybara' as const, labelKey: 'nav.capybara', Icon: Fingerprint },
 ];
 
 export function AppSidebar({
   view,
+  market,
+  onMarketChange,
   open,
   onNavigate,
   onClose,
 }: AppSidebarProps) {
   const { t, i18n } = useTranslation();
+  const { user, promptLogin } = useSession();
   const activeKey = view === 'chat' ? 'messages' : view;
+  const accountLabel = user ? t('nav.account') : t('auth.loginCta');
 
   function toggleLanguage() {
     void i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en');
@@ -85,6 +91,9 @@ export function AppSidebar({
             {t('legal.terms')}
           </button>
         </div>
+        <div className="pc-side-market">
+          <MarketPicker market={market} onChange={onMarketChange} compact direction="up" tone="ghost" />
+        </div>
         <button
           type="button"
           className="pc-language-toggle"
@@ -98,17 +107,20 @@ export function AppSidebar({
         <button
           type="button"
           className={`pc-account-card ${view === 'account' ? 'is-active' : ''}`}
-          onClick={() => onNavigate('account')}
+          onClick={() => {
+            if (user) onNavigate('account');
+            else promptLogin('account');
+          }}
           aria-current={view === 'account' ? 'page' : undefined}
-          aria-label={t('nav.account')}
-          data-tooltip={t('nav.account')}
+          aria-label={accountLabel}
+          data-tooltip={accountLabel}
         >
           <span className="pc-account-avatar">
             <Capybara variant="face" size={34} />
             <i />
           </span>
           <span className="pc-account-copy">
-            <strong>{t('nav.account')}</strong>
+            <strong>{accountLabel}</strong>
           </span>
         </button>
       </footer>

@@ -240,10 +240,16 @@ test('Reels HTTP merges an anonymous profile at registration and uses the signed
   await record(anonymousId, event({ sessionId, type: 'like' }));
   const email = `reels-${randomUUID()}@example.com`;
   const credentials = { email, password: 'correct horse 9', displayName: 'Reels viewer' };
+  const codeResponse = await fetch(`${baseUrl}/api/auth/email-code`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, purpose: 'register' }),
+  });
+  const { devCode } = (await codeResponse.json()) as { devCode?: string };
   const registered = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { ...headers(anonymousId), 'content-type': 'application/json' },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({ ...credentials, code: devCode }),
   });
   assert.equal(registered.status, 201);
   const account = await registered.json() as { user: { id: string }; mergedEvents: number };

@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Lock, ShoppingBag, Sparkles, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Lock, ShoppingBag, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CAPY_SLOTS, type CapySlot } from '../../shared/capybara';
 import { formatMoney, relativeTime } from '../lib/format';
@@ -94,22 +94,11 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
               <span style={{ width: `${Math.round(view.progress * 100)}%` }} />
             </div>
 
-            <div className="pc-capy-meter-meta">
-              <span>{t('capybara.xp', { into: view.into, span: view.span })}</span>
-              <span>
-                {view.maxed
-                  ? t('capybara.maxed')
-                  : t('capybara.toNext', { xp: Math.max(0, view.nextLevelAt - view.xp) })}
-              </span>
-            </div>
-
-            {view.nextStage && (
-              <p className="pc-capy-next-stage">
-                <Sparkles size={14} strokeWidth={2.2} />
-                {t('capybara.nextStage', {
-                  stage: english ? view.nextStage.nameEn : view.nextStage.nameZh,
-                })}
-              </p>
+            {view.maxed ? null : (
+              <div className="pc-capy-meter-meta">
+                <span>{t('capybara.xp', { into: view.into, span: view.span })}</span>
+                <span>{t('capybara.toNext', { xp: Math.max(0, view.nextLevelAt - view.xp) })}</span>
+              </div>
             )}
 
             <div className="pc-capy-quickstats">
@@ -127,12 +116,10 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
               </span>
             </div>
 
+            {view.worn.length > 0 && (
             <div className="pc-capy-wearing">
               <span className="pc-eyebrow">{t('capybara.equippedLabel')}</span>
-              {view.worn.length === 0 ? (
-                <p className="pc-capy-wearing-empty">{t('capybara.wardrobeHint')}</p>
-              ) : (
-                <ul>
+              <ul>
                   {view.worn.map((accessory) => (
                     <li key={accessory.id}>
                       <button
@@ -146,10 +133,10 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                         <span aria-hidden="true">×</span>
                       </button>
                     </li>
-                  ))}
-                </ul>
-              )}
+                ))}
+              </ul>
             </div>
+            )}
           </div>
         </section>
 
@@ -158,7 +145,6 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
             <header className="pc-capy-panel-head">
               <div>
                 <h2>{t('capybara.wardrobe')}</h2>
-                <p>{t('capybara.wardrobeHint')}</p>
               </div>
               <span className="pc-capy-panel-count">
                 <Check size={14} strokeWidth={2.4} />
@@ -219,7 +205,6 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
             <header className="pc-capy-panel-head">
               <div>
                 <h2>{t('capybara.purchases')}</h2>
-                <p>{t('capybara.purchasesHint')}</p>
               </div>
               <span className="pc-capy-panel-count">
                 <ShoppingBag size={14} strokeWidth={2.2} />
@@ -278,12 +263,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
             </span>
           </header>
 
-          {activeRows.length === 0 ? (
-            <div className="pc-capy-empty">
-              <Sparkles size={28} strokeWidth={1.6} />
-              <p>{t('capybara.howBody')}</p>
-            </div>
-          ) : (
+          {activeRows.length > 0 && (
             <ul className="pc-capy-xp-list">
               {activeRows.map((row) => (
                 <li key={row.source}>
@@ -296,18 +276,6 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
               ))}
             </ul>
           )}
-
-          <footer className="pc-capy-how">
-            <strong>{t('capybara.howTo')}</strong>
-            <p>{t('capybara.howBody')}</p>
-            <div className="pc-capy-how-chips">
-              {view.xpRows.slice(0, 4).map((row) => (
-                <span key={row.source}>
-                  {english ? row.labelEn : row.labelZh} <b>+{row.unit}</b>
-                </span>
-              ))}
-            </div>
-          </footer>
         </section>
       </div>
     </div>

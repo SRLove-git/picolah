@@ -20,7 +20,7 @@ interface SessionContextValue extends SessionState {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName?: string) => Promise<void>;
+  register: (email: string, password: string, code: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   loginPrompt: { reason: string } | null;
@@ -57,8 +57,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
-  const register = useCallback(async (email: string, password: string, displayName?: string) => {
-    const next = await registerRequest(email, password, displayName);
+  const register = useCallback(async (email: string, password: string, code: string, displayName?: string) => {
+    const next = await registerRequest(email, password, code, displayName);
     setState(next);
     setError(null);
   }, []);

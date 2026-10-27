@@ -18,7 +18,7 @@ export function Wordmark({
       className={`pc-wordmark ${className}`}
       style={{ fontSize: size }}
       role="img"
-      aria-label="PICOLAH!"
+      aria-label="PICOLAH"
     >
       {letters.map((letter, index) => (
         <span
@@ -32,12 +32,6 @@ export function Wordmark({
           {letter}
         </span>
       ))}
-      <span
-        className="pc-wordmark-letter pc-wordmark-bang"
-        style={{ color: tone === 'ink' ? 'currentColor' : '#ef4f7e' }}
-      >
-        !
-      </span>
     </span>
   );
 }

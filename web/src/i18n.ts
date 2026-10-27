@@ -4,11 +4,11 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   zh: {
     translation: {
-      app: { title: 'Picolah · 购物之前 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
+      app: { title: 'Picolah · 全网低价 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
       language: { switch: 'Switch to English', short: 'EN' },
-      nav: { main: '主导航', home: '首页', capybara: '水豚', search: '发现', watchlist: '关注', reels: '短视频', profile: '画像', messages: '消息', account: '账号', close: '关闭导航' },
+      nav: { main: '主导航', home: '首页', capybara: '成长', search: '发现', watchlist: '关注', reels: '短视频', profile: '画像', messages: '足迹', account: '账号', close: '关闭导航' },
       search: {
-        label: '商品发现', title: '先逛逛，再 pico', body: '按品类浏览目录，或直接搜索商品和品牌。点“去比价”就会带着这个商品开始一次比价。',
+        label: '发现', title: '发现', body: '',
         placeholder: '搜索商品、品牌或型号', clear: '清空搜索', categories: '品类', all: '全部',
         results: '{{count}} 件商品', loading: '正在搜索…', empty: '没有找到匹配的商品，换个词或品类试试。',
         error: '商品目录暂时加载失败，请稍后再试。', compare: '去比价',
@@ -16,13 +16,13 @@ const resources = {
       home: {
         label: '首页', openNav: '打开导航', mascotAction: '和 Picolah 互动并开始比价',
         mascotHello: '先 pico，再买。', mascotReady: '告诉我想买什么吧。',
-        taglineBefore: '购物之前，', taglineAfter: ' 一下', question: '今天想找什么好东西？',
+        taglineBefore: '全网低价，', taglineWord: 'PICO', taglineAfter: ' 一下。', question: '今天想找什么好东西？',
       },
       composer: {
-        homePlaceholder: '购物之前pico一下', followupPlaceholder: '继续问{{market}}的价格，或上传商品图…',
+        homePlaceholder: '想买什么？', followupPlaceholder: '继续问{{market}}的价格，或上传商品图…',
         inputLabel: '输入比价问题', imageReady: '图片已就绪', removeImage: '移除图片',
         upload: '上传图片搜同款', image: '图片', listening: '正在听你说… 说完会自动停', cancel: '取消',
-        voice: '语音输入', stopVoice: '停止语音输入', stop: '停止', send: 'pico 一下',
+        voice: '语音输入', stopVoice: '停止语音输入', stop: '停止', send: 'PICO',
         sendTitle: '发送 · Enter', stopGeneration: '停止生成', imageAlt: '待发送的商品图片', imageQuery: '帮我看看这张图里的商品，推荐一下',
         localSummary: '本地比价摘要', imageError: '图片处理失败，请换一张试试。',
         voiceUnsupported: '当前浏览器不支持语音输入，可以试试 Chrome 或 Edge。',
@@ -39,7 +39,7 @@ const resources = {
         searching: '正在搜索商品信息', loading: '正在加载对话', shipping: '运费', coupon: '券后价', trend: '30 日走势',
       },
       messages: {
-        label: '消息', description: '每一段对话，都是一次认真比过的价。', search: '搜索对话', clear: '清除搜索',
+        label: '足迹', description: '', search: '搜索对话', clear: '清除搜索',
         new: '新比价', comparison: '价格库比价', noReply: '还没有回复', noMatch: '没有找到这段对话',
         empty: '还没有比价记录', tryAgain: '换个关键词试试，或者直接开始一段新的比价。',
         emptyHint: '说说想买什么，Picolah 会帮你把六个市场的价格摊开。', start: '开始比价',
@@ -87,8 +87,7 @@ const resources = {
         reached: '已到目标价', watching: '正在关注', remove: '取消关注', add: '关注',
       },
       capybara: {
-        label: '水豚伙伴', eyebrow: 'CAPYBARA', title: '陪 Picolah 一起长大的水豚',
-        body: '比价、收藏、记录买下的商品都会让它长大。你买过的东西，它会挑喜欢的穿戴在身上。',
+        label: '成长', eyebrow: 'GROWTH', title: '成长', body: '',
         stage: '成长阶段', level: 'Lv.{{level}}', nextStage: '下一阶段：{{stage}}', maxed: '已经是传奇水豚',
         xp: '{{into}} / {{span}} XP', toNext: '再 {{xp}} XP 升级',
         days: '一起 {{count}} 天', dayOne: '今天刚认识',
@@ -98,7 +97,7 @@ const resources = {
         equip: '戴上', unequip: '摘下', locked: '未解锁', owned: '已记录', equippedLabel: '已戴上',
         markPurchased: '记下这件', purchaseFailed: '记录失败，请稍后重试', toggleFailed: '穿戴保存失败，请稍后重试',
         purchases: '买过的商品', purchasesHint: '记下真正买下的东西，水豚会把它变成随身的小配饰。',
-        purchasesEmpty: '还没有记录商品。去比价卡或关注列表点“记下这件”，就能放进它的档案。',
+        purchasesEmpty: '还没有记录商品。',
         price: '入手价', recorded: '记录于', remove: '移出档案', removeFailed: '移除失败，请稍后重试',
         growth: '成长记录', growthHint: '每一个和购物有关的小动作，都会变成它的经验值。', growthTotal: '共 {{xp}} XP',
         howTo: '怎么长大', howBody: '比价、打开报价、收藏、记录购买，还有刷短视频和互动。',
@@ -141,11 +140,11 @@ const resources = {
   },
   en: {
     translation: {
-      app: { title: 'Picolah · Pico before you buy', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
+      app: { title: 'Picolah · Price Lower, PiCO Checker', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
       language: { switch: '切换为中文', short: '中' },
-      nav: { main: 'Main navigation', home: 'Home', capybara: 'Capy', search: 'Discover', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Messages', account: 'Account', close: 'Close navigation' },
+      nav: { main: 'Main navigation', home: 'Home', capybara: 'Growth', search: 'Discover', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Trail', account: 'Account', close: 'Close navigation' },
       search: {
-        label: 'Product discovery', title: 'Browse first, pico next', body: 'Explore the catalog by category, or search for a product or brand. “Compare” starts a price comparison with that product.',
+        label: 'Discover', title: 'Discover', body: '',
         placeholder: 'Search products, brands or models', clear: 'Clear search', categories: 'Categories', all: 'All',
         results: '{{count}} products', loading: 'Searching…', empty: 'No matching products. Try another word or category.',
         error: 'The catalog could not load. Please try again.', compare: 'Compare',
@@ -153,13 +152,13 @@ const resources = {
       home: {
         label: 'Home', openNav: 'Open navigation', mascotAction: 'Interact with Picolah and start comparing',
         mascotHello: 'Pico before you buy.', mascotReady: 'Tell me what you want to buy.',
-        taglineBefore: 'Before you shop, ', taglineAfter: '', question: 'What are you looking for today?',
+        taglineBefore: 'Price Lower, ', taglineWord: 'PiCO', taglineAfter: ' Checker.', question: 'What are you looking for today?',
       },
       composer: {
-        homePlaceholder: 'Pico before you buy', followupPlaceholder: 'Ask about prices in {{market}}, or upload a product image…',
+        homePlaceholder: 'What do you want to buy?', followupPlaceholder: 'Ask about prices in {{market}}, or upload a product image…',
         inputLabel: 'Enter a price comparison question', imageReady: 'Image ready', removeImage: 'Remove image',
         upload: 'Upload an image to find a match', image: 'Image', listening: 'Listening… it will stop automatically', cancel: 'Cancel',
-        voice: 'Voice input', stopVoice: 'Stop voice input', stop: 'Stop', send: 'Pico it',
+        voice: 'Voice input', stopVoice: 'Stop voice input', stop: 'Stop', send: 'PICO',
         sendTitle: 'Send · Enter', stopGeneration: 'Stop generating', imageAlt: 'Product image ready to send', imageQuery: 'Identify this product and recommend the best offer',
         localSummary: 'Local price summary', imageError: 'Could not process the image. Please try another one.',
         voiceUnsupported: 'Voice input is not supported in this browser. Try Chrome or Edge.',
@@ -176,7 +175,7 @@ const resources = {
         searching: 'Searching for product information', loading: 'Loading conversation', shipping: 'Shipping', coupon: 'After coupon', trend: '30-day trend',
       },
       messages: {
-        label: 'Messages', description: 'Every conversation is a carefully checked comparison.', search: 'Search conversations', clear: 'Clear search',
+        label: 'Trail', description: '', search: 'Search conversations', clear: 'Clear search',
         new: 'New comparison', comparison: 'Price comparison', noReply: 'No reply yet', noMatch: 'No conversation found',
         empty: 'No comparisons yet', tryAgain: 'Try another keyword or start a new comparison.',
         emptyHint: 'Tell Picolah what you want and compare prices across six markets.', start: 'Start comparing',
@@ -224,8 +223,7 @@ const resources = {
         reached: 'Target reached', watching: 'Watching', remove: 'Remove', add: 'Watch',
       },
       capybara: {
-        label: 'Capy companion', eyebrow: 'CAPYBARA', title: 'A capybara that grows with you',
-        body: 'Every comparison, save and purchase makes it grow. Things you buy become little accessories it actually wears.',
+        label: 'Growth', eyebrow: 'GROWTH', title: 'Growth', body: '',
         stage: 'Stage', level: 'Lv.{{level}}', nextStage: 'Next stage: {{stage}}', maxed: 'Fully grown legend',
         xp: '{{into}} / {{span}} XP', toNext: '{{xp}} XP to the next level',
         days: '{{count}} days together', dayOne: 'Met today',
@@ -235,7 +233,7 @@ const resources = {
         equip: 'Wear', unequip: 'Take off', locked: 'Locked', owned: 'Recorded', equippedLabel: 'Wearing',
         markPurchased: 'I bought this', purchaseFailed: 'Could not record it. Try again.', toggleFailed: 'Could not save the outfit. Try again.',
         purchases: 'Purchased items', purchasesHint: 'Note what you actually bought and your capy turns it into a tiny accessory.',
-        purchasesEmpty: 'Nothing recorded yet. Use “I bought this” on a comparison or watchlist card.',
+        purchasesEmpty: 'Nothing recorded yet.',
         price: 'Paid', recorded: 'Recorded', remove: 'Remove', removeFailed: 'Could not remove it. Try again.',
         growth: 'Growth log', growthHint: 'Every small shopping action becomes experience.', growthTotal: '{{xp}} XP total',
         howTo: 'How it grows', howBody: 'Compare, open offers, save to the watchlist, record purchases, watch and react to Reels.',

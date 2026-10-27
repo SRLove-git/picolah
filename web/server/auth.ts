@@ -69,6 +69,18 @@ export async function createUser(input: { email: string; passwordHash: string; d
   return { id, email: normalizeEmail(input.email), displayName: input.displayName };
 }
 
+export async function updatePassword(userId: string, passwordHash: string): Promise<void> {
+  await db.run('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?', [
+    passwordHash,
+    new Date().toISOString(),
+    userId,
+  ]);
+}
+
+export async function revokeSessions(userId: string): Promise<void> {
+  await db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
+}
+
 function tokenHash(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }

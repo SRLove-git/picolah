@@ -27,11 +27,23 @@ function cookieFrom(response: Response): string {
   return cookie.split(';')[0];
 }
 
+async function requestCode(email: string, purpose: 'register' | 'reset' = 'register') {
+  const response = await fetch(`${baseUrl}/api/auth/email-code`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, purpose }),
+  });
+  if (response.status !== 200) return { response, code: '' };
+  const body = (await response.json()) as { devCode?: string };
+  return { response, code: body.devCode || '' };
+}
+
 async function register(email: string, password = 'correct horse 9') {
+  const { code } = await requestCode(email, 'register');
   return fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName: 'Test Pico' }),
+    body: JSON.stringify({ email, password, code: code || '000000', displayName: 'Test Pico' }),
   });
 }
 
@@ -105,10 +117,11 @@ test('merges the anonymous shopping profile into the new account', async () => {
   });
 
   const email = `merge-${Date.now()}@example.com`;
+  const { code } = await requestCode(email, 'register');
   const created = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-picolah-user': anonymous },
-    body: JSON.stringify({ email, password: 'correct horse 9', displayName: 'Merged Pico' }),
+    body: JSON.stringify({ email, password: 'correct horse 9', code, displayName: 'Merged Pico' }),
   });
   assert.equal(created.status, 201);
   const body = (await created.json()) as { mergedEvents: number; user: { id: string } };
@@ -151,4 +164,40 @@ test('exports and deletes the signed-in account with password confirmation', asy
 
   const me = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
   assert.equal(((await me.json()) as { user: null }).user, null);
+});
+
+test('resets a forgotten password with an emailed code', async () => {
+  const email = `reset-${Date.now()}@example.com`;
+  const created = await register(email, 'correct horse 9');
+  assert.equal(created.status, 201);
+
+  const forgot = await fetch(`${baseUrl}/api/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  assert.equal(forgot.status, 200);
+  const forgotBody = (await forgot.json()) as { devCode?: string };
+  assert.ok(forgotBody.devCode, 'expected a dev reset code');
+
+  const reset = await fetch(`${baseUrl}/api/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, code: forgotBody.devCode, password: 'new correct 9' }),
+  });
+  assert.equal(reset.status, 200);
+
+  const login = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: 'new correct 9' }),
+  });
+  assert.equal(login.status, 200);
+
+  const stale = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: 'correct horse 9' }),
+  });
+  assert.equal(stale.status, 401);
 });

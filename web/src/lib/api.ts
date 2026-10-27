@@ -76,15 +76,62 @@ export async function login(email: string, password: string): Promise<SessionSta
 export async function register(
   email: string,
   password: string,
+  code: string,
   displayName?: string,
 ): Promise<SessionState> {
   const response = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...userHeaders() },
-    body: JSON.stringify({ email, password, displayName }),
+    body: JSON.stringify({ email, password, code, displayName }),
   });
   if (!response.ok) throw new Error(await parseError(response));
   return (await response.json()) as SessionState;
+}
+
+export type EmailCodePurpose = 'register' | 'reset';
+
+export interface EmailCodeResult {
+  ok: boolean;
+  sent?: boolean;
+  expiresIn?: number;
+  /** Only returned when no mail provider is configured (local/dev/test). */
+  devCode?: string;
+}
+
+export async function requestEmailCode(
+  email: string,
+  purpose: EmailCodePurpose,
+): Promise<EmailCodeResult> {
+  const response = await fetch('/api/auth/email-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ email, purpose }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as EmailCodeResult;
+}
+
+export async function requestPasswordReset(email: string): Promise<EmailCodeResult> {
+  const response = await fetch('/api/auth/password/forgot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as EmailCodeResult;
+}
+
+export async function resetPassword(
+  email: string,
+  code: string,
+  password: string,
+): Promise<void> {
+  const response = await fetch('/api/auth/password/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ email, code, password }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
 }
 
 export async function logout(): Promise<void> {

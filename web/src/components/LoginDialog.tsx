@@ -14,8 +14,8 @@ const REASONS = {
     en: 'Sign in to manage your account, privacy and data.',
   },
   default: {
-    zh: '登录后，比价记录、购物画像和价格提醒会跟着你的账户走。',
-    en: 'Sign in to keep comparisons, your profile and alerts with your account.',
+    zh: '登录后，比价记录和价格提醒会跟着你的账户走。',
+    en: 'Sign in to keep comparisons and price alerts with your account.',
   },
 } as const;
 
