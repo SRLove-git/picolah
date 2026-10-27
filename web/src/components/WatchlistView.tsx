@@ -17,6 +17,7 @@ import { PageHeader } from './PageHeader';
 import { PlatformBadge } from './PlatformBadge';
 import { ProductArt } from './ProductArt';
 import { Sparkline } from './Sparkline';
+import { MarkPurchasedButton } from './MarkPurchasedButton';
 
 interface WatchlistViewProps {
   market: CountryCode;
@@ -211,6 +212,12 @@ export function WatchlistView({ market, onOpenSidebar, notify }: WatchlistViewPr
                         </span>
                       </div>
                     ) : null}
+                    <MarkPurchasedButton
+                      product={item.product}
+                      market={item.market}
+                      price={offer?.finalPrice ?? null}
+                      className="pc-watch-buy"
+                    />
                   </div>
                   <div className="pc-watch-actions">
                     <span className={`pc-watch-state ${item.met ? 'is-met' : ''}`}>

@@ -8,6 +8,7 @@ import type {
   ProductVisual,
   ShoppingProfile,
 } from '../../shared/types';
+import type { CapyPayload } from '../../shared/capybara';
 import { userHeaders } from './user';
 
 /**
@@ -323,4 +324,46 @@ export async function deleteAccount(password: string): Promise<void> {
     body: JSON.stringify({ password }),
   });
   if (!response.ok) throw new Error(await parseError(response));
+}
+
+export async function getCapybara(): Promise<CapyPayload | null> {
+  if (isMockMode()) return null;
+  const data = await getJson<{ capybara: CapyPayload | null }>('/api/capybara');
+  return data.capybara;
+}
+
+export async function addCapyPurchase(
+  productId: string,
+  market: string,
+  price?: number | null,
+): Promise<CapyPayload> {
+  const response = await fetch('/api/capybara/purchases', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ productId, market, price: price ?? null }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as { capybara: CapyPayload };
+  return data.capybara;
+}
+
+export async function removeCapyPurchase(id: string): Promise<CapyPayload> {
+  const response = await fetch(`/api/capybara/purchases/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: userHeaders(),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as { capybara: CapyPayload };
+  return data.capybara;
+}
+
+export async function setCapyOutfit(equipped: string[]): Promise<CapyPayload> {
+  const response = await fetch('/api/capybara/outfit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ equipped }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as { capybara: CapyPayload };
+  return data.capybara;
 }

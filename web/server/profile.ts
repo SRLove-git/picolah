@@ -16,6 +16,9 @@ import { db } from './db.ts';
 import { getProduct } from './repo.ts';
 import type { VideoProfile } from '../shared/reels.ts';
 import { getVideoProfile, mergeVideoProfile, resetVideoProfile } from './reels.ts';
+import { deleteCapybara } from './capybara.ts';
+
+export { requestUserId } from './user-id.ts';
 
 interface EventRow {
   id: string;
@@ -211,16 +214,6 @@ function emptyProfile(userId: string, video: VideoProfile, user?: UserRow | null
     budget: null,
     recent: [],
   };
-}
-
-export function requestUserId(request: {
-  header(name: string): string | undefined;
-  user?: { id: string };
-}): string | null {
-  const accountId = String(request.user?.id || '').trim();
-  if (/^[a-zA-Z0-9_-]{8,80}$/.test(accountId)) return accountId;
-  const raw = String(request.header('x-picolah-user') || '').trim();
-  return /^[a-zA-Z0-9_-]{8,80}$/.test(raw) ? raw : null;
 }
 
 export async function ensureUser(userId: string): Promise<void> {
@@ -628,5 +621,6 @@ function toActivity(event: EventRow): ProfileActivity {
 
 export async function resetProfile(userId: string): Promise<void> {
   await resetVideoProfile(userId);
+  await deleteCapybara(userId);
   await db.run('DELETE FROM user_events WHERE user_id = ?', [userId]);
 }

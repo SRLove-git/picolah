@@ -14,6 +14,7 @@ import {
   verifyPassword,
 } from '../auth.ts';
 import { mergeAnonymousProfile } from '../profile.ts';
+import { mergeCapybara } from '../capybara.ts';
 
 export const authRouter = Router();
 
@@ -76,6 +77,7 @@ authRouter.post('/register', async (req, res) => {
   setSessionCookie(res, token, req);
   clearAttempts(key);
   const mergedEvents = await mergeAnonymousProfile(anonymousId(req), user.id);
+  await mergeCapybara(anonymousId(req), user.id);
   return res.status(201).json({ user, required: config.authRequired, mergedEvents });
 });
 
@@ -102,6 +104,7 @@ authRouter.post('/login', async (req, res) => {
   setSessionCookie(res, token, req);
   clearAttempts(key);
   const mergedEvents = await mergeAnonymousProfile(anonymousId(req), row.id);
+  await mergeCapybara(anonymousId(req), row.id);
   return res.json({ user: publicUser(row), required: config.authRequired, mergedEvents });
 });
 

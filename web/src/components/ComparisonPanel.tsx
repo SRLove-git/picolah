@@ -15,6 +15,7 @@ import { useSession } from '../lib/session';
 import { PlatformBadge } from './PlatformBadge';
 import { Sparkline } from './Sparkline';
 import { Capybara } from './PicolahMark';
+import { MarkPurchasedButton } from './MarkPurchasedButton';
 
 interface ComparisonPanelProps {
   comparison: import('../../shared/types').Comparison;
@@ -160,22 +161,31 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
         </div>
         <div className="product-copy">
           <h3>{product.name}</h3>
+          {!isLive && (
+            <div className="comparison-head-actions">
+              <button
+                type="button"
+                className={`pc-watch-add ${watched ? 'is-watched' : ''}`}
+                onClick={() => void watch()}
+                disabled={watched}
+                title={t('watchlist.add')}
+              >
+                <BellPlus size={14} />
+                {watched ? t('watchlist.watching') : t('watchlist.add')}
+              </button>
+              <MarkPurchasedButton
+                product={{ id: product.id, name: product.name, visual: product.visual }}
+                market={market}
+                price={best ? offerValue(best, displayMode) : null}
+              />
+            </div>
+          )}
         </div>
         {best && (
           <div className="headline-price">
             <strong>{formatMoney(offerValue(best, displayMode), market)}</strong>
           </div>
         )}
-        {!isLive && <button
-          type="button"
-          className={`pc-watch-add ${watched ? 'is-watched' : ''}`}
-          onClick={() => void watch()}
-          disabled={watched}
-          title={t('watchlist.add')}
-        >
-          <BellPlus size={14} />
-          {watched ? t('watchlist.watching') : t('watchlist.add')}
-        </button>}
       </div>
 
       <div className="comparison-toolbar is-compact">

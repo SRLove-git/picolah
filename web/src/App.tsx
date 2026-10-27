@@ -25,6 +25,7 @@ const ProfileView = lazy(() => import('./components/ProfileView').then((module) 
 const LegalView = lazy(() => import('./components/LegalView').then((module) => ({ default: module.LegalView })));
 const WatchlistView = lazy(() => import('./components/WatchlistView').then((module) => ({ default: module.WatchlistView })));
 const AccountView = lazy(() => import('./components/AccountView').then((module) => ({ default: module.AccountView })));
+const CapybaraView = lazy(() => import('./components/CapybaraView').then((module) => ({ default: module.CapybaraView })));
 
 const MARKET_KEY = 'picolah.market';
 const PRICE_MODE_KEY = 'picolah.priceMode';
@@ -36,7 +37,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'watchlist', 'messages', 'reels', 'profile', 'account', 'privacy', 'terms'];
+const PAGE_VIEWS: AppView[] = ['home', 'capybara', 'watchlist', 'messages', 'reels', 'profile', 'account', 'privacy', 'terms'];
 
 function readStorage(key: string): string | null {
   try {
@@ -565,6 +566,10 @@ function AppWorkspace() {
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
+        )}
+
+        {view === 'capybara' && (
+          <CapybaraView onOpenSidebar={() => setSidebarOpen(true)} notify={notify} />
         )}
 
         {view === 'search' && (

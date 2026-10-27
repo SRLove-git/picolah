@@ -15,6 +15,7 @@ import { authRouter } from './routes/auth.ts';
 import { watchlistRouter, alertsRouter } from './routes/watchlist.ts';
 import { outRouter } from './routes/out.ts';
 import { accountRouter } from './routes/account.ts';
+import { capybaraRouter } from './routes/capybara.ts';
 import { attachUser, requireAccount, requireAuth } from './auth.ts';
 import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
@@ -121,6 +122,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/conversations', conversationsRouter);
 app.use('/api/catalog', catalogRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/capybara', capybaraRouter);
 app.use('/api/reels', reelsRouter);
 app.use('/api/watchlist', requireAuth, watchlistRouter);
 app.use('/api/alerts', requireAuth, alertsRouter);

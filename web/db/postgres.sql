@@ -180,6 +180,25 @@ CREATE TABLE IF NOT EXISTS price_alerts (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS capybara_state (
+  owner_id TEXT PRIMARY KEY,
+  xp INTEGER NOT NULL DEFAULT 0,
+  equipped TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS capybara_purchases (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  market TEXT NOT NULL,
+  price DOUBLE PRECISION,
+  currency TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (owner_id, product_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_offers_product_country ON offers(product_id, country);
 CREATE INDEX IF NOT EXISTS idx_offers_country ON offers(country);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
@@ -192,3 +211,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_reel_events_session_type ON reel_events(us
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_watchlist_owner ON watchlist(owner_id, market);
 CREATE INDEX IF NOT EXISTS idx_price_alerts_owner ON price_alerts(owner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_capybara_purchases_owner ON capybara_purchases(owner_id, created_at DESC);

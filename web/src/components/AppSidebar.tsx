@@ -1,8 +1,8 @@
-import { Bell, Clapperboard, Fingerprint, Home, Languages, Search, Send, X } from 'lucide-react';
+import { Bell, Clapperboard, Fingerprint, Home, Languages, PawPrint, Search, Send, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BrandLockup, Capybara } from './PicolahMark';
 
-export type AppView = 'home' | 'search' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
+export type AppView = 'home' | 'capybara' | 'search' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
@@ -13,6 +13,7 @@ interface AppSidebarProps {
 
 const NAV = [
   { key: 'home' as const, labelKey: 'nav.home', Icon: Home },
+  { key: 'capybara' as const, labelKey: 'nav.capybara', Icon: PawPrint },
   { key: 'search' as const, labelKey: 'nav.search', Icon: Search },
   { key: 'watchlist' as const, labelKey: 'nav.watchlist', Icon: Bell },
   { key: 'reels' as const, labelKey: 'nav.reels', Icon: Clapperboard },
