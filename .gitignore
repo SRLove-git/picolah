@@ -18,3 +18,8 @@ screenshots/
 web/e2e.db
 web/e2e.db-shm
 web/e2e.db-wal
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
