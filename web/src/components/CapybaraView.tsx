@@ -256,7 +256,6 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
           <header className="pc-capy-panel-head">
             <div>
               <h2>{t('capybara.growth')}</h2>
-              <p>{t('capybara.growthHint')}</p>
             </div>
             <span className="pc-capy-panel-count is-xp">
               {t('capybara.growthTotal', { xp: view.xp })}

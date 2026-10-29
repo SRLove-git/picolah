@@ -15,14 +15,11 @@ import { languageForMarket } from './lib/market-language';
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
-import { IngestDrawer } from './components/IngestDrawer';
 import { LoginDialog } from './components/LoginDialog';
 import { useSession } from './lib/session';
 
-const ReelsView = lazy(() => import('./components/ReelsView').then((module) => ({ default: module.ReelsView })));
 const SearchView = lazy(() => import('./components/SearchView').then((module) => ({ default: module.SearchView })));
 const MessagesView = lazy(() => import('./components/MessagesView').then((module) => ({ default: module.MessagesView })));
-const ProfileView = lazy(() => import('./components/ProfileView').then((module) => ({ default: module.ProfileView })));
 const LegalView = lazy(() => import('./components/LegalView').then((module) => ({ default: module.LegalView })));
 const WatchlistView = lazy(() => import('./components/WatchlistView').then((module) => ({ default: module.WatchlistView })));
 const AccountView = lazy(() => import('./components/AccountView').then((module) => ({ default: module.AccountView })));
@@ -38,7 +35,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'capybara', 'watchlist', 'messages', 'reels', 'profile', 'account', 'privacy', 'terms'];
+const PAGE_VIEWS: AppView[] = ['home', 'search', 'capybara', 'watchlist', 'messages', 'account', 'privacy', 'terms'];
 
 function readStorage(key: string): string | null {
   try {
@@ -96,10 +93,8 @@ function AppWorkspace() {
   const [conversationLoading, setConversationLoading] = useState(false);
   const [booting, setBooting] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [gatewayOpen, setGatewayOpen] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
   const [view, setView] = useState<AppView>(initialView);
-  const [reelStart, setReelStart] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -136,10 +131,6 @@ function AppWorkspace() {
     } catch {
       // Keep the current list when a background refresh fails.
     }
-  }, []);
-
-  const refreshConfig = useCallback(async () => {
-    setConfig(await getConfig());
   }, []);
 
   const applyConversation = useCallback(
@@ -622,24 +613,6 @@ function AppWorkspace() {
           />
         )}
 
-        {view === 'reels' && (
-          <ReelsView
-            market={market}
-            initialIndex={reelStart}
-            onAsk={(query) => void sendMessage(query)}
-            onOpenSidebar={() => setSidebarOpen(true)}
-            notify={notify}
-          />
-        )}
-
-        {view === 'profile' && (
-          <ProfileView
-            onStart={() => navigate('home')}
-            onOpenSidebar={() => setSidebarOpen(true)}
-            notify={notify}
-          />
-        )}
-
         {view === 'privacy' && (
           <LegalView kind="privacy" onOpenSidebar={() => setSidebarOpen(true)} />
         )}
@@ -652,10 +625,8 @@ function AppWorkspace() {
           <MessagesView
             conversations={conversations}
             loading={booting}
-            config={config}
             onSelect={(id) => void loadConversation(id)}
             onNew={handleNewChat}
-            onOpenGateway={() => setGatewayOpen(true)}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
@@ -667,8 +638,6 @@ function AppWorkspace() {
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
-            onOpenProfile={() => navigate('profile')}
-            onOpenReels={() => navigate('reels')}
             onOpenHome={() => navigate('home')}
             onAsk={(query) => void sendMessage(query)}
             notify={notify}
@@ -683,13 +652,6 @@ function AppWorkspace() {
           <span>{toast}</span>
         </div>
       )}
-
-      <IngestDrawer
-        open={gatewayOpen}
-        config={config}
-        onClose={() => setGatewayOpen(false)}
-        onRefresh={refreshConfig}
-      />
 
       <LoginDialog />
     </div>

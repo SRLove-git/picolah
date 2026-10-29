@@ -1,4 +1,4 @@
-import { Bookmark, ChevronRight, Clock3, Heart, Menu, Play, RefreshCw, Settings2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bookmark, ChevronRight, Clock3, Heart, Menu, Play, RefreshCw, Settings2 } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode, PriceMode, ShoppingProfile } from '../../shared/types';
@@ -18,8 +18,6 @@ interface AccountViewProps {
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
   onOpenSidebar: () => void;
-  onOpenProfile: () => void;
-  onOpenReels: () => void;
   onOpenHome: () => void;
   onAsk: (query: string) => void;
   notify: (message: string) => void;
@@ -35,7 +33,7 @@ const TABS = [
 ] as const;
 
 export function AccountView({ market, priceMode, onMarketChange, onPriceModeChange,
-  onOpenSidebar, onOpenProfile, onOpenReels, onOpenHome, onAsk, notify }: AccountViewProps) {
+  onOpenSidebar, onOpenHome, onAsk, notify }: AccountViewProps) {
   const { i18n } = useTranslation();
   const { user } = useSession();
   const english = i18n.language.startsWith('en');
@@ -106,7 +104,6 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
           </div>
           <div className="account-actions">
             <button className="account-button account-button-primary" type="button" onClick={() => selectTab('settings', true)}><Settings2 size={15} />{copy('偏好设置', 'Preferences')}</button>
-            <button className="account-button" type="button" onClick={onOpenProfile}><Sparkles size={15} />{copy('查看画像', 'Your interests')}</button>
           </div>
         </div>
       </div>
@@ -137,9 +134,8 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
                   </article>)}
                 </div> : <div className="account-empty"><span className="account-empty-icon"><EmptyIcon size={30} strokeWidth={1.4} /></span>
                   <h3>{copy('这里还没有近期记录', 'No recent activity here')}</h3><p>{copy(tab === 'saved' ? '遇到喜欢的短片，点一下收藏。' : tab === 'likes' ? '给喜欢的短片一颗心，下次更容易找到。' : tab === 'browsing' ? '比较过的商品，会在这里留下足迹。' : '从一条感兴趣的短片开始。', tab === 'saved' ? 'Save a Reel to keep it close.' : tab === 'likes' ? 'Like a Reel to find it again later.' : tab === 'browsing' ? 'Your recent comparisons will appear here.' : 'Start with a Reel that catches your eye.')}</p>
-                  <button className="account-button account-button-primary" onClick={tab === 'browsing' ? onOpenHome : onOpenReels}>{tab === 'browsing' ? copy('去比价', 'Start comparing') : copy('探索短视频', 'Explore Reels')}<ChevronRight size={15} /></button>
+                  <button className="account-button account-button-primary" onClick={onOpenHome}>{copy('去比价', 'Start comparing')}<ChevronRight size={15} /></button>
                 </div>}
-                <p className="account-private-note"><ShieldCheck size={13} />{copy('记录用于个性化推荐，可在画像页清空。', 'Activity personalizes your feed. Clear it from Your interests.')}</p>
               </>}
       </div>
     </div>

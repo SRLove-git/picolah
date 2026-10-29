@@ -34,8 +34,8 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
     ? 'You are browsing as a guest. No account is signed in.'
     : '当前以访客身份浏览，尚未登录账号。';
   const privacyGuestHint = en
-    ? 'Account export and deletion are available after signing in. You can clear your interest profile on the Profile page.'
-    : '登录后可导出数据或删除账号；兴趣画像可前往画像页面清空。';
+    ? 'Account export and deletion are available after signing in.'
+    : '登录后可导出数据或删除账号。';
 
   const removeAccount = async () => {
     if (!user || !deletePassword || deleting) return;

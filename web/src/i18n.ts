@@ -16,7 +16,7 @@ const resources = {
       home: {
         label: '首页', openNav: '打开导航', mascotAction: '和 Picolah 互动并开始比价',
         mascotHello: '先 pico，再买。', mascotReady: '告诉我想买什么吧。',
-        taglineBefore: '全网低价，', taglineWord: 'PICO', taglineAfter: ' 一下。', question: '今天想找什么好东西？',
+        taglineBefore: '全网低价，', taglineWord: 'PICO', taglineAfter: '一下', question: '今天想找什么好东西？',
       },
       composer: {
         homePlaceholder: '想买什么？', followupPlaceholder: '继续问{{market}}的价格，或上传商品图…',

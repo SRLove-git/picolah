@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, MessageCircle, Plus, Search, X } from 'lucide-react';
-import type { AppConfig, ConversationSummary } from '../../shared/types';
+import type { ConversationSummary } from '../../shared/types';
 import { dayGroup, relativeTime, stripMarkdown, truncate } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { Capybara } from './PicolahMark';
@@ -9,10 +9,8 @@ import { Capybara } from './PicolahMark';
 interface MessagesViewProps {
   conversations: ConversationSummary[];
   loading: boolean;
-  config: AppConfig | null;
   onSelect: (id: string) => void;
   onNew: () => void;
-  onOpenGateway: () => void;
   onOpenSidebar: () => void;
 }
 
@@ -21,13 +19,11 @@ const GROUP_ORDER = ['今天', '昨天', '更早'] as const;
 export function MessagesView({
   conversations,
   loading,
-  config,
   onSelect,
   onNew,
-  onOpenGateway,
   onOpenSidebar,
 }: MessagesViewProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -146,23 +142,6 @@ export function MessagesView({
           </div>
         </div>
 
-        <aside className="pc-msg-aside">
-          <button type="button" className="pc-msg-source-card" onClick={onOpenGateway}>
-            <span className={`pc-source-dot ${config ? 'is-live' : ''}`} />
-            <span>
-              <strong>{t(config ? 'messages.online' : 'messages.connecting')}</strong>
-              <small>
-                {config
-                  ? t('messages.marketOffers', {
-                      markets: config.gateway.markets,
-                      offers: new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'zh-CN').format(config.gateway.offers),
-                    })
-                  : t('messages.retry')}
-              </small>
-            </span>
-            <ChevronRight size={15} />
-          </button>
-        </aside>
       </div>
     </section>
   );
