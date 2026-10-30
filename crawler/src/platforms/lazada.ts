@@ -2,6 +2,7 @@ import { BrightDataError, fetchHtml } from '../brightdata/web-unlocker.ts';
 import { config } from '../config.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import { parsePrice } from '../money.ts';
+import { extractImageUrl } from '../image-url.ts';
 import type { RawListing } from '../types.ts';
 import type { PlatformAdapter } from './types.ts';
 import { lazadaProductUrl, parseLazadaStructured } from './lazada-structured.ts';
@@ -9,6 +10,7 @@ import { lazadaProductUrl, parseLazadaStructured } from './lazada-structured.ts'
 interface JsonLdItem {
   name?: string;
   url?: string;
+  image?: unknown;
   aggregateRating?: { ratingValue?: string | number; ratingCount?: string | number };
 }
 
@@ -17,6 +19,7 @@ interface JsonLdProductMeta {
   url: string;
   rating?: number;
   reviews?: number;
+  imageUrl?: string;
 }
 
 export function lazadaSearchUrl(market: MarketCode, query: string): string {
@@ -75,7 +78,7 @@ function extractFixedDiscount(card: string, decimals: 0 | 2): number | undefined
   return match ? (parsePrice(match[1], decimals) ?? undefined) : undefined;
 }
 
-function parseJsonLd(html: string): Map<string, JsonLdProductMeta> {
+function parseJsonLd(html: string, market: MarketCode): Map<string, JsonLdProductMeta> {
   const result = new Map<string, JsonLdProductMeta>();
   const blocks = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
   for (const block of blocks) {
@@ -103,6 +106,7 @@ function parseJsonLd(html: string): Map<string, JsonLdProductMeta> {
           result.set(id, {
             name: item.name || '',
             url: item.url,
+            imageUrl: extractImageUrl(item.image, `https://${MARKETS[market].domains.lazada}`),
             rating: Number.isFinite(rating) && rating >= 0 && rating <= 5 ? rating : undefined,
             reviews: Number.isInteger(reviews) && reviews >= 0 ? reviews : undefined,
           });
@@ -122,7 +126,7 @@ function parseJsonLd(html: string): Map<string, JsonLdProductMeta> {
  */
 export function parseLazadaSearch(html: string, market: MarketCode): RawListing[] {
   const marketConfig = MARKETS[market];
-  const metas = parseJsonLd(html);
+  const metas = parseJsonLd(html, market);
   const structured = parseLazadaStructured(html, market);
   const dom = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
   const markers = [...dom.matchAll(/<([a-z][\w-]*)\b[^>]*\bdata-qa-locator\s*=\s*(["'])product-item\2[^>]*>/gi)];
@@ -154,6 +158,13 @@ export function parseLazadaSearch(html: string, market: MarketCode): RawListing[
     const source = lazadaProductUrl(href, market);
     if (!source || source.itemId !== itemId) continue;
     const url = source.url;
+    const imageTags = [...card.matchAll(/<img\b[^>]*>/gi)].map((match) => match[0]);
+    const imageUrl = extractImageUrl([
+      ...imageTags.map((tag) => attribute(tag, 'src')),
+      ...imageTags.map((tag) => attribute(tag, 'data-src')),
+      ...imageTags.map((tag) => attribute(tag, 'data-ks-lazyload')),
+      meta?.imageUrl,
+    ], url);
 
     const priceElement = [...card.matchAll(/<span\b([^>]*)>([\s\S]*?)<\/span>/gi)]
       .find((match) => (attribute(match[1], 'class') || '').split(/\s+/).includes('ooOxS'));
@@ -171,6 +182,7 @@ export function parseLazadaSearch(html: string, market: MarketCode): RawListing[
       itemId,
       title,
       url,
+      ...(imageUrl ? { imageUrl } : {}),
       price,
       currency: marketConfig.currency,
       shippingFee: extractShippingFee(card, marketConfig.decimals),
@@ -187,7 +199,14 @@ export function parseLazadaSearch(html: string, market: MarketCode): RawListing[
 
   // A structured stock declaration is stronger than a DOM card merely being listed.
   const byId = new Map(listings.map((listing) => [listing.itemId, listing]));
-  for (const listing of structured) byId.set(listing.itemId, listing);
+  for (const listing of structured) {
+    const card = byId.get(listing.itemId);
+    byId.set(listing.itemId, {
+      ...card,
+      ...listing,
+      ...(listing.imageUrl ?? card?.imageUrl ? { imageUrl: listing.imageUrl ?? card?.imageUrl } : {}),
+    });
+  }
   return [...byId.values()];
 }
 

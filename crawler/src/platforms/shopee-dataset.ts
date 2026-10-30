@@ -2,6 +2,7 @@ import { parseCsvRecords } from '../brightdata/csv.ts';
 import { BrightDataError } from '../brightdata/web-unlocker.ts';
 import { config } from '../config.ts';
 import { logInfo, logWarn } from '../log.ts';
+import { extractImageUrl } from '../image-url.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import type { RawListing } from '../types.ts';
 
@@ -118,6 +119,11 @@ export function mapShopeeDatasetRows(
     const stock = row.stock?.trim() ?? '';
     const available = row.is_available?.trim().toLowerCase() ?? '';
     const inStock = available === 'false' ? false : stock !== '0';
+    let datasetImages: unknown = row.image_url || row.image || row.main_image || row.images;
+    if (typeof datasetImages === 'string' && /^[\[{]/.test(datasetImages.trim())) {
+      try { datasetImages = JSON.parse(datasetImages); } catch { /* use the raw value below */ }
+    }
+    const imageUrl = extractImageUrl(datasetImages, url);
 
     seen.add(itemId);
     listings.push({
@@ -126,6 +132,7 @@ export function mapShopeeDatasetRows(
       itemId,
       title,
       url,
+      ...(imageUrl ? { imageUrl } : {}),
       price,
       currency,
       rating: positiveNumber(row.rating),

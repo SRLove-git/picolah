@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mapShopeeDatasetRows, parseShopeeDatasetCsv, searchShopeeDataset, shopeeDatasetKeyword } from './shopee-dataset.ts';
 import { config } from '../config.ts';
 
-const HEADER = 'url,id,title,final_price,currency,rating,reviews,seller_name,stock,is_available,domain';
+const HEADER = 'url,id,title,final_price,currency,rating,reviews,seller_name,stock,is_available,domain,image_url';
 
 function row(values: Partial<Record<string, string>>): string {
   const order = HEADER.split(',');
@@ -29,6 +29,7 @@ const CSV = [
     stock: '',
     is_available: '',
     domain: 'https://shopee.sg',
+    image_url: 'https://down-sg.img.susercontent.com/file/sony-wh1000xm5',
   }),
   // Duplicate item id -> ignored.
   row({
@@ -79,6 +80,7 @@ test('maps Shopee dataset CSV rows for the requested market', () => {
   assert.equal(sony.seller, 'Shop, Inc.');
   assert.equal(sony.inStock, true);
   assert.equal(sony.isOfficial, false);
+  assert.equal(sony.imageUrl, 'https://down-sg.img.susercontent.com/file/sony-wh1000xm5');
 
   assert.equal(anmum.itemId, '6378783065');
   assert.equal(anmum.price, 308.23);

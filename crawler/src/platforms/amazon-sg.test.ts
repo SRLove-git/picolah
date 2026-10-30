@@ -13,6 +13,7 @@ test('parses priced Amazon cards and leaves accessories for central matching', (
   const html = `
     <div role="listitem" data-asin="B09XSDMT4F">
       <h2 aria-label="Sony WH-1000XM5 Wireless Noise-Cancelling Headphones &amp; Case"></h2>
+      <img class="s-image" src="https://m.media-amazon.com/images/I/test-product.jpg" alt="Sony WH-1000XM5">
       <div data-cy="price-recipe"><span class="a-offscreen">S$328.78</span></div>
       <i aria-label="4.3 out of 5 stars, rating details"></i><a aria-label="16,858 ratings"></a>
     </div>
@@ -21,6 +22,7 @@ test('parses priced Amazon cards and leaves accessories for central matching', (
     platform: 'amazon-sg', market: 'SG', itemId: 'B09XSDMT4F',
     title: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones & Case',
     url: 'https://www.amazon.sg/dp/B09XSDMT4F', price: 328.78, currency: 'SGD',
+    imageUrl: 'https://m.media-amazon.com/images/I/test-product.jpg',
     rating: 4.3, reviews: 16858, seller: 'Amazon SG', inStock: true,
   }]);
 });

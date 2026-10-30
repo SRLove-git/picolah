@@ -27,7 +27,8 @@ export type LiveSearchInput = z.infer<typeof liveSearchInputSchema>;
 const listingSchema = z.object({
   platform: z.enum([...platforms, 'web']), sourceHost: z.string().max(253).optional(), market: z.enum(COUNTRY_CODES),
   itemId: z.string().min(1).max(150), title: z.string().min(2).max(1000),
-  url: z.string().url().max(2000), price: z.number().finite().positive().max(1e12),
+  url: z.string().url().max(2000), imageUrl: z.string().url().max(2000).optional(),
+  price: z.number().finite().positive().max(1e12),
   currency: z.string().length(3), inStock: z.literal(true),
   shippingFee: z.number().finite().min(0).max(1e9).optional(),
   discount: z.number().finite().min(0).max(1e9).optional(),
@@ -109,6 +110,7 @@ export function createModelSearchTool(options: {
     }
     for (const listing of result.listings) {
       const url = new URL(listing.url);
+      const imageUrl = listing.imageUrl ? new URL(listing.imageUrl) : null;
       const domain = domains[listing.platform]?.[input.market];
       const host = url.hostname.replace(/^www\./, '');
       const validSource = listing.platform === 'web'
@@ -121,6 +123,8 @@ export function createModelSearchTool(options: {
           listing.currency !== MARKETS[input.market].currency ||
           (input.maxPrice !== undefined && listing.price > input.maxPrice) ||
           url.protocol !== 'https:' || url.username || url.password || url.port ||
+          (imageUrl && (imageUrl.protocol !== 'https:' || imageUrl.username || imageUrl.password || imageUrl.port
+            || !publicSourceHost(imageUrl.hostname.replace(/^www\./, '')))) ||
           listing.price + (listing.shippingFee ?? 0) - (listing.discount ?? 0) <= 0) {
         throw new Error('商品搜索返回了无效报价');
       }

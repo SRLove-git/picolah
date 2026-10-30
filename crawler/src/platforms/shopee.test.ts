@@ -8,8 +8,10 @@ import { config } from '../config.ts';
 import { hasShopeeLoginState, parseShopeeSearchPayload, searchShopee } from './shopee.ts';
 
 test('Shopee API prices preserve currency minor units instead of rounding SGD to dollars', () => {
-  const item = { itemid: 12, shopid: 34, name: 'Sony WF-1000XM6', price: 315.99 * 100_000 };
+  const item = { itemid: 12, shopid: 34, name: 'Sony WF-1000XM6', price: 315.99 * 100_000, image: 'sg-11134201-testimage' };
   assert.equal(parseShopeeSearchPayload({ items: [{ item_basic: item }] }, 'SG')[0]?.price, 315.99);
+  assert.equal(parseShopeeSearchPayload({ items: [{ item_basic: item }] }, 'SG')[0]?.imageUrl,
+    'https://down-sg.img.susercontent.com/file/sg-11134201-testimage');
   assert.equal(parseShopeeSearchPayload({ items: [{ item_basic: { ...item, price: 1_299_000.6 * 100_000 } }] }, 'ID')[0]?.price, 1_299_001);
   assert.deepEqual(parseShopeeSearchPayload({ items: [{ item_basic: { ...item, price: -1 } }] }, 'SG'), []);
 });

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import { safeWebUrl } from '../safe-web-url.ts';
+import { extractImageUrl } from '../image-url.ts';
 import type { WebListing } from '../types.ts';
 
 type RecordValue = Record<string, unknown>;
@@ -79,9 +80,11 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
   const host = sourceHost(page);
   const seller = text(record(offer.seller)?.name, 120) ?? text(offer.seller, 120) ?? host;
   const url = canonical.href;
+  const imageUrl = extractImageUrl(product.image, page.href);
   return {
     platform: 'web', sourceHost: host, market, itemId: createHash('sha256').update(url).digest('hex'),
     title, url, price, currency, inStock: true, seller,
+    ...(imageUrl ? { imageUrl } : {}),
     ...(rating !== undefined ? { rating } : {}), ...(reviews !== undefined ? { reviews } : {}),
   };
 }

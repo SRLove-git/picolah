@@ -17,6 +17,7 @@ function offer(listing: LiveListing, productId: string, stamp: string): Offer {
   return {
     id: `live-${listing.market}-${source}-${listing.itemId}`, productId,
     source: 'live', platformId: listing.platform === 'web' ? `web:${source}` : source,
+    ...(listing.imageUrl ? { imageUrl: listing.imageUrl } : {}),
     platform: listing.platform === 'web' ? source : PLATFORMS[source]?.name ?? source,
     seller: listing.seller || '', country: listing.market, currency: listing.currency,
     itemPrice: listing.price, shippingFee: listing.shippingFee ?? 0, discount: listing.discount ?? 0,

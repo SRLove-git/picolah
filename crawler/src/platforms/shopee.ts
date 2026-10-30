@@ -7,6 +7,7 @@ import { config } from '../config.ts';
 import { logWarn } from '../log.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
 import { findPrice } from '../money.ts';
+import { extractImageUrl } from '../image-url.ts';
 import type { RawListing } from '../types.ts';
 import { hasShopeeDataset, searchShopeeDataset } from './shopee-dataset.ts';
 import type { PlatformAdapter } from './types.ts';
@@ -52,6 +53,8 @@ interface ShopeeItemBasic {
   shop_location?: string;
   shop_name?: string;
   is_official_shop?: boolean;
+  image?: string;
+  image_url?: string;
 }
 
 interface ShopeeSearchPayload {
@@ -64,6 +67,8 @@ interface ShopeeSearchPayload {
     item_rating?: { rating_star?: number; rating_count?: number[] };
     shop_location?: string;
     is_official_shop?: boolean;
+    image?: string;
+    image_url?: string;
   }>;
 }
 
@@ -107,6 +112,10 @@ export function parseShopeeSearchPayload(payload: ShopeeSearchPayload, market: M
     const rating = Number(item.item_rating?.rating_star);
     const reviews = Number(item.item_rating?.rating_count?.[0]);
     const shopId = item.shopid ?? entry.shopid;
+    const rawImage = item.image_url ?? item.image ?? entry.image_url ?? entry.image;
+    const imageUrl = extractImageUrl(rawImage)
+      ?? (/^[a-zA-Z0-9_-]{8,}$/.test(rawImage || '')
+        ? `https://down-${market.toLowerCase()}.img.susercontent.com/file/${rawImage}` : undefined);
 
     listings.push({
       platform: 'shopee',
@@ -116,6 +125,7 @@ export function parseShopeeSearchPayload(payload: ShopeeSearchPayload, market: M
       url: shopId
         ? `https://${domain}/product/${shopId}/${itemId}`
         : `https://${domain}/product/${itemId}`,
+      ...(imageUrl ? { imageUrl } : {}),
       price: amount,
       currency: marketConfig.currency,
       rating: Number.isFinite(rating) && rating > 0 ? rating : undefined,
@@ -133,6 +143,7 @@ export function parseShopeeSearchPayload(payload: ShopeeSearchPayload, market: M
 interface DomAnchor {
   href: string;
   text: string;
+  imageUrl?: string;
 }
 
 /**
@@ -142,14 +153,16 @@ interface DomAnchor {
 async function parseShopeeDom(page: Page, market: MarketCode): Promise<RawListing[]> {
   const anchors = await page.evaluate<DomAnchor[]>(() => {
     const seen = new Set<string>();
-    const rows: { href: string; text: string }[] = [];
+    const rows: { href: string; text: string; imageUrl?: string }[] = [];
     for (const element of Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href*="/product/"]'))) {
       const href = element.href;
       const match = href.match(/\/product\/(\d+)\/(\d+)/);
       if (!match || seen.has(match[2])) continue;
       seen.add(match[2]);
       const text = (element.innerText || '').trim();
-      if (text) rows.push({ href, text });
+      const image = element.querySelector<HTMLImageElement>('img');
+      const imageUrl = image?.currentSrc || image?.src || image?.getAttribute('data-src') || undefined;
+      if (text) rows.push({ href, text, imageUrl });
     }
     return rows;
   });
@@ -174,6 +187,7 @@ async function parseShopeeDom(page: Page, market: MarketCode): Promise<RawListin
       .filter((line) => !/^free shipping$/i.test(line))
       .sort((a, b) => b.length - a.length)[0];
     if (!title) continue;
+    const imageUrl = extractImageUrl(anchor.imageUrl, anchor.href);
 
     listings.push({
       platform: 'shopee',
@@ -181,6 +195,7 @@ async function parseShopeeDom(page: Page, market: MarketCode): Promise<RawListin
       itemId,
       title,
       url: anchor.href,
+      ...(imageUrl ? { imageUrl } : {}),
       price,
       currency: marketConfig.currency,
       seller: 'Shopee',

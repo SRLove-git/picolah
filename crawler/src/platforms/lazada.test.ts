@@ -17,6 +17,7 @@ const HTML = `
 </script>
 </head><body>
 <div class="Bm3ON" data-qa-locator="product-item" data-item-id="111">
+  <img src="https://sg-live-01.slatic.net/p/sony-wh1000xm5.jpg" alt="SONY WH-1000XM5">
   <div class="RfADt"><a href="//www.lazada.sg/products/pdp-i111.html" title="SONY WH-1000XM5 / WH1000XM5 Headphones">SONY WH-1000XM5</a></div>
   <div class="aBrP0"><span class="ooOxS">S$499.00</span></div>
   <span class="oa6ri" title="Singapore">Singapore</span>
@@ -41,6 +42,7 @@ test('parses cards and joins JSON-LD rating data', () => {
   assert.equal(first.rating, 4.9);
   assert.equal(first.reviews, 681);
   assert.equal(first.url, 'https://www.lazada.sg/products/pdp-i111.html');
+  assert.equal(first.imageUrl, 'https://sg-live-01.slatic.net/p/sony-wh1000xm5.jpg');
   assert.equal(first.currency, 'SGD');
   assert.equal(second.price, 549);
   assert.equal(second.rating, undefined);

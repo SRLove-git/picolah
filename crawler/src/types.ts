@@ -16,6 +16,8 @@ export interface RawListing {
   itemId: string;
   title: string;
   url: string;
+  /** Public HTTPS product image exposed by the source. */
+  imageUrl?: string;
   price: number;
   currency: string;
   /** Known shipping amount; undefined means the source did not expose it. */

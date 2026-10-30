@@ -4,7 +4,8 @@ import { parseWebProduct } from './web-product.ts';
 
 const url = 'https://www.sony.com.sg/products/wf-1000xm6';
 const offer = { '@type': 'Offer', price: '399.00', priceCurrency: 'SGD', availability: 'https://schema.org/InStock', url };
-const product = { '@type': 'Product', name: 'Sony WF-1000XM6 Wireless Earbuds', url, offers: offer };
+const product = { '@type': 'Product', name: 'Sony WF-1000XM6 Wireless Earbuds', url,
+  image: 'https://sony.scene7.com/is/image/sony/wf-1000xm6', offers: offer };
 const html = (data: unknown, head = '') => `<html><head>${head}<script type="application/ld+json">${JSON.stringify(data)}</script></head></html>`;
 
 test('a current product page yields an explicit source-bound price and stable URL hash', () => {
@@ -12,6 +13,7 @@ test('a current product page yields an explicit source-bound price and stable UR
   assert.equal(listing.platform, 'web'); assert.equal(listing.sourceHost, 'sony.com.sg');
   assert.equal(listing.seller, 'sony.com.sg'); assert.equal(listing.url, url);
   assert.equal(listing.title, product.name); assert.equal(listing.price, 399); assert.equal(listing.currency, 'SGD');
+  assert.equal(listing.imageUrl, product.image);
   assert.equal(listing.inStock, true); assert.match(listing.itemId, /^[a-f0-9]{64}$/);
   assert.equal(parseWebProduct(html(product), `${url}#details`, 'SG')[0].itemId, listing.itemId);
   for (const key of ['rating', 'reviews', 'shippingFee', 'discount', 'isOfficial']) assert.equal(key in listing, false, key);

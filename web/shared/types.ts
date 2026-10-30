@@ -138,6 +138,7 @@ export interface PricePoint {
 
 export interface Offer {
   source?: 'live';
+  imageUrl?: string;
   shippingKnown?: boolean;
   discountKnown?: boolean;
   ratingKnown?: boolean;

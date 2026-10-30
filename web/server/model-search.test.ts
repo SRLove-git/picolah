@@ -131,11 +131,13 @@ test('partial live results disclose failed platforms and do not invent missing f
   const input = { market: 'SG' as const, query: 'WF-1000XM6', model: 'WF-1000XM6', platforms: ['lazada' as const, 'shopee' as const] };
   const result = { ...input, ok: true as const, summary: { requests: 2, matched: 1, skipped: 0, failed: 1 },
     listings: [{ platform: 'lazada' as const, market: 'SG' as const, itemId: 'test', title: 'Sony WF-1000XM6',
-      url: 'https://www.lazada.sg/products/test.html', price: 390, currency: 'SGD', inStock: true as const }] };
+      url: 'https://www.lazada.sg/products/test.html', imageUrl: 'https://sg-live-01.slatic.net/p/wf1000xm6.jpg',
+      price: 390, currency: 'SGD', inStock: true as const }] };
   const comparison = liveComparison('帮我找一下wf1000xm6', input, result);
   assert.equal(comparison.search?.failedPlatforms, 1);
   assert.equal(comparison.offers[0].shippingKnown, false);
   assert.equal(comparison.offers[0].ratingKnown, false);
+  assert.equal(comparison.offers[0].imageUrl, result.listings[0].imageUrl);
   assert.deepEqual(comparison.offers[0].history, []);
   assert.match(writeFallbackAnswer(comparison), /1 个平台暂未完成搜索/);
   assert.match(writeFallbackAnswer(comparison), /商品价/);
@@ -153,6 +155,19 @@ test('live search rejects a price outside the requested budget', async () => {
       listings: [{ platform: 'lazada', market: 'SG', itemId: 'test', title: '耳机',
         url: 'https://www.lazada.sg/products/test.html', price: 101, currency: 'SGD', inStock: true }] })) as typeof fetch });
   await assert.rejects(search.invoke(input), /无效报价/);
+});
+
+test('live search rejects unsafe product image URLs', async () => {
+  const input = { market: 'SG' as const, query: '耳机', platforms: ['lazada' as const] };
+  for (const imageUrl of ['http://images.test/product.jpg', 'https://127.0.0.1/product.jpg',
+    'https://user:secret@images.example.org/product.jpg', 'https://images.internal/product.jpg']) {
+    const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+      fetchImpl: (async () => Response.json({ ...input, ok: true,
+        summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
+        listings: [{ platform: 'lazada', market: 'SG', itemId: 'test', title: '耳机',
+          url: 'https://www.lazada.sg/products/test.html', imageUrl, price: 99, currency: 'SGD', inStock: true }] })) as typeof fetch });
+    await assert.rejects(search.invoke(input));
+  }
 });
 
 const webInput = { market: 'SG' as const, scope: 'web' as const, platforms: [], query: 'WF-1000XM6', model: 'WF-1000XM6' };

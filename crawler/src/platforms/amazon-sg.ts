@@ -1,4 +1,5 @@
 import { BrightDataError, fetchHtml } from '../brightdata/web-unlocker.ts';
+import { extractImageUrl } from '../image-url.ts';
 import type { MarketCode } from '../markets.ts';
 import type { RawListing } from '../types.ts';
 import type { PlatformAdapter } from './types.ts';
@@ -61,12 +62,17 @@ export function parseAmazonSearch(html: string): RawListing[] {
 
     const shippingFee = extractAmazonShipping(block);
     const discount = extractAmazonDiscount(block);
+    const imageUrl = extractImageUrl([...block.matchAll(/<img\b[^>]*>/gi)]
+      .map((match) => match[0])
+      .filter((tag) => /\bclass\s*=\s*["'][^"']*\bs-image\b/i.test(tag))
+      .map((tag) => attribute(tag, /\bsrc\s*=\s*["']([^"']+)["']/i)));
     listings.push({
       platform: 'amazon-sg',
       market: 'SG',
       itemId,
       title,
       url: `https://www.amazon.sg/dp/${itemId}`,
+      ...(imageUrl ? { imageUrl } : {}),
       price,
       currency: 'SGD',
       ...(shippingFee !== undefined ? { shippingFee } : {}),

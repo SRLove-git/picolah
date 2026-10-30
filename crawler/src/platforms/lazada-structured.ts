@@ -1,4 +1,5 @@
 import { MARKETS, type MarketCode } from '../markets.ts';
+import { extractImageUrl } from '../image-url.ts';
 import type { RawListing } from '../types.ts';
 
 type RecordValue = Record<string, unknown>;
@@ -89,8 +90,10 @@ function parseProduct(product: RecordValue, market: MarketCode): RawListing | nu
   const reviewCount = number(aggregate?.reviewCount);
   const reviews = reviewCount !== undefined && Number.isInteger(reviewCount) && reviewCount >= 0 && reviewCount <= 1e8 ? reviewCount : undefined;
   const seller = text(record(offer.seller)?.name, 120);
+  const imageUrl = extractImageUrl(product.image, url.url);
   return {
     platform: 'lazada', market, itemId: url.itemId, title, url: url.url, price, currency, inStock,
+    ...(imageUrl ? { imageUrl } : {}),
     ...(rating !== undefined ? { rating } : {}),
     ...(reviews !== undefined ? { reviews } : {}),
     ...(seller ? { seller } : {}),

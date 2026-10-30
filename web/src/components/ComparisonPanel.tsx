@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, BellPlus, Clock3 } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, BellPlus, Clock3, PackageSearch } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
@@ -25,6 +25,14 @@ interface ComparisonPanelProps {
 function relativeBar(value: number, minimum: number, maximum: number) {
   if (maximum <= minimum) return 100;
   return 42 + ((value - minimum) / (maximum - minimum)) * 58;
+}
+
+function ProductResultImage({ src, name, fallbackMascot = false }: { src?: string; name: string; fallbackMascot?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return <img className="product-result-image" src={src} alt={name} loading="lazy" decoding="async" onError={() => setFailed(true)} />;
+  }
+  return fallbackMascot ? <Capybara size={72} /> : <PackageSearch className="product-image-placeholder" size={25} strokeWidth={1.45} aria-hidden="true" />;
 }
 
 // Only compare values supported by every live source. Missing shipping is not
@@ -157,7 +165,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
     <div className="comparison-card">
       <div className="comparison-head">
         <div className="product-art-wrap comparison-mascot">
-          <Capybara size={72} />
+          <ProductResultImage key={best?.imageUrl || product.id} src={best?.imageUrl} name={product.name} fallbackMascot={!isLive} />
         </div>
         <div className="product-copy">
           <h3>{product.name}</h3>
@@ -306,7 +314,7 @@ export function AlternativeGrid({
           const mode = offer ? comparablePriceMode([offer], priceMode) : priceMode;
           const content = <>
               <span className="alternative-mascot">
-                <Capybara size={54} />
+                <ProductResultImage src={offer?.imageUrl} name={item.product.name} />
               </span>
               <span className="alternative-copy">
                 <span className="alternative-category">{item.product.category}</span>
