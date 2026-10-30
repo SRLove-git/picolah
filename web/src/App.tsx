@@ -639,7 +639,6 @@ function AppWorkspace() {
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenHome={() => navigate('home')}
-            onAsk={(query) => void sendMessage(query)}
             notify={notify}
           />
         )}
