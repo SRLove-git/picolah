@@ -1,4 +1,4 @@
-/* One character, small reactions: the pose retargets when tapped again. */
+/* Interactive character clips; the rig retargets from its current pose. */
 .pc-companion {
   --pc-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --pc-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -38,8 +38,10 @@
   overflow-y: visible;
 }
 
-.pc-companion[data-stage='grown'] .pc-companion-scene { padding-top: 16px; }
-.pc-companion[data-stage='legend'] .pc-companion-scene { padding-top: 28px; }
+/* Leave room for the upward stretch/hop at the larger growth scales. */
+.pc-companion[data-stage='teen'] .pc-companion-scene { padding-top: 24px; }
+.pc-companion[data-stage='grown'] .pc-companion-scene { padding-top: 40px; }
+.pc-companion[data-stage='legend'] .pc-companion-scene { padding-top: 52px; }
 
 .pc-companion-scene::after {
   position: absolute;
@@ -79,19 +81,23 @@
 }
 
 .pc-companion-follow { transition-duration: 180ms; }
-.pc-companion .pc-capy { width: 100% !important; height: 100% !important; animation: pc-companion-breathe 5.6s var(--pc-ease-in-out) infinite; }
+.pc-companion .pc-capy { width: 100% !important; height: 100% !important; animation: none; }
 .pc-companion .pc-capy-live { margin: 0; }
 .pc-companion .pc-capy-live-aura { inset: 0; }
-.pc-companion[data-moving='true'][data-expression='happy'] .pc-companion-pose { transform: translateY(-4px) rotate(-3deg) scale(1.02); }
-.pc-companion[data-moving='true'][data-expression='snack'] .pc-companion-pose { transform: rotate(2deg) scale(1.025); }
-.pc-companion[data-moving='true'][data-expression='playful'] .pc-companion-pose { transform: translateY(-9px) rotate(4deg); }
-.pc-companion[data-expression='sleepy'] .pc-companion-pose { transform: translateY(2px) rotate(-2deg); }
-.pc-companion[data-expression='sleepy'] .pc-capy { animation-duration: 7s; }
 
-@keyframes pc-companion-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.008, 1.018); }
+.pc-capy-motion { position: relative; display: block; width: 100%; height: 100%; }
+.pc-capy-motion canvas {
+  position: absolute;
+  top: -10%;
+  left: 2.238806%;
+  width: 95.522388%;
+  height: 120%;
+  pointer-events: none;
+  visibility: hidden;
 }
+.pc-capy-motion[data-ready='true'] canvas { visibility: visible; }
+.pc-capy-motion[data-ready='true'] .pc-capy-expressions { opacity: 0; }
+.pc-capy-motion[data-ready='true'] ~ .pc-capy-worn { visibility: hidden; }
 
 .pc-capy-expressions { position: relative; display: block; width: 100%; height: 100%; }
 .pc-capy-expressions img { position: absolute; inset: 0; opacity: 0; transition: opacity 180ms var(--pc-ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
@@ -136,7 +142,18 @@
 .pc-companion-effect.is-one { top: 22%; left: 14%; }
 .pc-companion-effect.is-two { top: 42%; right: 5%; }
 .pc-companion-effects[data-active='true'] .pc-companion-effect { opacity: 1; transform: translateY(-6px) scale(1); }
+.pc-companion-effects[data-active='true'] .is-one { animation: pc-companion-float 2.8s ease-in-out infinite; }
+.pc-companion-effects[data-active='true'] .is-two { animation: pc-companion-float 2.8s 0.5s ease-in-out infinite; }
 .pc-companion-zzz { position: absolute; top: 42%; left: 9%; font-size: 14px; font-weight: 600; letter-spacing: 2px; transform: rotate(-15deg); }
+.pc-companion-zzz { animation: pc-companion-dream 4.8s ease-in-out infinite; }
+@keyframes pc-companion-float {
+  0%, 100% { transform: translateY(-3px) rotate(-5deg); opacity: 0.5; }
+  50% { transform: translateY(-12px) rotate(5deg); opacity: 1; }
+}
+@keyframes pc-companion-dream {
+  0%, 100% { transform: translateY(3px) rotate(-15deg); opacity: 0.45; }
+  50% { transform: translateY(-6px) rotate(-10deg); opacity: 1; }
+}
 
 .pc-companion-actions {
   display: grid;
@@ -180,6 +197,7 @@
 .pc-companion.is-compact { width: 176px; }
 .pc-companion.is-compact .pc-companion-speech { position: absolute; top: 12px; bottom: auto; left: 74%; z-index: 2; width: max-content; max-width: 146px; min-height: 0; margin: 0; padding: 8px 11px; font-size: 11px; white-space: normal; transform: rotate(5deg); animation: none; pointer-events: none; }
 .pc-companion.is-compact .pc-companion-scene::after { display: none; }
+.pc-companion.is-compact .pc-companion-pause { top: auto; bottom: 5px; right: 3px; }
 .pc-companion-explore { display: inline-flex; align-items: center; gap: 3px; min-height: 32px; margin: 2px 0 5px; padding: 4px 10px; font: inherit; font-size: 11px; color: #988371; background: transparent; border: 1px solid transparent; border-radius: 999px; cursor: pointer; transition: transform 140ms var(--pc-ease-out), background-color 180ms ease; }
 
 .pc-companion[data-paused='true'] * { animation-play-state: paused !important; }

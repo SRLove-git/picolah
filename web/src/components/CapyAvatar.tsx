@@ -3,6 +3,7 @@ import type { CapyView } from '../../shared/capybara';
 import { Capybara } from './PicolahMark';
 import { AccessoryLayer } from './CapyAccessoryArt';
 import type { CapyExpression } from './CapyExpressionArt';
+import type { CapyMotion } from '../lib/capy-motion';
 import './capybara.css';
 
 interface CapyAvatarProps {
@@ -12,6 +13,7 @@ interface CapyAvatarProps {
   showBadge?: boolean;
   badgeLabel?: string;
   expression?: CapyExpression;
+  motion?: CapyMotion;
 }
 
 /**
@@ -19,7 +21,7 @@ interface CapyAvatarProps {
  * bought for it. Accessories are an SVG overlay in the artwork's own
  * 768×804 coordinate space, so they stay glued to the capybara at any size.
  */
-export function CapyAvatar({ view, size = 240, className = '', showBadge = false, badgeLabel, expression }: CapyAvatarProps) {
+export function CapyAvatar({ view, size = 240, className = '', showBadge = false, badgeLabel, expression, motion }: CapyAvatarProps) {
   const scale = view.stage.scale;
   return (
     <span
@@ -44,7 +46,7 @@ export function CapyAvatar({ view, size = 240, className = '', showBadge = false
         className="pc-capy-live-inner"
         style={{ '--pc-capy-scale': scale } as CSSProperties}
       >
-        <Capybara size={size} className="pc-capy-live-art" expression={expression}>
+        <Capybara size={size} className="pc-capy-live-art" expression={expression} motion={motion} worn={view.worn}>
           {view.worn.length > 0 && (
             <svg className="pc-capy-worn" viewBox="0 0 768 804" aria-hidden="true">
               <AccessoryLayer worn={view.worn} />

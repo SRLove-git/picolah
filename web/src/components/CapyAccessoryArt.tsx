@@ -101,12 +101,9 @@ function GlyphImage({ id }: { id: CapyAccessoryId }) {
 }
 
 export function AccessoryLayer({ worn }: { worn: CapyAccessory[] }) {
-  const bag = worn.filter((accessory) => BAG_IDS.has(accessory.id));
   return (
     <>
-      {DRAW_ORDER.filter((id) => worn.some((accessory) => accessory.id === id)).map((id) => {
-        const bagIndex = bag.findIndex((accessory) => accessory.id === id);
-        const layout = layoutFor(id, Math.max(0, bagIndex));
+      {wornArtwork(worn).map(({ id, layout }) => {
         return (
           <g
             key={id}
@@ -118,6 +115,14 @@ export function AccessoryLayer({ worn }: { worn: CapyAccessory[] }) {
       })}
     </>
   );
+}
+
+/** One placement source for both the static SVG and the animated character rig. */
+export function wornArtwork(worn: CapyAccessory[]) {
+  const bag = worn.filter((accessory) => BAG_IDS.has(accessory.id));
+  return DRAW_ORDER.filter((id) => worn.some((accessory) => accessory.id === id)).map((id) => ({
+    id, src: GLYPH_IMAGES[id], layout: layoutFor(id, Math.max(0, bag.findIndex((accessory) => accessory.id === id))),
+  }));
 }
 
 /** Standalone Image 2.5 glyph for wardrobe cards. */

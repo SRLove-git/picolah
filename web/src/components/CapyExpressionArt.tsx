@@ -6,7 +6,7 @@ import playful from '../assets/capy-expressions-v3/playful.webp';
 import sleepy from '../assets/capy-expressions-v3/sleepy.webp';
 
 export type CapyExpression = 'idle' | 'happy' | 'snack' | 'playful' | 'sleepy';
-const ART: Record<CapyExpression, string> = { idle, happy, snack, playful, sleepy };
+export const CAPY_EXPRESSION_ART: Record<CapyExpression, string> = { idle, happy, snack, playful, sleepy };
 
 /** Keep the previous frame visible until the next expression has loaded. */
 export function CapyExpressionArt({ expression }: { expression?: CapyExpression }) {
@@ -14,7 +14,7 @@ export function CapyExpressionArt({ expression }: { expression?: CapyExpression 
   if (!expression) return <img src={idle} alt="" draggable={false} />;
   const visible = loaded[expression] ? expression : 'idle';
   return <span className="pc-capy-expressions" data-visible-expression={visible}>
-    {(Object.entries(ART) as [CapyExpression, string][]).map(([name, src]) => (
+    {(Object.entries(CAPY_EXPRESSION_ART) as [CapyExpression, string][]).map(([name, src]) => (
       <img key={name} src={src} alt="" draggable={false} decoding="async"
         className={name === visible ? 'is-visible' : ''}
         onLoad={() => setLoaded((current) => current[name] ? current : { ...current, [name]: true })}

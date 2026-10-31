@@ -22,3 +22,21 @@ Use case: precise-object-edit. Asset type: a transparent expression frame for th
 - **snack:** Expression: delightedly munching a little green leaf held lightly between the lips, bright attentive eyes and tiny rounded puffed cheeks. Keep hands on the bag exactly as before. Only a small leaf at the mouth, no additional props.
 - **playful:** Expression: a very clear mischievous wink, one eye closed and the other shiny and wide, eyebrows playful, broad cheerful open-mouth grin with a small tongue visible. Both hands and body remain in the original position.
 - **sleepy:** Expression: sound asleep standing peacefully, both eyes fully and gently closed, relaxed eyebrows, a tiny round sleepy mouth, cheeks relaxed. Keep the head upright and all body landmarks fixed, no Z letters or effects.
+
+## Interactive animation
+
+The companion uses these same textures in a continuous 2.5D WebGL mesh, authored
+in `src/lib/capy-motion.ts` and `src/lib/capy-renderer.ts`. The head, ears, muzzle,
+chest and shopping bag move independently. Idle includes breathing and eyelid
+blinks; clips cover head nuzzles, chewing, two hops with a settling bag swing,
+sleep and waking stretches. This is a browser-rendered rig, not a generated video.
+
+Accessories use `wornArtwork()` as the shared layout source and the same vertex
+deformation as the body. Repeated actions blend from the current pose. Rendering
+stops when paused, offscreen, in the background, or with reduced motion enabled.
+The original image and SVG outfit remain available during asset loading, on
+unsupported devices and after context loss; restoration rebuilds the GPU rig.
+
+Validation: `npm exec tsx -- --test src/lib/capy-motion.test.ts` plus the
+`e2e/capybara.spec.ts` browser suite, including actual pixel changes, draw-call
+suspension and context recovery. No progress or purchase API is called by clips.

@@ -1,5 +1,8 @@
 import { useId, type ReactNode } from 'react';
 import { CapyExpressionArt, type CapyExpression } from './CapyExpressionArt';
+import { CapyMotionArt } from './CapyMotionArt';
+import type { CapyMotion } from '../lib/capy-motion';
+import type { CapyAccessory } from '../../shared/capybara';
 
 const LETTER_COLORS = ['#ef4f7e', '#ff8b5e', '#f2b53c', '#4fc5a5', '#5b9cf5', '#9a78f0', '#ef5fa7'];
 
@@ -43,12 +46,16 @@ export function Capybara({
   className = '',
   children,
   expression,
+  motion,
+  worn,
 }: {
   size?: number;
   variant?: 'full' | 'face';
   className?: string;
   children?: ReactNode;
   expression?: CapyExpression;
+  motion?: CapyMotion;
+  worn?: CapyAccessory[];
 }) {
   const uid = useId().replace(/:/g, '');
   const headGradient = `capy-head-${uid}`;
@@ -61,7 +68,8 @@ export function Capybara({
       aria-hidden="true"
     >
       {variant === 'full' ? (
-        <CapyExpressionArt expression={expression} />
+        motion ? <CapyMotionArt expression={expression ?? 'idle'} motion={motion} worn={worn} />
+          : <CapyExpressionArt expression={expression} />
       ) : (
         <svg viewBox="38 0 164 168" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>

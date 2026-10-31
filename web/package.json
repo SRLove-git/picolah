@@ -17,7 +17,7 @@
     "mock": "tsx mock/crawler.ts",
     "mock:once": "tsx mock/crawler.ts --once",
     "seed": "tsx server/seed.ts --force",
-    "test": "tsx --test server/*.test.ts src/lib/reel-clock.test.ts src/lib/account-activity.test.ts src/lib/composer-input.test.ts",
+    "test": "tsx --test server/*.test.ts src/lib/reel-clock.test.ts src/lib/account-activity.test.ts src/lib/composer-input.test.ts src/lib/capy-motion.test.ts",
     "test:reels:browser": "tsx --test src/lib/reel-playback.browser.test.ts",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
