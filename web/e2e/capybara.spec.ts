@@ -108,7 +108,8 @@ test('successful outfit changes react and keep accessories on the character', as
   await scarf.click();
   await expect(scarf).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.pc-companion')).toHaveAttribute('data-expression', 'playful');
-  await expect(page.locator('.pc-capy-worn')).toBeVisible();
+  await expect(page.locator('.pc-capy-worn')).toHaveCount(1);
+  await expect(page.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
   await expect(page.locator('.pc-companion').getByRole('status')).toContainText('New outfit');
 });
 
@@ -189,12 +190,12 @@ async function motionFrame(page: Page) {
   }));
 }
 
-test('the rig renders changing frames for each action, including breathing during a nap', async ({ page }) => {
+test('awake actions render changing frames and the curled sleeping pose breathes', async ({ page }) => {
   await setup(page);
   await page.goto('/7hk9ho#capybara');
   const companion = page.locator('.pc-companion');
   await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  for (const name of ['Head pat', 'Little snack', 'Play', 'Nap time', 'Wake up']) {
+  for (const name of ['Head pat', 'Little snack', 'Play']) {
     await companion.getByRole('button', { name, exact: true }).click();
     await page.waitForTimeout(400);
     const first = await motionFrame(page);
@@ -206,6 +207,16 @@ test('the rig renders changing frames for each action, including breathing durin
     expect(second.top).toBeGreaterThan(0);
     expect(second.bottom).toBeLessThan(964);
   }
+  await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
+  await expect(companion).toHaveAttribute('data-napping', 'true');
+  const nap = companion.locator('.pc-room-nap img');
+  const before = (await nap.boundingBox())!.height;
+  await page.waitForTimeout(450);
+  expect(Math.abs((await nap.boundingBox())!.height - before)).toBeGreaterThan(0.01);
+  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
+  await companion.getByRole('button', { name: 'Wake up', exact: true }).click();
+  await expect(companion).toHaveAttribute('data-napping', 'false');
+  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
 });
 
 test('pause, reduced motion, background tabs and offscreen characters stop GPU draws', async ({ page }) => {
@@ -242,6 +253,7 @@ test('pause, reduced motion, background tabs and offscreen characters stop GPU d
   await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
   const before = await draws();
   await expect.poll(draws).toBeGreaterThan(before);
+  await page.setViewportSize({ width: 390, height: 700 });
   await page.locator('.pc-capy-item').last().scrollIntoViewIfNeeded();
   await stopped();
   await companion.scrollIntoViewIfNeeded();
@@ -312,4 +324,111 @@ test('a fully grown animated Capy has room to hop on a narrow screen', async ({ 
   expect(canvas.y + pixels.top / 965 * canvas.height).toBeGreaterThanOrEqual(scene.y);
   expect(canvas.y + pixels.bottom / 965 * canvas.height).toBeLessThan(actions.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('room furniture triggers meals, play, bedtime and waking without granting XP', async ({ page }) => {
+  await setup(page);
+  const writes: string[] = [];
+  page.on('request', (request) => { if (request.method() !== 'GET' && request.url().includes('/api/')) writes.push(request.url()); });
+  await page.goto('/7hk9ho#capybara');
+  const room = page.locator('.pc-companion.is-room');
+  const xp = await room.getByRole('progressbar').getAttribute('aria-valuenow');
+  await room.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
+  await expect(room).toHaveAttribute('data-action', 'feed');
+  await room.getByRole('button', { name: 'Play with the ball', exact: true }).click();
+  await expect(room).toHaveAttribute('data-action', 'play');
+  await expect(room.locator('.pc-room-ball')).toHaveCSS('animation-name', 'pc-room-ball-hop');
+  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
+  await expect(room).toHaveAttribute('data-night', 'true');
+  await expect(room).toHaveAttribute('data-napping', 'true');
+  await expect(room.locator('.pc-room-nap img')).toBeVisible();
+  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
+  await room.getByRole('button', { name: 'Wake Capy at the bed', exact: true }).click();
+  await expect(room).toHaveAttribute('data-night', 'false');
+  await expect(room).toHaveAttribute('data-napping', 'false');
+  await expect(room).toHaveAttribute('data-action', 'wake');
+  await expect(room.getByRole('progressbar')).toHaveAttribute('aria-valuenow', xp!);
+  expect(writes).toEqual([]);
+});
+
+test('the room light can be changed independently and daylight wakes a sleeping Capy', async ({ page }) => {
+  await setup(page);
+  await page.goto('/7hk9ho#capybara');
+  const room = page.locator('.pc-companion.is-room');
+  await room.getByRole('button', { name: 'Switch to evening', exact: true }).click();
+  await expect(room).toHaveAttribute('data-night', 'true');
+  await expect(room).toHaveAttribute('data-action', 'idle');
+  await room.getByRole('button', { name: 'Turn on daylight', exact: true }).click();
+  await expect(room).toHaveAttribute('data-night', 'false');
+  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
+  await room.getByRole('button', { name: 'Turn on daylight', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(room).toHaveAttribute('data-night', 'false');
+  await expect(room).toHaveAttribute('data-action', 'wake');
+  await expect(room).toHaveAttribute('data-still', 'true');
+});
+
+test('the wardrobe furniture and journal tabs support focus, arrows, home and end', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page);
+  await page.goto('/7hk9ho#capybara');
+  await page.getByRole('button', { name: 'Open the wardrobe', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Growing up', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name: 'Growing up', exact: true })).toBeVisible();
+  await expect(page.locator('#capy-panel-wardrobe')).toBeHidden();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tabpanel', { name: 'Keepsakes', exact: true })).toBeVisible();
+  await page.keyboard.press('Home');
+  await expect(page.getByRole('tabpanel', { name: 'Wardrobe', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
+  await expect(page.locator('.pc-capy-room-stage')).toBeFocused();
+  await expect(page.locator('.pc-companion-touch')).toBeInViewport();
+});
+
+test('mobile uses the portrait room and the character retains its square canvas layout', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await setup(page);
+  await page.goto('/7hk9ho#capybara');
+  const room = page.locator('.pc-companion.is-room');
+  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
+  const background = await room.locator('.pc-room-background img').evaluate((img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight }));
+  expect(background).toEqual({ width: 1024, height: 1536 });
+  const avatar = (await room.locator('.pc-capy-live').boundingBox())!;
+  const scene = (await room.locator('.pc-companion-scene').boundingBox())!;
+  expect(Math.abs(avatar.width - avatar.height)).toBeLessThan(1);
+  expect(avatar.y + avatar.height).toBeLessThan(scene.y + scene.height);
+  for (const name of ['Feed Capy at the snack table', 'Rest at the little bed', 'Open the wardrobe', 'Play with the ball']) {
+    const button = room.getByRole('button', { name, exact: true });
+    await expect(button).toBeInViewport();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320);
+  }
+});
+
+test('a missing portrait plate falls back to the landscape room', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page);
+  await page.route('**/*room-mobile*.webp', (route) => route.abort());
+  await page.goto('/7hk9ho#capybara');
+  const background = page.locator('.pc-room-background img');
+  await expect.poll(() => background.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1536);
+  await expect(background).toHaveCSS('opacity', '1');
+  await page.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
+  await expect(page.locator('.pc-companion')).toHaveAttribute('data-action', 'feed');
+});
+
+test('a missing resting pose keeps the original sleepy character visible', async ({ page }) => {
+  await setup(page);
+  await page.route('**/*capy-nap*.webp', (route) => route.abort());
+  await page.goto('/7hk9ho#capybara');
+  const room = page.locator('.pc-companion.is-room');
+  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
+  await expect(room).toHaveAttribute('data-night', 'true');
+  await expect(room).toHaveAttribute('data-napping', 'false');
+  await expect(room.locator('.pc-companion-follow')).toHaveCSS('opacity', '1');
+  await expect(room.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'sleepy');
+  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
 });

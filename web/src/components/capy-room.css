@@ -1,0 +1,207 @@
+/* Capy's room — the character lives in the scene; the journal holds its records. */
+.pc-capy-home-page { background: #faf7f0; }
+.pc-capy-room-body { display: grid; grid-template-columns: minmax(0, 1fr) 302px; align-items: start; gap: 22px; }
+.pc-capy-room-stage { min-width: 0; outline: none; }
+.pc-capy-room-stage:focus-visible { outline: 2px solid #b38865; outline-offset: 5px; border-radius: 26px; }
+.pc-companion.is-room {
+  display: block;
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+  background: #fffdf8;
+  border: 1px solid #e5dacb;
+  border-radius: 26px;
+  box-shadow: 0 10px 32px -22px #74563270;
+}
+.pc-companion.is-room .pc-companion-scene {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  min-height: 400px;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(#ecd7b8 58%, #cfaa7a 58%, #ead1a5);
+}
+.pc-companion.is-room .pc-companion-scene::after {
+  z-index: 1; bottom: 11.5%; left: 34%; width: 32%; height: 7%;
+  background: radial-gradient(ellipse, #6243243d, transparent 68%);
+}
+.pc-room-background, .pc-room-background img, .pc-room-evening { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pc-room-background img { display: block; object-fit: cover; object-position: center; transition: filter 250ms ease; }
+.pc-room-evening { z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(145deg, #394a8055, #252a526b); transition: opacity 250ms ease; }
+.pc-companion[data-night='true'] .pc-room-background img { filter: brightness(0.47) saturate(0.65); }
+.pc-companion[data-night='true'] .pc-room-evening { opacity: 1; }
+.pc-room-window-glow { position: absolute; z-index: 1; top: 20%; left: 36%; width: 24px; height: 24px; border-radius: 50%; opacity: 0; background: #fff7db; box-shadow: 0 0 20px #fff2bd99; pointer-events: none; transition: opacity 250ms ease; }
+.pc-companion[data-night='true'] .pc-room-window-glow { opacity: 0.85; }
+
+.pc-companion.is-room .pc-companion-touch {
+  position: absolute;
+  z-index: 3;
+  bottom: 10%;
+  left: 50%;
+  width: min(49%, 470px) !important;
+  height: auto;
+  min-width: 280px;
+  transform: translateX(-50%);
+  transform-origin: 50% 85%;
+  transition: transform 250ms var(--pc-ease-out);
+}
+.pc-companion.is-room[data-action='feed'] .pc-companion-touch { transform: translateX(-30%); }
+.pc-companion.is-room[data-napping='true'] .pc-companion-touch { transform: translateX(-76%); }
+.pc-companion.is-room .pc-capy-live-aura { opacity: 0.18; }
+.pc-companion.is-room .pc-capy-live { width: 100% !important; height: 100% !important; }
+.pc-companion.is-room .pc-capy-live-spark { opacity: 0.55; }
+.pc-companion.is-room .pc-companion-follow { transition: transform 180ms var(--pc-ease-out), opacity 180ms ease; }
+.pc-companion-follow[data-nap-hidden='true'] { opacity: 0; }
+.pc-room-nap { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease; }
+.pc-room-nap[data-visible='true'] { opacity: 1; visibility: visible; }
+.pc-room-nap img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; transform-origin: 50% 90%; }
+.pc-room-nap[data-visible='true'] img { animation: pc-room-sleep-breath 4.8s ease-in-out infinite; }
+@keyframes pc-room-sleep-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.008, 1.018); } }
+.pc-companion.is-room[data-night='true'] .pc-companion-pose { filter: brightness(0.91); }
+.pc-companion.is-room .pc-companion-speech {
+  position: absolute; z-index: 6; top: 23%; left: 57%; width: 208px; max-width: 36%; min-height: 46px;
+  margin: 0; padding: 10px 13px; font-size: 11px; border-radius: 16px 16px 16px 4px;
+  color: #6b503d; background: #fffdf2ed; border-color: #fffaf0; box-shadow: 0 5px 20px -12px #76502e5c;
+  pointer-events: none;
+}
+.pc-companion.is-room .pc-companion-mood { display: none; }
+.pc-companion.is-room .pc-companion-pause,
+.pc-room-light { position: absolute; z-index: 7; top: 17px; right: 17px; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; color: #795f49; background: #fffdf1e6; border: 1px solid #ffffffb3; border-radius: 50%; cursor: pointer; box-shadow: 0 3px 12px #6f512014; }
+.pc-room-light { right: 59px; }
+.pc-companion.is-room .pc-companion-effect.is-one { left: 12%; }
+.pc-companion.is-room .pc-companion-effect.is-two { right: 8%; }
+.pc-companion.is-room[data-napping='true'] .pc-companion-effects { transform: translateY(18%); }
+.pc-companion.is-room .pc-companion-zzz { top: 30%; left: 24%; color: #eee2ff; }
+
+.pc-room-hud {
+  position: absolute; z-index: 6; top: 16px; left: 16px; width: 182px; padding: 11px 13px 9px;
+  color: #6e553d; background: #fffdf0e8; border: 1px solid #ffffffa6; border-radius: 15px;
+  box-shadow: 0 4px 20px -10px #68502245; pointer-events: none;
+}
+.pc-room-hud-title { display: flex; align-items: baseline; gap: 8px; }
+.pc-room-hud-title strong { font-size: 17px; letter-spacing: -0.5px; }
+.pc-room-hud-title span { font-size: 10px; font-weight: 600; }
+.pc-room-hud .pc-capy-meter { height: 5px; margin: 7px 0 5px; background: #e8dcc7; border: 0; box-shadow: none; }
+.pc-room-hud .pc-capy-meter > span { background: linear-gradient(90deg, #a5b982, #779662); }
+.pc-room-hud small { display: block; font-size: 9px; line-height: 1; color: #95836c; }
+
+.pc-room-hotspot { position: absolute; z-index: 5; display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 44px; padding: 6px 10px; color: #6c563f; background: #fff9e9d9; border: 1px solid #fffdf3db; border-radius: 999px; box-shadow: 0 4px 18px -6px #6f4e3652; cursor: pointer; font: inherit; font-size: 10px; font-weight: 600; white-space: nowrap; transform: translate(-50%, -50%); touch-action: manipulation; transition: background 180ms ease, box-shadow 180ms ease; }
+.pc-room-hotspot-dot { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #e9eedc; color: #7b8e5a; }
+.pc-room-hotspot.is-bed { left: 17%; top: 70%; }
+.pc-room-hotspot.is-bed .pc-room-hotspot-dot { background: #ebe6f1; color: #9481a8; }
+.pc-room-hotspot.is-table { left: 81%; top: 70%; }
+.pc-room-hotspot.is-wardrobe { left: 89%; top: 42%; }
+.pc-room-hotspot.is-wardrobe .pc-room-hotspot-dot { background: #f6e6ce; color: #b28a58; }
+.pc-room-toy { position: absolute; z-index: 5; left: 69%; bottom: 6%; width: 74px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; padding: 0; background: none; border: 0; color: #826647; font: inherit; cursor: pointer; touch-action: manipulation; }
+.pc-room-ball { position: relative; display: block; width: 43px; height: 43px; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 31% 25%, #ffe9b0, #eab36c 65%, #be814f); box-shadow: inset -4px -5px 6px #995b3126, 1px 7px 6px -3px #78502c50; }
+.pc-room-ball::after { position: absolute; content: ''; width: 14px; height: 56px; top: -7px; left: 11px; transform: rotate(27deg); background: #fff3d1; border-radius: 50%; opacity: 0.65; }
+.pc-room-toy-label { display: flex; align-items: center; gap: 3px; padding: 4px 7px; font-size: 9px; border-radius: 999px; background: #fff9e7c9; }
+.pc-companion.is-room[data-action='play'] .pc-room-ball { animation: pc-room-ball-hop 700ms ease-in-out 3; }
+@keyframes pc-room-ball-hop { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-28px) rotate(35deg); } }
+.pc-room-snack-trail { position: absolute; z-index: 4; top: 57%; left: 75%; color: #749a4b; opacity: 0; pointer-events: none; }
+.pc-room-snack-trail svg:last-child { margin-left: 7px; transform: rotate(20deg); }
+.pc-companion.is-room[data-action='feed'] .pc-room-snack-trail { animation: pc-room-leaf 1.4s ease-out 2; }
+@keyframes pc-room-leaf { 0% { opacity: 0; transform: translate(0, 0) scale(0.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-90px, -65px) rotate(-20deg); } }
+.pc-companion.is-room[data-night='true'] .pc-room-hotspot { background: #f5eddbd9; }
+
+.pc-room-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px 0; color: #9b8b76; font-size: 10px; }
+.pc-room-caption > span:first-child { display: inline-flex; align-items: center; gap: 5px; color: #8c795e; font-weight: 500; }
+.pc-room-caption i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #a5b982; }
+.pc-companion.is-room .pc-companion-actions { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 10px 18px 16px; }
+.pc-companion.is-room .pc-companion-actions button { flex-direction: column; gap: 5px; min-height: 76px; padding: 7px 4px; background: transparent; border: 1px solid transparent; border-radius: 17px; color: #735c44; font-size: 11px; }
+.pc-companion.is-room .pc-companion-actions button > svg { width: 42px; height: 42px; padding: 10px; color: #bb8176; background: #f8e7df; border-radius: 50%; }
+.pc-companion.is-room .pc-companion-actions button:nth-child(2) > svg { color: #809663; background: #eaf0de; }
+.pc-companion.is-room .pc-companion-actions button:nth-child(3) > svg { color: #c39a56; background: #fff0cd; }
+.pc-companion.is-room .pc-companion-actions button:nth-child(4) > svg { color: #9b8bb4; background: #eee7f6; }
+.pc-companion.is-room .pc-companion-actions button[data-active='true'] { background: #f6f0e5; border-color: #e6d8c1; }
+
+.pc-room-notebook { min-width: 0; padding: 18px 16px 14px; background: #fffdf8; border: 1px solid #e9e0d2; border-radius: 23px; box-shadow: 0 8px 24px -20px #6d523859; }
+.pc-room-notebook-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 16px; }
+.pc-room-notebook-head .pc-eyebrow { display: flex; align-items: center; gap: 5px; color: #aa997e; font-size: 8px; letter-spacing: 1.3px; }
+.pc-room-notebook-head h2 { margin: 7px 0 0; color: #6a513c; font-size: 18px; letter-spacing: -0.5px; }
+.pc-room-return { display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 5px 7px; font: inherit; font-size: 9px; color: #9d866a; border: 1px solid #e7dcc9; border-radius: 999px; background: transparent; cursor: pointer; }
+.pc-room-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: 13px; background: #f3eee4; }
+.pc-room-tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 54px; min-width: 0; padding: 7px 2px; font: inherit; font-size: 10px; border: 0; border-radius: 10px; color: #9b886d; background: transparent; cursor: pointer; }
+.pc-room-tabs button[aria-selected='true'] { background: #fffdf8; color: #74563c; box-shadow: 0 2px 5px #6143270c; }
+.pc-room-panel[hidden] { display: none; }
+.pc-room-notebook .pc-room-panel { padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; min-width: 0; }
+.pc-room-notebook .pc-capy-panel-head { margin-bottom: 12px; }
+.pc-room-notebook .pc-capy-panel-head h2 { color: #8b7459; font-size: 12px; font-weight: 600; }
+.pc-room-notebook .pc-capy-panel-count { color: #9e8a71; background: #f7f1e6; font-size: 9px; }
+.pc-room-notebook .pc-capy-wardrobe-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; max-height: 500px; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; scrollbar-width: thin; scrollbar-color: #dacbb8 transparent; }
+.pc-room-notebook .pc-capy-item { position: relative; border-color: #ede3d5; background: #fffaf2; border-radius: 13px; }
+.pc-room-notebook .pc-capy-item-art { width: 46px; height: 46px; }
+.pc-room-notebook .pc-capy-item-copy strong { font-size: 11px; }
+.pc-room-notebook .pc-capy-item-copy small { font-size: 9px; }
+.pc-room-notebook .pc-capy-item.is-worn { border-color: #aec18d; background: #f2f6e9; }
+.pc-room-notebook .pc-capy-item-tag { font-size: 8px; }
+.pc-room-notebook .pc-capy-quickstats { gap: 5px; margin: 14px 0; }
+.pc-room-notebook .pc-capy-quickstats > span { background: #f8f3e9; border-color: #ebe2d1; font-size: 9px; }
+.pc-room-notebook .pc-capy-quickstats strong { color: #846446; }
+.pc-room-growth-note { font-size: 11px; line-height: 1.8; color: #aa947a; }
+.pc-room-stage-note { padding: 14px; margin: 14px 0; border-radius: 13px; background: #f1f3e7; color: #74845b; }
+.pc-room-stage-note strong { font-size: 12px; }
+.pc-room-stage-note p, .pc-room-stage-note small { font-size: 10px; line-height: 1.7; }
+.pc-room-notebook .pc-capy-xp-list { grid-template-columns: minmax(0, 1fr); }
+.pc-room-notebook .pc-capy-purchase-list { max-height: 520px; overflow-y: auto; }
+.pc-room-notebook .pc-capy-empty { padding: 34px 8px; color: #b1a088; }
+.pc-room-notebook .pc-capy-empty p { font-size: 11px; line-height: 1.8; }
+.pc-room-notebook button:focus-visible, .pc-room-panel:focus-visible { outline: 2px solid #a48462; outline-offset: 3px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .pc-room-hotspot:hover { background: #fffdf5; box-shadow: 0 6px 18px -5px #6f4e3670; }
+  .pc-companion.is-room .pc-companion-actions button:hover { background: #faf4e9; }
+  .pc-room-tabs button:hover { color: #74563c; }
+}
+@media (max-width: 1199px) {
+  .pc-capy-room-body { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .pc-room-notebook .pc-capy-wardrobe-grid { grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); max-height: none; overflow: visible; padding-right: 0; }
+  .pc-room-notebook .pc-capy-purchase-list { max-height: none; overflow: visible; }
+  .pc-room-tabs button { flex-direction: row; min-height: 44px; font-size: 11px; }
+}
+@media (max-width: 720px) {
+  .pc-capy-room-body { padding: 12px !important; gap: 16px; }
+  .pc-companion.is-room { border-radius: 22px; }
+  .pc-companion.is-room .pc-companion-scene { aspect-ratio: 2 / 3; min-height: 0; }
+  .pc-companion.is-room .pc-companion-touch { width: 86% !important; min-width: 0; max-width: 340px; bottom: 11%; }
+  .pc-companion.is-room[data-action='feed'] .pc-companion-touch { transform: translateX(-41%); }
+  .pc-companion.is-room[data-napping='true'] .pc-companion-touch { transform: translateX(-61%); }
+  .pc-companion.is-room .pc-companion-speech { top: 23%; left: 50%; width: 198px; max-width: 67%; transform: translateX(-50%); padding: 10px 12px; border-radius: 16px 16px 4px 16px; font-size: 11px; }
+  .pc-room-hud { top: 12px; left: 12px; width: 157px; padding: 10px 11px 8px; }
+  .pc-room-hud-title strong { font-size: 16px; }
+  .pc-room-hud-title span { font-size: 9px; }
+  .pc-companion.is-room .pc-companion-pause { top: 12px; right: 12px; }
+  .pc-room-light { top: 12px; right: 53px; }
+  .pc-room-hotspot { font-size: 9px; gap: 4px; padding: 5px 7px; min-height: 40px; }
+  .pc-room-hotspot-dot { width: 21px; height: 21px; }
+  .pc-room-hotspot.is-bed { left: 20%; top: 58%; }
+  .pc-room-hotspot.is-table { left: 85%; top: 62%; }
+  .pc-room-hotspot.is-wardrobe { left: 84%; top: 40%; }
+  .pc-room-toy { left: 74%; bottom: 5%; width: 62px; height: 75px; }
+  .pc-room-ball { width: 37px; height: 37px; }
+  .pc-room-toy-label { white-space: nowrap; font-size: 8px; padding: 4px 6px; gap: 2px; }
+  .pc-room-caption { padding: 11px 14px 0; font-size: 9px; gap: 6px; }
+  .pc-room-caption > span:last-child { font-size: 8px; }
+  .pc-companion.is-room .pc-companion-actions { gap: 5px; padding: 7px 10px 12px; }
+  .pc-companion.is-room .pc-companion-actions button { font-size: 10px; gap: 4px; }
+  .pc-room-notebook { padding: 17px 14px 14px; border-radius: 20px; }
+  .pc-room-notebook .pc-capy-wardrobe-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
+  .pc-room-notebook .pc-capy-item { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px; }
+  .pc-room-notebook .pc-capy-item-tag { position: absolute; top: 9px; right: 9px; }
+  .pc-room-notebook .pc-capy-item-copy { width: 100%; }
+}
+@media (max-width: 350px) {
+  .pc-room-caption > span:last-child { display: none; }
+  .pc-room-hud { width: 139px; }
+  .pc-room-hud-title { gap: 5px; }
+  .pc-room-hud-title span { font-size: 8px; }
+  .pc-room-hotspot { font-size: 8px; padding: 5px; }
+  .pc-room-hotspot-dot { width: 18px; height: 18px; }
+  .pc-room-hotspot.is-wardrobe { left: 83%; }
+  .pc-room-notebook .pc-capy-wardrobe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-companion.is-room .pc-companion-touch, .pc-room-background img, .pc-room-evening, .pc-room-window-glow, .pc-room-nap { transition: none; }
+  .pc-companion.is-room .pc-companion-speech { transition: none; }
+}

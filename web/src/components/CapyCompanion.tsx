@@ -6,6 +6,8 @@ import type { CapyExpression } from './CapyExpressionArt';
 import type { CapyAction as Action } from '../lib/capy-motion';
 import { CapyAvatar } from './CapyAvatar';
 import { Capybara } from './PicolahMark';
+import { CapyHabitat, CapyHabitatHud } from './CapyHabitat';
+import napArt from '../assets/capy-room-v1/capy-nap.webp';
 import './capy-companion.css';
 
 const EXPRESSION: Record<Action, CapyExpression> = {
@@ -52,22 +54,28 @@ interface Props {
   compact?: boolean;
   outfitVersion?: number;
   onExplore?: () => void;
+  room?: boolean;
+  onWardrobe?: () => void;
 }
 
 /** Reactions are transient; shopping progress and earned outfits stay server-owned. */
-export function CapyCompanion({ view, size = 300, compact = false, outfitVersion = 0, onExplore }: Props) {
+export function CapyCompanion({ view, size = 300, compact = false, outfitVersion = 0, onExplore, room = false, onWardrobe }: Props) {
   const { i18n } = useTranslation();
   const copy = i18n.language.startsWith('en') ? COPY.en : COPY.zh;
   const [reaction, setReaction] = useState<{ action: Action; variation: number }>({ action: 'idle', variation: 0 });
   const [keyboard, setKeyboard] = useState(false);
   const [paused, setPaused] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [evening, setEvening] = useState(false);
+  const [napReady, setNapReady] = useState(false);
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const timer = useRef<number | undefined>(undefined);
   const repetitions = useRef<Partial<Record<Action, number>>>({});
   const follow = useRef<HTMLSpanElement>(null);
   const expression = EXPRESSION[reaction.action];
   const sleeping = expression === 'sleepy';
+  const napping = room && sleeping && napReady;
+  const night = evening || (room && sleeping);
 
   const clearTimers = useCallback(() => {
     window.clearTimeout(timer.current);
@@ -127,14 +135,20 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
     { action: 'play', Icon: Sparkles, label: copy.actions[2] },
     { action: sleeping ? 'wake' : 'rest', Icon: sleeping ? Sun : Moon, label: copy.actions[sleeping ? 4 : 3] },
   ] as const;
-  const motion = { action: reaction.action, sequence: reaction.variation, playing: !paused && !keyboard && !hidden && !reduced };
+  const motion = { action: reaction.action, sequence: reaction.variation, playing: !paused && !keyboard && !hidden && !reduced && !napping };
 
-  return <div className={`pc-companion ${compact ? 'is-compact' : ''}`}
-    data-expression={expression} data-stage={view?.stage.id} data-still={paused || keyboard} data-paused={hidden}>
+  return <div className={`pc-companion ${compact ? 'is-compact' : ''} ${room ? 'is-room' : ''}`}
+    data-expression={expression} data-action={reaction.action} data-stage={view?.stage.id}
+    data-night={room && night} data-napping={napping} data-still={paused || keyboard} data-paused={hidden}>
     <p className={`pc-companion-speech ${compact ? 'pc-hero-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">
       {compact ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
     </p>
     <div className="pc-companion-scene">
+      {room && <>
+        <CapyHabitat sleeping={sleeping} night={night} sequence={reaction.variation} onInteract={react} onWardrobe={onWardrobe}
+          onLight={(pointer) => { if (sleeping) { react('wake', pointer); setEvening(false); } else setEvening((value) => !value); }} />
+        {view && <CapyHabitatHud view={view} />}
+      </>}
       {!compact && <span className="pc-companion-mood"><i aria-hidden="true" />{copy.moods[expression]}</span>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? copy.resume : copy.pause}
           title={paused ? copy.resume : copy.pause} aria-pressed={paused} onClick={() => {
@@ -146,12 +160,15 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
         onPointerMove={lookAtPointer}
         onPointerLeave={() => { if (follow.current) follow.current.style.transform = ''; }}
         onClick={(event) => react(sleeping ? 'wake' : 'pet', event.detail > 0)}>
-        <span className="pc-companion-follow" ref={follow}>
+        <span className="pc-companion-follow" ref={follow} data-nap-hidden={napping}>
           <span className="pc-companion-pose">
             {view ? <CapyAvatar view={view} size={size} expression={expression} motion={motion} />
               : <Capybara size={size} expression={expression} motion={motion} />}
           </span>
         </span>
+        {room && <span className="pc-room-nap" data-visible={napping} aria-hidden="true">
+          <img src={napArt} alt="" draggable={false} onLoad={() => setNapReady(true)} onError={() => setNapReady(false)} />
+        </span>}
         <span className="pc-companion-effects" aria-hidden="true" data-active={expression !== 'idle'}>
           <ReactionIcon className="pc-companion-effect is-one" size={compact ? 16 : 24} />
           <ReactionIcon className="pc-companion-effect is-two" size={compact ? 11 : 16} />
@@ -159,6 +176,10 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
         </span>
       </button>
     </div>
+    {room && <div className="pc-room-caption">
+      <span><i />{copy.moods[expression]}</span>
+      <span>{i18n.language.startsWith('en') ? 'Tap Capy or something in the room' : '点点卡皮，也点点房间里的小物件'}</span>
+    </div>}
     {!compact && <div className="pc-companion-actions" role="group" aria-label={copy.controls}>
       {actions.map(({ action, Icon, label }) => <button key={action} type="button"
         data-active={reaction.action === action} onClick={(event) => react(action, event.detail > 0)}>
