@@ -82,7 +82,6 @@ export function MessagesView({
               <div className="pc-msg-skeletons" aria-hidden="true">
                 {[0, 1, 2, 3].map((item) => (
                   <div className="pc-msg-skeleton" key={item}>
-                    <span className="pc-skeleton-avatar" />
                     <span className="pc-skeleton-lines">
                       <i style={{ width: '46%' }} />
                       <i style={{ width: '84%' }} />
@@ -105,9 +104,6 @@ export function MessagesView({
                         key={conversation.id}
                         onClick={() => onSelect(conversation.id)}
                       >
-                        <span className="pc-msg-avatar">
-                          <Capybara variant="face" size={44} />
-                        </span>
                         <span className="pc-msg-main">
                           <span className="pc-msg-row-top">
                             <strong>{conversation.title}</strong>

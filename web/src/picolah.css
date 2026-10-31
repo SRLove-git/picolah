@@ -2698,17 +2698,6 @@
   transform: translateX(2px);
 }
 
-.pc-msg-avatar {
-  display: grid;
-  flex: 0 0 auto;
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(145deg, #ffe8f1, #fff2dd);
-  border: 1px solid #f6e3d9;
-  border-radius: 15px;
-  place-items: center;
-}
-
 .pc-msg-main {
   display: flex;
   flex: 1;
@@ -2788,15 +2777,6 @@
   gap: 12px;
   align-items: center;
   padding: 12px 10px;
-}
-
-.pc-skeleton-avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(100deg, #f8eee7, #fff8f3 50%, #f8eee7);
-  background-size: 200% 100%;
-  border-radius: 15px;
-  animation: pc-shimmer 1.5s linear infinite;
 }
 
 .pc-skeleton-lines {
@@ -6170,12 +6150,6 @@
 
   .pc-msg-row {
     padding: 9px 7px;
-  }
-
-  .pc-msg-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
   }
 
   .pc-msg-row-top strong {
