@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { searchCatalog, type CatalogProduct } from '../lib/api';
@@ -13,6 +13,7 @@ interface SearchViewProps {
 
 export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   const { t } = useTranslation();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
@@ -43,6 +44,24 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
     };
   }, [query, category]);
 
+  useEffect(() => {
+    function focusSearch(event: KeyboardEvent) {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) return;
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    }
+
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
+
   return (
     <section className="pc-page pc-search-page" aria-label={t('search.label')}>
       <PageHeader
@@ -53,18 +72,34 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
       />
       <div className="pc-page-body pc-search-body">
         <label className="pc-search-bar">
-          <Search size={18} aria-hidden="true" />
+          <span className="pc-search-icon" aria-hidden="true">
+            <Search size={18} />
+          </span>
           <input
+            ref={searchInputRef}
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('search.placeholder')}
             aria-label={t('search.placeholder')}
+            aria-keyshortcuts="/"
           />
-          {query && (
-            <button type="button" onClick={() => setQuery('')} aria-label={t('search.clear')}>
-              ×
+          {query ? (
+            <button
+              className="pc-search-clear"
+              type="button"
+              onClick={() => {
+                setQuery('');
+                searchInputRef.current?.focus();
+              }}
+              aria-label={t('search.clear')}
+            >
+              <X size={15} aria-hidden="true" />
             </button>
+          ) : (
+            <span className="pc-search-shortcut" aria-hidden="true">
+              <kbd>/</kbd>
+            </span>
           )}
         </label>
 

@@ -8,8 +8,16 @@ test('finds a product and starts a comparison', async ({ page }) => {
   await expect(page.getByRole('region', { name: /发现|Discover/ })).toBeVisible();
   await expect(page.locator('.pc-catalog-row')).toHaveCount(28);
 
-  await page.getByPlaceholder(/搜索商品、品牌或型号|Search products, brands or models/).fill('sony');
+  const searchInput = page.getByPlaceholder(/搜索商品、品牌或型号|Search products, brands or models/);
+  await page.keyboard.press('/');
+  await expect(searchInput).toBeFocused();
+  await searchInput.fill('sony');
   await expect(page.locator('.pc-catalog-row')).toHaveCount(2);
+
+  await page.getByRole('button', { name: /清空搜索|Clear search/ }).click();
+  await expect(searchInput).toBeFocused();
+  await expect(searchInput).toHaveValue('');
+  await searchInput.fill('sony');
 
   await page.getByRole('button', { name: /去比价|Compare/ }).first().click();
   await expect(page.locator('textarea')).toBeVisible();
