@@ -113,6 +113,7 @@ const SQLITE_SCHEMA = `
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     display_name TEXT NOT NULL,
+    avatar TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -288,6 +289,7 @@ const SQLITE_SCHEMA = `
 function applySqliteMigrations(handle: DatabaseSync): void {
   for (const [table, column, definition] of [
     ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
+    ['users', 'avatar', "TEXT NOT NULL DEFAULT ''"],
   ] as const) {
     const columns = handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!columns.some((item) => item.name === column)) {

@@ -17,6 +17,7 @@ export interface AccountUser {
   id: string;
   email: string;
   displayName: string;
+  avatar: string;
 }
 
 type UserRow = {
@@ -24,6 +25,7 @@ type UserRow = {
   email: string;
   password_hash: string;
   display_name: string;
+  avatar: string;
 };
 
 export function normalizeEmail(value: string): string {
@@ -51,11 +53,11 @@ export async function verifyPassword(password: string, stored: string): Promise<
 }
 
 export async function findUserByEmail(email: string): Promise<UserRow | undefined> {
-  return db.get<UserRow>('SELECT id, email, password_hash, display_name FROM users WHERE email = ?', [normalizeEmail(email)]);
+  return db.get<UserRow>('SELECT id, email, password_hash, display_name, avatar FROM users WHERE email = ?', [normalizeEmail(email)]);
 }
 
-export function publicUser(row: { id: string; email: string; display_name: string }): AccountUser {
-  return { id: row.id, email: row.email, displayName: row.display_name };
+export function publicUser(row: { id: string; email: string; display_name: string; avatar?: string }): AccountUser {
+  return { id: row.id, email: row.email, displayName: row.display_name, avatar: row.avatar ?? '' };
 }
 
 export async function createUser(input: { email: string; passwordHash: string; displayName: string }): Promise<AccountUser> {
@@ -66,7 +68,7 @@ export async function createUser(input: { email: string; passwordHash: string; d
      VALUES (?, ?, ?, ?, ?, ?)`,
     [id, normalizeEmail(input.email), input.passwordHash, input.displayName, now, now],
   );
-  return { id, email: normalizeEmail(input.email), displayName: input.displayName };
+  return { id, email: normalizeEmail(input.email), displayName: input.displayName, avatar: '' };
 }
 
 export async function updatePassword(userId: string, passwordHash: string): Promise<void> {
@@ -112,8 +114,8 @@ export async function createSession(userId: string): Promise<string> {
 export async function sessionUser(request: Request): Promise<AccountUser | null> {
   const token = cookieToken(request);
   if (!token) return null;
-  const row = await db.get<{ id: string; email: string; display_name: string; expires_at: string }>(
-    `SELECT u.id, u.email, u.display_name, s.expires_at
+  const row = await db.get<{ id: string; email: string; display_name: string; avatar: string; expires_at: string }>(
+    `SELECT u.id, u.email, u.display_name, u.avatar, s.expires_at
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = ?`,
     [tokenHash(token)],
@@ -127,7 +129,7 @@ export async function sessionUser(request: Request): Promise<AccountUser | null>
     new Date().toISOString(),
     tokenHash(token),
   ]);
-  return { id: row.id, email: row.email, displayName: row.display_name };
+  return { id: row.id, email: row.email, displayName: row.display_name, avatar: row.avatar };
 }
 
 export async function destroySession(request: Request): Promise<void> {

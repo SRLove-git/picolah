@@ -47,6 +47,8 @@ async function register(email: string, password = 'correct horse 9') {
   });
 }
 
+const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
 test('registers, authenticates and logs out with an http-only session', async () => {
   const email = `profile-${Date.now()}@example.com`;
   const created = await register(email);
@@ -78,6 +80,47 @@ test('registers, authenticates and logs out with an http-only session', async ()
   });
   assert.equal(login.status, 200);
   cookieFrom(login);
+});
+
+test('stores a custom avatar and validates its format and decoded size', async () => {
+  const created = await register(`avatar-${Date.now()}@example.com`);
+  assert.equal(created.status, 201);
+  const cookie = cookieFrom(created);
+
+  const updated = await fetch(`${baseUrl}/api/account/avatar`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ avatar: TINY_PNG }),
+  });
+  assert.equal(updated.status, 200);
+  assert.equal(((await updated.json()) as { avatar: string }).avatar, TINY_PNG);
+
+  const me = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
+  assert.equal(me.status, 200);
+  const session = (await me.json()) as { user: { avatar: string } | null };
+  assert.equal(session.user?.avatar, TINY_PNG);
+
+  const svg = await fetch(`${baseUrl}/api/account/avatar`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ avatar: 'data:image/svg+xml;base64,PHN2Zy8+' }),
+  });
+  assert.equal(svg.status, 422);
+
+  const oversized = await fetch(`${baseUrl}/api/account/avatar`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ avatar: `data:image/png;base64,${Buffer.alloc(512 * 1024 + 1).toString('base64')}` }),
+  });
+  assert.equal(oversized.status, 422);
+
+  const restored = await fetch(`${baseUrl}/api/account/avatar`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ avatar: '' }),
+  });
+  assert.equal(restored.status, 200);
+  assert.equal(((await restored.json()) as { avatar: string }).avatar, '');
 });
 
 test('rejects invalid credentials and short passwords', async () => {

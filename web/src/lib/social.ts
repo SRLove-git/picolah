@@ -22,6 +22,7 @@ export interface RadarSelf {
 export interface RadarCandidate {
   id: string;
   displayName: string;
+  avatar: string;
   similarity: number;
   shared: SharedPreference[];
   relationship: Relationship;
@@ -31,12 +32,14 @@ export interface FriendRequestView {
   id: string;
   userId: string;
   displayName: string;
+  avatar: string;
   createdAt: string;
 }
 
 export interface FriendView {
   id: string;
   displayName: string;
+  avatar: string;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unread: number;

@@ -356,6 +356,12 @@
   object-fit: cover;
 }
 
+.radar-blip > span img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .radar-person {
   display: flex;
   flex: 1;

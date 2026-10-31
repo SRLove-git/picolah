@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Bell,
   Check,
+  ChevronRight,
   MessageCircle,
   Radar,
   RefreshCw,
+  Search,
   Send,
-  UserCheck,
   UserPlus,
   UsersRound,
   X,
@@ -30,7 +32,7 @@ const COPY = {
   zh: {
     eyebrow: 'FRIENDS',
     title: '好友',
-    description: '处理好友请求，和懂你消费偏好的人继续聊天。',
+    description: '查看好友，和懂你消费偏好的人继续聊天。',
     refresh: '刷新',
     guestTitle: '登录后查看好友',
     guestBody: '好友请求、未读消息和聊天记录都会安全地保存在你的账户中。',
@@ -38,10 +40,18 @@ const COPY = {
     friends: '好友',
     requests: '好友请求',
     unread: '未读消息',
+    notifications: '通知',
+    notificationEmpty: '暂时没有新通知',
+    notificationSummaryOne: '条新动态',
+    notificationSummary: '条新动态',
+    messageTitle: '未读消息',
     requestTitle: '待处理请求',
     requestEmpty: '暂无新的好友请求',
     friendTitle: '我的好友',
     friendEmpty: '还没有好友，去雷达发现与你偏好相近的人。',
+    searchFriends: '搜索好友',
+    searchEmpty: '没有找到匹配的好友',
+    contacts: '位联系人',
     openRadar: '去雷达找好友',
     accept: '接受',
     decline: '拒绝',
@@ -57,7 +67,7 @@ const COPY = {
   en: {
     eyebrow: 'FRIENDS',
     title: 'Friends',
-    description: 'Manage requests and keep chatting with people who get your shopping taste.',
+    description: 'See your friends and keep chatting with people who get your shopping taste.',
     refresh: 'Refresh',
     guestTitle: 'Sign in to see friends',
     guestBody: 'Friend requests, unread messages and conversations stay safely with your account.',
@@ -65,10 +75,18 @@ const COPY = {
     friends: 'Friends',
     requests: 'Requests',
     unread: 'Unread',
+    notifications: 'Notifications',
+    notificationEmpty: 'You are all caught up',
+    notificationSummaryOne: 'new update',
+    notificationSummary: 'new updates',
+    messageTitle: 'Unread messages',
     requestTitle: 'Pending requests',
     requestEmpty: 'No new friend requests',
     friendTitle: 'My friends',
     friendEmpty: 'No friends yet. Use Radar to find people with similar taste.',
+    searchFriends: 'Search friends',
+    searchEmpty: 'No matching friends',
+    contacts: 'contacts',
     openRadar: 'Find friends on Radar',
     accept: 'Accept',
     decline: 'Decline',
@@ -111,8 +129,11 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   const [chatWith, setChatWith] = useState<FriendView | null>(null);
   const [messages, setMessages] = useState<SocialMessage[]>([]);
   const [draft, setDraft] = useState('');
+  const [friendQuery, setFriendQuery] = useState('');
   const [sending, setSending] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef('');
 
   const load = useCallback(async () => {
@@ -163,6 +184,25 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages]);
 
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!notificationsRef.current?.contains(event.target as Node)) setNotificationsOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setNotificationsOpen(false);
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [notificationsOpen]);
+
   async function respond(request: FriendRequestView, accept: boolean) {
     setBusyId(request.id);
     try {
@@ -177,6 +217,7 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   }
 
   function openChat(friend: FriendView) {
+    setNotificationsOpen(false);
     lastAtRef.current = '';
     setMessages([]);
     setDraft('');
@@ -202,6 +243,16 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   const friends = data?.friends ?? [];
   const incoming = data?.incoming ?? [];
   const unread = friends.reduce((total, friend) => total + friend.unread, 0);
+  const unreadFriends = friends.filter((friend) => friend.unread > 0);
+  const notificationCount = incoming.length + unread;
+  const visibleFriends = useMemo(() => {
+    const query = friendQuery.trim().toLocaleLowerCase();
+    const collator = new Intl.Collator(en ? 'en' : 'zh-CN', { sensitivity: 'base' });
+    return friends
+      .slice()
+      .filter((friend) => !query || friend.displayName.toLocaleLowerCase().includes(query))
+      .sort((left, right) => collator.compare(left.displayName, right.displayName));
+  }, [en, friendQuery, friends]);
 
   return (
     <section className="pc-page pc-friends-page" aria-label={copy.title}>
@@ -212,10 +263,127 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
         onOpenSidebar={onOpenSidebar}
       >
         {user ? (
-          <button type="button" className="pc-outline-button" onClick={() => void load()} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'radar-spin' : undefined} />
-            {copy.refresh}
-          </button>
+          <div className="friends-head-actions">
+            <div className="friends-notification-anchor" ref={notificationsRef}>
+              <button
+                type="button"
+                className={`friends-bell ${notificationsOpen ? 'is-active' : ''}`}
+                aria-label={copy.notifications}
+                aria-haspopup="dialog"
+                aria-expanded={notificationsOpen}
+                aria-controls="friends-notifications"
+                onClick={() => setNotificationsOpen((open) => !open)}
+              >
+                <Bell size={17} />
+                {notificationCount > 0 ? (
+                  <span>{notificationCount > 99 ? '99+' : notificationCount}</span>
+                ) : null}
+              </button>
+
+              {notificationsOpen ? (
+                <aside
+                  id="friends-notifications"
+                  className="friends-notifications"
+                  role="dialog"
+                  aria-label={copy.notifications}
+                >
+                  <header className="friends-notifications-head">
+                    <div>
+                      <strong>{copy.notifications}</strong>
+                      <small>
+                        {notificationCount > 0
+                          ? `${notificationCount} ${notificationCount === 1 ? copy.notificationSummaryOne : copy.notificationSummary}`
+                          : copy.notificationEmpty}
+                      </small>
+                    </div>
+                    <button type="button" onClick={() => setNotificationsOpen(false)} aria-label={copy.close}>
+                      <X size={15} />
+                    </button>
+                  </header>
+
+                  {notificationCount === 0 ? (
+                    <div className="friends-notifications-empty">
+                      <span><Bell size={20} /></span>
+                      <p>{copy.notificationEmpty}</p>
+                    </div>
+                  ) : (
+                    <div className="friends-notifications-content">
+                      {incoming.length > 0 ? (
+                        <section className="friends-notification-section">
+                          <header>
+                            <h3><UserPlus size={14} />{copy.requestTitle}</h3>
+                            <span>{incoming.length}</span>
+                          </header>
+                          <ul>
+                            {incoming.map((request) => (
+                              <li key={request.id}>
+                                <span className="radar-avatar" style={{ background: tint(request.userId) }}>
+                                  {request.avatar ? <img src={request.avatar} alt="" /> : initial(request.displayName)}
+                                </span>
+                                <span className="friends-notification-person">
+                                  <strong>{request.displayName}</strong>
+                                  <small>{copy.requests}</small>
+                                </span>
+                                <span className="friends-notification-actions">
+                                  <button
+                                    type="button"
+                                    className="is-accept"
+                                    disabled={busyId === request.id}
+                                    onClick={() => void respond(request, true)}
+                                    aria-label={`${copy.accept} ${request.displayName}`}
+                                  >
+                                    <Check size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={busyId === request.id}
+                                    onClick={() => void respond(request, false)}
+                                    aria-label={`${copy.decline} ${request.displayName}`}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      ) : null}
+
+                      {unreadFriends.length > 0 ? (
+                        <section className="friends-notification-section">
+                          <header>
+                            <h3><MessageCircle size={14} />{copy.messageTitle}</h3>
+                            <span>{unread}</span>
+                          </header>
+                          <ul>
+                            {unreadFriends.map((friend) => (
+                              <li key={friend.id} className="friends-message-notification-item">
+                                <button type="button" className="friends-message-notification" onClick={() => openChat(friend)}>
+                                  <span className="radar-avatar" style={{ background: tint(friend.id) }}>
+                                    {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
+                                  </span>
+                                  <span className="friends-notification-person">
+                                    <strong>{friend.displayName}</strong>
+                                    <small>{friend.lastMessage ?? copy.noMessage}</small>
+                                  </span>
+                                  <span className="friends-notification-count">{friend.unread}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      ) : null}
+                    </div>
+                  )}
+                </aside>
+              ) : null}
+            </div>
+
+            <button type="button" className="pc-outline-button" onClick={() => void load()} disabled={loading}>
+              <RefreshCw size={14} className={loading ? 'radar-spin' : undefined} />
+              {copy.refresh}
+            </button>
+          </div>
         ) : null}
       </PageHeader>
 
@@ -231,98 +399,67 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
           </div>
         ) : (
           <>
-            <section className="friends-summary" aria-label={copy.title}>
-              <div className="friends-summary-card">
-                <span><UsersRound size={19} /></span>
-                <div><b>{friends.length}</b><small>{copy.friends}</small></div>
-              </div>
-              <div className="friends-summary-card">
-                <span><UserPlus size={19} /></span>
-                <div><b>{incoming.length}</b><small>{copy.requests}</small></div>
-              </div>
-              <div className="friends-summary-card">
-                <span><MessageCircle size={19} /></span>
-                <div><b>{unread}</b><small>{copy.unread}</small></div>
-              </div>
+            <section className="radar-panel friends-panel friends-list-panel">
+              <header className="radar-panel-head">
+                <h3>{copy.friendTitle}</h3>
+                <span className="radar-count">{friends.length}</span>
+              </header>
+              {friends.length ? (
+                <div className="friends-contacts-shell">
+                  <label className="friends-search">
+                    <Search size={15} />
+                    <input
+                      type="search"
+                      value={friendQuery}
+                      onChange={(event) => setFriendQuery(event.target.value)}
+                      placeholder={copy.searchFriends}
+                      aria-label={copy.searchFriends}
+                    />
+                    {friendQuery ? (
+                      <button type="button" onClick={() => setFriendQuery('')} aria-label={copy.close}>
+                        <X size={13} />
+                      </button>
+                    ) : null}
+                  </label>
+
+                  {visibleFriends.length ? (
+                    <ul className="friends-contacts">
+                      {visibleFriends.map((friend) => (
+                        <li key={friend.id}>
+                          <button
+                            type="button"
+                            className="friends-contact-row"
+                            onClick={() => openChat(friend)}
+                            aria-label={`${copy.chat} ${friend.displayName}`}
+                          >
+                            <span className="friends-contact-avatar" style={{ background: tint(friend.id) }}>
+                              {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
+                            </span>
+                            <strong>{friend.displayName}</strong>
+                            <ChevronRight size={16} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="friends-search-empty">
+                      <UsersRound size={22} />
+                      <p>{copy.searchEmpty}</p>
+                    </div>
+                  )}
+
+                  <p className="friends-contact-total">{friends.length} {copy.contacts}</p>
+                </div>
+              ) : (
+                <div className="friends-empty">
+                  <span><Radar size={24} /></span>
+                  <p>{copy.friendEmpty}</p>
+                  <button type="button" className="radar-action" onClick={onOpenRadar}>
+                    <Radar size={13} />{copy.openRadar}
+                  </button>
+                </div>
+              )}
             </section>
-
-            <div className="friends-grid">
-              <section className="radar-panel friends-panel">
-                <header className="radar-panel-head">
-                  <h3>{copy.requestTitle}</h3>
-                  <span className="radar-count">{incoming.length}</span>
-                </header>
-                {incoming.length ? (
-                  <ul className="radar-list">
-                    {incoming.map((request) => (
-                      <li key={request.id}>
-                        <span className="radar-avatar" style={{ background: tint(request.userId) }}>
-                          {initial(request.displayName)}
-                        </span>
-                        <span className="radar-person"><strong>{request.displayName}</strong></span>
-                        <span className="radar-request-actions">
-                          <button
-                            type="button"
-                            className="radar-action"
-                            disabled={busyId === request.id}
-                            onClick={() => void respond(request, true)}
-                          >
-                            <Check size={13} />{copy.accept}
-                          </button>
-                          <button
-                            type="button"
-                            className="radar-action is-ghost"
-                            disabled={busyId === request.id}
-                            onClick={() => void respond(request, false)}
-                          >
-                            <X size={13} />{copy.decline}
-                          </button>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="friends-empty-inline">
-                    <UserCheck size={22} />
-                    <p>{copy.requestEmpty}</p>
-                  </div>
-                )}
-              </section>
-
-              <section className="radar-panel friends-panel">
-                <header className="radar-panel-head">
-                  <h3>{copy.friendTitle}</h3>
-                  <span className="radar-count">{friends.length}</span>
-                </header>
-                {friends.length ? (
-                  <ul className="radar-list friends-list">
-                    {friends.map((friend) => (
-                      <li key={friend.id}>
-                        <span className="radar-avatar" style={{ background: tint(friend.id) }}>
-                          {initial(friend.displayName)}
-                        </span>
-                        <span className="radar-person">
-                          <strong>{friend.displayName}</strong>
-                          <small>{friend.lastMessage ?? copy.noMessage}</small>
-                        </span>
-                        {friend.unread > 0 ? <span className="radar-unread">{friend.unread}</span> : null}
-                        <button type="button" className="radar-action is-ghost" onClick={() => openChat(friend)}>
-                          <MessageCircle size={13} />{copy.chat}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="friends-empty">
-                    <span><Radar size={24} /></span>
-                    <p>{copy.friendEmpty}</p>
-                    <button type="button" className="radar-action" onClick={onOpenRadar}>
-                      <Radar size={13} />{copy.openRadar}
-                    </button>
-                  </div>
-                )}
-              </section>
-            </div>
 
             {error ? <p className="radar-error">{error}</p> : null}
           </>
@@ -333,7 +470,7 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
         <div className="radar-chat" role="dialog" aria-label={copy.chat}>
           <header className="radar-chat-head">
             <span className="radar-avatar" style={{ background: tint(chatWith.id) }}>
-              {initial(chatWith.displayName)}
+              {chatWith.avatar ? <img src={chatWith.avatar} alt="" /> : initial(chatWith.displayName)}
             </span>
             <strong>{chatWith.displayName}</strong>
             <button

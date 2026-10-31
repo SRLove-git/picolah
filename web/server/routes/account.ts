@@ -7,6 +7,38 @@ import { deleteOwnerData, listAlerts, listWatchlist } from '../watchlist.ts';
 
 export const accountRouter = Router();
 
+const MAX_AVATAR_BYTES = 512 * 1024;
+const avatarSchema = z.object({
+  avatar: z.string().max(700_000, '头像图片过大。').refine((value) => {
+    if (value === '') return true;
+    const match = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+    if (!match) return false;
+    try {
+      return Buffer.from(match[1], 'base64').byteLength <= MAX_AVATAR_BYTES;
+    } catch {
+      return false;
+    }
+  }, '头像仅支持 JPEG、PNG 或 WebP，且不得超过 512KB。'),
+});
+
+accountRouter.patch('/avatar', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'AUTH_REQUIRED', message: '请先登录。' });
+  const parsed = avatarSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({
+      error: 'VALIDATION_ERROR',
+      message: parsed.error.issues[0]?.message || '头像图片无效。',
+    });
+  }
+  await db.run('UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?', [
+    parsed.data.avatar,
+    new Date().toISOString(),
+    req.user.id,
+  ]);
+  req.user.avatar = parsed.data.avatar;
+  return res.json({ avatar: parsed.data.avatar });
+});
+
 accountRouter.get('/export', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'AUTH_REQUIRED', message: '请先登录。' });
   const user = req.user;

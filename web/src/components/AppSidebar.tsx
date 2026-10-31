@@ -118,7 +118,7 @@ export function AppSidebar({
           data-tooltip={accountLabel}
         >
           <span className="pc-account-avatar">
-            <Capybara variant="face" size={34} />
+            {user?.avatar ? <img src={user.avatar} alt="" /> : <Capybara variant="face" size={34} />}
             <i />
           </span>
           <span className="pc-account-copy">

@@ -13,6 +13,7 @@ const server = await new Promise<import('node:http').Server>((resolve) => {
 const address = server.address();
 if (!address || typeof address === 'string') throw new Error('test server did not bind a TCP port');
 const baseUrl = `http://127.0.0.1:${address.port}`;
+const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 after(
   () =>
@@ -54,14 +55,23 @@ async function click(userId: string, category: string, brand: string, platform: 
   });
 }
 
+async function setAvatar(cookie: string, avatar: string) {
+  const response = await fetch(`${baseUrl}/api/account/avatar`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ avatar }),
+  });
+  assert.equal(response.status, 200);
+}
+
 async function radar(cookie: string) {
   const response = await fetch(`${baseUrl}/api/social/radar`, { headers: { cookie } });
   assert.equal(response.status, 200);
   return (await response.json()) as {
     self: { hasData: boolean; comparisons: number };
-    candidates: Array<{ id: string; similarity: number; shared: Array<{ zh: string }>; relationship: string }>;
-    incoming: Array<{ id: string; userId: string }>;
-    friends: Array<{ id: string; unread: number }>;
+    candidates: Array<{ id: string; avatar: string; similarity: number; shared: Array<{ zh: string }>; relationship: string }>;
+    incoming: Array<{ id: string; userId: string; avatar: string }>;
+    friends: Array<{ id: string; avatar: string; unread: number }>;
   };
 }
 
@@ -70,6 +80,9 @@ test('radar matches people by shopping preferences and friends can chat', async 
   const bob = await register(`radar-b-${Date.now()}@example.com`);
   const carol = await register(`radar-c-${Date.now()}@example.com`);
   const dave = await register(`radar-d-${Date.now()}@example.com`);
+
+  await setAvatar(alice.cookie, TINY_PNG);
+  await setAvatar(bob.cookie, TINY_PNG);
 
   await click(alice.id, 'phone', 'apple', 'shopee', 1200);
   await click(alice.id, 'phone', 'apple', 'lazada', 1180);
@@ -84,6 +97,7 @@ test('radar matches people by shopping preferences and friends can chat', async 
   const carolCandidate = aliceRadar.candidates.find((item) => item.id === carol.id);
   const daveCandidate = aliceRadar.candidates.find((item) => item.id === dave.id);
   assert.ok(bobCandidate, 'Bob should appear on the radar');
+  assert.equal(bobCandidate.avatar, TINY_PNG);
   assert.equal(carolCandidate, undefined, 'market and platform overlap alone is not a meaningful match');
   assert.equal(daveCandidate, undefined, 'users without events are not matched');
   assert.ok(bobCandidate.similarity >= 45, 'meaningful matches clear the similarity threshold');
@@ -100,6 +114,7 @@ test('radar matches people by shopping preferences and friends can chat', async 
   const bobRadar = await radar(bob.cookie);
   assert.equal(bobRadar.incoming.length, 1);
   assert.equal(bobRadar.incoming[0].userId, alice.id);
+  assert.equal(bobRadar.incoming[0].avatar, TINY_PNG);
 
   const accept = await fetch(`${baseUrl}/api/social/requests/${bobRadar.incoming[0].id}/accept`, {
     method: 'POST',
@@ -110,6 +125,7 @@ test('radar matches people by shopping preferences and friends can chat', async 
   const aliceAfter = await radar(alice.cookie);
   assert.equal(aliceAfter.friends.length, 1);
   assert.equal(aliceAfter.friends[0].id, bob.id);
+  assert.equal(aliceAfter.friends[0].avatar, TINY_PNG);
   assert.equal(aliceAfter.candidates.find((item) => item.id === bob.id)?.relationship, 'friend');
 
   const sent = await fetch(`${baseUrl}/api/social/messages`, {

@@ -52,6 +52,7 @@ export interface SessionUser {
   id: string;
   email: string;
   displayName: string;
+  avatar: string;
 }
 
 export interface SessionState {
@@ -140,6 +141,16 @@ export async function logout(): Promise<void> {
     headers: userHeaders(),
   });
   if (!response.ok) throw new Error(await parseError(response));
+}
+
+export async function updateAvatar(avatar: string): Promise<{ avatar: string }> {
+  const response = await fetch('/api/account/avatar', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...userHeaders() },
+    body: JSON.stringify({ avatar }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as { avatar: string };
 }
 
 export async function getConversations(): Promise<ConversationSummary[]> {

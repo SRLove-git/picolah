@@ -342,7 +342,9 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                       top: `${50 + Math.sin(angle) * radius}%`,
                     }}
                   >
-                    <span style={{ background: tint(candidate.id) }}>{initial(candidate.displayName)}</span>
+                    <span style={{ background: tint(candidate.id) }}>
+                      {candidate.avatar ? <img src={candidate.avatar} alt="" /> : initial(candidate.displayName)}
+                    </span>
                     <i>{candidate.similarity}%</i>
                   </span>
                 );
@@ -365,7 +367,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                     {candidates.map((candidate) => (
                       <li key={candidate.id}>
                         <span className="radar-avatar" style={{ background: tint(candidate.id) }}>
-                          {initial(candidate.displayName)}
+                          {candidate.avatar ? <img src={candidate.avatar} alt="" /> : initial(candidate.displayName)}
                         </span>
                         <span className="radar-person">
                           <strong>{candidate.displayName}</strong>
@@ -418,7 +420,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                       {data.incoming.map((request) => (
                         <li key={request.id}>
                           <span className="radar-avatar" style={{ background: tint(request.userId) }}>
-                            {initial(request.displayName)}
+                            {request.avatar ? <img src={request.avatar} alt="" /> : initial(request.displayName)}
                           </span>
                           <span className="radar-person">
                             <strong>{request.displayName}</strong>
@@ -461,7 +463,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                       {data.friends.map((friend) => (
                         <li key={friend.id}>
                           <span className="radar-avatar" style={{ background: tint(friend.id) }}>
-                            {initial(friend.displayName)}
+                            {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
                           </span>
                           <span className="radar-person">
                             <strong>{friend.displayName}</strong>
@@ -495,7 +497,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
         <div className="radar-chat" role="dialog" aria-label={copy.chat}>
           <header className="radar-chat-head">
             <span className="radar-avatar" style={{ background: tint(chatWith.id) }}>
-              {initial(chatWith.displayName)}
+              {chatWith.avatar ? <img src={chatWith.avatar} alt="" /> : initial(chatWith.displayName)}
             </span>
             <strong>{chatWith.displayName}</strong>
             <button

@@ -13,6 +13,7 @@ export type Relationship = 'none' | 'requested' | 'incoming' | 'friend';
 export interface RadarCandidate {
   id: string;
   displayName: string;
+  avatar: string;
   similarity: number;
   shared: SharedPreference[];
   relationship: Relationship;
@@ -36,12 +37,14 @@ export interface FriendRequestView {
   id: string;
   userId: string;
   displayName: string;
+  avatar: string;
   createdAt: string;
 }
 
 export interface FriendView {
   id: string;
   displayName: string;
+  avatar: string;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unread: number;
@@ -56,8 +59,8 @@ export interface DirectMessage {
   readAt: string | null;
 }
 
-type UserRow = { id: string; display_name: string };
-type RequestRow = { id: string; from_user: string; to_user: string; created_at: string; display_name: string };
+type UserRow = { id: string; display_name: string; avatar: string };
+type RequestRow = { id: string; from_user: string; to_user: string; created_at: string; display_name: string; avatar: string };
 type MessageRow = {
   id: string;
   from_user: string;
@@ -191,7 +194,7 @@ export async function listRadar(userId: string): Promise<RadarCandidate[]> {
 
   const candidates: RadarCandidate[] = [];
   for (const row of rows) {
-    const person = await db.get<UserRow>('SELECT id, display_name FROM users WHERE id = ?', [row.user_id]);
+    const person = await db.get<UserRow>('SELECT id, display_name, avatar FROM users WHERE id = ?', [row.user_id]);
     if (!person) continue;
     const profile = await getShoppingProfile(row.user_id);
     if (!profile.hasData) continue;
@@ -201,6 +204,7 @@ export async function listRadar(userId: string): Promise<RadarCandidate[]> {
     candidates.push({
       id: person.id,
       displayName: person.display_name,
+      avatar: person.avatar,
       similarity,
       shared: sharedPreferences(mine, profile),
       relationship: await relationship(userId, person.id),
@@ -240,7 +244,7 @@ async function relationship(viewer: string, other: string): Promise<Relationship
 
 export async function listIncomingRequests(userId: string): Promise<FriendRequestView[]> {
   const rows = await db.all<RequestRow>(
-    `SELECT fr.id, fr.from_user, fr.to_user, fr.created_at, u.display_name
+    `SELECT fr.id, fr.from_user, fr.to_user, fr.created_at, u.display_name, u.avatar
      FROM friend_requests fr
      JOIN users u ON u.id = fr.from_user
      WHERE fr.to_user = ? AND fr.status = 'pending'
@@ -251,13 +255,14 @@ export async function listIncomingRequests(userId: string): Promise<FriendReques
     id: row.id,
     userId: row.from_user,
     displayName: row.display_name,
+    avatar: row.avatar,
     createdAt: row.created_at,
   }));
 }
 
 export async function listOutgoingRequests(userId: string): Promise<FriendRequestView[]> {
   const rows = await db.all<RequestRow>(
-    `SELECT fr.id, fr.from_user, fr.to_user, fr.created_at, u.display_name
+    `SELECT fr.id, fr.from_user, fr.to_user, fr.created_at, u.display_name, u.avatar
      FROM friend_requests fr
      JOIN users u ON u.id = fr.to_user
      WHERE fr.from_user = ? AND fr.status = 'pending'
@@ -268,13 +273,14 @@ export async function listOutgoingRequests(userId: string): Promise<FriendReques
     id: row.id,
     userId: row.to_user,
     displayName: row.display_name,
+    avatar: row.avatar,
     createdAt: row.created_at,
   }));
 }
 
 export async function listFriends(userId: string): Promise<FriendView[]> {
-  const rows = await db.all<{ id: string; display_name: string }>(
-    `SELECT u.id, u.display_name
+  const rows = await db.all<{ id: string; display_name: string; avatar: string }>(
+    `SELECT u.id, u.display_name, u.avatar
      FROM friendships f
      JOIN users u ON u.id = CASE WHEN f.user_a = ? THEN f.user_b ELSE f.user_a END
      WHERE f.user_a = ? OR f.user_b = ?
@@ -297,6 +303,7 @@ export async function listFriends(userId: string): Promise<FriendView[]> {
     friends.push({
       id: row.id,
       displayName: row.display_name,
+      avatar: row.avatar,
       lastMessage: last?.body ?? null,
       lastMessageAt: last?.created_at ?? null,
       unread: Number(unread?.count ?? 0),

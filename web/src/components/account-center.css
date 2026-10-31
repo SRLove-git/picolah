@@ -14,7 +14,14 @@
 .account-menu { display: none; }
 .account-content { width: min(100% - 64px, 940px); margin: 0 auto; padding-bottom: 48px; }
 .account-identity { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 36px; align-items: center; padding: 48px 0 42px; }
-.account-avatar { width: 158px; height: 158px; display: grid; place-items: center; justify-self: center; border-radius: 50%; background: #fff0e4; border: 7px solid #fff; box-shadow: 0 0 0 1px #eae5df, 0 10px 28px #674e2610; overflow: hidden; }
+.account-avatar-editor { display: flex; flex-direction: column; align-items: center; gap: 9px; justify-self: center; }
+.account-avatar-editor > small { color: var(--account-muted); font-size: 10px; line-height: 1.3; text-align: center; }
+.account-avatar { position: relative; width: 158px; height: 158px; display: grid; place-items: center; padding: 0; border-radius: 50%; background: #fff0e4; border: 7px solid #fff; box-shadow: 0 0 0 1px #eae5df, 0 10px 28px #674e2610; overflow: hidden; cursor: pointer; }
+.account-avatar > img { width: 100%; height: 100%; object-fit: cover; }
+.account-avatar-edit { position: absolute; right: 5px; bottom: 5px; display: grid; place-items: center; width: 36px; height: 36px; color: #fff; background: #29272ce8; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 5px 16px #2c253033; }
+.account-avatar-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.account-avatar-spin { animation: account-avatar-spin 900ms linear infinite; }
+@keyframes account-avatar-spin { to { transform: rotate(1turn); } }
 .account-name-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .account-name-row h2 { margin: 0; max-width: 100%; font-size: clamp(26px, 3vw, 34px); font-weight: 650; line-height: 1.2; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .account-member-label { color: var(--account-muted); font-size: 11px; padding: 4px 9px; border: 1px solid var(--account-line); border-radius: 6px; }
@@ -79,6 +86,7 @@
   .account-content { width: calc(100% - 36px); }
   .account-identity { grid-template-columns: 112px minmax(0, 1fr); gap: 22px; padding: 26px 0 30px; }
   .account-avatar { width: 108px; height: 108px; border-width: 5px; }
+  .account-avatar-edit { right: 1px; bottom: 1px; width: 31px; height: 31px; border-width: 2px; }
   .account-avatar > .pc-capy { width: 87px !important; height: 87px !important; }
   .account-name-row h2 { font-size: 26px; }
   .account-member-label { font-size: 10px; }
@@ -95,6 +103,9 @@
 @media (max-width: 520px) {
   .account-identity { grid-template-columns: 86px minmax(0, 1fr); gap: 18px; align-items: start; padding-top: 24px; }
   .account-avatar { width: 84px; height: 84px; margin-top: 3px; border-width: 4px; }
+  .account-avatar-editor { gap: 6px; align-self: start; }
+  .account-avatar-editor > small { font-size: 9px; }
+  .account-avatar-edit { width: 27px; height: 27px; }
   .account-avatar > .pc-capy { width: 69px !important; height: 69px !important; }
   .account-name-row { gap: 7px; }
   .account-name-row h2 { font-size: 25px; }
@@ -112,7 +123,7 @@
   .pc-account-center .pc-danger-zone > div { flex-direction: column; }
   .pc-account-setting-value { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .pc-account-center button:active { transform: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pc-account-center button:active { transform: none; transition: none; } .account-avatar-spin { animation: none; } }
 @media (prefers-reduced-transparency: reduce) { .account-toolbar { background: #fdfcfa; backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media (prefers-contrast: more) {
   .pc-account-center { --account-muted: #49454b; --account-line: #817a85; }
