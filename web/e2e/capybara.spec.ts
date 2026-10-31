@@ -135,6 +135,24 @@ test('an unavailable expression image keeps the original character visible', asy
   expect(await companion.locator('img.is-visible').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
 });
 
+test('the largest growth stage keeps its head and feet inside the interaction area on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 1000 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const payload = await setup(page);
+  payload.xp = capyXpForLevel(30);
+  await page.goto('/7hk9ho#capybara');
+  const companion = page.locator('.pc-companion');
+  await expect(companion).toHaveAttribute('data-stage', 'legend');
+  await companion.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'playful');
+  const image = (await companion.locator('img.is-visible').boundingBox())!;
+  const scene = (await companion.locator('.pc-companion-scene').boundingBox())!;
+  const actions = (await companion.locator('.pc-companion-actions').boundingBox())!;
+  expect(image.y).toBeGreaterThanOrEqual(scene.y);
+  expect(image.y + image.height).toBeLessThanOrEqual(actions.y);
+  expect(await companion.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+});
+
 test.describe('touch interaction', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
   test('tap can feed, put to sleep and wake Capy without hover movement', async ({ page }) => {

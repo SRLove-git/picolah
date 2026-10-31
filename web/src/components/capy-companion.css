@@ -34,8 +34,12 @@
   justify-content: center;
   width: 100%;
   isolation: isolate;
-  overflow: clip;
+  overflow-x: clip;
+  overflow-y: visible;
 }
+
+.pc-companion[data-stage='grown'] .pc-companion-scene { padding-top: 16px; }
+.pc-companion[data-stage='legend'] .pc-companion-scene { padding-top: 28px; }
 
 .pc-companion-scene::after {
   position: absolute;

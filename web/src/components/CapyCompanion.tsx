@@ -126,7 +126,7 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
   ] as const;
 
   return <div className={`pc-companion ${compact ? 'is-compact' : ''}`}
-    data-expression={expression} data-moving={moving} data-still={paused || keyboard} data-paused={hidden}>
+    data-expression={expression} data-stage={view?.stage.id} data-moving={moving} data-still={paused || keyboard} data-paused={hidden}>
     <p className={`pc-companion-speech ${compact ? 'pc-hero-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">
       {compact ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
     </p>
