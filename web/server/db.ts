@@ -76,6 +76,7 @@ const SQLITE_SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
+    owner_id TEXT NOT NULL DEFAULT '',
     title TEXT NOT NULL,
     market TEXT NOT NULL,
     created_at TEXT NOT NULL,
@@ -290,12 +291,14 @@ function applySqliteMigrations(handle: DatabaseSync): void {
   for (const [table, column, definition] of [
     ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
     ['users', 'avatar', "TEXT NOT NULL DEFAULT ''"],
+    ['conversations', 'owner_id', "TEXT NOT NULL DEFAULT ''"],
   ] as const) {
     const columns = handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!columns.some((item) => item.name === column)) {
       handle.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
     }
   }
+  handle.exec('CREATE INDEX IF NOT EXISTS idx_conversations_owner_updated ON conversations(owner_id, updated_at DESC)');
 }
 
 class SqliteDatabase implements Database {

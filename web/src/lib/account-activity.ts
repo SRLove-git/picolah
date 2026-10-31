@@ -1,11 +1,12 @@
 import { REELS, type Reel } from '../../shared/reels';
-import type { ShoppingProfile } from '../../shared/types';
+import type { CountryCode, ShoppingProfile } from '../../shared/types';
 
 export type ActivityTab = 'watched' | 'likes' | 'saved' | 'browsing';
 export interface AccountActivity {
   id: string;
   title: string;
   createdAt: string;
+  market?: CountryCode;
   reel?: Reel;
   kind: 'video' | 'comparison' | 'offer_click';
 }
@@ -15,7 +16,7 @@ export function accountActivity(profile: ShoppingProfile | null, tab: ActivityTa
   if (!profile) return [];
   if (tab === 'browsing') return profile.recent.map((event) => ({
     id: event.id, title: english ? event.titleEn : event.titleZh,
-    createdAt: event.createdAt, kind: event.type,
+    createdAt: event.createdAt, kind: event.type, market: event.market,
   }));
   const types = tab === 'watched' ? ['view', 'watch'] : tab === 'likes' ? ['like', 'unlike'] : ['save', 'unsave'];
   const seen = new Set<string>();

@@ -49,6 +49,14 @@ async function register(email: string, password = 'correct horse 9') {
 
 const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
+test('malformed session cookies do not break public APIs', async () => {
+  for (const cookie of ['picolah_session=%', 'picolah_session=%E0%A4%A']) {
+    const response = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json() as { user: null }).user, null);
+  }
+});
+
 test('registers, authenticates and logs out with an http-only session', async () => {
   const email = `profile-${Date.now()}@example.com`;
   const created = await register(email);

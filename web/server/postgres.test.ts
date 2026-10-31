@@ -19,6 +19,11 @@ function freePort(): Promise<number> {
 test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => {
   const port = await freePort();
   const pglite = new PGlite();
+  // Start with the old schema so the production-driver test exercises the upgrade.
+  await pglite.exec(`CREATE TABLE conversations (
+    id TEXT PRIMARY KEY, title TEXT NOT NULL, market TEXT NOT NULL,
+    created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+  )`);
   const socket = new PGLiteSocketServer({ db: pglite, port, host: '127.0.0.1' });
   await socket.start();
 
@@ -89,10 +94,24 @@ test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => 
   assert.equal(history.length, 2);
 
   const conversationId = 'c1';
-  await repo.createConversationWithId(conversationId, 'Test', 'SG', now);
+  await repo.createConversationWithId(conversationId, 'Test', 'SG', now, 'pg-conversation-owner');
   await repo.addMessage({ conversationId, role: 'user', content: 'hello' });
-  const conversation = await repo.getConversation(conversationId);
+  const conversation = await repo.getConversation(conversationId, 'pg-conversation-owner');
   assert.equal(conversation?.messages.length, 1);
+  assert.equal(await repo.getConversation(conversationId, 'pg-another-owner'), null);
+  assert.deepEqual(await repo.listConversations('pg-another-owner'), []);
+  await repo.updateConversationTitle(conversationId, 'Not allowed', 'pg-another-owner');
+  await repo.deleteConversation(conversationId, 'pg-another-owner');
+  assert.equal((await repo.getConversation(conversationId, 'pg-conversation-owner'))?.title, 'Test');
+  assert.equal(await profile.recordConversationComparison(conversationId, comparison), true);
+  assert.equal((await profile.getShoppingProfile('pg-conversation-owner')).totals.comparisons, 1);
+  await db.run('UPDATE conversations SET owner_id = ? WHERE id = ?', ['pg-next-owner', conversationId]);
+  assert.equal(await profile.recordConversationComparison(conversationId, comparison), true);
+  assert.equal((await profile.getShoppingProfile('pg-next-owner')).totals.comparisons, 1);
+  assert.ok(await repo.addAssistantReply(conversationId, 'Still active', {}));
+  await repo.deleteConversation(conversationId, 'pg-next-owner');
+  assert.equal(await profile.recordConversationComparison(conversationId, comparison), false);
+  assert.equal(await repo.addAssistantReply(conversationId, 'Too late', {}), null);
 
   const user = await auth.createUser({ email: 'pg@example.com', passwordHash: 'hash', displayName: 'PG' });
   assert.equal((await auth.findUserByEmail('pg@example.com'))?.id, user.id);

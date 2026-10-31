@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db.ts';
-import { findUserByEmail, verifyPassword } from '../auth.ts';
+import { clearSessionCookie, findUserByEmail, verifyPassword } from '../auth.ts';
 import { getShoppingProfile, resetProfile } from '../profile.ts';
 import { deleteOwnerData, listAlerts, listWatchlist } from '../watchlist.ts';
 
@@ -66,12 +66,13 @@ accountRouter.delete('/', async (req, res) => {
   }
 
   const userId = req.user.id;
+  await db.run('DELETE FROM conversations WHERE owner_id = ?', [userId]);
   await deleteOwnerData(`user:${userId}`);
   await resetProfile(userId);
   await db.run('DELETE FROM app_users WHERE id = ?', [userId]);
   await db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
   await db.run('DELETE FROM users WHERE id = ?', [userId]);
 
-  res.clearCookie('picolah_session');
+  clearSessionCookie(res);
   return res.json({ ok: true });
 });

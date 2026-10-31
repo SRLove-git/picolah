@@ -5,11 +5,11 @@ import type { ChatMessage, Comparison } from '../../shared/types.ts';
 import { COUNTRY_CODES, MARKETS } from '../../shared/types.ts';
 import { detectMarket, resolvePlatformDirective } from '../../shared/query.ts';
 import { config, crawlerToolConfigured, llmConfigured } from '../config.ts';
-import { addMessage, createConversation, getConversation } from '../repo.ts';
+import { addAssistantReply, addMessage, createConversation, getConversation } from '../repo.ts';
 import { writeFallbackAnswer } from '../copy.ts';
 import { liveSearchCoverageNote } from '../../shared/copy.ts';
 import { streamChatAnswer, streamLlmAnswer } from '../llm.ts';
-import { recordComparisonEvent, requestUserId } from '../profile.ts';
+import { recordConversationComparison, requestUserId } from '../profile.ts';
 import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
 import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
@@ -56,11 +56,13 @@ chatRouter.post('/', async (req, res) => {
 
   const message = rawMessage || '帮我看看这张图里的商品';
   const market = detectMarket(message, selectedMarket);
-  const stored = conversationId ? await getConversation(conversationId) : null;
+  const profileUserId = requestUserId(req);
+  if (!profileUserId) return res.status(400).json({ error: 'INVALID_USER_ID', message: '无法识别当前访客，请刷新页面后重试。' });
+  const stored = conversationId ? await getConversation(conversationId, profileUserId) : null;
   if (conversationId && !stored) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND', message: '对话不存在' });
   const priorMessages: ChatMessage[] = stored?.messages ?? [];
   const previous = previousComparison(priorMessages);
-  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${MARKETS[market].nameZh}`, market);
+  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${MARKETS[market].nameZh}`, market, profileUserId);
   const directive = resolvePlatformDirective(message, market,
     previous?.search?.scope === 'web' ? [] : previous?.platformFilter ?? []);
   const platformRestriction = directive.mode === 'include' ||
@@ -126,10 +128,13 @@ chatRouter.post('/', async (req, res) => {
     }
   }
 
-  const profileUserId = requestUserId(req);
-  if (profileUserId) {
-    try { await recordComparisonEvent(profileUserId, comparison, conversation.id); }
-    catch { console.warn('[profile] failed to record live comparison'); }
+  try {
+    if (!(await recordConversationComparison(conversation.id, comparison))) {
+      sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
+      return res.end();
+    }
+  } catch {
+    console.warn('[profile] failed to record live comparison');
   }
   sse(res, 'results', comparison);
   sse(res, 'status', { label: '正在整理搜索结果…' });
@@ -162,10 +167,11 @@ chatRouter.post('/', async (req, res) => {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }
   }
-  const assistantMessageId = await addMessage({
-    conversationId: conversation.id, role: 'assistant', content: answer,
-    metadata: { comparison, usedLlm, source: 'live-tools' },
-  });
+  const assistantMessageId = await addAssistantReply(conversation.id, answer, { comparison, usedLlm, source: 'live-tools' });
+  if (!assistantMessageId) {
+    sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
+    return res.end();
+  }
   sse(res, 'done', { messageId: assistantMessageId, conversationId: conversation.id });
   res.end();
 });

@@ -92,7 +92,12 @@ function cookieToken(request: Request): string | null {
   for (const part of raw.split(';')) {
     const [name, ...rest] = part.trim().split('=');
     if (name === config.sessionCookie) {
-      return decodeURIComponent(rest.join('=')) || null;
+      try {
+        return decodeURIComponent(rest.join('=')) || null;
+      } catch {
+        // Treat a malformed cookie as signed out, not as a server failure.
+        return null;
+      }
     }
   }
   return null;

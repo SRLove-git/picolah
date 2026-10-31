@@ -86,8 +86,8 @@ test('browsing uses the requested language and preserves event type and timestam
     { id: 'click-one', type: 'offer_click', titleZh: '查看商家', titleEn: 'View merchant', market: 'MY', createdAt: stamp(1) },
   ]);
   assert.deepEqual(accountActivity(profile, 'browsing', false), [
-    { id: 'comparison-one', title: '耳机比价', kind: 'comparison', createdAt: stamp(2) },
-    { id: 'click-one', title: '查看商家', kind: 'offer_click', createdAt: stamp(1) },
+    { id: 'comparison-one', title: '耳机比价', kind: 'comparison', createdAt: stamp(2), market: 'SG' },
+    { id: 'click-one', title: '查看商家', kind: 'offer_click', createdAt: stamp(1), market: 'MY' },
   ]);
   assert.deepEqual(accountActivity(profile, 'browsing', true).map(({ title }) => title), ['Compare headphones', 'View merchant']);
 });

@@ -101,3 +101,29 @@ test('reset keeps the anonymous user but clears every shopping signal', async ()
     await cleanup(userId);
   }
 });
+
+test('recommendation history has an English title, including legacy bilingual snapshots', async () => {
+  const userId = 'test-recommendation-title';
+  const comparison = comparisonFixture();
+  comparison.kind = 'recommendation';
+  comparison.alternatives = [
+    { product: { ...comparison.product, name: 'Apple iPhone 18 Pro' } },
+    { product: { ...comparison.product, name: 'Samsung Galaxy' } },
+    { product: { ...comparison.product, name: 'Google Pixel' } },
+  ] as Comparison['alternatives'];
+  comparison.product = null;
+  await cleanup(userId);
+  try {
+    await recordComparisonEvent(userId, comparison);
+    const recorded = (await getShoppingProfile(userId)).recent[0];
+    assert.equal(recorded.titleZh, 'Apple iPhone 18 Pro 等 3 款');
+    assert.equal(recorded.titleEn, 'Apple iPhone 18 Pro and 2 more');
+    const event = await db.get<{ metadata: string }>('SELECT metadata FROM user_events WHERE user_id = ?', [userId]);
+    const metadata = JSON.parse(event!.metadata);
+    metadata.titleEn = metadata.titleZh;
+    await db.run('UPDATE user_events SET metadata = ? WHERE user_id = ?', [JSON.stringify(metadata), userId]);
+    assert.equal((await getShoppingProfile(userId)).recent[0].titleEn, 'Apple iPhone 18 Pro and 2 more');
+  } finally {
+    await cleanup(userId);
+  }
+});

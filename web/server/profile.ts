@@ -12,11 +12,12 @@ import type {
   ShoppingProfile,
 } from '../shared/types.ts';
 import { MARKETS, PLATFORMS } from '../shared/types.ts';
-import { db } from './db.ts';
-import { getProduct } from './repo.ts';
+import { db, type DbExecutor } from './db.ts';
+import { getProduct, lockConversationOwner } from './repo.ts';
 import type { VideoProfile } from '../shared/reels.ts';
 import { getVideoProfile, mergeVideoProfile, resetVideoProfile } from './reels.ts';
 import { deleteCapybara } from './capybara.ts';
+import { isAnonymousUserId, isValidUserId } from './user-id.ts';
 
 export { requestUserId } from './user-id.ts';
 
@@ -216,9 +217,9 @@ function emptyProfile(userId: string, video: VideoProfile, user?: UserRow | null
   };
 }
 
-export async function ensureUser(userId: string): Promise<void> {
+export async function ensureUser(userId: string, executor: DbExecutor = db): Promise<void> {
   const stamp = nowIso();
-  await db.run(
+  await executor.run(
     `INSERT INTO app_users (id, created_at, last_seen_at)
      VALUES (?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at`,
@@ -237,12 +238,14 @@ export async function mergeAnonymousProfile(anonymousId: string, accountId: stri
   const account = String(accountId || '').trim();
   if (
     anonymous === account ||
-    !/^[a-zA-Z0-9_-]{8,80}$/.test(anonymous) ||
-    !/^[a-zA-Z0-9_-]{8,80}$/.test(account)
+    !isAnonymousUserId(anonymous) ||
+    !isValidUserId(account)
   ) {
     return 0;
   }
   await ensureUser(account);
+  // A chat without a product result still belongs to its anonymous creator.
+  await db.run('UPDATE conversations SET owner_id = ? WHERE owner_id = ?', [account, anonymous]);
   const exists = await db.get('SELECT 1 FROM app_users WHERE id = ?', [anonymous]);
   if (!exists) return 0;
   const result = await db.run('UPDATE user_events SET user_id = ? WHERE user_id = ?', [account, anonymous]);
@@ -264,8 +267,8 @@ async function insertEvent(input: {
   isLowest?: boolean | null;
   position?: number | null;
   metadata?: Record<string, unknown>;
-}): Promise<void> {
-  await db.run(
+}, executor: DbExecutor = db): Promise<void> {
+  await executor.run(
     `INSERT INTO user_events
       (id, user_id, type, market, product_id, category, brand, platform_id, price,
        currency, is_lowest, position, metadata, created_at)
@@ -297,10 +300,11 @@ export async function recordComparisonEvent(
   userId: string,
   comparison: Comparison,
   conversationId?: string | null,
+  executor: DbExecutor = db,
 ): Promise<void> {
   const product = comparison.product;
   if (!product && comparison.kind !== 'recommendation') return;
-  await ensureUser(userId);
+  await ensureUser(userId, executor);
 
   const alternatives = product
     ? []
@@ -318,7 +322,8 @@ export async function recordComparisonEvent(
   const titleZh = product
     ? product.name
     : `${alternatives[0]?.productName || '推荐商品'}${alternatives.length > 1 ? ` 等 ${alternatives.length} 款` : ''}`;
-  const titleEn = titleZh;
+  const titleEn = product ? product.name
+    : `${alternatives[0]?.productName || 'Recommended products'}${alternatives.length > 1 ? ` and ${alternatives.length - 1} more` : ''}`;
 
   await insertEvent({
     userId,
@@ -338,6 +343,16 @@ export async function recordComparisonEvent(
       offers,
       alternatives,
     },
+  }, executor);
+}
+
+/** A request may outlive a sign-in or deletion; use the current, locked owner. */
+export async function recordConversationComparison(conversationId: string, comparison: Comparison): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const owner = await lockConversationOwner(conversationId, tx);
+    if (!owner) return false;
+    await recordComparisonEvent(owner, comparison, conversationId, tx);
+    return true;
   });
 }
 
@@ -598,22 +613,26 @@ function toActivity(event: EventRow): ProfileActivity {
   if (event.type === 'offer_click') {
     const platform = event.platform_id ? PLATFORMS[event.platform_id]?.name || event.platform_id : '';
     const productName = meta.productName || '';
-    const title = [platform, productName].filter(Boolean).join(' · ') || '平台点击';
+    const title = [platform, productName].filter(Boolean).join(' · ');
     return {
       id: event.id,
       type: 'offer_click',
-      titleZh: title,
-      titleEn: title,
+      titleZh: title || '查看商家',
+      titleEn: title || 'Merchant visit',
       market,
       createdAt: event.created_at,
     };
   }
   const titleZh = meta.titleZh || meta.productName || '一次比价';
+  const alternatives = meta.alternatives || [];
+  const titleEn = !meta.productName && alternatives.length
+    ? `${alternatives[0].productName || 'Recommended products'}${alternatives.length > 1 ? ` and ${alternatives.length - 1} more` : ''}`
+    : meta.titleEn || meta.productName || 'A comparison';
   return {
     id: event.id,
     type: 'comparison',
     titleZh,
-    titleEn: meta.titleEn || titleZh,
+    titleEn,
     market,
     createdAt: event.created_at,
   };

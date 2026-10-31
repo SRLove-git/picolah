@@ -316,24 +316,29 @@ function mapConversation(row: ConversationRow): ConversationSummary {
   };
 }
 
-export async function listConversations(executor: DbExecutor = db): Promise<ConversationSummary[]> {
+export async function listConversations(ownerId: string, executor: DbExecutor = db): Promise<ConversationSummary[]> {
+  if (!ownerId) return [];
   const rows = await executor.all<ConversationRow>(
     `SELECT c.*,
       (SELECT content FROM messages m WHERE m.conversation_id = c.id AND m.role = 'assistant'
        ORDER BY m.created_at DESC LIMIT 1) AS preview,
       (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
      FROM conversations c
+     WHERE c.owner_id = ?
      ORDER BY c.updated_at DESC
      LIMIT 60`,
+    [ownerId],
   );
   return rows.map(mapConversation);
 }
 
 export async function getConversation(
   id: string,
+  ownerId: string,
   executor: DbExecutor = db,
 ): Promise<ConversationDetail | null> {
-  const row = await executor.get<ConversationRow>('SELECT * FROM conversations WHERE id = ?', [id]);
+  if (!ownerId) return null;
+  const row = await executor.get<ConversationRow>('SELECT * FROM conversations WHERE id = ? AND owner_id = ?', [id, ownerId]);
   if (!row) return null;
   const messages = await executor.all<Row>(
     'SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
@@ -358,13 +363,15 @@ export async function getConversation(
 export async function createConversation(
   title: string,
   market: CountryCode,
+  ownerId: string,
   executor: DbExecutor = db,
 ): Promise<ConversationSummary> {
+  if (!ownerId) throw new Error('A conversation requires an owner');
   const now = new Date().toISOString();
   const id = randomUUID();
   await executor.run(
-    'INSERT INTO conversations (id, title, market, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [id, title, market, now, now],
+    'INSERT INTO conversations (id, title, market, owner_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [id, title, market, ownerId, now, now],
   );
   return { id, title, market, preview: '', createdAt: now, updatedAt: now };
 }
@@ -374,23 +381,27 @@ export async function createConversationWithId(
   title: string,
   market: CountryCode,
   createdAt: string,
+  ownerId = '',
   executor: DbExecutor = db,
 ): Promise<void> {
   await executor.run(
-    'INSERT INTO conversations (id, title, market, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [id, title, market, createdAt, createdAt],
+    'INSERT INTO conversations (id, title, market, owner_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [id, title, market, ownerId, createdAt, createdAt],
   );
 }
 
 export async function updateConversationTitle(
   id: string,
   title: string,
+  ownerId: string,
   executor: DbExecutor = db,
 ): Promise<void> {
-  await executor.run('UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?', [
+  if (!ownerId) return;
+  await executor.run('UPDATE conversations SET title = ?, updated_at = ? WHERE id = ? AND owner_id = ?', [
     title,
     new Date().toISOString(),
     id,
+    ownerId,
   ]);
 }
 
@@ -430,8 +441,25 @@ export async function addMessage(
   return id;
 }
 
-export async function deleteConversation(id: string, executor: DbExecutor = db): Promise<void> {
-  await executor.run('DELETE FROM conversations WHERE id = ?', [id]);
+/** Serialize a delayed reply/analytics write with ownership transfers and deletion. */
+export async function lockConversationOwner(id: string, executor: DbExecutor): Promise<string | null> {
+  const row = await executor.get<{ owner_id: string }>(
+    `SELECT owner_id FROM conversations WHERE id = ?${db.kind === 'postgres' ? ' FOR UPDATE' : ''}`,
+    [id],
+  );
+  return row?.owner_id || null;
+}
+
+export async function addAssistantReply(conversationId: string, content: string, metadata: object): Promise<string | null> {
+  return db.transaction(async (tx) => {
+    if (!(await lockConversationOwner(conversationId, tx))) return null;
+    return addMessage({ conversationId, role: 'assistant', content, metadata }, tx);
+  });
+}
+
+export async function deleteConversation(id: string, ownerId: string, executor: DbExecutor = db): Promise<void> {
+  if (!ownerId) return;
+  await executor.run('DELETE FROM conversations WHERE id = ? AND owner_id = ?', [id, ownerId]);
 }
 
 export async function getIngestRuns(limit = 6, executor: DbExecutor = db): Promise<IngestRun[]> {

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS price_points (
 
 CREATE TABLE IF NOT EXISTS conversations (
   id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL DEFAULT '',
   title TEXT NOT NULL,
   market TEXT NOT NULL,
   created_at TEXT NOT NULL,
@@ -92,6 +93,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS owner_id TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_conversations_owner_updated ON conversations(owner_id, updated_at DESC);
 
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,

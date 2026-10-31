@@ -84,6 +84,8 @@ process.env.CRAWLER_SEARCH_SCOPE = 'platforms';
 const { app } = await import('./index.ts');
 const { config } = await import('./config.ts');
 const { db, dbPath } = await import('./db.ts');
+const { createUser, hashPassword } = await import('./auth.ts');
+const { getShoppingProfile } = await import('./profile.ts');
 const { ModelSearchError, modelSearchTool } = await import('./agent/tools/model-search.ts');
 const server = createServer(app);
 const baseUrl = await listen(server);
@@ -105,11 +107,11 @@ after(async () => {
 
 async function ask(
   message: string,
-  options: { market?: string; conversationId?: string; onEvent?: (event: Event) => void } = {},
+  options: { market?: string; conversationId?: string; userId?: string; onEvent?: (event: Event) => void } = {},
 ) {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-picolah-user': options.userId || 'anon-model-search-test' },
     body: JSON.stringify({ message, market: options.market || 'SG', conversationId: options.conversationId }),
     signal: AbortSignal.timeout(15_000),
   });
@@ -151,6 +153,56 @@ function assertNoInventedResults(result: Awaited<ReturnType<typeof ask>>) {
   assert.deepEqual(result.comparison.alternatives, []);
   assert.doesNotMatch(result.answer, /我还没有在价格库|热门选择|S\$\d/);
 }
+
+test('a comparison finishing after sign-in follows the transferred conversation owner', async () => {
+  mode = 'valid';
+  const anonymous = 'anon-slow-search-login';
+  const password = 'correct horse 9';
+  const account = await createUser({ email: 'slow-search@example.com', passwordHash: await hashPassword(password), displayName: 'Slow search' });
+  let releaseSearch!: () => void;
+  searchGate = new Promise<void>((resolve) => { releaseSearch = resolve; });
+  const entered = new Promise<void>((resolve) => { onSearchEntered = resolve; });
+  const pending = ask('Sony WH-1000XM5', { userId: anonymous });
+  try {
+    await entered;
+    const login = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-picolah-user': anonymous },
+      body: JSON.stringify({ email: account.email, password }),
+    });
+    assert.equal(login.status, 200);
+  } finally {
+    releaseSearch();
+  }
+  await pending;
+  assert.equal((await getShoppingProfile(account.id)).totals.comparisons, 1);
+  assert.equal((await getShoppingProfile(anonymous)).totals.comparisons, 0);
+});
+
+test('a deleted in-flight conversation cannot recreate shopping history', async () => {
+  mode = 'valid';
+  const anonymous = 'anon-slow-search-delete';
+  let releaseSearch!: () => void;
+  searchGate = new Promise<void>((resolve) => { releaseSearch = resolve; });
+  const entered = new Promise<void>((resolve) => { onSearchEntered = resolve; });
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-picolah-user': anonymous },
+    body: JSON.stringify({ message: 'Sony WH-1000XM5', market: 'SG' }),
+  });
+  assert.equal(response.status, 200);
+  const body = response.text();
+  try {
+    await entered;
+    const row = await db.get<{ id: string }>('SELECT id FROM conversations WHERE owner_id = ?', [anonymous]);
+    assert.ok(row);
+    const deleted = await fetch(`${baseUrl}/api/conversations/${row.id}`, { method: 'DELETE', headers: { 'x-picolah-user': anonymous } });
+    assert.equal(deleted.status, 200);
+  } finally {
+    releaseSearch();
+  }
+  const text = await body;
+  assert.doesNotMatch(text, /event: results/);
+  assert.equal((await getShoppingProfile(anonymous)).totals.comparisons, 0);
+});
 
 function assertSearch(result: Awaited<ReturnType<typeof ask>>, platforms: string[], status: string) {
   assert.equal(result.comparison.search?.model, 'WF-1000XM6');
@@ -431,7 +483,7 @@ test('unconfigured tool does not fall back to seeded catalog quotes', { timeout:
       const results = [];
       for (const message of ['Sony WH-1000XM5', 'iPhone 15']) {
         const response = await fetch('http://127.0.0.1:' + server.address().port + '/api/chat', {
-          method: 'POST', headers: { 'content-type': 'application/json' },
+          method: 'POST', headers: { 'content-type': 'application/json', 'x-picolah-user': 'anon-model-search-child' },
           body: JSON.stringify({ message, market: 'SG' })
         });
         const events = (await response.text()).split('\\n').filter(line => line.startsWith('data: '))

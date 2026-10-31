@@ -22,7 +22,7 @@ after(() => new Promise<void>((resolve, reject) => {
 async function ask(message: string, market = 'SG', conversationId?: string) {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-picolah-user': 'anon-chat-test' },
     body: JSON.stringify({ message, market, conversationId }),
   });
   assert.equal(response.status, 200);

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -35,38 +36,57 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginPrompt, setLoginPrompt] = useState<{ reason: string } | null>(null);
+  const requestVersion = useRef(0);
+  const authPending = useRef(false);
 
   const refresh = useCallback(async () => {
+    if (authPending.current) return;
+    const version = ++requestVersion.current;
     try {
-      setState(await getSession());
-      setError(null);
+      const next = await getSession();
+      if (version === requestVersion.current) {
+        setState(next);
+        setError(null);
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '无法连接服务器');
+      if (version === requestVersion.current) setError(cause instanceof Error ? cause.message : '无法连接服务器');
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void refresh();
+    return () => { requestVersion.current += 1; };
   }, [refresh]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const next = await loginRequest(email, password);
-    setState(next);
-    setError(null);
+  const changeSession = useCallback(async (request: () => Promise<SessionState | null>) => {
+    const version = ++requestVersion.current;
+    authPending.current = true;
+    try {
+      const next = await request();
+      if (version !== requestVersion.current) return;
+      setState((current) => next ?? { ...current, user: null });
+      setError(null);
+    } finally {
+      if (version === requestVersion.current) {
+        authPending.current = false;
+        setLoading(false);
+      }
+    }
   }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    await changeSession(() => loginRequest(email, password));
+  }, [changeSession]);
 
   const register = useCallback(async (email: string, password: string, code: string, displayName?: string) => {
-    const next = await registerRequest(email, password, code, displayName);
-    setState(next);
-    setError(null);
-  }, []);
+    await changeSession(() => registerRequest(email, password, code, displayName));
+  }, [changeSession]);
 
   const logout = useCallback(async () => {
-    await logoutRequest();
-    setState((current) => ({ ...current, user: null }));
-  }, []);
+    await changeSession(async () => { await logoutRequest(); return null; });
+  }, [changeSession]);
 
   const promptLogin = useCallback((reason = 'default') => {
     setLoginPrompt({ reason });

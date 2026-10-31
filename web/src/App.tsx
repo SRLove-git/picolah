@@ -77,7 +77,9 @@ function initialView(): AppView {
 }
 
 export default function App() {
-  return <AppWorkspace />;
+  const { user } = useSession();
+  // Discard chat/profile caches and in-flight work when the account changes.
+  return <AppWorkspace key={user?.id || 'guest'} />;
 }
 
 function AppWorkspace() {

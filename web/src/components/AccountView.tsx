@@ -1,4 +1,4 @@
-import { Camera, ChevronRight, Clock3, Menu, RefreshCw, Settings2, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Camera, ChevronRight, Clock3, Menu, RefreshCw, Settings2, Store, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode, PriceMode, ShoppingProfile } from '../../shared/types';
@@ -10,7 +10,6 @@ import { relativeTime } from '../lib/format';
 import { useSession } from '../lib/session';
 import { AccountSettings } from './AccountSettings';
 import { CountryFlag } from './CountryFlag';
-import { Capybara } from './PicolahMark';
 import './account-center.css';
 
 interface AccountViewProps {
@@ -32,7 +31,7 @@ const TABS = [
 export function AccountView({ market, priceMode, onMarketChange, onPriceModeChange,
   onOpenSidebar, onOpenHome, notify }: AccountViewProps) {
   const { i18n } = useTranslation();
-  const { user, refresh: refreshSession } = useSession();
+  const { user, refresh: refreshSession, promptLogin } = useSession();
   const english = i18n.language.startsWith('en');
   const copy = (zh: string, en: string) => english ? en : zh;
   const [tab, setTab] = useState<CenterTab>('browsing');
@@ -73,13 +72,25 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
     .filter((item) => item.kind !== 'video');
   const activeTab = TABS.find((item) => item.id === tab)!;
   const EmptyIcon = activeTab.Icon;
-  const name = user?.displayName?.trim() || 'Pico';
+  const name = user?.displayName?.trim() || copy('访客', 'Guest');
   const marketName = english ? MARKETS[market].nameEn : MARKETS[market].nameZh;
+
+  function openAvatarPicker() {
+    if (!user) {
+      promptLogin('account');
+      return;
+    }
+    avatarInputRef.current?.click();
+  }
 
   async function chooseAvatar(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    if (!user) {
+      promptLogin('account');
+      return;
+    }
     setAvatarSaving(true);
     try {
       const avatar = await prepareAvatar(file);
@@ -120,12 +131,12 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
             type="button"
             className="account-avatar"
             disabled={avatarSaving}
-            onClick={() => avatarInputRef.current?.click()}
+            onClick={openAvatarPicker}
             aria-label={copy('上传自定义头像', 'Upload a custom avatar')}
           >
             {user?.avatar
               ? <img src={user.avatar} alt="" />
-              : <Capybara variant="face" size={128} />}
+              : <UserRound className="account-avatar-default" strokeWidth={1.3} aria-hidden="true" />}
             <span className="account-avatar-edit" aria-hidden="true">
               {avatarSaving ? <RefreshCw size={16} className="account-avatar-spin" /> : <Camera size={16} />}
             </span>
@@ -136,9 +147,9 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
             type="file"
             accept={AVATAR_ACCEPT}
             onChange={(event) => void chooseAvatar(event)}
-            disabled={avatarSaving}
+            disabled={avatarSaving || !user}
           />
-          <small>{avatarSaving ? copy('正在处理头像…', 'Preparing avatar…') : copy('点击更换头像', 'Click to change avatar')}</small>
+          <small>{avatarSaving ? copy('正在处理头像…', 'Preparing avatar…') : user ? copy('点击更换头像', 'Click to change avatar') : copy('登录后设置头像', 'Sign in to add a photo')}</small>
         </div>
         <div className="account-intro">
           <div className="account-name-row"><h2>{name}</h2><span className="account-member-label">{copy(user ? 'Picolah 成员' : '本机访客', user ? 'Picolah member' : 'Guest on this browser')}</span></div>
@@ -146,7 +157,7 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
           <div className="account-context"><CountryFlag code={market} width={18} /><span>{marketName} · {MARKETS[market].currency}</span></div>
           <div className="account-actions">
             <button className="account-button account-button-primary" type="button" onClick={() => selectTab('settings', true)}><Settings2 size={15} />{copy('偏好设置', 'Preferences')}</button>
-            <button className="account-button" type="button" disabled={avatarSaving} onClick={() => avatarInputRef.current?.click()}><Camera size={15} />{copy(user?.avatar ? '更换头像' : '上传头像', user?.avatar ? 'Change avatar' : 'Upload avatar')}</button>
+            <button className="account-button" type="button" disabled={avatarSaving} onClick={openAvatarPicker}><Camera size={15} />{copy(user?.avatar ? '更换头像' : '上传头像', user?.avatar ? 'Change avatar' : 'Upload avatar')}</button>
             {user?.avatar ? <button className="account-button" type="button" disabled={avatarSaving} onClick={() => void removeAvatar()}><Trash2 size={15} />{copy('恢复默认头像', 'Restore default')}</button> : null}
           </div>
         </div>
@@ -165,15 +176,21 @@ export function AccountView({ market, priceMode, onMarketChange, onPriceModeChan
               : <>
                 <div className="account-section-head"><h3>{copy('最近记录', 'Recent activity')}<span>{items.length}</span></h3><span>{copy('仅展示最近同步的记录', 'Showing recently synced activity')}</span></div>
                 {items.length ? <div className="account-post-grid">
-                  {items.map((item, index) => <article className="account-post" key={item.id}>
-                    <div className={`account-post-cover account-post-tone-${index % 4}`}>
-                      <span className="account-post-kind">{copy('购物足迹', 'SHOPPING')}</span>
-                      <span className="account-post-symbol" aria-hidden="true"><Clock3 size={17} /></span>
-                      <Capybara size={124} />
-                      <strong>{copy('Pico 一下', 'A little Pico')}</strong>
-                    </div>
-                    <div className="account-post-caption"><h4>{item.title}</h4><p>{copy('比价记录', 'Comparison')}<span>·</span>{relativeTime(item.createdAt)}</p></div>
-                  </article>)}
+                  {items.map((item) => {
+                    const merchantVisit = item.kind === 'offer_click';
+                    const ActivityIcon = merchantVisit ? Store : ArrowLeftRight;
+                    const itemMarket = item.market ? MARKETS[item.market] : null;
+                    return <article className={`account-post${merchantVisit ? ' account-post-merchant' : ''}`} key={item.id}>
+                      <span className="account-activity-icon" aria-hidden="true"><ActivityIcon size={21} strokeWidth={1.6} /></span>
+                      <div className="account-post-caption">
+                        <span className="account-post-kind">{merchantVisit ? copy('查看商家', 'Merchant visit') : copy('比价记录', 'Comparison')}</span>
+                        <h4>{item.title}</h4>
+                        <p>{itemMarket && <span className="account-activity-market"><CountryFlag code={itemMarket.code} width={15} />{english ? itemMarket.nameEn : itemMarket.nameZh}</span>}
+                          <time dateTime={item.createdAt}>{relativeTime(item.createdAt)}</time>
+                        </p>
+                      </div>
+                    </article>;
+                  })}
                 </div> : <div className="account-empty"><span className="account-empty-icon"><EmptyIcon size={30} strokeWidth={1.4} /></span>
                   <h3>{copy('这里还没有近期记录', 'No recent activity here')}</h3><p>{copy('比较过的商品，会在这里留下足迹。', 'Your recent comparisons will appear here.')}</p>
                   <button className="account-button account-button-primary" onClick={onOpenHome}>{copy('去比价', 'Start comparing')}<ChevronRight size={15} /></button>

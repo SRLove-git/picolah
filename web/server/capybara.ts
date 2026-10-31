@@ -14,7 +14,7 @@ import {
 import { MARKETS, type CountryCode, type Product, type ProductVisual } from '../shared/types.ts';
 import { db } from './db.ts';
 import { getOffers, getProduct } from './repo.ts';
-import { isValidUserId } from './user-id.ts';
+import { isAnonymousUserId, isValidUserId } from './user-id.ts';
 
 interface StateRow {
   owner_id: string;
@@ -343,7 +343,7 @@ export async function setCapybaraOutfit(
 export async function mergeCapybara(anonymousId: string, accountId: string): Promise<number> {
   const anonymous = String(anonymousId || '').trim();
   const account = String(accountId || '').trim();
-  if (anonymous === account || !isValidUserId(anonymous) || !isValidUserId(account)) return 0;
+  if (anonymous === account || !isAnonymousUserId(anonymous) || !isValidUserId(account)) return 0;
 
   const purchases = await db.all<PurchaseRow>(
     'SELECT * FROM capybara_purchases WHERE owner_id = ?',

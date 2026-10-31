@@ -1,9 +1,9 @@
-import { Fingerprint, Footprints, Home, Languages, Radar, Search, UsersRound, X } from 'lucide-react';
+import { Fingerprint, Footprints, Home, Languages, Radar, Search, UserRound, UsersRound, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { useSession } from '../lib/session';
 import { MarketPicker } from './Controls';
-import { BrandLockup, Capybara } from './PicolahMark';
+import { BrandLockup } from './PicolahMark';
 
 export type AppView = 'home' | 'capybara' | 'search' | 'radar' | 'friends' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
@@ -118,7 +118,7 @@ export function AppSidebar({
           data-tooltip={accountLabel}
         >
           <span className="pc-account-avatar">
-            {user?.avatar ? <img src={user.avatar} alt="" /> : <Capybara variant="face" size={34} />}
+            {user?.avatar ? <img src={user.avatar} alt="" /> : <UserRound size={25} strokeWidth={1.6} aria-hidden="true" />}
             <i />
           </span>
           <span className="pc-account-copy">
