@@ -27,6 +27,7 @@
   background: radial-gradient(ellipse, #6243243d, transparent 68%);
 }
 .pc-room-background, .pc-room-background img, .pc-room-evening { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pc-room-background { pointer-events: none; }
 .pc-room-background img { display: block; object-fit: cover; object-position: center; transition: filter 250ms ease; }
 .pc-room-evening { z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(145deg, #394a8055, #252a526b); transition: opacity 250ms ease; }
 .pc-companion[data-night='true'] .pc-room-background img { filter: brightness(0.47) saturate(0.65); }

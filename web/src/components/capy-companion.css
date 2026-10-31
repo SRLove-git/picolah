@@ -213,6 +213,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pc-companion *, .pc-companion .pc-capy { animation: none !important; }
-  .pc-companion-follow, .pc-companion-pose, .pc-companion-effect, .pc-companion button:active { transform: none !important; transition: none; }
+  .pc-companion-follow, .pc-companion-pose, .pc-companion-effect { transform: none !important; transition: none; }
+  /* Only remove press feedback, never transforms that position room controls. */
+  .pc-companion-actions button:active, .pc-companion-pause:active, .pc-companion-explore:active { transform: none !important; transition: none; }
   .pc-capy-expressions img { transition: opacity 150ms ease; }
 }

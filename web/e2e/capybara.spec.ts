@@ -432,3 +432,27 @@ test('a missing resting pose keeps the original sleepy character visible', async
   await expect(room.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'sleepy');
   await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
 });
+
+test('reduced motion keeps furniture and character hit targets in their layout positions', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await setup(page);
+  await page.goto('/7hk9ho#capybara');
+  const room = page.locator('.pc-companion.is-room');
+  const bed = room.getByRole('button', { name: 'Rest at the little bed', exact: true });
+  const before = (await bed.boundingBox())!;
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+  await page.mouse.down();
+  const pressed = (await bed.boundingBox())!;
+  expect(pressed.x).toBeCloseTo(before.x, 1);
+  expect(pressed.y).toBeCloseTo(before.y, 1);
+  await page.mouse.up();
+  await expect(room).toHaveAttribute('data-napping', 'true');
+  await room.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
+  await expect(room).toHaveAttribute('data-napping', 'false');
+  await room.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
+  await expect(room).toHaveAttribute('data-action', 'feed');
+  await room.getByRole('button', { name: 'Play with the ball', exact: true }).click();
+  await expect(room).toHaveAttribute('data-action', 'play');
+  await room.getByRole('button', { name: 'Open the wardrobe', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused();
+});
