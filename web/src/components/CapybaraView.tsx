@@ -1,9 +1,10 @@
 import { CalendarDays, Check, Lock, ShoppingBag, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { CAPY_SLOTS, type CapySlot } from '../../shared/capybara';
 import { formatMoney, relativeTime } from '../lib/format';
 import { useCapybara } from '../lib/capybara';
-import { CapyAvatar } from './CapyAvatar';
+import { CapyCompanion } from './CapyCompanion';
 import { AccessoryPreview } from './CapyAccessoryArt';
 import { PageHeader } from './PageHeader';
 import { ProductArt } from './ProductArt';
@@ -22,6 +23,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   const { t, i18n } = useTranslation();
   const english = i18n.language.startsWith('en');
   const { view, available, syncing, toggleAccessory, removePurchase } = useCapybara();
+  const [outfitVersion, setOutfitVersion] = useState(0);
 
   const slotName = (slot: CapySlot) => {
     const info = CAPY_SLOTS.find((entry) => entry.id === slot);
@@ -34,6 +36,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   async function handleToggle(id: string) {
     try {
       await toggleAccessory(id);
+      setOutfitVersion((version) => version + 1);
     } catch {
       notify(t('capybara.toggleFailed'));
     }
@@ -69,8 +72,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
       <div className="pc-page-body pc-capy-body">
         <section className={`pc-capy-hero ${view.stage.id === 'legend' ? 'is-legend' : ''}`}>
           <div className="pc-capy-stage">
-            <span className="pc-capy-stage-floor" aria-hidden="true" />
-            <CapyAvatar view={view} size={320} />
+            <CapyCompanion view={view} size={300} outfitVersion={outfitVersion} />
             <div className="pc-capy-stage-copy">
               <strong>{english ? view.stage.nameEn : view.stage.nameZh}</strong>
               <p>{english ? view.stage.taglineEn : view.stage.taglineZh}</p>

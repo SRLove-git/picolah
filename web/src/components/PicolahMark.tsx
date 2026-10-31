@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import capybaraImage from '../assets/picolah-capybara-v2.webp';
+import { CapyExpressionArt, type CapyExpression } from './CapyExpressionArt';
 
 const LETTER_COLORS = ['#ef4f7e', '#ff8b5e', '#f2b53c', '#4fc5a5', '#5b9cf5', '#9a78f0', '#ef5fa7'];
 
@@ -42,11 +42,13 @@ export function Capybara({
   variant = 'full',
   className = '',
   children,
+  expression,
 }: {
   size?: number;
   variant?: 'full' | 'face';
   className?: string;
   children?: ReactNode;
+  expression?: CapyExpression;
 }) {
   const uid = useId().replace(/:/g, '');
   const headGradient = `capy-head-${uid}`;
@@ -59,7 +61,7 @@ export function Capybara({
       aria-hidden="true"
     >
       {variant === 'full' ? (
-        <img src={capybaraImage} alt="" draggable={false} />
+        <CapyExpressionArt expression={expression} />
       ) : (
         <svg viewBox="38 0 164 168" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>

@@ -567,6 +567,7 @@ function AppWorkspace() {
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
+            onOpenCapybara={() => navigate('capybara')}
           />
         )}
 
