@@ -110,6 +110,38 @@ CREATE TABLE IF NOT EXISTS email_codes (
 
 CREATE INDEX IF NOT EXISTS idx_email_codes_lookup ON email_codes (email, purpose, created_at);
 
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id TEXT PRIMARY KEY,
+  from_user TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(from_user, to_user)
+);
+
+CREATE INDEX IF NOT EXISTS idx_friend_requests_inbox ON friend_requests (to_user, status);
+
+CREATE TABLE IF NOT EXISTS friendships (
+  id TEXT PRIMARY KEY,
+  user_a TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_a, user_b)
+);
+
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id TEXT PRIMARY KEY,
+  from_user TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  read_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_direct_messages_thread ON direct_messages (from_user, to_user, created_at);
+CREATE INDEX IF NOT EXISTS idx_direct_messages_inbox ON direct_messages (to_user, read_at);
+
 CREATE TABLE IF NOT EXISTS user_events (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,

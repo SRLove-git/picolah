@@ -16,6 +16,7 @@ import { watchlistRouter, alertsRouter } from './routes/watchlist.ts';
 import { outRouter } from './routes/out.ts';
 import { accountRouter } from './routes/account.ts';
 import { capybaraRouter } from './routes/capybara.ts';
+import { socialRouter } from './routes/social.ts';
 import { attachUser, requireAccount, requireAuth } from './auth.ts';
 import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
@@ -127,6 +128,7 @@ app.use('/api/reels', reelsRouter);
 app.use('/api/watchlist', requireAuth, watchlistRouter);
 app.use('/api/alerts', requireAuth, alertsRouter);
 app.use('/api/account', requireAccount, accountRouter);
+app.use('/api/social', requireAccount, socialRouter);
 app.use('/api/v1/ingest', ingestRouter);
 app.use('/go', attachUser, outRouter);
 

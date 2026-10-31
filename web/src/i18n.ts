@@ -6,7 +6,7 @@ const resources = {
     translation: {
       app: { title: 'Picolah · 全网低价 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
       language: { switch: 'Switch to English', short: 'EN' },
-      nav: { main: '主导航', home: '首页', capybara: '成长', search: '发现', watchlist: '关注', reels: '短视频', profile: '画像', messages: '足迹', account: '账号', close: '关闭导航' },
+      nav: { main: '主导航', home: '首页', capybara: '成长', search: '发现', radar: '雷达', watchlist: '关注', reels: '短视频', profile: '画像', messages: '足迹', account: '账号', close: '关闭导航' },
       search: {
         label: '发现', title: '发现', body: '',
         placeholder: '搜索商品、品牌或型号', clear: '清空搜索', categories: '品类', all: '全部',
@@ -142,7 +142,7 @@ const resources = {
     translation: {
       app: { title: 'Picolah · Price Lower, PiCO Checker', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
       language: { switch: '切换为中文', short: '中' },
-      nav: { main: 'Main navigation', home: 'Home', capybara: 'Growth', search: 'Discover', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Trail', account: 'Account', close: 'Close navigation' },
+      nav: { main: 'Main navigation', home: 'Home', capybara: 'Growth', search: 'Discover', radar: 'Radar', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Trail', account: 'Account', close: 'Close navigation' },
       search: {
         label: 'Discover', title: 'Discover', body: '',
         placeholder: 'Search products, brands or models', clear: 'Clear search', categories: 'Categories', all: 'All',

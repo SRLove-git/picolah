@@ -13,6 +13,10 @@ const REASONS = {
     zh: '登录后即可管理账号、隐私与数据。',
     en: 'Sign in to manage your account, privacy and data.',
   },
+  radar: {
+    zh: '登录后开启雷达，与消费偏好相近的人成为好友并聊天。',
+    en: 'Sign in to use Radar, meet similar people and chat.',
+  },
   default: {
     zh: '登录后，比价记录和价格提醒会跟着你的账户走。',
     en: 'Sign in to keep comparisons and price alerts with your account.',

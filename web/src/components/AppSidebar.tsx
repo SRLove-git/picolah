@@ -1,11 +1,11 @@
-import { Fingerprint, Footprints, Home, Languages, Search, X } from 'lucide-react';
+import { Fingerprint, Footprints, Home, Languages, Radar, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { useSession } from '../lib/session';
 import { MarketPicker } from './Controls';
 import { BrandLockup, Capybara } from './PicolahMark';
 
-export type AppView = 'home' | 'capybara' | 'search' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
+export type AppView = 'home' | 'capybara' | 'search' | 'radar' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
 interface AppSidebarProps {
   view: AppView;
@@ -19,6 +19,7 @@ interface AppSidebarProps {
 const NAV = [
   { key: 'home' as const, labelKey: 'nav.home', Icon: Home },
   { key: 'search' as const, labelKey: 'nav.search', Icon: Search },
+  { key: 'radar' as const, labelKey: 'nav.radar', Icon: Radar },
   { key: 'messages' as const, labelKey: 'nav.messages', Icon: Footprints },
   { key: 'capybara' as const, labelKey: 'nav.capybara', Icon: Fingerprint },
 ];
@@ -72,7 +73,7 @@ export function AppSidebar({
                 <Icon
                   size={25}
                   strokeWidth={isActive ? 2.5 : 1.9}
-                  fill={isActive ? 'currentColor' : 'none'}
+                  fill={isActive && key !== 'radar' ? 'currentColor' : 'none'}
                 />
               </span>
               <span className="pc-nav-label">{label}</span>
