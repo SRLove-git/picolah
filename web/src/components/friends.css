@@ -1,0 +1,144 @@
+.pc-friends-page {
+  background:
+    radial-gradient(560px 340px at 92% 2%, rgba(255, 224, 236, 0.48), transparent 66%),
+    radial-gradient(460px 300px at 3% 18%, rgba(228, 220, 255, 0.32), transparent 68%),
+    var(--pc-bg);
+}
+
+.friends-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 980px;
+}
+
+.friends-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.friends-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px 17px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--pc-line);
+  border-radius: 17px;
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.friends-summary-card > span {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--pc-pink-deep);
+  background: var(--pc-pink-wash);
+  border-radius: 13px;
+}
+
+.friends-summary-card div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friends-summary-card b {
+  color: var(--pc-ink);
+  font-family: var(--pc-font-display);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.friends-summary-card small {
+  margin-top: 4px;
+  color: var(--pc-muted);
+  font-size: 10.5px;
+}
+
+.friends-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.friends-panel {
+  min-height: 210px;
+}
+
+.friends-list li {
+  min-height: 58px;
+}
+
+.friends-empty-inline,
+.friends-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pc-faint);
+}
+
+.friends-empty-inline {
+  flex-direction: column;
+  gap: 7px;
+  min-height: 130px;
+}
+
+.friends-empty-inline p,
+.friends-empty p {
+  margin: 0;
+  color: var(--pc-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.friends-empty {
+  flex-direction: column;
+  gap: 10px;
+  min-height: 150px;
+  padding: 10px 24px;
+}
+
+.friends-empty > span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  color: var(--pc-pink);
+  background: var(--pc-pink-wash);
+  border-radius: 15px;
+}
+
+@media (max-width: 760px) {
+  .friends-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .friends-summary-card {
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .friends-summary-card > span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .friends-summary-card b {
+    font-size: 17px;
+  }
+
+  .friends-grid {
+    grid-template-columns: 1fr;
+  }
+}

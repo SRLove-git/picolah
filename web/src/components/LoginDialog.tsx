@@ -17,6 +17,10 @@ const REASONS = {
     zh: '登录后开启雷达，与消费偏好相近的人成为好友并聊天。',
     en: 'Sign in to use Radar, meet similar people and chat.',
   },
+  friends: {
+    zh: '登录后查看好友请求，与好友继续聊天。',
+    en: 'Sign in to manage friend requests and keep chatting.',
+  },
   default: {
     zh: '登录后，比价记录和价格提醒会跟着你的账户走。',
     en: 'Sign in to keep comparisons and price alerts with your account.',

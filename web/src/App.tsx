@@ -25,6 +25,7 @@ const WatchlistView = lazy(() => import('./components/WatchlistView').then((modu
 const AccountView = lazy(() => import('./components/AccountView').then((module) => ({ default: module.AccountView })));
 const CapybaraView = lazy(() => import('./components/CapybaraView').then((module) => ({ default: module.CapybaraView })));
 const RadarView = lazy(() => import('./components/RadarView').then((module) => ({ default: module.RadarView })));
+const FriendsView = lazy(() => import('./components/FriendsView').then((module) => ({ default: module.FriendsView })));
 
 const MARKET_KEY = 'picolah.market';
 const PRICE_MODE_KEY = 'picolah.priceMode';
@@ -36,7 +37,7 @@ interface StreamState {
   startedAt: number;
 }
 
-const PAGE_VIEWS: AppView[] = ['home', 'search', 'radar', 'capybara', 'watchlist', 'messages', 'account', 'privacy', 'terms'];
+const PAGE_VIEWS: AppView[] = ['home', 'search', 'radar', 'friends', 'capybara', 'watchlist', 'messages', 'account', 'privacy', 'terms'];
 
 function readStorage(key: string): string | null {
   try {
@@ -624,6 +625,14 @@ function AppWorkspace() {
 
         {view === 'radar' && (
           <RadarView onOpenSidebar={() => setSidebarOpen(true)} onStart={() => navigate('search')} notify={notify} />
+        )}
+
+        {view === 'friends' && (
+          <FriendsView
+            onOpenSidebar={() => setSidebarOpen(true)}
+            onOpenRadar={() => navigate('radar')}
+            notify={notify}
+          />
         )}
 
         {view === 'messages' && (
