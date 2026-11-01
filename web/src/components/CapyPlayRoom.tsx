@@ -69,7 +69,7 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
           <canvas ref={canvas} className="pc-play-canvas" aria-hidden="true" />
         </button>
         {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyAvatar view={view} size={360} expression={expression} /></div>}
-        <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>
+        {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? 'Resume motion' : '继续动作') : (en ? 'Pause motion' : '暂停动作')}
           aria-pressed={paused} onClick={() => setPaused((value) => !value)}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>
         {toy && <div className="pc-play-controls" aria-label={en ? 'Toy controls' : '玩具操作'}>
