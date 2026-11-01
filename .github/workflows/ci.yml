@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       LLM_API_KEY: ''
@@ -36,7 +36,8 @@ jobs:
           pnpm --filter @picolah/crawler run test
 
   e2e:
-    runs-on: ubuntu-latest
+    # Keep the runner compatible with the pinned Playwright browser bundle.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: test
     env:
