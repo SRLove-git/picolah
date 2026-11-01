@@ -100,6 +100,7 @@ test('Original outfit artwork survives pause, sleep and graphics context restora
 });
 
 test('hoodie stays on the original image character through all four games', async ({ page }, info) => {
+  test.slow(); // Four game renders plus an outfit reload on software-rendered CI.
   const headers = await setup(page);
   expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['cream-hoodie'] } })).ok()).toBe(true);
   await page.reload(); const room = page.locator('.pc-companion.is-room'), canvas = room.locator('.pc-play-canvas');
