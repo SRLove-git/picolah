@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { ArrowUpRight, HandHeart, Heart, Leaf, Moon, Pause, Play, Sparkles, Sun } from 'lucide-react';
+import { ArrowUpRight, CircleDot, HandHeart, Heart, Leaf, Moon, NotebookPen, Pause, Play, Shirt, Sparkles, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CapyView } from '../../shared/capybara';
 import type { CapyExpression } from './CapyExpressionArt';
 import type { CapyAction as Action } from '../lib/capy-motion';
 import { CapyAvatar } from './CapyAvatar';
 import { Capybara } from './PicolahMark';
-import { CapyHabitat, CapyHabitatHud } from './CapyHabitat';
+import { CapyHabitat, CapyHabitatHud, type OpenCapyPanel } from './CapyHabitat';
 import napArt from '../assets/capy-room-v1/capy-nap.webp';
 import './capy-companion.css';
 
@@ -55,13 +55,15 @@ interface Props {
   outfitVersion?: number;
   onExplore?: () => void;
   room?: boolean;
-  onWardrobe?: () => void;
+  onOpenPanel?: OpenCapyPanel;
+  roomMenuOpen?: boolean;
 }
 
 /** Reactions are transient; shopping progress and earned outfits stay server-owned. */
-export function CapyCompanion({ view, size = 300, compact = false, outfitVersion = 0, onExplore, room = false, onWardrobe }: Props) {
+export function CapyCompanion({ view, size = 300, compact = false, outfitVersion = 0, onExplore, room = false, onOpenPanel, roomMenuOpen = false }: Props) {
   const { i18n } = useTranslation();
-  const copy = i18n.language.startsWith('en') ? COPY.en : COPY.zh;
+  const en = i18n.language.startsWith('en');
+  const copy = en ? COPY.en : COPY.zh;
   const [reaction, setReaction] = useState<{ action: Action; variation: number }>({ action: 'idle', variation: 0 });
   const [keyboard, setKeyboard] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -135,19 +137,24 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
     { action: 'play', Icon: Sparkles, label: copy.actions[2] },
     { action: sleeping ? 'wake' : 'rest', Icon: sleeping ? Sun : Moon, label: copy.actions[sleeping ? 4 : 3] },
   ] as const;
-  const motion = { action: reaction.action, sequence: reaction.variation, playing: !paused && !keyboard && !hidden && !reduced && !napping };
+  const roomActions = [
+    { action: 'feed', Icon: Leaf, label: en ? 'Snack' : '喂食', accessible: copy.actions[1] },
+    { action: 'play', Icon: CircleDot, label: en ? 'Play' : '玩耍', accessible: copy.actions[2] },
+    { action: sleeping ? 'wake' : 'rest', Icon: sleeping ? Sun : Moon, label: en ? (sleeping ? 'Wake' : 'Sleep') : (sleeping ? '起床' : '睡觉'), accessible: copy.actions[sleeping ? 4 : 3] },
+  ] as const;
+  const motion = { action: reaction.action, sequence: reaction.variation, playing: !paused && !keyboard && !hidden && !reduced && !napping && !roomMenuOpen };
 
   return <div className={`pc-companion ${compact ? 'is-compact' : ''} ${room ? 'is-room' : ''}`}
     data-expression={expression} data-action={reaction.action} data-stage={view?.stage.id}
-    data-night={room && night} data-napping={napping} data-still={paused || keyboard} data-paused={hidden}>
+    data-night={room && night} data-napping={napping} data-still={paused || keyboard} data-paused={hidden || roomMenuOpen}>
     <p className={`pc-companion-speech ${compact ? 'pc-hero-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">
-      {compact ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
+      {compact || (room && reaction.action === 'idle') ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
     </p>
     <div className="pc-companion-scene">
       {room && <>
-        <CapyHabitat sleeping={sleeping} night={night} sequence={reaction.variation} onInteract={react} onWardrobe={onWardrobe}
+        <CapyHabitat sleeping={sleeping} night={night} sequence={reaction.variation} onInteract={react} onOpenPanel={onOpenPanel}
           onLight={(pointer) => { if (sleeping) { react('wake', pointer); setEvening(false); } else setEvening((value) => !value); }} />
-        {view && <CapyHabitatHud view={view} />}
+        {view && <CapyHabitatHud view={view} onOpenPanel={onOpenPanel} />}
       </>}
       {!compact && <span className="pc-companion-mood"><i aria-hidden="true" />{copy.moods[expression]}</span>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? copy.resume : copy.pause}
@@ -176,11 +183,22 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
         </span>
       </button>
     </div>
-    {room && <div className="pc-room-caption">
-      <span><i />{copy.moods[expression]}</span>
-      <span>{i18n.language.startsWith('en') ? 'Tap Capy or something in the room' : '点点卡皮，也点点房间里的小物件'}</span>
+    {room && <div className="pc-room-dock" role="group" aria-label={en ? "Capy's daily life" : '卡皮的日常'}>
+      {roomActions.map(({ action, Icon, label, accessible }) => <button key={action} type="button"
+        className={`pc-room-dock-button is-${action}`} aria-label={accessible} data-active={reaction.action === action}
+        onClick={(event) => react(action, event.detail > 0)}>
+        <span className="pc-room-dock-icon" aria-hidden="true"><Icon size={27} strokeWidth={2.1} /></span><span>{label}</span>
+      </button>)}
+      <button type="button" className="pc-room-dock-button is-wardrobe" aria-haspopup="dialog"
+        aria-label={en ? 'Dress up Capy' : '给卡皮换装'} onClick={(event) => onOpenPanel?.('wardrobe', event.currentTarget, event.detail === 0)}>
+        <span className="pc-room-dock-icon" aria-hidden="true"><Shirt size={27} strokeWidth={2.1} /></span><span>{en ? 'Dress up' : '换装'}</span>
+      </button>
+      <button type="button" className="pc-room-dock-button is-journal" aria-haspopup="dialog"
+        aria-label={en ? "Open Capy's keepsakes" : '打开卡皮的购物手帐'} onClick={(event) => onOpenPanel?.('purchases', event.currentTarget, event.detail === 0)}>
+        <span className="pc-room-dock-icon" aria-hidden="true"><NotebookPen size={27} strokeWidth={2.1} /></span><span>{en ? 'Journal' : '手帐'}</span>
+      </button>
     </div>}
-    {!compact && <div className="pc-companion-actions" role="group" aria-label={copy.controls}>
+    {!compact && !room && <div className="pc-companion-actions" role="group" aria-label={copy.controls}>
       {actions.map(({ action, Icon, label }) => <button key={action} type="button"
         data-active={reaction.action === action} onClick={(event) => react(action, event.detail > 0)}>
         <Icon size={19} strokeWidth={1.7} /><span>{label}</span>
