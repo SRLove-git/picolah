@@ -1,4 +1,13 @@
-import type { CapyAccessoryId, CapyAccessory } from '../../shared/capybara';
+import { Fragment, useId } from 'react';
+import { CAPY_CLOTHING_IDS, type CapyAccessoryId, type CapyAccessory, type CapyClothingId } from '../../shared/capybara';
+import { CAPY_EXPRESSION_ART, type CapyExpression } from './CapyExpressionArt';
+import { CAPY_CLOTHING_FOREGROUND } from '../lib/capy-clothing';
+import strawberryDress from '../assets/capy-clothes-v1/strawberry-dress.webp';
+import mintOveralls from '../assets/capy-clothes-v1/mint-overalls.webp';
+import creamHoodie from '../assets/capy-clothes-v1/cream-hoodie.webp';
+import duckRaincoat from '../assets/capy-clothes-v1/duck-raincoat.webp';
+import starPajamas from '../assets/capy-clothes-v1/star-pajamas.webp';
+import sailorShirt from '../assets/capy-clothes-v1/sailor-shirt.webp';
 import airfryerArt from '../assets/capy-accessories-v2/airfryer.png';
 import coffeeArt from '../assets/capy-accessories-v2/coffee.png';
 import earbudsArt from '../assets/capy-accessories-v2/earbuds.png';
@@ -24,9 +33,11 @@ interface AccessoryLayout {
   y: number;
   scale: number;
   rotate?: number;
+  width?: number;
+  height?: number;
 }
 
-const BASE_LAYOUTS: Record<Exclude<CapyAccessoryId, 'phone' | 'serum' | 'airfryer' | 'speaker' | 'coffee'>, AccessoryLayout> = {
+const BASE_LAYOUTS: Record<Exclude<CapyAccessoryId, CapyClothingId | 'phone' | 'serum' | 'airfryer' | 'speaker' | 'coffee'>, AccessoryLayout> = {
   headphones: { x: 405, y: 142, scale: 2.8 },
   earbuds: { x: 390, y: 146, scale: 3.1 },
   sunglasses: { x: 382, y: 166, scale: 3.2 },
@@ -48,6 +59,12 @@ const BAG_SPOTS: AccessoryLayout[] = [
 ];
 
 const GLYPH_IMAGES: Record<CapyAccessoryId, string> = {
+  'strawberry-dress': strawberryDress,
+  'mint-overalls': mintOveralls,
+  'cream-hoodie': creamHoodie,
+  'duck-raincoat': duckRaincoat,
+  'star-pajamas': starPajamas,
+  'sailor-shirt': sailorShirt,
   headphones: headphonesArt,
   earbuds: earbudsArt,
   phone: phoneArt,
@@ -64,9 +81,11 @@ const GLYPH_IMAGES: Record<CapyAccessoryId, string> = {
 };
 
 const BAG_IDS = new Set<CapyAccessoryId>(['phone', 'serum', 'airfryer', 'speaker', 'coffee']);
+const CLOTHING_IDS = new Set<string>(CAPY_CLOTHING_IDS);
 
 /** Feet → bag → wrist → neck → head → face, so eyewear sits on top. */
 const DRAW_ORDER: CapyAccessoryId[] = [
+  ...CAPY_CLOTHING_IDS,
   'sneaker',
   'phone',
   'serum',
@@ -83,34 +102,37 @@ const DRAW_ORDER: CapyAccessoryId[] = [
 ];
 
 function layoutFor(id: CapyAccessoryId, bagIndex: number): AccessoryLayout {
+  if (CLOTHING_IDS.has(id)) return { x: 384, y: 402, scale: 1, width: 768, height: 804 };
   if (BAG_IDS.has(id)) return BAG_SPOTS[bagIndex % BAG_SPOTS.length];
   return BASE_LAYOUTS[id as keyof typeof BASE_LAYOUTS];
 }
 
-function GlyphImage({ id }: { id: CapyAccessoryId }) {
+function GlyphImage({ id, width = 100, height = 100 }: { id: CapyAccessoryId; width?: number; height?: number }) {
   return (
     <image
       href={GLYPH_IMAGES[id]}
       x="0"
       y="0"
-      width="100"
-      height="100"
-      preserveAspectRatio="xMidYMid meet"
+      width={width}
+      height={height}
+      preserveAspectRatio={CLOTHING_IDS.has(id) ? 'none' : 'xMidYMid meet'}
     />
   );
 }
 
-export function AccessoryLayer({ worn }: { worn: CapyAccessory[] }) {
+export function AccessoryLayer({ worn, expression = 'idle' }: { worn: CapyAccessory[]; expression?: CapyExpression }) {
+  const foregroundId = useId();
   return (
     <>
-      {wornArtwork(worn).map(({ id, layout }) => {
+      <defs><clipPath id={foregroundId}><path d={CAPY_CLOTHING_FOREGROUND} /></clipPath></defs>
+      {wornArtwork(worn).map(({ id, layout, clothing }) => {
         return (
-          <g
-            key={id}
-            transform={`translate(${layout.x} ${layout.y}) rotate(${layout.rotate ?? 0}) scale(${layout.scale}) translate(-50 -50)`}
+          <Fragment key={id}><g data-wearable={id}
+            transform={`translate(${layout.x} ${layout.y}) rotate(${layout.rotate ?? 0}) scale(${layout.scale}) translate(${-(layout.width ?? 100) / 2} ${-(layout.height ?? 100) / 2})`}
           >
-            <GlyphImage id={id} />
-          </g>
+            <GlyphImage id={id} width={layout.width} height={layout.height} />
+          </g>{clothing && <image href={CAPY_EXPRESSION_ART[expression]} width="768" height="804" preserveAspectRatio="none" clipPath={`url(#${foregroundId})`}
+            onError={(event) => event.currentTarget.setAttribute('href', CAPY_EXPRESSION_ART.idle)} />}</Fragment>
         );
       })}
     </>
@@ -121,12 +143,13 @@ export function AccessoryLayer({ worn }: { worn: CapyAccessory[] }) {
 export function wornArtwork(worn: CapyAccessory[]) {
   const bag = worn.filter((accessory) => BAG_IDS.has(accessory.id));
   return DRAW_ORDER.filter((id) => worn.some((accessory) => accessory.id === id)).map((id) => ({
-    id, src: GLYPH_IMAGES[id], layout: layoutFor(id, Math.max(0, bag.findIndex((accessory) => accessory.id === id))),
+    id, src: GLYPH_IMAGES[id], clothing: CLOTHING_IDS.has(id), layout: layoutFor(id, Math.max(0, bag.findIndex((accessory) => accessory.id === id))),
   }));
 }
 
 /** Standalone Image 2.5 glyph for wardrobe cards. */
 export function AccessoryPreview({ id, className = '' }: { id: CapyAccessoryId; className?: string }) {
+  if (CLOTHING_IDS.has(id)) return <svg className={className} viewBox="150 310 510 480" aria-hidden="true"><GlyphImage id={id} width={768} height={804} /></svg>;
   const boost = id === 'sneaker' ? 1.3 : 1;
   return (
     <svg className={className} viewBox="0 0 100 100" aria-hidden="true">

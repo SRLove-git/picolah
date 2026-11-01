@@ -150,3 +150,26 @@ test('purchases reject unknown products and can be removed', async () => {
   assert.equal(body.capybara?.purchases.some((item) => item.product.id === 'the-ordinary-niacinamide'), false);
   assert.equal(body.capybara?.equipped.includes('serum'), false);
 });
+
+test('all six clothes can be worn from day one, persist and occupy one body slot without granting XP', async () => {
+  const { CAPY_CLOTHING_IDS } = await import('../shared/capybara.ts');
+  const ownerHeaders = { ...headers, 'x-picolah-user': 'capy-clothes-fresh-owner' };
+  const read = async () => (await (await fetch(`${baseUrl}/api/capybara`, { headers: ownerHeaders })).json() as CapyBody).capybara!;
+  const before = await read();
+  assert.equal(before.xp, 0);
+  assert.equal(capySnapshot(before).accessories.filter((item) => item.slot === 'body' && item.unlocked).length, 6);
+  for (const id of CAPY_CLOTHING_IDS) {
+    const response = await fetch(`${baseUrl}/api/capybara/outfit`, { method: 'POST', headers: ownerHeaders, body: JSON.stringify({ equipped: [id] }) });
+    assert.equal(response.status, 200);
+    const current = await read();
+    assert.deepEqual(current.equipped, [id]);
+    assert.equal(current.xp, before.xp);
+    assert.deepEqual(current.purchases, before.purchases);
+  }
+  const capped = await fetch(`${baseUrl}/api/capybara/outfit`, { method: 'POST', headers: ownerHeaders, body: JSON.stringify({ equipped: [...CAPY_CLOTHING_IDS] }) });
+  assert.deepEqual(((await capped.json()) as CapyBody).capybara?.equipped, [CAPY_CLOTHING_IDS[0]]);
+  const other = await (await fetch(`${baseUrl}/api/capybara`, { headers: { ...headers, 'x-picolah-user': 'capy-clothes-other-owner' } })).json() as CapyBody;
+  assert.deepEqual(other.capybara?.equipped, []);
+  await fetch(`${baseUrl}/api/capybara/outfit`, { method: 'POST', headers: ownerHeaders, body: JSON.stringify({ equipped: [] }) });
+  assert.deepEqual((await read()).equipped, []);
+});

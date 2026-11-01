@@ -28,6 +28,7 @@ export function CapyAvatar({ view, size = 240, className = '', showBadge = false
       className={`pc-capy-live ${className}`}
       style={{ width: size, height: size }}
       data-legend={view.stage.id === 'legend' ? 'true' : undefined}
+      data-clothing={view.worn.find((item) => item.slot === 'body')?.id || 'none'}
       aria-hidden="true"
     >
       <span
@@ -49,7 +50,7 @@ export function CapyAvatar({ view, size = 240, className = '', showBadge = false
         <Capybara size={size} className="pc-capy-live-art" expression={expression} motion={motion} worn={view.worn}>
           {view.worn.length > 0 && (
             <svg className="pc-capy-worn" viewBox="0 0 768 804" aria-hidden="true">
-              <AccessoryLayer worn={view.worn} />
+              <AccessoryLayer worn={view.worn} expression={expression} />
             </svg>
           )}
         </Capybara>

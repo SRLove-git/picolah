@@ -239,7 +239,7 @@ export function capyXpRows(counts: CapyCounts): CapyXpRow[] {
   });
 }
 
-export type CapySlot = 'head' | 'face' | 'neck' | 'wrist' | 'feet' | 'bag';
+export type CapySlot = 'body' | 'head' | 'face' | 'neck' | 'wrist' | 'feet' | 'bag';
 
 export interface CapySlotInfo {
   id: CapySlot;
@@ -248,6 +248,7 @@ export interface CapySlotInfo {
 }
 
 export const CAPY_SLOTS: CapySlotInfo[] = [
+  { id: 'body', nameZh: '衣服', nameEn: 'Clothes' },
   { id: 'head', nameZh: '头顶', nameEn: 'Head' },
   { id: 'face', nameZh: '脸上', nameEn: 'Face' },
   { id: 'neck', nameZh: '颈间', nameEn: 'Neck' },
@@ -257,6 +258,7 @@ export const CAPY_SLOTS: CapySlotInfo[] = [
 ];
 
 export const CAPY_SLOT_LIMITS: Record<CapySlot, number> = {
+  body: 1,
   head: 1,
   face: 1,
   neck: 1,
@@ -265,7 +267,11 @@ export const CAPY_SLOT_LIMITS: Record<CapySlot, number> = {
   bag: 3,
 };
 
+export const CAPY_CLOTHING_IDS = ['strawberry-dress', 'mint-overalls', 'cream-hoodie', 'duck-raincoat', 'star-pajamas', 'sailor-shirt'] as const;
+export type CapyClothingId = typeof CAPY_CLOTHING_IDS[number];
+
 export type CapyAccessoryId =
+  | CapyClothingId
   | 'headphones'
   | 'earbuds'
   | 'phone'
@@ -295,6 +301,36 @@ export interface CapyAccessory {
 }
 
 export const CAPY_ACCESSORIES: CapyAccessory[] = [
+  {
+    id: 'strawberry-dress', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '草莓背带裙', nameEn: 'Strawberry dress',
+    descriptionZh: '软软的草莓粉，小口袋里藏着今天的甜。', descriptionEn: 'Strawberry pink, with a little pocket full of sweet moments.', accent: '#eaa5b0',
+  },
+  {
+    id: 'mint-overalls', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '薄荷背带裤', nameEn: 'Mint overalls',
+    descriptionZh: '薄荷绿背带配一朵小雏菊，出门晒太阳。', descriptionEn: 'Mint corduroy and a tiny daisy, ready for a sunny stroll.', accent: '#a8c7ae',
+  },
+  {
+    id: 'cream-hoodie', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '奶油连帽衫', nameEn: 'Cream hoodie',
+    descriptionZh: '暖乎乎的奶油卫衣，适合窝着发呆。', descriptionEn: 'A soft cream hoodie for the coziest little day.', accent: '#dfc7a5',
+  },
+  {
+    id: 'duck-raincoat', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '小鸭雨衣', nameEn: 'Duck raincoat',
+    descriptionZh: '鹅黄色小雨衣，下雨天也要开心散步。', descriptionEn: 'A butter-yellow raincoat for happy puddle days.', accent: '#e4c76d',
+  },
+  {
+    id: 'star-pajamas', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '星星睡衣', nameEn: 'Star pajamas',
+    descriptionZh: '穿着淡紫色小星星，把好梦装进口袋。', descriptionEn: 'Lavender stars and a pocket for little dreams.', accent: '#b6a5d4',
+  },
+  {
+    id: 'sailor-shirt', slot: 'body', visual: null, unlockLevel: 1,
+    nameZh: '海盐条纹衫', nameEn: 'Seaside stripes',
+    descriptionZh: '奶白和雾蓝的条纹，今天去吹吹海风。', descriptionEn: 'Cream and misty-blue stripes for a day by the sea.', accent: '#9ebecb',
+  },
   {
     id: 'headphones',
     slot: 'head',
@@ -477,6 +513,7 @@ export function normalizeCapyOutfit(
 ): string[] {
   const unlocked = capyUnlockedAccessoryIds(level, visuals);
   const used: Record<CapySlot, number> = {
+    body: 0,
     head: 0,
     face: 0,
     neck: 0,
@@ -594,13 +631,13 @@ export function capySnapshot(payload: CapyPayload): CapyView {
         : null,
       unlockLabelZh:
         accessory.unlockLevel !== null
-          ? `达到 ${accessory.unlockLevel} 级解锁`
+          ? accessory.unlockLevel === 1 ? '随时可以穿' : `达到 ${accessory.unlockLevel} 级解锁`
           : source
             ? `买下 ${source.product.brand} 后解锁`
             : '购买对应商品后解锁',
       unlockLabelEn:
         accessory.unlockLevel !== null
-          ? `Unlocks at level ${accessory.unlockLevel}`
+          ? accessory.unlockLevel === 1 ? 'Ready to wear' : `Unlocks at level ${accessory.unlockLevel}`
           : source
             ? `Unlocked by buying ${source.product.brand}`
             : 'Unlocks when you buy a matching product',

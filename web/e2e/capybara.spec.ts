@@ -105,11 +105,12 @@ test('successful outfit changes react and keep accessories on the character', as
   });
   await page.goto('/7hk9ho#capybara');
   await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
+  await page.getByRole('button', { name: 'Accessories', exact: true }).click();
   const scarf = page.locator('.pc-capy-item').filter({ hasText: 'Striped scarf' });
   await scarf.click();
   await expect(scarf).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.pc-companion')).toHaveAttribute('data-expression', 'playful');
-  await expect(page.locator('.pc-capy-worn')).toHaveCount(1);
+  await expect(page.locator('.pc-companion .pc-capy-worn')).toHaveCount(1);
   await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
   await expect(page.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
   await expect(page.locator('.pc-companion').getByRole('status')).toContainText('New outfit');
@@ -120,6 +121,7 @@ test('a failed outfit change does not celebrate or leave an unearned accessory e
   await page.route('**/api/capybara/outfit', (route) => route.fulfill({ status: 503, json: { message: 'Unavailable' } }));
   await page.goto('/7hk9ho#capybara');
   await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
+  await page.getByRole('button', { name: 'Accessories', exact: true }).click();
   const scarf = page.locator('.pc-capy-item').filter({ hasText: 'Striped scarf' });
   await scarf.click();
   await expect(scarf).toHaveAttribute('aria-pressed', 'false');

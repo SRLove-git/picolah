@@ -1,10 +1,12 @@
 import type { CapyExpression } from '../components/CapyExpressionArt';
 import type { CapyPose } from './capy-motion';
+import { CAPY_CLOTHING_FOREGROUND } from './capy-clothing';
 
 type Images = Partial<Record<CapyExpression, HTMLImageElement>>;
 export interface CapyWearable {
   image: HTMLImageElement;
-  layout: { x: number; y: number; scale: number; rotate?: number };
+  clothing?: boolean;
+  layout: { x: number; y: number; scale: number; rotate?: number; width?: number; height?: number };
 }
 
 // One continuous mesh avoids cut-out seams. The same deformation is applied to
@@ -106,7 +108,7 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
     const position = gl.getAttribLocation(program, 'aPosition');
     const uv = gl.getAttribLocation(program, 'aUV');
 
-    function texture(image: HTMLImageElement) {
+    function texture(image: HTMLImageElement | HTMLCanvasElement) {
       const value = gl!.createTexture();
       if (!value) throw new Error('Texture unavailable');
       textures.push(value);
@@ -135,11 +137,26 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
       return { vertex, index, count: indices.length };
     }
     const body = mesh(48, 50, (x, y) => [x * 768, y * 804]);
-    const art = Object.fromEntries(Object.entries(images).map(([name, image]) => [name, texture(image)])) as Record<CapyExpression, WebGLTexture>;
-    const accessories = worn.map(({ image, layout }) => {
+    const clothing = worn.find((item) => item.clothing);
+    function dressed(image: HTMLImageElement): HTMLImageElement | HTMLCanvasElement {
+      if (!clothing) return image;
+      const plate = document.createElement('canvas');
+      plate.width = 768; plate.height = 804;
+      const paint = plate.getContext('2d');
+      if (!paint) throw new Error('Clothing compositor unavailable');
+      paint.drawImage(image, 0, 0, 768, 804);
+      paint.drawImage(clothing.image, 0, 0, 768, 804);
+      paint.save();
+      paint.clip(new Path2D(CAPY_CLOTHING_FOREGROUND));
+      paint.drawImage(image, 0, 0, 768, 804);
+      paint.restore();
+      return plate;
+    }
+    const art = Object.fromEntries(Object.entries(images).map(([name, image]) => [name, texture(dressed(image))])) as Record<CapyExpression, WebGLTexture>;
+    const accessories = worn.filter((item) => !item.clothing).map(({ image, layout }) => {
       const angle = (layout.rotate ?? 0) * Math.PI / 180;
       return { texture: texture(image), mesh: mesh(10, 10, (u, v) => {
-        const x = (u - 0.5) * 100 * layout.scale, y = (v - 0.5) * 100 * layout.scale;
+        const x = (u - 0.5) * (layout.width ?? 100) * layout.scale, y = (v - 0.5) * (layout.height ?? 100) * layout.scale;
         return [layout.x + x * Math.cos(angle) - y * Math.sin(angle), layout.y + x * Math.sin(angle) + y * Math.cos(angle)];
       }) };
     });

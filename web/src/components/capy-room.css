@@ -168,6 +168,7 @@
 .pc-room-notebook .pc-capy-empty > svg { padding: 13px; width: 62px; height: 62px; border-radius: 22px; color: #bd9475; background: #f5e4ce; }
 .pc-room-notebook .pc-capy-empty p { font-size: 12px; line-height: 1.8; }
 .pc-room-notebook button:focus-visible, .pc-room-panel:focus-visible { outline: 2px solid #b98173; outline-offset: 2px; }
+.pc-companion.is-room[data-dressed-nap='true'] .pc-companion-touch { transform: translateX(-61%); }
 
 @media (hover: hover) and (pointer: fine) {
   .pc-room-hotspot:hover { background: #fffdf5; }

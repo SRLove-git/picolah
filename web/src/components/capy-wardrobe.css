@@ -1,0 +1,26 @@
+.pc-wardrobe-mirror { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 9px 12px; border: 1px solid #ecd8c3; border-radius: 24px; background: radial-gradient(ellipse at 21% 60%, #f6e4d5, transparent 65%), #fff6e7; }
+.pc-wardrobe-model { display: grid; place-items: center; flex: 0 0 43%; min-width: 0; overflow: hidden; }
+.pc-wardrobe-model .pc-capy-live { width: 100% !important; max-width: 154px; height: auto !important; aspect-ratio: 1; margin: 0; }
+.pc-wardrobe-model .pc-capy { width: 100% !important; height: 100% !important; animation: none; }
+.pc-wardrobe-look { flex: 1; min-width: 0; padding: 7px 0; }
+.pc-wardrobe-look > span { display: block; margin-bottom: 5px; color: #98795f; font-size: 10px; }
+.pc-wardrobe-look strong { color: #80604f; font-size: 15px; }
+.pc-wardrobe-look p { margin: 6px 0 8px; color: #90735e; font-size: 11px; line-height: 1.65; }
+.pc-wardrobe-look small { display: block; color: #98795f; font-size: 10px; line-height: 1.6; }
+.pc-wardrobe-categories { display: flex; gap: 8px; margin-bottom: 13px; }
+.pc-wardrobe-categories button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 18px; border: 1px solid #ead7c2; border-radius: 16px; color: #9b7b64; background: #fff8ee; font: inherit; font-size: 12px; cursor: pointer; touch-action: manipulation; }
+.pc-wardrobe-categories button[aria-pressed='true'] { color: #667e61; background: #eaf0de; border-color: #cad7b4; font-weight: 600; }
+.pc-room-notebook .is-clothes .pc-capy-item { align-items: center; padding: 15px 10px 12px; }
+.pc-room-notebook .is-clothes .pc-capy-item-art { width: 100%; height: 112px; background: radial-gradient(ellipse, color-mix(in srgb, var(--pc-capy-accent), white 70%), transparent 70%); border-radius: 16px; }
+.pc-room-notebook .is-clothes .pc-capy-item-art svg { width: 110px; height: 108px; }
+.pc-room-notebook .is-clothes .pc-capy-item-copy { text-align: center; }
+.pc-room-notebook .is-clothes .pc-capy-item-copy strong { font-size: 12px; }
+.pc-room-notebook .is-clothes .pc-capy-item-tag { top: 8px; right: 7px; }
+.pc-room-notebook .is-clothes .pc-capy-item.is-worn { box-shadow: inset 0 0 0 1px #b4c98e; }
+@media (max-width: 350px) {
+  .pc-wardrobe-mirror { gap: 7px; padding: 8px; }
+  .pc-wardrobe-look strong { font-size: 13px; }
+  .pc-wardrobe-look p { font-size: 10px; }
+  .pc-room-notebook .is-clothes .pc-capy-item-art { height: 94px; }
+  .pc-room-notebook .is-clothes .pc-capy-item-art svg { width: 92px; height: 90px; }
+}

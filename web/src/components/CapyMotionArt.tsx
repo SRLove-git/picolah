@@ -70,7 +70,7 @@ export function CapyMotionArt({ expression, motion, worn = [] }: {
     void (async () => {
       const faces = await Promise.allSettled(Object.entries(CAPY_EXPRESSION_ART).map(async ([name, src]) => [name, await loadImage(src)] as const));
       // A missing wearable must leave the whole static outfit visible.
-      const accessories = await Promise.all(artwork.map(async ({ src, layout }) => ({ image: await loadImage(src), layout })));
+      const accessories = await Promise.all(artwork.map(async ({ src, layout, clothing }) => ({ image: await loadImage(src), layout, clothing })));
       if (disposed || lost) return;
       const images = Object.fromEntries(faces.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []));
       renderer = createCapyRenderer(element, images, accessories);

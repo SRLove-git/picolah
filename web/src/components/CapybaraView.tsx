@@ -1,14 +1,13 @@
-import { Check, Heart, Lock, NotebookPen, Shirt, ShoppingBag, Sprout, Trash2, X } from 'lucide-react';
+import { Heart, NotebookPen, Shirt, ShoppingBag, Sprout, Trash2, X } from 'lucide-react';
 import { Dialog } from '@base-ui/react/dialog';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { CAPY_SLOTS, type CapySlot } from '../../shared/capybara';
 import { formatMoney, relativeTime } from '../lib/format';
 import { useCapybara } from '../lib/capybara';
 import { CapyCompanion } from './CapyCompanion';
 import type { CapyRoomPanel, OpenCapyPanel } from './CapyHabitat';
 import { CapyJournal, type JournalProtection } from './CapyJournal';
-import { AccessoryPreview } from './CapyAccessoryArt';
+import { CapyWardrobe } from './CapyWardrobe';
 import { PageHeader } from './PageHeader';
 import { ProductArt } from './ProductArt';
 import './capybara.css';
@@ -62,13 +61,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
     tabRefs.current[panels[next].id]?.focus();
   }
 
-  const slotName = (slot: CapySlot) => {
-    const info = CAPY_SLOTS.find((entry) => entry.id === slot);
-    return english ? info?.nameEn : info?.nameZh;
-  };
-
   const activeRows = view.xpRows.filter((row) => row.count > 0);
-  const wornIds = new Set(view.worn.map((accessory) => accessory.id));
 
   async function handleToggle(id: string) {
     try {
@@ -152,63 +145,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                   <CapyJournal key={journalVersion} active={panelOpen && panel === 'journal'} onProtectionChange={setJournalProtection} />
                 </section>
                 <section className="pc-panel pc-capy-wardrobe pc-room-panel" id="capy-panel-wardrobe" role="tabpanel" aria-labelledby="capy-tab-wardrobe" hidden={panel !== 'wardrobe'} tabIndex={0}>
-                  <header className="pc-capy-panel-head">
-                    <div>
-                      <h2>{t('capybara.wardrobe')}</h2>
-                    </div>
-                    <span className="pc-capy-panel-count">
-                      <Check size={14} strokeWidth={2.4} />
-                      {t('capybara.wornCount', { count: view.worn.length })}
-                    </span>
-                  </header>
-
-                  <ul className="pc-capy-wardrobe-grid">
-                    {view.accessories.map((accessory) => {
-                      const isWorn = wornIds.has(accessory.id);
-                      return (
-                        <li key={accessory.id}>
-                          <button
-                            type="button"
-                            className={`pc-capy-item ${accessory.unlocked ? '' : 'is-locked'} ${isWorn ? 'is-worn' : ''}`}
-                            onClick={() => void handleToggle(accessory.id)}
-                            disabled={!accessory.unlocked || syncing}
-                            aria-pressed={isWorn}
-                            title={
-                              accessory.unlocked
-                                ? `${english ? accessory.nameEn : accessory.nameZh} · ${slotName(accessory.slot)}`
-                                : english
-                                  ? accessory.unlockLabelEn
-                                  : accessory.unlockLabelZh
-                            }
-                          >
-                            <span
-                              className="pc-capy-item-art"
-                              style={{ ['--pc-capy-accent' as string]: accessory.accent }}
-                            >
-                              <AccessoryPreview id={accessory.id} />
-                            </span>
-                            <span className="pc-capy-item-copy">
-                              <strong>{english ? accessory.nameEn : accessory.nameZh}</strong>
-                              <small>
-                                {isWorn
-                                  ? t('capybara.unequip')
-                                  : accessory.unlocked
-                                    ? t('capybara.equip')
-                                    : english
-                                      ? accessory.unlockLabelEn
-                                      : accessory.unlockLabelZh}
-                              </small>
-                            </span>
-                            <span className="pc-capy-item-tag">
-                              {!accessory.unlocked && <Lock size={12} strokeWidth={2.4} />}
-                              {isWorn && <Check size={12} strokeWidth={2.8} />}
-                              {slotName(accessory.slot)}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <CapyWardrobe view={view} syncing={syncing} available={available} onToggle={handleToggle} />
                 </section>
 
                 <section className="pc-panel pc-capy-purchases pc-room-panel" id="capy-panel-purchases" role="tabpanel" aria-labelledby="capy-tab-purchases" hidden={panel !== 'purchases'} tabIndex={0}>

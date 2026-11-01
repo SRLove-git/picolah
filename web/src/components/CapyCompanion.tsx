@@ -76,7 +76,10 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
   const follow = useRef<HTMLSpanElement>(null);
   const expression = EXPRESSION[reaction.action];
   const sleeping = expression === 'sleepy';
-  const napping = room && sleeping && napReady;
+  // Keep the dressed, breathing rig while resting: the curled illustration
+  // has no clothing layers and would otherwise make the selected outfit vanish.
+  const dressedNap = room && sleeping && Boolean(view?.worn.some((item) => item.slot === 'body'));
+  const napping = room && sleeping && napReady && !dressedNap;
   const night = evening || (room && sleeping);
 
   const clearTimers = useCallback(() => {
@@ -146,7 +149,7 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
 
   return <div className={`pc-companion ${compact ? 'is-compact' : ''} ${room ? 'is-room' : ''}`}
     data-expression={expression} data-action={reaction.action} data-stage={view?.stage.id}
-    data-night={room && night} data-napping={napping} data-still={paused || keyboard} data-paused={hidden || roomMenuOpen}>
+    data-night={room && night} data-napping={napping} data-dressed-nap={dressedNap} data-still={paused || keyboard} data-paused={hidden || roomMenuOpen}>
     <p className={`pc-companion-speech ${compact ? 'pc-hero-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">
       {compact || (room && reaction.action === 'idle') ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
     </p>
