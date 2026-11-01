@@ -115,3 +115,72 @@ test('clothing is composited into the moving character and survives pause and co
   await room.getByRole('button', { name: 'Wake up', exact: true }).click();
   await expect(room).toHaveAttribute('data-dressed-nap', 'false');
 });
+
+test('hoodie sleeves remain fabric through every expression instead of restoring bare forearms', async ({ page }, testInfo) => {
+  const headers = await setup(page);
+  expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['cream-hoodie'] } })).ok()).toBe(true);
+  await page.reload();
+  const room = page.locator('.pc-companion.is-room');
+  await expect(room.locator('.pc-capy-live')).toHaveAttribute('data-clothing', 'cream-hoodie');
+  for (const label of [null, 'Pet the capybara', 'Little snack', 'Play', 'Nap time']) {
+    if (label) await room.getByRole('button', { name: label, exact: true }).click();
+    await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
+    const coverage = await room.locator('canvas').evaluate((canvas: HTMLCanvasElement) => new Promise<number>((resolve) => requestAnimationFrame(() => {
+      const gl = canvas.getContext('webgl')!;
+      const pixels = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      let fabric = 0, total = 0;
+      // The near forearm used to be painted over the hoodie with orange fur.
+      for (let y = 430; y < 485; y++) for (let x = 450; x < 520; x++) {
+        const i = ((canvas.height - 1 - Math.round(y + 80.4)) * canvas.width + x) * 4;
+        const [r, g, b, a] = pixels.slice(i, i + 4);
+        if (a > 200 && r > 150 && g > r * 0.77 && b > r * 0.6) fabric++;
+        total++;
+      }
+      resolve(fabric / total);
+    })));
+    expect(coverage, `hoodie sleeve during ${label ?? 'idle'}`).toBeGreaterThan(0.65);
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(room.locator('[data-art="fitted-character"]')).toBeVisible();
+  await expect(room.locator('.pc-capy-dressed')).toHaveAttribute('data-visible-expression', 'sleepy');
+  await room.locator('.pc-capy-live').screenshot({ path: testInfo.outputPath('hoodie-fitted-sleeves.png') });
+});
+
+test('a complete dressed character stays visible when WebGL is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: unknown[]) {
+      if (type === 'webgl') return null;
+      return original.call(this, type as '2d', ...args);
+    } as typeof original;
+  });
+  const headers = await setup(page);
+  expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['cream-hoodie'] } })).ok()).toBe(true);
+  await page.reload();
+  const room = page.locator('.pc-companion.is-room');
+  await expect(room.locator('[data-art="fitted-character"]')).toBeVisible();
+  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
+  await room.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
+  await expect(room.locator('.pc-capy-dressed')).toHaveAttribute('data-visible-expression', 'happy');
+  await expect(room.locator('[data-wearable="cream-hoodie"]')).toBeVisible();
+});
+
+test.describe('cached clothing on mobile', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  test('reloading a cached outfit keeps the static character and its expressions ready', async ({ page }) => {
+    const headers = await setup(page);
+    expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['strawberry-dress'] } })).ok()).toBe(true);
+    const room = page.locator('.pc-companion.is-room');
+    for (let reload = 0; reload < 3; reload++) {
+      await page.reload();
+      await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await expect(room.locator('[data-art="fitted-character"]')).toBeVisible();
+      await room.getByRole('button', { name: 'Pet the capybara', exact: true }).tap();
+      await expect(room.locator('.pc-capy-dressed')).toHaveAttribute('data-visible-expression', 'happy');
+      await expect(room.locator('.pc-capy-face-patch.is-visible')).toHaveCSS('opacity', '1');
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+    }
+  });
+});

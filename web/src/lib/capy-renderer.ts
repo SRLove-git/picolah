@@ -1,6 +1,6 @@
 import type { CapyExpression } from '../components/CapyExpressionArt';
 import type { CapyPose } from './capy-motion';
-import { CAPY_CLOTHING_FOREGROUND } from './capy-clothing';
+import { CAPY_CLOTHING_FACE } from './capy-clothing';
 
 type Images = Partial<Record<CapyExpression, HTMLImageElement>>;
 export interface CapyWearable {
@@ -138,21 +138,31 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
     }
     const body = mesh(48, 50, (x, y) => [x * 768, y * 804]);
     const clothing = worn.find((item) => item.clothing);
-    function dressed(image: HTMLImageElement): HTMLImageElement | HTMLCanvasElement {
+    function dressed(name: string, image: HTMLImageElement): HTMLImageElement | HTMLCanvasElement {
       if (!clothing) return image;
+      if (name === 'idle') return clothing.image;
       const plate = document.createElement('canvas');
       plate.width = 768; plate.height = 804;
       const paint = plate.getContext('2d');
       if (!paint) throw new Error('Clothing compositor unavailable');
+      // Only blend facial features; the complete dressed body supplies sleeves,
+      // paws, fur edges and all garment contact shadows as one surface.
       paint.drawImage(image, 0, 0, 768, 804);
-      paint.drawImage(clothing.image, 0, 0, 768, 804);
+      paint.globalCompositeOperation = 'destination-in';
       paint.save();
-      paint.clip(new Path2D(CAPY_CLOTHING_FOREGROUND));
-      paint.drawImage(image, 0, 0, 768, 804);
+      const { x, y, rx, ry, solid } = CAPY_CLOTHING_FACE;
+      paint.translate(x, y); paint.scale(rx, ry);
+      const feather = paint.createRadialGradient(0, 0, 0, 0, 0, 1);
+      feather.addColorStop(solid, 'rgba(255,255,255,1)');
+      feather.addColorStop(1, 'rgba(255,255,255,0)');
+      paint.fillStyle = feather;
+      paint.fillRect(-x / rx, -y / ry, 768 / rx, 804 / ry);
       paint.restore();
+      paint.globalCompositeOperation = 'destination-over';
+      paint.drawImage(clothing.image, 0, 0, 768, 804);
       return plate;
     }
-    const art = Object.fromEntries(Object.entries(images).map(([name, image]) => [name, texture(dressed(image))])) as Record<CapyExpression, WebGLTexture>;
+    const art = Object.fromEntries(Object.entries(images).map(([name, image]) => [name, texture(dressed(name, image))])) as Record<CapyExpression, WebGLTexture>;
     const accessories = worn.filter((item) => !item.clothing).map(({ image, layout }) => {
       const angle = (layout.rotate ?? 0) * Math.PI / 180;
       return { texture: texture(image), mesh: mesh(10, 10, (u, v) => {

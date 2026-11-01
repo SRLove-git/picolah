@@ -1,8 +1,19 @@
-/** Original head, paws, bag and toes sit in front of the clothing layer.
- * Shared by the static SVG and the animated texture compositor in 768×804 art coordinates. */
-export const CAPY_CLOTHING_FOREGROUND = [
-  'M0 0H768V300H590Q575 332 548 344Q535 351 517 358Q482 380 425 386Q358 396 304 379Q270 368 242 347Q221 334 207 312H0Z',
-  'M176 438C173 414 189 392 219 388C250 377 276 386 297 401L308 411L314 432C322 411 334 402 357 402C386 400 406 411 427 415C477 421 500 405 526 427C552 452 548 478 528 497C506 522 465 526 425 505L391 486L391 634Q375 650 365 649L176 618L211 479C189 485 177 463 176 438Z',
-  'M238 760a55 26 0 1 0 110 0a55 26 0 1 0-110 0',
-  'M459 770a59 27 0 1 0 118 0a59 27 0 1 0-118 0',
-].join(' ');
+import type { CapyClothingId } from '../../shared/capybara';
+import strawberryDress from '../assets/capy-clothes-v2/strawberry-dress.webp';
+import mintOveralls from '../assets/capy-clothes-v2/mint-overalls.webp';
+import creamHoodie from '../assets/capy-clothes-v2/cream-hoodie.webp';
+import duckRaincoat from '../assets/capy-clothes-v2/duck-raincoat.webp';
+import starPajamas from '../assets/capy-clothes-v2/star-pajamas.webp';
+import sailorShirt from '../assets/capy-clothes-v2/sailor-shirt.webp';
+
+/** Complete dressed characters, including sleeves, paws and contact shadows.
+ * Never paint the original bare arms over these fitted garments. */
+export const CAPY_CLOTHING_ART: Record<CapyClothingId, string> = {
+  'strawberry-dress': strawberryDress, 'mint-overalls': mintOveralls,
+  'cream-hoodie': creamHoodie, 'duck-raincoat': duckRaincoat,
+  'star-pajamas': starPajamas, 'sailor-shirt': sailorShirt,
+};
+
+/** Feather only the facial features. The neck, silhouette, garment and limbs
+ * remain one continuous painted surface in both SVG and WebGL rendering. */
+export const CAPY_CLOTHING_FACE = { x: 370, y: 216, rx: 178, ry: 140, solid: 0.84 } as const;

@@ -2,7 +2,7 @@ import { useId, type ReactNode } from 'react';
 import { CapyExpressionArt, type CapyExpression } from './CapyExpressionArt';
 import { CapyMotionArt } from './CapyMotionArt';
 import type { CapyMotion } from '../lib/capy-motion';
-import type { CapyAccessory } from '../../shared/capybara';
+import type { CapyAccessory, CapyClothingId } from '../../shared/capybara';
 
 const LETTER_COLORS = ['#ef4f7e', '#ff8b5e', '#f2b53c', '#4fc5a5', '#5b9cf5', '#9a78f0', '#ef5fa7'];
 
@@ -69,7 +69,7 @@ export function Capybara({
     >
       {variant === 'full' ? (
         motion ? <CapyMotionArt expression={expression ?? 'idle'} motion={motion} worn={worn} />
-          : <CapyExpressionArt expression={expression} />
+          : <CapyExpressionArt expression={expression} clothing={worn?.find((item) => item.slot === 'body')?.id as CapyClothingId | undefined} />
       ) : (
         <svg viewBox="38 0 164 168" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>

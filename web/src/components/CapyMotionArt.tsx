@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CapyAccessory } from '../../shared/capybara';
+import type { CapyAccessory, CapyClothingId } from '../../shared/capybara';
 import { blendCapyPose, capyPose, type CapyMotion } from '../lib/capy-motion';
 import { createCapyRenderer } from '../lib/capy-renderer';
 import { CAPY_EXPRESSION_ART, CapyExpressionArt, type CapyExpression } from './CapyExpressionArt';
@@ -87,7 +87,7 @@ export function CapyMotionArt({ expression, motion, worn = [] }: {
 
   useEffect(() => { sync.current?.(); }, [motion.playing, motion.action, motion.sequence]);
   return <span className="pc-capy-motion" data-ready={ready && motion.playing} data-clip={motion.action}>
-    <CapyExpressionArt expression={expression} />
+    <CapyExpressionArt expression={expression} clothing={worn.find((item) => item.slot === 'body')?.id as CapyClothingId | undefined} />
     <canvas ref={canvas} width={768} height={965} aria-hidden="true" />
   </span>;
 }

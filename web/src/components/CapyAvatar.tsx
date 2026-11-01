@@ -17,9 +17,8 @@ interface CapyAvatarProps {
 }
 
 /**
- * The living mascot: the original artwork plus whatever the shopper has
- * bought for it. Accessories are an SVG overlay in the artwork's own
- * 768×804 coordinate space, so they stay glued to the capybara at any size.
+ * The living mascot: a complete dressed character when clothing is selected,
+ * with smaller accessories placed in the shared 768×804 art coordinates.
  */
 export function CapyAvatar({ view, size = 240, className = '', showBadge = false, badgeLabel, expression, motion }: CapyAvatarProps) {
   const scale = view.stage.scale;
@@ -50,7 +49,7 @@ export function CapyAvatar({ view, size = 240, className = '', showBadge = false
         <Capybara size={size} className="pc-capy-live-art" expression={expression} motion={motion} worn={view.worn}>
           {view.worn.length > 0 && (
             <svg className="pc-capy-worn" viewBox="0 0 768 804" aria-hidden="true">
-              <AccessoryLayer worn={view.worn} expression={expression} />
+              <AccessoryLayer worn={view.worn} />
             </svg>
           )}
         </Capybara>

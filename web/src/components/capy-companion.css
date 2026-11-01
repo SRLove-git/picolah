@@ -102,6 +102,12 @@
 .pc-capy-expressions { position: relative; display: block; width: 100%; height: 100%; }
 .pc-capy-expressions img { position: absolute; inset: 0; opacity: 0; transition: opacity 180ms var(--pc-ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
 .pc-capy-expressions img.is-visible { opacity: 1; }
+.pc-capy-dressed > svg { display: block; width: 100%; height: 100%; }
+.pc-capy-dressed > .pc-capy-expressions,
+.pc-capy-dressed > img { position: absolute; inset: 0; }
+.pc-capy-dressed > img { opacity: 1; }
+.pc-capy-face-patch { opacity: 0; transition: opacity 180ms var(--pc-ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
+.pc-capy-face-patch.is-visible { opacity: 1; }
 
 .pc-companion-mood {
   position: absolute;
