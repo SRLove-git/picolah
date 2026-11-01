@@ -9,8 +9,10 @@ async function setup(page: Page, language = 'en') {
   return payload;
 }
 async function room(page: Page) {
-  await page.goto('/7hk9ho#capybara'); const room = page.locator('.pc-companion.is-room');
-  await expect(room).toHaveAttribute('data-renderer', 'three'); return room;
+  await page.goto('/7hk9ho#capybara', { waitUntil: 'domcontentloaded' }); const room = page.locator('.pc-companion.is-room');
+  // A cold software-WebGL context can exceed the default 5 s on CI. Keep the
+  // action assertions strict; only initial renderer readiness gets this budget.
+  await expect(room).toHaveAttribute('data-renderer', 'three', { timeout: 15000 }); return room;
 }
 async function play(page: Page, game: string) {
   await page.locator('.pc-room-dock-button.is-play').click(); await page.locator(`[data-game-choice="${game}"]`).click();
@@ -18,6 +20,7 @@ async function play(page: Page, game: string) {
 }
 
 test('bag-free artwork follows meals, petting, toys and a persistent nap', async ({ page }, info) => {
+  test.slow(); // Initial software rendering plus five full action transitions.
   await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
   await expect(canvas).toHaveAttribute('data-art-state', 'idle');
   const idle = await canvas.getAttribute('data-source');
@@ -37,16 +40,19 @@ test('bag-free artwork follows meals, petting, toys and a persistent nap', async
 });
 
 test('a delayed earlier pose cannot replace a later action', async ({ page }) => {
+  test.slow();
   let release!: () => void;
   const held = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/assets/reach-*.webp', async route => { await held; await route.continue(); });
-  await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
-  await play(page, 'bubbles');
-  await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
-  await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
-  release(); await page.waitForTimeout(500);
-  await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
-  await expect(canvas).toHaveAttribute('data-ready', 'true');
+  try {
+    await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
+    await play(page, 'bubbles');
+    await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
+    await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
+    release(); await page.waitForTimeout(500);
+    await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
+    await expect(canvas).toHaveAttribute('data-ready', 'true');
+  } finally { release(); }
 });
 
 test('petting, meals and a persistent nap animate without changing shopping progress', async ({ page }) => {
@@ -71,7 +77,7 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
   await page.goto('/7hk9ho#home'); const home = page.locator('.pc-companion');
   await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
   await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
-  await expect(companion).toHaveAttribute('data-renderer', 'three'); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
+  await expect(companion).toHaveAttribute('data-renderer', 'three', { timeout: 15000 }); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-character', 'original-image');
   await expect(canvas).toHaveAttribute('data-art-state', 'idle');
   expect(Number(await canvas.getAttribute('data-geometry'))).toBeLessThan(15000);
