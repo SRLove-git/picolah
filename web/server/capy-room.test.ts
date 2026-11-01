@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { after, test } from 'node:test';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { EMPTY_CAPY_ROOM } from '../shared/capy-room.ts';
+const directory = mkdtempSync(join(tmpdir(), 'picolah-room-test-'));
+Object.assign(process.env, { NODE_ENV: 'test', AUTH_REQUIRED: 'false', DATABASE_URL: '', PICOLAH_DB_PATH: join(directory, 'room.db'), LLM_API_KEY: '', CRAWLER_TOOL_URL: '', CRAWLER_TOOL_TOKEN: '' });
+const { app } = await import('./index.ts');
+const { db } = await import('./db.ts');
+const { config } = await import('./config.ts');
+const auth = await import('./auth.ts');
+const server = app.listen(0, '127.0.0.1');
+await new Promise<void>(resolve => server.once('listening', resolve));
+const address = server.address(); if (!address || typeof address === 'string') throw new Error('No port');
+const base = `http://127.0.0.1:${address.port}/api`;
+after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await db.close(); rmSync(directory, { recursive: true, force: true }); });
+const headers = (owner: string, cookie = '') => ({ 'Content-Type': 'application/json', 'X-Picolah-User': owner, ...(cookie ? { cookie } : {}) });
+const call = (owner: string, body?: unknown, cookie?: string) => fetch(`${base}/capybara/room`, { method: body ? 'PATCH' : 'GET', headers: headers(owner, cookie), ...(body ? { body: JSON.stringify(body) } : {}) });
+
+test('room persistence is owner-scoped, rejects impersonation and stale concurrent writes', async () => {
+  assert.equal((await call('')).status, 401); assert.equal((await call('a'.repeat(32))).status, 401);
+  const owner = 'room-owner-one';
+  assert.deepEqual((await (await call(owner)).json()).room, EMPTY_CAPY_ROOM);
+  const before = await (await fetch(`${base}/capybara`, { headers: headers(owner) })).json();
+  const results = await Promise.all([true, false].map(sleeping => call(owner, { revision: 0, changes: { sleeping } })));
+  assert.deepEqual(results.map(r => r.status).sort(), [200, 409]);
+  const room = (await (await call(owner)).json()).room;
+  assert.equal(room.revision, 1);
+  assert.deepEqual((await (await call('room-owner-two')).json()).room, EMPTY_CAPY_ROOM);
+  for (const body of [{ revision: 1, changes: {} }, { revision: -1, changes: { sleeping: true } }, { revision: 1, changes: { sleeping: 'true' } }, { revision: 1, changes: { xp: 999 } }, { revision: 1, owner: 'room-owner-two', changes: { sleeping: true } }]) assert.equal((await call(owner, body)).status, 422);
+  const saved = await call(owner, { revision: 1, changes: { evening: true } }); assert.equal(saved.status, 200); assert.match(saved.headers.get('cache-control')!, /no-store/);
+  const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `const {getCapyRoom}=await import('./server/capy-room.ts');const {db}=await import('./server/db.ts');console.log(JSON.stringify(await getCapyRoom('${owner}')));await db.close();`], { cwd: new URL('..', import.meta.url), env: process.env, encoding: 'utf8' });
+  assert.equal(child.status, 0, child.stderr); assert.equal(JSON.parse(child.stdout.trim()).evening, true); assert.equal(JSON.parse(child.stdout.trim()).revision, 2);
+  assert.deepEqual(await (await fetch(`${base}/capybara`, { headers: headers(owner) })).json(), before, 'care interactions never grant shopping XP');
+});
+
+test('login inherits the guest room, keeps existing account preferences, exports and deletes it', async () => {
+  const guest = 'room-guest-before-login', password = 'room test password 9';
+  await call(guest, { revision: 0, changes: { sleeping: true, evening: true } });
+  const account = await auth.createUser({ email: 'room-test@example.com', passwordHash: await auth.hashPassword(password), displayName: 'Room test' });
+  const cookie = `${config.sessionCookie}=${await auth.createSession(account.id)}`;
+  const login = () => fetch(`${base}/auth/login`, { method: 'POST', headers: headers(guest), body: JSON.stringify({ email: account.email, password }) });
+  assert.equal((await login()).status, 200);
+  assert.deepEqual((await (await call(guest)).json()).room, EMPTY_CAPY_ROOM);
+  assert.equal((await (await call(guest, undefined, cookie)).json()).room.sleeping, true);
+  await call(guest, { revision: 0, changes: { sleeping: false, evening: false } });
+  assert.equal((await login()).status, 200);
+  const exported = await (await fetch(`${base}/account/export`, { headers: headers(guest, cookie) })).json();
+  assert.equal(exported.room.sleeping, true); assert.equal(exported.room.evening, true);
+  assert.equal((await fetch(`${base}/account`, { method: 'DELETE', headers: headers(guest, cookie), body: JSON.stringify({ password }) })).status, 200);
+  assert.equal((await db.get<{ n: number }>('SELECT COUNT(*) AS n FROM capybara_room WHERE owner_id = ?', [account.id]))?.n, 0);
+});

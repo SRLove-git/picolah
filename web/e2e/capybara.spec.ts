@@ -10,9 +10,8 @@ async function setup(page: Page, language = 'en') {
 }
 async function room(page: Page) {
   await page.goto('/7hk9ho#capybara', { waitUntil: 'domcontentloaded' }); const room = page.locator('.pc-companion.is-room');
-  // A cold software-WebGL context can exceed the default 5 s on CI. Keep the
-  // action assertions strict; only initial renderer readiness gets this budget.
-  await expect(room).toHaveAttribute('data-renderer', 'three', { timeout: 15000 }); return room;
+  // The first frame sheet is decoded lazily.
+  await expect(room).toHaveAttribute('data-renderer', 'frames', { timeout: 15000 }); return room;
 }
 async function play(page: Page, game: string) {
   await page.locator('.pc-room-dock-button.is-play').click(); await page.locator(`[data-game-choice="${game}"]`).click();
@@ -20,7 +19,7 @@ async function play(page: Page, game: string) {
 }
 
 test('bag-free artwork follows meals, petting, toys and a persistent nap', async ({ page }, info) => {
-  test.slow(); // Initial software rendering plus five full action transitions.
+  test.slow(); // Five full action transitions.
   await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
   await expect(canvas).toHaveAttribute('data-art-state', 'idle');
   const idle = await canvas.getAttribute('data-source');
@@ -56,7 +55,7 @@ test('a delayed earlier pose cannot replace a later action', async ({ page }) =>
 });
 
 test('petting, meals and a persistent nap animate without changing shopping progress', async ({ page }) => {
-  test.slow(); // Several complete animated interactions on software-rendered CI.
+  test.slow(); // Several complete animated interactions.
   await setup(page); const writes: string[] = [];
   page.on('request', r => { if (r.method() !== 'GET' && r.url().includes('/api/')) writes.push(r.url()); });
   const companion = await room(page), canvas = companion.locator('canvas');
@@ -68,7 +67,7 @@ test('petting, meals and a persistent nap animate without changing shopping prog
   await page.waitForTimeout(4500); await expect(companion).toHaveAttribute('data-action', 'rest');
   await companion.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
   await expect(companion).toHaveAttribute('data-action', 'wake'); await expect(companion).toHaveAttribute('data-night', 'false');
-  await expect(companion.getByRole('progressbar')).toHaveAttribute('aria-valuenow', xp!); expect(writes).toEqual([]);
+  await expect(companion.getByRole('progressbar')).toHaveAttribute('aria-valuenow', xp!); expect(writes.every(url => url.endsWith('/api/capybara/room'))).toBe(true);
 });
 
 for (const width of [1440, 390, 320]) test(`home and four physical toys work at ${width}px`, async ({ page }, info) => {
@@ -77,10 +76,11 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
   await page.goto('/7hk9ho#home'); const home = page.locator('.pc-companion');
   await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
   await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
-  await expect(companion).toHaveAttribute('data-renderer', 'three', { timeout: 15000 }); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
+  await expect(companion).toHaveAttribute('data-renderer', 'frames', { timeout: 15000 }); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-character', 'original-image');
   await expect(canvas).toHaveAttribute('data-art-state', 'idle');
-  expect(Number(await canvas.getAttribute('data-geometry'))).toBeLessThan(15000);
+  await expect(canvas).toHaveAttribute('data-engine', 'canvas2d-sequence');
+  expect(await canvas.evaluate(c => (c as HTMLCanvasElement).getContext('webgl2'))).toBeNull();
   for (const mode of ['ball', 'bubbles', 'swing', 'dance']) {
     await play(page, mode); const before = await canvas.screenshot(); await page.waitForTimeout(450); expect((await canvas.screenshot()).equals(before)).toBe(false);
     if (mode === 'ball' || mode === 'bubbles') await expect.poll(async () => Number(await canvas.getAttribute('data-contacts')), { timeout: 12000 }).toBeGreaterThan(0);
@@ -88,7 +88,7 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
     const dock = (await companion.locator('.pc-room-dock').boundingBox())!, scene = (await canvas.boundingBox())!;
     expect(scene.y + scene.height).toBeLessThanOrEqual(dock.y + 1); await companion.screenshot({ path: info.outputPath(`${mode}-${width}.png`) });
   }
-  expect(Number(await canvas.getAttribute('data-draw-calls'))).toBeLessThan(160);
+  expect(Number(await canvas.getAttribute('data-cache-size'))).toBeLessThanOrEqual(3);
 });
 
 test('switching toys, feeding and putting toys away interrupt the previous activity', async ({ page }) => {
@@ -103,10 +103,10 @@ test('switching toys, feeding and putting toys away interrupt the previous activ
   await expect(canvas).toHaveAttribute('data-mode', 'idle'); await expect(canvas).toHaveAttribute('data-contacts', '0');
 });
 
-test('pause, reduced motion, background tabs and dialogs stop GPU draws', async ({ page }) => {
+test('pause, reduced motion, background tabs and dialogs stop canvas draws', async ({ page }) => {
   await page.addInitScript(() => {
-    const draw = WebGL2RenderingContext.prototype.drawElements; (window as any).capyDraws = 0;
-    WebGL2RenderingContext.prototype.drawElements = function (...args) { (window as any).capyDraws++; return draw.apply(this, args); };
+    const draw = CanvasRenderingContext2D.prototype.drawImage; (window as any).capyDraws = 0;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args) { (window as any).capyDraws++; return draw.apply(this, args); };
   });
   await setup(page); const companion = await room(page);
   const draws = () => page.evaluate(() => (window as any).capyDraws as number);
@@ -129,7 +129,7 @@ test('keyboard toy selection traps and restores focus with reduced motion', asyn
   const dialog = page.getByRole('dialog'); expect(await dialog.evaluate(e => parseFloat(getComputedStyle(e).transitionDuration))).toBeLessThan(0.001); await expect(page.locator('[data-game-choice]')).toHaveCount(4);
   for (let i = 0; i < 9; i++) { await page.keyboard.press('Tab'); await expect.poll(() => dialog.evaluate(e => e.contains(document.activeElement))).toBe(true); }
   await page.locator('[data-game-choice="ball"]').focus(); await page.keyboard.press('Enter'); await expect(trigger).toBeFocused();
-  const canvas = page.locator('.pc-play-canvas'); const before = await canvas.getAttribute('data-frames'); await page.waitForTimeout(350); expect(await canvas.getAttribute('data-frames')).toBe(before);
+  const canvas = page.locator('.pc-play-canvas'); await expect(canvas).toHaveAttribute('data-loading', 'false'); const before = await canvas.getAttribute('data-frames'); await page.waitForTimeout(350); expect(await canvas.getAttribute('data-frames')).toBe(before);
   await page.locator('.pc-play-controls').getByRole('button', { name: 'Toss again', exact: true }).focus(); await page.keyboard.press('Enter');
   expect(Number(await canvas.getAttribute('data-frames'))).toBeGreaterThan(Number(before)); await expect(canvas).toHaveAttribute('data-running', 'false');
 });

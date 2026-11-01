@@ -79,7 +79,7 @@ test('an outfit save failure rolls back the model and the selected clothing', as
 });
 
 test('Original outfit artwork survives pause, sleep and graphics context restoration', async ({ page }, info) => {
-  test.slow(); // Restoring a software WebGL context recompiles the scene shaders.
+  test.slow(); // Outfit loading, context recovery and a persistent nap.
   await setup(page); await wardrobe(page); await page.locator('[data-accessory="duck-raincoat"]').click();
   await expect(page.locator('[data-accessory="duck-raincoat"]')).toBeEnabled();
   await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
@@ -89,7 +89,7 @@ test('Original outfit artwork survives pause, sleep and graphics context restora
   await expect(canvas).toHaveAttribute('data-running', 'false');
   const still = await canvas.getAttribute('data-frames'); await page.waitForTimeout(350); await expect(canvas).toHaveAttribute('data-frames', still!);
   await room.getByRole('button', { name: 'Resume motion', exact: true }).click();
-  await canvas.evaluate((c: HTMLCanvasElement) => { const ext = c.getContext('webgl2')!.getExtension('WEBGL_lose_context')!; ext.loseContext(); setTimeout(() => ext.restoreContext(), 500); });
+  await canvas.evaluate((c: HTMLCanvasElement) => { c.dispatchEvent(new Event('contextlost', { cancelable: true })); setTimeout(() => c.dispatchEvent(new Event('contextrestored')), 500); });
   await expect(canvas).toHaveAttribute('data-ready', 'false'); await expect(room.locator('[data-art="fitted-character"]')).toBeVisible();
   await expect(canvas).toHaveAttribute('data-ready', 'true', { timeout: 15000 }); await expect(room.locator('.pc-play-loading-character')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-clothing', 'duck-raincoat');
@@ -114,11 +114,11 @@ test('hoodie stays on the original image character through all four games', asyn
   await expect(canvas).toHaveAttribute('data-clothing', 'cream-hoodie'); await expect(room.locator('.pc-capy-live')).toHaveCount(0);
 });
 
-test('unsupported WebGL keeps the complete dressed character, diary and wardrobe available', async ({ page }) => {
+test('unavailable Canvas 2D keeps the complete dressed character, diary and wardrobe available', async ({ page }) => {
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (type: string, ...args: unknown[]) {
-      if (type === 'webgl' || type === 'webgl2') return null;
+      if (type === '2d' && this.classList.contains('pc-play-canvas')) return null;
       return original.call(this, type as '2d', ...args);
     } as typeof original;
   });

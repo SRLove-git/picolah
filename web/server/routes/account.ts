@@ -4,6 +4,7 @@ import { db } from '../db.ts';
 import { clearSessionCookie, findUserByEmail, verifyPassword } from '../auth.ts';
 import { getShoppingProfile, resetProfile } from '../profile.ts';
 import { deleteOwnerData, listAlerts, listWatchlist } from '../watchlist.ts';
+import { deleteCapyRoom, getCapyRoom } from '../capy-room.ts';
 import { deleteCapyJournal, exportCapyJournal } from '../capy-journal.ts';
 
 export const accountRouter = Router();
@@ -52,6 +53,7 @@ accountRouter.get('/export', async (req, res) => {
     watchlist: await listWatchlist(`user:${user.id}`),
     alerts: await listAlerts(`user:${user.id}`, 100),
     journal: await exportCapyJournal(user.id),
+    room: await getCapyRoom(user.id),
   });
 });
 
@@ -73,6 +75,7 @@ accountRouter.delete('/', async (req, res) => {
   await deleteOwnerData(`user:${userId}`);
   await resetProfile(userId);
   await deleteCapyJournal(userId);
+  await deleteCapyRoom(userId);
   await db.run('DELETE FROM app_users WHERE id = ?', [userId]);
   await db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
   await db.run('DELETE FROM users WHERE id = ?', [userId]);

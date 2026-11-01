@@ -3,6 +3,8 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Armchair, Bubbles, CircleDot, Leaf, Moon, Music2, NotebookPen, Pause, Play, Shirt, Sparkles, Sun, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CapyView } from '../../shared/capybara';
+import { capyRoomAction, type CapyRoomEvent } from '../../shared/capy-room';
+import { useCapyRoom } from '../lib/use-capy-room';
 import type { CapyAction } from '../lib/capy-motion';
 import type { CapyGame } from '../lib/capy-play';
 import type { createCapyPlayScene } from '../lib/capy-play-scene';
@@ -19,7 +21,7 @@ const TOYS = [
   { id: 'dance' as const, Icon: Music2, name: ['扭扭舞', 'Happy dance'], hint: ['点一下换个舞步，一起摇摇头、扭扭身子。', 'Tap for a new step, a head bob and a little wiggle.'], button: ['换个舞步', 'New dance step'], color: '#efced3' },
 ];
 
-/** Share the same bag-free artwork while WebGL loads or is unavailable. */
+/** Share the same bag-free artwork while sequence frames load or are unavailable. */
 function CapyRoomStill({ view, action, game }: { view: CapyView; action: CapyAction; game: CapyGame | null }) {
   const art = capyArtwork(view.worn.map(item => item.id), capyArtState(action, game));
   const scale = art.rig.scale;
@@ -44,8 +46,10 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
   const { i18n } = useTranslation(), en = i18n.language.startsWith('en'), language = en ? 1 : 0;
   const canvas = useRef<HTMLCanvasElement>(null), engine = useRef<ReturnType<typeof createCapyPlayScene> | null>(null);
   const [ready, setReady] = useState(false), [failed, setFailed] = useState(false);
-  const [game, setGame] = useState<CapyGame | null>(null), [action, setAction] = useState<CapyAction>('idle');
-  const [contacts, setContacts] = useState(0), [paused, setPaused] = useState(false), [evening, setEvening] = useState(false);
+  const { store, state: roomState, sync, retry } = useCapyRoom();
+  const action = capyRoomAction(roomState), game = roomState.activity.type === 'playing' ? roomState.activity.toy : null;
+  const [contacts, setContacts] = useState(0), [paused, setPaused] = useState(false);
+  const evening = roomState.evening;
   const [toysOpen, setToysOpen] = useState(false), [instant, setInstant] = useState(false);
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const sleeping = action === 'rest', night = evening || sleeping;
@@ -54,14 +58,14 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
   const toy = TOYS.find((item) => item.id === game);
   const initialOutfitVersion = useRef(outfitVersion);
   useEffect(() => {
-    let disposed = false;
+    let disposed = false; setReady(false); setFailed(false);
     void import('../lib/capy-play-scene').then(({ createCapyPlayScene }) => {
       if (disposed || !canvas.current) return;
-      const scene = createCapyPlayScene(canvas.current, setContacts, setAction, setReady);
+      const scene = createCapyPlayScene(canvas.current, store, setContacts, available => { setReady(available); setFailed(!available); });
       engine.current = scene; scene.controls(current.current);
     }).catch(() => { if (!disposed) { setFailed(true); setReady(false); } });
     return () => { disposed = true; engine.current?.dispose(); engine.current = null; };
-  }, []);
+  }, [store]);
   useEffect(() => { engine.current?.controls(controls); }, [paused, roomMenuOpen, toysOpen, reduced, night, view.worn]);
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -71,30 +75,35 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
   useEffect(() => {
     if (initialOutfitVersion.current !== outfitVersion) { initialOutfitVersion.current = outfitVersion; if (!game) act('outfit'); }
   }, [outfitVersion]);
-  function act(next: CapyAction) { setGame(null); setAction(next); setContacts(0); setPaused(false); engine.current?.action(next); }
-  function play(next: CapyGame) { setGame(next); setAction('play'); setContacts(0); setPaused(false); engine.current?.game(next); setToysOpen(false); }
-  function finish() { setGame(null); setAction('idle'); engine.current?.game(null); }
+  function send(event: CapyRoomEvent) { setPaused(false); store.send(event); }
+  function act(next: CapyAction) {
+    const events = { idle: 'PUT_AWAY', pet: 'PET', feed: 'FEED', rest: 'SLEEP', wake: 'WAKE', outfit: 'DRESS', play: 'PET' } as const;
+    send({ type: events[next] });
+  }
+  function play(next: CapyGame) { send({ type: 'PLAY', toy: next }); setToysOpen(false); }
+  function finish() { send({ type: 'PUT_AWAY' }); }
   const expression = sleeping ? 'sleepy' : action === 'feed' ? 'snack' : action === 'play' || action === 'outfit' ? 'playful' : action === 'pet' || action === 'wake' ? 'happy' : 'idle';
   const message = toy ? toy.hint[language] : sleeping ? (en ? 'A little dream, then more adventures.' : '先做一个小小的梦，睡醒再陪你玩。') : action === 'feed' ? (en ? 'Crunch, crunch. A tasty little leaf!' : '咔嚓咔嚓，小叶子真好吃。') : action === 'pet' ? (en ? 'Hehe. One more head pat?' : '嘿嘿，再摸摸头嘛。') : action === 'outfit' ? (en ? 'New outfit, ready to play!' : '穿好新衣服，准备出门玩！') : (en ? 'Pick a toy. Let’s play together!' : '挑个玩具，我们一起玩吧！');
   const interaction = toy ? toy.button[language] : sleeping ? (en ? 'Wake the capybara' : '叫醒卡皮巴拉') : (en ? 'Pet the capybara' : '摸摸卡皮巴拉');
   return <Dialog.Root open={toysOpen} onOpenChange={setToysOpen}>
-    <div className="pc-companion is-room is-three-room" data-action={action} data-game={game ?? 'none'} data-expression={expression}
-      data-night={night} data-paused={paused || roomMenuOpen || toysOpen} data-renderer={ready ? 'three' : failed ? 'fallback' : 'loading'}>
+    <div className="pc-companion is-room is-frame-room" data-action={action} data-game={game ?? 'none'} data-expression={expression}
+      data-night={night} data-sync={sync} data-paused={paused || roomMenuOpen || toysOpen} data-renderer={ready ? 'frames' : failed ? 'fallback' : 'loading'}>
       <div className="pc-companion-scene">
         <CapyHabitat sleeping={sleeping} night={night} sequence={0} onInteract={(next) => act(next)} onOpenPanel={onOpenPanel} liveToys
-          onLight={() => { if (sleeping) { act('wake'); setEvening(false); } else setEvening((value) => !value); }} />
+          onLight={() => send({ type: 'TOGGLE_LIGHT' })} />
         <CapyHabitatHud view={view} onOpenPanel={onOpenPanel} />
         <button type="button" className="pc-play-canvas-button" aria-label={interaction} disabled={!ready || paused}
-          onClick={(event) => { if (!game) setAction(sleeping ? 'wake' : 'pet'); engine.current?.interact(event.detail ? event.clientX : undefined, event.detail ? event.clientY : undefined); }}>
+          onClick={(event) => store.send({ type: 'INTERACT', x: event.detail ? event.clientX : undefined, y: event.detail ? event.clientY : undefined })}>
           <canvas ref={canvas} className="pc-play-canvas" aria-hidden="true" />
         </button>
         {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyRoomStill view={view} action={action} game={game} /></div>}
         {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? 'Resume motion' : '继续动作') : (en ? 'Pause motion' : '暂停动作')}
           aria-pressed={paused} onClick={() => setPaused((value) => !value)}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>
+        {sync === 'error' && <button type="button" className="pc-room-save-retry" onClick={retry} aria-live="polite">{en ? 'Room not saved · Retry' : '房间未保存 · 重试'}</button>}
         {toy && <div className="pc-play-controls" aria-label={en ? 'Toy controls' : '玩具操作'}>
           <span><toy.Icon size={17} /><strong>{toy.name[language]}</strong>{(game === 'ball' || game === 'bubbles') && <small aria-live="polite">{contacts} {en ? (game === 'ball' ? 'kicks' : 'pops') : (game === 'ball' ? '次踢回' : '个泡泡')}</small>}</span>
-          <button type="button" onClick={() => engine.current?.interact()} disabled={paused || !ready}>{toy.button[language]}</button>
+          <button type="button" onClick={() => store.send({ type: 'INTERACT' })} disabled={paused || !ready}>{toy.button[language]}</button>
           <button type="button" className="pc-play-finish" onClick={finish} aria-label={en ? 'Put the toy away' : '收起玩具'}><X size={16} /></button>
         </div>}
       </div>

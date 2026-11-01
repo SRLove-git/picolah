@@ -155,6 +155,10 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
   }
   return {
     root, hands, feet,
+    /** Offline frame baking: sample the exact deformation used by the artwork. */
+    samplePoint(x: number, y: number) {
+      const point = new T.Vector3(); deform(control(x, y, art.rig), point, art.rig); return point;
+    },
     get ready() { return ready; }, get source() { return art.src; }, get variant() { return art.variant; },
     motion(enabled: boolean) { motion = enabled; if (!motion) applyPose(); },
     detail(_amount: number) { /* The image mesh is already small on every device. */ },

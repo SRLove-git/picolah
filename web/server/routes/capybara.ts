@@ -7,6 +7,7 @@ import {
   removeCapybaraPurchase,
   setCapybaraOutfit,
 } from '../capybara.ts';
+import { getCapyRoom, updateCapyRoom } from '../capy-room.ts';
 import { requestUserId } from '../user-id.ts';
 
 export const capybaraRouter = Router();
@@ -88,4 +89,25 @@ capybaraRouter.post('/outfit', async (req, res) => {
   const capybara = await setCapybaraOutfit(id, parsed.data.equipped, watchOwner);
   if (!capybara) return res.status(400).json({ error: 'INVALID_USER', message: '用户标识无效。' });
   return res.json({ capybara });
+});
+
+const roomSchema = z.object({
+  revision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  changes: z.object({ sleeping: z.boolean().optional(), evening: z.boolean().optional() }).strict()
+    .refine(value => Object.keys(value).length > 0, '缺少房间状态。'),
+}).strict();
+capybaraRouter.get('/room', async (req, res) => {
+  const { id } = viewer(req);
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!id) return res.status(401).json({ error: 'AUTH_REQUIRED' });
+  return res.json({ room: await getCapyRoom(id) });
+});
+capybaraRouter.patch('/room', async (req, res) => {
+  const { id } = viewer(req);
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!id) return res.status(401).json({ error: 'AUTH_REQUIRED' });
+  const parsed = roomSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(422).json({ error: 'VALIDATION_ERROR' });
+  const result = await updateCapyRoom(id, parsed.data.revision, parsed.data.changes);
+  return res.status(result.conflict ? 409 : 200).json({ room: result.room });
 });

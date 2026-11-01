@@ -1,26 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OrthographicCamera, Vector3 } from 'three';
+import { frameKey, clipFrame, manifest } from './capy-frame-data';
 import { CAPY_CLOTHING_IDS } from '../../shared/capybara';
 import { createCapyImagePuppet as createCapyModel, CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-image-puppet';
 import { CAPY_ACTION_ART } from './capy-action-art';
 import { blowCapyBubbles, createCapyPlayState, pushCapySwing, resolveCapyContacts, setCapyGame, setCapyPlayAction, stepCapyPlay, type CapyPlayState } from './capy-play';
 
 function rigSimulation(state: CapyPlayState, seconds: number) {
-  const model = createCapyModel();
-  const camera = new OrthographicCamera(); camera.position.set(.7, 5.5, 13); camera.lookAt(0, 1.45, 0);
-  void model.outfit([]);
-  const feet = [new Vector3(), new Vector3()], hands = [new Vector3(), new Vector3()];
   let highest = 0;
   for (let i = 0; i < seconds * 60; i++) {
     stepCapyPlay(state, 1 / 60);
-    model.root.position.set(state.actor.x, state.actor.y, state.actor.z);
-    model.root.rotation.y = state.actor.yaw; model.faceCamera(camera); model.pose(state);
-    model.feet.forEach((p, j) => p.getWorldPosition(feet[j])); model.hands.forEach((p, j) => p.getWorldPosition(hands[j]));
-    resolveCapyContacts(state, feet, hands);
+    const { key } = frameKey(state, []), clip = manifest[key];
+    assert.ok(clip, `Missing clip ${key}`);
+    const meta = clip.frames[clipFrame(clip, state, key)];
+    const world = (p: { x: number; y: number; z: number }) => ({ x: state.actor.x + p.x, y: state.actor.y + p.y, z: state.actor.z + p.z + .3 });
+    resolveCapyContacts(state, meta.feet.map(world), meta.hands.map(world));
     highest = Math.max(highest, state.actor.y);
   }
-  return { model, highest };
+  return { highest };
 }
 
 test('timers and expired toys never award a contact', () => {
@@ -90,7 +87,7 @@ test('switching toys discards stale contacts and a nap lasts until explicitly wo
   assert.equal(state.action, 'rest'); assert.equal(state.mode, null);
   setCapyPlayAction(state, 'wake');
   for (let i = 0; i < 300; i++) stepCapyPlay(state, 1 / 60);
-  assert.equal(state.action, 'idle');
+  assert.equal(state.action, 'wake', 'physics must not independently complete a state-machine action');
 });
 
 test('bag-free poses preserve outfits and only bag charms restore the shopping image', async () => {

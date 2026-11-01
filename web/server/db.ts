@@ -272,6 +272,14 @@ const SQLITE_SCHEMA = `
     UNIQUE (owner_id, product_id)
   );
 
+  CREATE TABLE IF NOT EXISTS capybara_room (
+    owner_id TEXT PRIMARY KEY,
+    sleeping INTEGER NOT NULL DEFAULT 0 CHECK (sleeping IN (0, 1)),
+    evening INTEGER NOT NULL DEFAULT 0 CHECK (evening IN (0, 1)),
+    revision INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS capybara_journal (
     id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL,

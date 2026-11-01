@@ -67,7 +67,6 @@ export function pushCapySwing(state: CapyPlayState) {
 export function stepCapyPlay(state: CapyPlayState, dt: number) {
   dt = clamp(dt, 0, 1 / 30); state.time += dt; state.actionTime += dt;
   const a = state.actor, b = state.ball;
-  if (state.action !== 'rest' && !state.mode && state.actionTime > 4.2) state.action = 'idle';
   b.cooldown = Math.max(0, b.cooldown - dt);
   if (a.kick >= 0) { a.kick += dt; if (a.kick > 0.65) a.kick = -1; }
   a.landing = Math.max(0, a.landing - dt);
