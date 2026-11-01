@@ -194,8 +194,8 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
         <span className="pc-room-dock-icon" aria-hidden="true"><Shirt size={27} strokeWidth={2.1} /></span><span>{en ? 'Dress up' : '换装'}</span>
       </button>
       <button type="button" className="pc-room-dock-button is-journal" aria-haspopup="dialog"
-        aria-label={en ? "Open Capy's keepsakes" : '打开卡皮的购物手帐'} onClick={(event) => onOpenPanel?.('purchases', event.currentTarget, event.detail === 0)}>
-        <span className="pc-room-dock-icon" aria-hidden="true"><NotebookPen size={27} strokeWidth={2.1} /></span><span>{en ? 'Journal' : '手帐'}</span>
+        aria-label={en ? "Open Capy's diary" : '打开卡皮的日记'} onClick={(event) => onOpenPanel?.('journal', event.currentTarget, event.detail === 0)}>
+        <span className="pc-room-dock-icon" aria-hidden="true"><NotebookPen size={27} strokeWidth={2.1} /></span><span>{en ? 'Journal' : '日记'}</span>
       </button>
     </div>}
     {!compact && !room && <div className="pc-companion-actions" role="group" aria-label={copy.controls}>

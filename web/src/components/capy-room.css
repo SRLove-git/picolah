@@ -138,7 +138,7 @@
 .pc-room-book-icon { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 16px; color: #b77d78; background: #ffe6df; }
 .pc-room-notebook-head h2 { margin: 0; color: #815e50; font-family: var(--pc-font-display); font-size: 19px; letter-spacing: -0.5px; }
 .pc-room-close { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; color: #ae8a79; border: 1px solid #efdfd0; border-radius: 50%; background: #fff7e9; cursor: pointer; }
-.pc-room-tabs { display: grid; flex: 0 0 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 5px; margin-bottom: 16px; border-radius: 18px; background: #f6ecdf; }
+.pc-room-tabs { display: grid; flex: 0 0 auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; padding: 5px; margin-bottom: 16px; border-radius: 18px; background: #f6ecdf; }
 .pc-room-tabs button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 0; padding: 8px 3px; font: inherit; font-size: 12px; font-weight: 600; border: 0; border-radius: 14px; color: #a38770; background: transparent; cursor: pointer; }
 .pc-room-tabs button[aria-selected='true'] { background: #fffcf6; color: #a57068; box-shadow: 0 3px 0 #e6d7c5; }
 .pc-room-panel-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #dec6b5 transparent; padding: 3px 3px 4px; }
@@ -204,7 +204,7 @@
   .pc-room-modal-viewport { padding: 12px; }
   .pc-room-notebook { max-height: calc(100dvh - 24px); padding: 16px 13px; border-radius: 27px; }
   .pc-room-notebook-head h2 { font-size: 18px; }
-  .pc-room-tabs button { font-size: 11px; gap: 4px; }
+  .pc-room-tabs button { flex-direction: column; font-size: 10px; gap: 4px; }
 }
 @media (max-width: 350px) {
   .pc-capy-home-page .pc-capy-chip { max-width: 115px; }

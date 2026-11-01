@@ -4,6 +4,7 @@ import { db } from '../db.ts';
 import { clearSessionCookie, findUserByEmail, verifyPassword } from '../auth.ts';
 import { getShoppingProfile, resetProfile } from '../profile.ts';
 import { deleteOwnerData, listAlerts, listWatchlist } from '../watchlist.ts';
+import { deleteCapyJournal, exportCapyJournal } from '../capy-journal.ts';
 
 export const accountRouter = Router();
 
@@ -42,6 +43,7 @@ accountRouter.patch('/avatar', async (req, res) => {
 accountRouter.get('/export', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'AUTH_REQUIRED', message: '请先登录。' });
   const user = req.user;
+  res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('Content-Disposition', `attachment; filename="picolah-${user.id}.json"`);
   res.json({
     exportedAt: new Date().toISOString(),
@@ -49,6 +51,7 @@ accountRouter.get('/export', async (req, res) => {
     profile: await getShoppingProfile(user.id),
     watchlist: await listWatchlist(`user:${user.id}`),
     alerts: await listAlerts(`user:${user.id}`, 100),
+    journal: await exportCapyJournal(user.id),
   });
 });
 
@@ -69,6 +72,7 @@ accountRouter.delete('/', async (req, res) => {
   await db.run('DELETE FROM conversations WHERE owner_id = ?', [userId]);
   await deleteOwnerData(`user:${userId}`);
   await resetProfile(userId);
+  await deleteCapyJournal(userId);
   await db.run('DELETE FROM app_users WHERE id = ?', [userId]);
   await db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
   await db.run('DELETE FROM users WHERE id = ?', [userId]);

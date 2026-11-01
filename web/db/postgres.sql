@@ -249,6 +249,18 @@ CREATE TABLE IF NOT EXISTS capybara_purchases (
   UNIQUE (owner_id, product_id)
 );
 
+CREATE TABLE IF NOT EXISTS capybara_journal (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  entry_date TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_capybara_journal_owner ON capybara_journal(owner_id, entry_date DESC, created_at DESC, id DESC);
+
 CREATE INDEX IF NOT EXISTS idx_offers_product_country ON offers(product_id, country);
 CREATE INDEX IF NOT EXISTS idx_offers_country ON offers(country);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);

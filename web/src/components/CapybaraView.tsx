@@ -1,12 +1,13 @@
 import { Check, Heart, Lock, NotebookPen, Shirt, ShoppingBag, Sprout, Trash2, X } from 'lucide-react';
 import { Dialog } from '@base-ui/react/dialog';
 import { useTranslation } from 'react-i18next';
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { CAPY_SLOTS, type CapySlot } from '../../shared/capybara';
 import { formatMoney, relativeTime } from '../lib/format';
 import { useCapybara } from '../lib/capybara';
 import { CapyCompanion } from './CapyCompanion';
 import type { CapyRoomPanel, OpenCapyPanel } from './CapyHabitat';
+import { CapyJournal, type JournalProtection } from './CapyJournal';
 import { AccessoryPreview } from './CapyAccessoryArt';
 import { PageHeader } from './PageHeader';
 import { ProductArt } from './ProductArt';
@@ -30,17 +31,23 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   const [panel, setPanel] = useState<CapyRoomPanel>('wardrobe');
   const [panelOpen, setPanelOpen] = useState(false);
   const [instantPanel, setInstantPanel] = useState(false);
+  const [journalProtection, setJournalProtection] = useState<JournalProtection>({ dirty: false, busy: false });
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [journalVersion, setJournalVersion] = useState(0);
+  useEffect(() => { if (!journalProtection.dirty) setConfirmClose(false); }, [journalProtection.dirty]);
   const returnFocus = useRef<HTMLButtonElement>(null);
   const tabRefs = useRef<Partial<Record<CapyRoomPanel, HTMLButtonElement | null>>>({});
   const panels = [
     { id: 'wardrobe' as const, label: english ? 'Wardrobe' : '衣橱', Icon: Shirt },
     { id: 'growth' as const, label: english ? 'Growing up' : '成长', Icon: Sprout },
+    { id: 'journal' as const, label: english ? 'Diary' : '日记', Icon: NotebookPen },
     { id: 'purchases' as const, label: english ? 'Keepsakes' : '购物记', Icon: ShoppingBag },
   ];
   const openPanel: OpenCapyPanel = (next, trigger, keyboard) => {
     returnFocus.current = trigger;
     setPanel(next);
     setInstantPanel(keyboard);
+    setConfirmClose(false);
     setPanelOpen(true);
   };
   function selectWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -99,7 +106,15 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
           <CapyCompanion view={view} size={440} outfitVersion={outfitVersion} room onOpenPanel={openPanel} roomMenuOpen={panelOpen} />
         </section>
       </div>
-      <Dialog.Root open={panelOpen} onOpenChange={setPanelOpen}>
+      <Dialog.Root open={panelOpen} onOpenChange={(open, details) => {
+        if (!open && (journalProtection.dirty || journalProtection.busy)) {
+          details.cancel();
+          setPanel('journal');
+          if (!journalProtection.busy) setConfirmClose(true);
+          return;
+        }
+        setPanelOpen(open);
+      }}>
         <Dialog.Portal>
           <Dialog.Backdrop className="pc-room-backdrop" data-instant={instantPanel} />
           <Dialog.Viewport className="pc-room-modal-viewport">
@@ -110,7 +125,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                 <div><span className="pc-room-book-icon" aria-hidden="true"><NotebookPen size={22} /></span>
                   <Dialog.Title>{english ? "Capy's little journal" : '卡皮的小手帐'}</Dialog.Title>
                 </div>
-                <Dialog.Close className="pc-room-close" aria-label={english ? 'Back to Capy' : '回到卡皮'} title={english ? 'Back to Capy' : '回到卡皮'}><X size={20} /></Dialog.Close>
+                <Dialog.Close className="pc-room-close" disabled={journalProtection.busy} aria-label={english ? 'Back to Capy' : '回到卡皮'} title={english ? 'Back to Capy' : '回到卡皮'}><X size={20} /></Dialog.Close>
               </header>
               <div className="pc-room-tabs" role="tablist" aria-label={english ? "Capy's journal" : '小窝手帐'}>
                 {panels.map(({ id, label, Icon }, index) => <button key={id} type="button" role="tab"
@@ -120,7 +135,22 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                   <Icon size={16} /><span>{label}</span>
                 </button>)}
               </div>
+              {confirmClose && <div className="pc-journal-feedback pc-journal-close-confirm" role="alert">
+                <span>{english ? 'Your entry has unsaved changes.' : '这篇日记还有没保存的修改。'}</span>
+                <button type="button" autoFocus onClick={(event) => {
+                  setConfirmClose(false);
+                  event.currentTarget.closest('[role="dialog"]')?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+                }}>{english ? 'Keep writing' : '继续写'}</button>
+                <button type="button" onClick={() => {
+                  setJournalVersion((version) => version + 1);
+                  setJournalProtection({ dirty: false, busy: false });
+                  setConfirmClose(false); setPanelOpen(false);
+                }}>{english ? 'Discard and close' : '放弃并关闭'}</button>
+              </div>}
               <div className="pc-room-panel-scroll">
+                <section className="pc-room-panel" id="capy-panel-journal" role="tabpanel" aria-labelledby="capy-tab-journal" hidden={panel !== 'journal'} tabIndex={0}>
+                  <CapyJournal key={journalVersion} active={panelOpen && panel === 'journal'} onProtectionChange={setJournalProtection} />
+                </section>
                 <section className="pc-panel pc-capy-wardrobe pc-room-panel" id="capy-panel-wardrobe" role="tabpanel" aria-labelledby="capy-tab-wardrobe" hidden={panel !== 'wardrobe'} tabIndex={0}>
                   <header className="pc-capy-panel-head">
                     <div>

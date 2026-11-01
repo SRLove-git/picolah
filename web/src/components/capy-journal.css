@@ -1,0 +1,45 @@
+.pc-journal { color: #806454; }
+.pc-journal-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 2px 0 18px; }
+.pc-journal-heading strong { font-size: 14px; }
+.pc-journal-heading p { margin: 5px 0 0; color: #aa8b75; font-size: 11px; }
+.pc-journal button, .pc-journal-feedback button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 7px 12px; color: #a47969; background: #fff8ec; border: 1px solid #ebd9c6; border-radius: 14px; font: inherit; font-size: 11px; cursor: pointer; touch-action: manipulation; }
+.pc-journal button:disabled { opacity: 0.55; cursor: default; }
+.pc-journal button.pc-journal-primary { color: #577b86; background: #e2f0ef; border-color: #c3deda; font-weight: 600; }
+.pc-journal-saved { display: flex; align-items: center; gap: 5px; margin: 0 0 14px; color: #769252; font-size: 12px; }
+.pc-journal-loading { color: #a98d76; font-size: 12px; }
+.pc-journal-empty { display: flex; align-items: center; flex-direction: column; gap: 13px; padding: 37px 16px; text-align: center; background: #fcf2e4; border: 1px dashed #e6ccb4; border-radius: 22px; }
+.pc-journal-empty > svg { box-sizing: content-box; padding: 16px; border-radius: 22px; color: #8bafb6; background: #e4f0ed; }
+.pc-journal-empty strong { font-size: 14px; }
+.pc-journal-empty p { margin: 0; color: #ad9178; font-size: 11px; line-height: 1.8; }
+.pc-journal-editor { display: grid; gap: 14px; }
+.pc-journal-editor label { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 600; }
+.pc-journal-editor input, .pc-journal-editor textarea { width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 11px 12px; color: #765d50; background: #fffdf6; border: 1px solid #e8d6c2; border-radius: 13px; font: inherit; font-size: 14px; font-weight: 400; }
+.pc-journal-editor textarea { min-height: 160px; resize: vertical; line-height: 1.85; background: repeating-linear-gradient(transparent 0 25px, #eddfcc88 25px 26px) 0 9px / 100% 26px, #fffdf6; }
+.pc-journal-editor input::placeholder, .pc-journal-editor textarea::placeholder { color: #bda48d; }
+.pc-journal-editor input:focus-visible, .pc-journal-editor textarea:focus-visible { outline: 2px solid #a0c1c5; outline-offset: 2px; }
+.pc-journal-editor-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.pc-journal-editor-foot > span { color: #b19881; font-size: 10px; }
+.pc-journal-editor-foot > div { display: flex; gap: 7px; margin-left: auto; }
+.pc-journal-feedback { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 11px; color: #9c6b55; background: #fff0df; border: 1px solid #ebd3b7; border-radius: 15px; font-size: 12px; line-height: 1.6; }
+.pc-journal-feedback > span { flex: 1 1 100%; }
+.pc-journal-close-confirm { flex: 0 0 auto; }
+.pc-journal-list { display: flex; flex-direction: column; gap: 13px; margin: 0; padding: 0; list-style: none; }
+.pc-journal-entry { position: relative; padding: 17px; background: #fff7e9; border: 1px solid #eedcc6; border-radius: 20px; overflow-wrap: anywhere; }
+.pc-journal-entry::before { content: ''; position: absolute; top: -4px; right: 21px; width: 43px; height: 10px; border-radius: 2px; background: #b8d7d4a6; transform: rotate(5deg); }
+.pc-journal-entry time { display: block; color: #ac8f72; font-size: 10px; }
+.pc-journal-entry h3 { margin: 8px 0; color: #876653; font-size: 14px; line-height: 1.5; }
+.pc-journal-entry > p { margin: 0; color: #997d66; font-size: 12px; line-height: 1.9; white-space: pre-wrap; }
+.pc-journal-entry-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.pc-journal-entry-actions button { min-height: 44px; padding-inline: 10px; background: #fffaf2; }
+.pc-journal-entry .pc-journal-feedback { margin: 10px 0 0; }
+.pc-journal button.pc-journal-more { display: flex; width: 100%; margin-top: 14px; }
+@media (hover: hover) and (pointer: fine) {
+  .pc-journal button:hover:not(:disabled), .pc-journal-feedback button:hover { border-color: #c1b09a; background: #fff3df; }
+  .pc-journal button.pc-journal-primary:hover:not(:disabled) { background: #d3e9e6; }
+}
+@media (max-width: 720px) {
+  .pc-journal-editor input, .pc-journal-editor textarea { font-size: 16px; }
+  .pc-journal-editor textarea { line-height: 1.625; }
+  .pc-journal-heading { gap: 10px; }
+  .pc-journal-entry { padding: 14px; }
+}

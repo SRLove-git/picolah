@@ -498,9 +498,9 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568]]) {
     }
     await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
     await expect(wardrobe).toBeFocused();
-    const journal = page.getByRole('button', { name: "Open Capy's keepsakes", exact: true });
+    const journal = page.getByRole('button', { name: "Open Capy's diary", exact: true });
     await journal.click();
-    await expect(page.getByRole('tabpanel', { name: 'Keepsakes', exact: true })).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: 'Diary', exact: true })).toBeVisible();
     await page.mouse.click(3, 3);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(journal).toBeFocused();

@@ -116,6 +116,21 @@ test('PostgreSQL driver runs the same repository flows as SQLite', async (t) => 
   const user = await auth.createUser({ email: 'pg@example.com', passwordHash: 'hash', displayName: 'PG' });
   assert.equal((await auth.findUserByEmail('pg@example.com'))?.id, user.id);
 
+  const journal = await import('./capy-journal.ts');
+  const diary = await journal.createCapyJournal('pg-journal-guest', 'pg-diary-entry', { date: '2026-11-01', title: 'Hello', content: 'A little day' });
+  assert.equal(diary.entry.revision, 1);
+  assert.equal((await journal.createCapyJournal('pg-journal-guest', diary.entry.id, diary.entry)).created, false);
+  assert.equal((await journal.listCapyJournal('pg-another-owner')).total, 0);
+  await assert.rejects(journal.updateCapyJournal('pg-another-owner', diary.entry.id, 1, diary.entry), /NOT_FOUND/);
+  const edited = await journal.updateCapyJournal('pg-journal-guest', diary.entry.id, 1, { ...diary.entry, content: 'Saved again' });
+  assert.equal(edited.revision, 2);
+  await assert.rejects(journal.removeCapyJournal('pg-journal-guest', diary.entry.id, 1), /CONFLICT/);
+  await journal.mergeCapyJournal('pg-journal-guest', user.id);
+  assert.equal((await journal.listCapyJournal('pg-journal-guest')).total, 0);
+  assert.equal((await journal.exportCapyJournal(user.id))[0].content, 'Saved again');
+  await journal.removeCapyJournal(user.id, diary.entry.id, 2);
+  assert.equal((await journal.listCapyJournal(user.id)).total, 0);
+
   const reelOwner = 'pg-reels-anonymous';
   const watchedReel = REELS[0];
   const watchEvent = {
