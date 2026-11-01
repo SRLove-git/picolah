@@ -25,7 +25,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   sunlight.shadow.camera.top = 5; sunlight.shadow.camera.bottom = -3; sunlight.shadow.normalBias = 0.035; sunlight.shadow.radius = 2.5;
   scene.add(sunlight); const rim = new T.DirectionalLight('#ffe4b7', 1.35); rim.position.set(3, 4, -4); scene.add(rim);
   const bounceLight = new T.DirectionalLight('#fff6e7', 0.35); bounceLight.position.set(0, 2, 6); scene.add(bounceLight);
-  const ground = new T.Mesh(new T.PlaneGeometry(20, 20), new T.ShadowMaterial({ color: '#795739', opacity: 0.25 }));
+  const ground = new T.Mesh(new T.PlaneGeometry(20, 20), new T.ShadowMaterial({ color: '#795739', opacity: 0.25, depthWrite: false }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
   const model = createCapyImagePuppet(available => {
     if (disposed) return;
@@ -84,12 +84,13 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
     pivot.rotation.x = state.swing.angle; pivot.updateMatrixWorld(true);
     const dance = mode === 'dance' ? a.settled : 0;
     const bounce = dance * Math.max(0, Math.sin(state.time * 5)) * 0.06;
-    const settle = T.MathUtils.smoothstep(state.actionTime / 0.5, 0, 1);
-    model.root.position.set(a.x, a.y + bounce - (state.action === 'rest' ? 0.14 * settle : 0), a.z);
+    model.root.position.set(a.x, a.y + bounce, a.z);
     const outfitTurn = state.action === 'outfit' ? T.MathUtils.smoothstep(state.actionTime / 2, 0, 1) * Math.PI * 2 : 0;
     const spin = T.MathUtils.smoothstep((state.actionTime % 8 - 6) / 2, 0, 1) * Math.PI * 2;
     model.root.rotation.set(0, a.yaw * (1 - dance) + (Math.sin(state.time * 1.2) * 0.4 + spin) * dance + outfitTurn, 0);
-    model.root.scale.setScalar(state.action === 'rest' ? 1 - 0.04 * settle : 1);
+    // The seated sprite already supplies the shorter silhouette. Keep its feet
+    // on the rug instead of applying the old standing-model sink as well.
+    model.root.scale.setScalar(1);
     if (mode === 'swing') {
       swingPosition.set(0, -3.28, 0); pivot.localToWorld(swingPosition);
       model.root.position.lerp(swingPosition, a.settled);
@@ -124,6 +125,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
     canvas.dataset.clothing = controls.worn.find((id) => CAPY_CLOTHING_IDS.some((clothing) => clothing === id)) ?? 'none';
     canvas.dataset.worn = controls.worn.join(',');
     canvas.dataset.character = 'original-image'; canvas.dataset.source = model.source;
+    canvas.dataset.artState = model.variant;
     canvas.dataset.running = String(active());
   }
   function render() { if (lost || disposed) return; pose(); renderer.render(scene, camera); frames++; if (state.time - metricsAt > 0.2 || !active()) { metricsAt = state.time; metrics(); } }
@@ -162,7 +164,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   canvas.addEventListener('webglcontextlost', contextLost); canvas.addEventListener('webglcontextrestored', contextRestored);
   canvas.dataset.ready = 'false';
   return {
-    controls(next: CapyPlayControls) { controls = next; void model.outfit(next.worn, wornArtwork(next.worn.map(id => ({ id })))); fill.intensity = next.night ? 0.8 : 1.15; sunlight.intensity = next.night ? 0.9 : 2.35; render(); metrics(); resume(); },
+    controls(next: CapyPlayControls) { controls = next; model.motion(next.playing && !next.reduced); void model.outfit(next.worn, wornArtwork(next.worn.map(id => ({ id })))); fill.intensity = next.night ? 0.8 : 1.15; sunlight.intensity = next.night ? 0.9 : 2.35; render(); metrics(); resume(); },
     game(mode: CapyGame | null) { retarget(); setCapyGame(state, mode); reported = -1; stillInteraction(); },
     action(action: CapyAction) { retarget(); setCapyPlayAction(state, action); stillInteraction(); },
     interact(clientX?: number, clientY?: number) {

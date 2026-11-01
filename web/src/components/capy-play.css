@@ -5,6 +5,7 @@
 .pc-play-canvas { display: block; width: 100%; height: 100%; }
 .is-three-room:not([data-renderer="three"]) .pc-play-canvas { visibility: hidden; }
 .pc-play-loading-character { position: absolute; z-index: 2; left: 50%; bottom: 11%; width: 48%; transform: translateX(-50%); pointer-events: none; }
+.pc-play-still { display: block; max-width: 100%; height: auto; margin: auto; }
 .pc-play-controls { position: absolute; z-index: 6; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 7px 8px 7px 15px; border: 2px solid #fffdf5; border-radius: 23px; color: #765643; background: #fff9eeeF; box-shadow: 0 4px 0 #d8bfa472; }
 .pc-play-controls > span { display: flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 12px; }
 .pc-play-controls small { font-size: 10px; color: #9a7c63; }

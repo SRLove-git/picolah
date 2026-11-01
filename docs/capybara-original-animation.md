@@ -1,24 +1,32 @@
-# Original mascot animation
+# Reference-image capybara animation
 
-The room uses the unchanged `web/src/assets/picolah-capybara-v2.webp` as its
-character. The procedural 3D replacement has been removed. The mesh moves the
-original pixels without regenerating the face, recolouring the fur or revealing
-an invented back view. Materials bypass scene tone mapping so the artwork
-keeps its own colours.
+The room uses transparent artwork derived from the approved
+`web/src/assets/picolah-capybara-v2.webp`. It has five bag-free poses: relaxed
+idle, reaching, eating a leaf, waving and seated sleep. See
+[asset prompts and provenance](capybara-action-art.md).
 
-The existing motion clips supply breathing, ear movement, head tilts, chewing
-and settling. Walking, kicks and short reaches deform a continuous image mesh;
-UV coordinates remain fixed. The exact same deformation drives the visible-paw
-contact points used by the ball and bubble simulation. Bubbles are placed within
-the original folded-paw pose's reach, without enlarging the hitboxes.
+`capy-action-art.ts` maps interactions to sprites and stores the visible paw
+positions for each pose. The continuous meshes keep their UV coordinates fixed;
+existing clips provide breathing, ear movement, chewing, leaning and small limb
+movements. An 180 ms dissolve transitions between prepared poses. Contact points
+follow the same deformations and transition as the visible paws. Ball and bubble
+contacts keep their existing physical radii.
 
-The original complete dressed artwork supplies each of the six outfits. Smaller
-accessories share the established wardrobe placements and deform with the same
-image. Loading is versioned so a slow earlier outfit cannot replace a later
-selection. GPU context recovery reuses the image textures; disposal releases all
-loaded textures, including requests that finish after unmount.
+The six complete fitted outfits have bag-free versions. They retain their fitted
+standing pose during interactions, with the existing continuous motion; the five
+full-body pose variants are the unclothed character set. Clothing is never
+silently removed to show an action. Bag charms intentionally select the original
+shopping artwork, including the corresponding original dressed sprite, so the
+charms retain their bag support. Other accessories follow the pose's anchors.
 
-Pause, reduced motion, hidden tabs and open dialogs use the existing room gates.
-The original artwork remains visible while the renderer loads or recovers. The
-room camera always sees the source's original three-quarter view. This is image
-puppetry; it does not fabricate new camera angles or redraw unseen anatomy.
+Texture loads are cached and versioned: a slow earlier pose or outfit cannot
+replace the latest selection. A later texture failure retains the current
+visible character. Only the small action set preloads; outfits load as selected.
+GPU context restoration reuses textures, and disposal releases textures,
+geometries and materials, including late image results.
+
+Pause, reduced motion, background tabs and dialogs use the existing room gates.
+Reduced motion settles directly into the selected pose. Loading and unsupported
+WebGL share the new static artwork. The shadow receiver does not write depth, so
+it cannot cut off a seated sprite's feet. The camera retains the source artwork's
+three-quarter view; the character is image puppetry, not a replacement 3D mesh.

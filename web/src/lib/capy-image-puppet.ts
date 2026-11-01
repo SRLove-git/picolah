@@ -1,57 +1,51 @@
 import * as T from 'three';
-import { CAPY_CLOTHING_IDS, type CapyAccessoryId, type CapyClothingId } from '../../shared/capybara';
-import { capyPose, blendCapyPose, type CapyPose } from './capy-motion';
+import type { CapyAccessoryId } from '../../shared/capybara';
+import { capyPose, blendCapyPose } from './capy-motion';
 import type { CapyPlayState, Point3 } from './capy-play';
+import { CAPY_ACTION_ART, capyArtwork, capyArtState, type CapyArtRig, type CapyArtState } from './capy-action-art';
+export { CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-action-art';
 
-// These are the original approved files, not generated replacements. Literal
-// URLs let Vite fingerprint the assets while keeping the motion rig testable.
-export const CAPY_ORIGINAL_ART = new URL('../assets/picolah-capybara-v2.webp', import.meta.url).href;
-export const CAPY_PUPPET_CLOTHES: Record<CapyClothingId, string> = {
-  'strawberry-dress': new URL('../assets/capy-clothes-v2/strawberry-dress.webp', import.meta.url).href,
-  'mint-overalls': new URL('../assets/capy-clothes-v2/mint-overalls.webp', import.meta.url).href,
-  'cream-hoodie': new URL('../assets/capy-clothes-v2/cream-hoodie.webp', import.meta.url).href,
-  'duck-raincoat': new URL('../assets/capy-clothes-v2/duck-raincoat.webp', import.meta.url).href,
-  'star-pajamas': new URL('../assets/capy-clothes-v2/star-pajamas.webp', import.meta.url).href,
-  'sailor-shirt': new URL('../assets/capy-clothes-v2/sailor-shirt.webp', import.meta.url).href,
-};
 export interface PuppetLayer {
-  src: string; clothing?: boolean;
+  src: string; clothing?: boolean; id?: CapyAccessoryId;
   layout: { x: number; y: number; scale: number; rotate?: number; width?: number; height?: number };
 }
 const UNIT = 3.05 / 804;
 const smooth = T.MathUtils.smoothstep;
 const spot = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) => Math.exp(-2 * (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2));
-function control(x: number, y: number) {
+function control(x: number, y: number, rig: CapyArtRig) {
   return { x, y,
-    head: 1 - smooth(y, 305, 410), chest: smooth(y, 330, 440) * (1 - smooth(y, 640, 750)),
+    head: 1 - smooth(y, rig.headY - 50, rig.headY + 55), chest: smooth(y, 330, 440) * (1 - smooth(y, 640, 750)),
     ears: [spot(x, y, 302, 94, 51, 55), spot(x, y, 543, 132, 54, 57)],
     muzzle: spot(x, y, 327, 268, 134, 75), bag: spot(x, y, 292, 552, 172, 160),
-    hands: [spot(x, y, 265, 426, 100, 95), spot(x, y, 380, 447, 140, 110)],
-    feet: [spot(x, y, 292, 754, 82, 100), spot(x, y, 521, 761, 85, 100)],
+    hands: rig.hands.map(([cx, cy]) => spot(x, y, cx, cy, 95, 90)),
+    feet: rig.feet.map(([cx, cy]) => spot(x, y, cx, cy, 82, 100)),
   };
 }
 type Control = ReturnType<typeof control>;
 
-/** Original-pixel puppet on a continuous mesh. UVs never change; no face redraw,
- * image generation, lighting recolour, mirrored face, or 3D character substitute.
- * Paw contacts use the exact same deformation as the displayed image. */
+/** Reference-derived sprites on continuous meshes. Each pose has its own paw
+ * anchors; visible paws and contact points share the deformation and dissolve. */
 export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
   const root = new T.Group(), board = new T.Group(); root.add(board); root.name = 'Original artwork puppet';
   board.position.z = .3;
   const hands = [new T.Object3D(), new T.Object3D()], feet = [new T.Object3D(), new T.Object3D()];
   [...hands, ...feet].forEach(p => board.add(p));
-  const pawControls = [control(265, 426), control(380, 447), control(292, 754), control(521, 761)];
-  const records: { mesh: T.Mesh<T.BufferGeometry, T.MeshBasicMaterial>; points: Control[] }[] = [];
+  type Record = { mesh: T.Mesh<T.BufferGeometry, T.MeshBasicMaterial>; points: Control[]; rig: CapyArtRig };
+  let records: Record[] = [], outgoing: Record[] = [];
   const textures = new Map<string, Promise<T.Texture>>();
   const loaded = new Set<T.Texture>();
   const loader = typeof document === 'undefined' ? null : new T.TextureLoader();
-  let disposed = false, ready = false, artworkVersion = 0, outfitKey = '', source = CAPY_ORIGINAL_ART;
+  let disposed = false, ready = false, artworkVersion = 0, outfitKey = '', retryAt = 0, motion = true;
+  let art = capyArtwork([], 'idle'), previousArt = art, artAt = -1, artState: CapyArtState = 'idle';
+  let wornIds: CapyAccessoryId[] = [], wornLayers: PuppetLayer[] = [];
+  let pawControls = [...art.rig.hands, ...art.rig.feet].map(([x, y]) => control(x, y, art.rig));
+  let previousPaws = pawControls;
   let poseTime = -1, pose = capyPose('idle', 0, 0), previous = pose, clip = '', clipAt = 0;
   let headCos = 1, headSin = 0, earCos = 1, earSin = 0, leanCos = 1, leanSin = 0;
   const handOffsets = [new T.Vector3(), new T.Vector3()], footOffsets = [new T.Vector3(), new T.Vector3()];
   const targetHands = [new T.Vector3(), new T.Vector3()], targetFeet = [new T.Vector3(), new T.Vector3()];
   const orientation = new T.Quaternion(), cameraOrientation = new T.Quaternion();
-  const temp = new T.Vector3();
+  const temp = new T.Vector3(), oldPaw = new T.Vector3();
 
   function texture(src: string) {
     if (!textures.has(src)) textures.set(src, new Promise<T.Texture>((resolve, reject) => {
@@ -64,7 +58,7 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
     }).catch(error => { textures.delete(src); throw error; }));
     return textures.get(src)!;
   }
-  function makeLayer(layer: PuppetLayer | null, map: T.Texture) {
+  function makeLayer(layer: PuppetLayer | null, map: T.Texture, rig: CapyArtRig) {
     const cols = layer ? 12 : 48, rows = layer ? 12 : 50;
     const positions: number[] = [], uv: number[] = [], indices: number[] = [], points: Control[] = [];
     const layout = layer?.layout;
@@ -76,9 +70,14 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
         const dy = (y / rows - .5) * (layout.height ?? 100) * layout.scale;
         px = layout.x + dx * Math.cos(angle) - dy * Math.sin(angle);
         py = layout.y + dx * Math.sin(angle) + dy * Math.cos(angle);
+        if (layer?.id === 'watch') { px += rig.hands[0][0] - 265; py += rig.hands[0][1] - 426; }
+        else if (layer?.id === 'sneaker') {
+          px += (rig.feet[0][0] + rig.feet[1][0]) / 2 - 406.5;
+          py += (rig.feet[0][1] + rig.feet[1][1]) / 2 - 757.5;
+        } else if (rig.scale < 1) py += rig.headY - 355;
       }
       positions.push((px - 400) * UNIT, (774 - py) * UNIT, 0);
-      uv.push(x / cols, 1 - y / rows); points.push(control(px, py));
+      uv.push(x / cols, 1 - y / rows); points.push(control(px, py, rig));
     }
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
       const i = y * (cols + 1) + x;
@@ -91,9 +90,9 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
     const material = new T.MeshBasicMaterial({ map, transparent: true, alphaTest: .006, depthWrite: false, side: T.DoubleSide, toneMapped: false });
     const mesh = new T.Mesh(geometry, material); mesh.name = layer ? 'Original accessory art' : 'Original capybara image';
     mesh.renderOrder = layer ? 4 : 3; mesh.position.z = layer ? .006 : 0;
-    return { mesh, points };
+    return { mesh, points, rig };
   }
-  function deform(c: Control, result: T.Vector3) {
+  function deform(c: Control, result: T.Vector3, rig: CapyArtRig) {
     let x = c.x + (c.x - 400) * pose.breath * c.chest;
     let y = c.y - 300 * pose.breath * c.chest;
     for (let i = 0; i < 2; i++) {
@@ -101,7 +100,7 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       x += (dx * (earCos - 1) - s * dy) * c.ears[i]; y += (s * dx + dy * (earCos - 1)) * c.ears[i];
     }
     y += pose.chew * c.muzzle + pose.bag * .28 * c.bag; x += pose.chew * .22 * c.muzzle + pose.bag * c.bag;
-    const dx = x - 400, dy = y - 355;
+    const dx = x - 400, dy = y - rig.headY;
     x += (dx * (headCos - 1) - headSin * dy) * c.head;
     y += (headSin * dx + dy * (headCos - 1)) * c.head;
     x = 400 + (x - 400) * (1 - pose.stretch * .5); y = 774 + (y - 774) * (1 + pose.stretch);
@@ -109,20 +108,55 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
     x = 400 + leanCos * lx - leanSin * ly; y = 774 + leanSin * lx + leanCos * ly + pose.lift;
     result.set((x - 400) * UNIT, (774 - y) * UNIT, 0);
     for (let i = 0; i < 2; i++) { result.addScaledVector(handOffsets[i], c.hands[i]); result.addScaledVector(footOffsets[i], c.feet[i]); }
-    return result;
+    return result.multiplyScalar(rig.scale);
+  }
+  function remove(list: Record[]) {
+    list.forEach(({ mesh }) => { board.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); });
   }
   function applyPose() {
-    for (const { mesh, points } of records) {
+    const fade = motion ? smooth((poseTime - artAt) / .18, 0, 1) : 1;
+    for (const { mesh, points, rig } of [...outgoing, ...records]) {
       const position = mesh.geometry.getAttribute('position');
-      for (let i = 0; i < points.length; i++) { deform(points[i], temp); position.setXYZ(i, temp.x, temp.y, temp.z); }
+      for (let i = 0; i < points.length; i++) { deform(points[i], temp, rig); position.setXYZ(i, temp.x, temp.y, temp.z); }
       position.needsUpdate = true;
+      mesh.material.opacity = outgoing.length ? (outgoing.some(record => record.mesh === mesh) ? 1 - fade : fade) : 1;
     }
-    [...hands, ...feet].forEach((paw, i) => deform(pawControls[i], paw.position));
+    [...hands, ...feet].forEach((paw, i) => {
+      deform(pawControls[i], paw.position, art.rig);
+      if (fade < 1) { deform(previousPaws[i], oldPaw, previousArt.rig); paw.position.lerp(oldPaw, 1 - fade); }
+    });
+    if (fade === 1 && outgoing.length) { remove(outgoing); outgoing = []; }
     root.updateMatrixWorld(true);
+  }
+  async function updateArtwork() {
+    const next = capyArtwork(wornIds, artState), accessories = wornLayers.filter(layer => !layer.clothing);
+    const key = JSON.stringify([next.src, accessories]);
+    if (key === outfitKey || Date.now() < retryAt) return;
+    outfitKey = key; const version = ++artworkVersion;
+    try {
+      const maps = loader ? await Promise.all([next.src, ...accessories.map(a => a.src)].map(texture)) : [];
+      if (disposed || version !== artworkVersion) return;
+      const replacements = maps.map((map, i) => makeLayer(i ? accessories[i - 1] : null, map, next.rig));
+      remove(outgoing); outgoing = records; records = replacements;
+      previousArt = art; previousPaws = pawControls;
+      art = next; artAt = ready ? poseTime : poseTime - 1;
+      pawControls = [...art.rig.hands, ...art.rig.feet].map(([x, y]) => control(x, y, art.rig));
+      replacements.forEach(({ mesh }) => board.add(mesh));
+      ready = true; applyPose(); onArtwork?.(true);
+      // Warm only the small action set; outfits stay lazy-loaded.
+      if (loader && next.variant === 'idle') for (const src of Object.values(CAPY_ACTION_ART)) void texture(src).catch(() => {});
+    } catch {
+      if (!disposed && version === artworkVersion) {
+        outfitKey = ''; retryAt = Date.now() + 5000;
+        // A failed later pose must not blank a successfully loaded character.
+        onArtwork?.(ready);
+      }
+    }
   }
   return {
     root, hands, feet,
-    get ready() { return ready; }, get source() { return source; },
+    get ready() { return ready; }, get source() { return art.src; }, get variant() { return art.variant; },
+    motion(enabled: boolean) { motion = enabled; if (!motion) applyPose(); },
     detail(_amount: number) { /* The image mesh is already small on every device. */ },
     faceCamera(camera: T.Camera) {
       root.updateMatrixWorld(true); root.getWorldQuaternion(orientation); camera.getWorldQuaternion(cameraOrientation);
@@ -130,24 +164,12 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       board.quaternion.copy(orientation).multiply(cameraOrientation);
     },
     async outfit(worn: CapyAccessoryId[], layers: PuppetLayer[] = []) {
-      const clothing = worn.find(id => CAPY_CLOTHING_IDS.includes(id as CapyClothingId)) as CapyClothingId | undefined;
-      const next = clothing ? CAPY_PUPPET_CLOTHES[clothing] : CAPY_ORIGINAL_ART;
-      const accessories = layers.filter(layer => !layer.clothing), key = JSON.stringify([next, accessories]);
-      if (key === outfitKey) return; outfitKey = key; const version = ++artworkVersion;
-      // Node physics tests need no DOM/image decoder; source selection is still
-      // observable and the same visible-paw control field remains active.
-      if (!loader) { source = next; ready = true; return; }
-      try {
-        const maps = await Promise.all([next, ...accessories.map(a => a.src)].map(texture));
-        if (disposed || version !== artworkVersion) return;
-        const replacements = maps.map((map, i) => makeLayer(i ? accessories[i - 1] : null, map));
-        for (const old of records) { board.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.dispose(); }
-        records.splice(0, records.length, ...replacements); replacements.forEach(({ mesh }) => board.add(mesh));
-        source = next; ready = true; applyPose(); onArtwork?.(true);
-      } catch { if (!disposed && version === artworkVersion) { outfitKey = ''; ready = false; onArtwork?.(false); } }
+      wornIds = [...worn]; wornLayers = layers; retryAt = 0;
+      await updateArtwork();
     },
     pose(state: CapyPlayState, _swingGrip?: Point3[]) {
       const a = state.actor, t = state.time;
+      artState = capyArtState(state.action, state.mode); void updateArtwork();
       if (poseTime === t) { root.updateMatrixWorld(true); return; }
       const dt = poseTime < 0 ? 1 : Math.min(.05, t - poseTime); poseTime = t;
       const nextClip = `${state.action}:${state.mode ?? ''}`;
@@ -166,6 +188,7 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
         next.head += Math.sin(t * 4 - .5) * .035 * a.settled;
         next.bag += Math.sin(t * 4 - .7) * 5 * a.settled;
       }
+      if (art.variant !== 'shopping') next.bag = 0;
       pose = blendCapyPose(previous, next, (t - clipAt) / .18);
       headCos = Math.cos(pose.head); headSin = Math.sin(pose.head); earCos = Math.cos(pose.ears); earSin = Math.sin(pose.ears);
       leanCos = Math.cos(pose.lean); leanSin = Math.sin(pose.lean);
@@ -173,6 +196,11 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       for (let i = 0; i < 2; i++) {
         const phase = a.gait + i * Math.PI;
         targetFeet[i].set(Math.sin(phase) * .022 * a.walk, Math.max(0, Math.sin(phase)) * .065 * a.walk, 0);
+      }
+      if (art.variant === 'wave') {
+        targetHands[1].set(Math.sin(t * 5) * .04, Math.sin(t * 5 - .6) * .035, 0);
+      } else if (art.variant === 'snack') {
+        targetHands.forEach(p => p.set(0, Math.sin(t * 17) * .008, 0));
       }
       root.updateMatrixWorld(true);
       if (state.mode === 'ball' && a.kick >= 0) {
@@ -184,13 +212,13 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       if (state.mode === 'bubbles' && state.target) {
         temp.set(state.target.x, state.target.y, state.target.z); board.worldToLocal(temp);
         const i = temp.x < -.28 ? 0 : 1;
-        const px = (pawControls[i].x - 400) * UNIT, py = (774 - pawControls[i].y) * UNIT;
+        const px = (pawControls[i].x - 400) * UNIT * art.rig.scale, py = (774 - pawControls[i].y) * UNIT * art.rig.scale;
         targetHands[i].set(T.MathUtils.clamp(temp.x - px, -.13, .13), T.MathUtils.clamp(temp.y - py, 0, .24), T.MathUtils.clamp(temp.z, -.2, .2));
       }
       const amount = 1 - Math.exp(-18 * dt);
       for (let i = 0; i < 2; i++) { handOffsets[i].lerp(targetHands[i], amount); footOffsets[i].lerp(targetFeet[i], amount); }
       applyPose();
     },
-    dispose() { disposed = true; artworkVersion++; loaded.forEach(texture => texture.dispose()); loaded.clear(); textures.clear(); },
+    dispose() { disposed = true; artworkVersion++; remove(outgoing); remove(records); outgoing = []; records = []; loaded.forEach(texture => texture.dispose()); loaded.clear(); textures.clear(); },
   };
 }

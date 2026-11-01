@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { OrthographicCamera, Vector3 } from 'three';
 import { CAPY_CLOTHING_IDS } from '../../shared/capybara';
 import { createCapyImagePuppet as createCapyModel, CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-image-puppet';
+import { CAPY_ACTION_ART } from './capy-action-art';
 import { blowCapyBubbles, createCapyPlayState, pushCapySwing, resolveCapyContacts, setCapyGame, setCapyPlayAction, stepCapyPlay, type CapyPlayState } from './capy-play';
 
 function rigSimulation(state: CapyPlayState, seconds: number) {
@@ -92,13 +93,21 @@ test('switching toys discards stale contacts and a nap lasts until explicitly wo
   assert.equal(state.action, 'idle');
 });
 
-test('the puppet uses the original image and complete fitted outfit artwork', async () => {
+test('bag-free poses preserve outfits and only bag charms restore the shopping image', async () => {
   const model = createCapyModel(); await model.outfit([]);
-  assert.equal(model.source, CAPY_ORIGINAL_ART);
+  assert.equal(model.source, CAPY_ACTION_ART.idle);
   for (const id of CAPY_CLOTHING_IDS) {
     await model.outfit([id]); assert.equal(model.source, CAPY_PUPPET_CLOTHES[id]);
   }
-  await model.outfit([]); assert.equal(model.source, CAPY_ORIGINAL_ART);
+  await model.outfit(['phone']); assert.equal(model.source, CAPY_ORIGINAL_ART);
+  await model.outfit([]); assert.equal(model.source, CAPY_ACTION_ART.idle);
+  const state = createCapyPlayState();
+  for (const [action, source] of [['feed', CAPY_ACTION_ART.snack], ['rest', CAPY_ACTION_ART.sleep], ['wake', CAPY_ACTION_ART.wave]] as const) {
+    setCapyPlayAction(state, action); model.pose(state); assert.equal(model.source, source);
+  }
+  await model.outfit(['cream-hoodie']);
+  setCapyGame(state, 'bubbles'); model.pose(state); assert.equal(model.source, CAPY_PUPPET_CLOTHES['cream-hoodie']);
+  await model.outfit([]); assert.equal(model.source, CAPY_ACTION_ART.reach);
   model.dispose();
 });
 

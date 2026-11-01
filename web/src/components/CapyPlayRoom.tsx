@@ -6,7 +6,8 @@ import type { CapyView } from '../../shared/capybara';
 import type { CapyAction } from '../lib/capy-motion';
 import type { CapyGame } from '../lib/capy-play';
 import type { createCapyPlayScene } from '../lib/capy-play-scene';
-import { CapyAvatar } from './CapyAvatar';
+import { capyArtwork, capyArtState } from '../lib/capy-action-art';
+import { wornArtwork } from './CapyAccessoryArt';
 import { CapyHabitat, CapyHabitatHud, type OpenCapyPanel } from './CapyHabitat';
 import './capy-companion.css';
 import './capy-play.css';
@@ -17,6 +18,25 @@ const TOYS = [
   { id: 'swing' as const, Icon: Armchair, name: ['荡秋千', 'Little swing'], hint: ['轻轻推一下，陪卡皮慢慢荡。', 'Give a gentle push and watch Capy sway.'], button: ['推一下', 'Give a push'], color: '#e4d5ed' },
   { id: 'dance' as const, Icon: Music2, name: ['扭扭舞', 'Happy dance'], hint: ['点一下换个舞步，一起摇摇头、扭扭身子。', 'Tap for a new step, a head bob and a little wiggle.'], button: ['换个舞步', 'New dance step'], color: '#efced3' },
 ];
+
+/** Share the same bag-free artwork while WebGL loads or is unavailable. */
+function CapyRoomStill({ view, action, game }: { view: CapyView; action: CapyAction; game: CapyGame | null }) {
+  const art = capyArtwork(view.worn.map(item => item.id), capyArtState(action, game));
+  const scale = art.rig.scale;
+  return <svg viewBox="0 0 768 804" width="360" className="pc-play-still" aria-hidden="true"
+    data-art={art.variant === 'dressed' || art.variant === 'shopping' ? 'fitted-character' : 'action-character'} data-art-state={art.variant}>
+    <g transform={`translate(400 774) scale(${scale}) translate(-400 -774)`}>
+      <image href={art.src} width="768" height="804" />
+      {wornArtwork(view.worn).filter(layer => !layer.clothing).map(({ id, src, layout }) => {
+        const x = layout.x + (id === 'watch' ? art.rig.hands[0][0] - 265 : 0);
+        const y = layout.y + (id === 'watch' ? art.rig.hands[0][1] - 426 : scale < 1 ? art.rig.headY - 355 : 0);
+        return <g key={id} transform={`translate(${x} ${y}) rotate(${layout.rotate ?? 0}) scale(${layout.scale})`}>
+          <image href={src} x="-50" y="-50" width="100" height="100" />
+        </g>;
+      })}
+    </g>
+  </svg>;
+}
 
 export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }: {
   view: CapyView; outfitVersion: number; onOpenPanel: OpenCapyPanel; roomMenuOpen: boolean;
@@ -68,7 +88,7 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
           onClick={(event) => { if (!game) setAction(sleeping ? 'wake' : 'pet'); engine.current?.interact(event.detail ? event.clientX : undefined, event.detail ? event.clientY : undefined); }}>
           <canvas ref={canvas} className="pc-play-canvas" aria-hidden="true" />
         </button>
-        {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyAvatar view={view} size={360} expression="idle" /></div>}
+        {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyRoomStill view={view} action={action} game={game} /></div>}
         {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? 'Resume motion' : '继续动作') : (en ? 'Pause motion' : '暂停动作')}
           aria-pressed={paused} onClick={() => setPaused((value) => !value)}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>

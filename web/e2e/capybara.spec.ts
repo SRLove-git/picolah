@@ -17,6 +17,38 @@ async function play(page: Page, game: string) {
   await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page.locator('.pc-play-canvas')).toHaveAttribute('data-mode', game);
 }
 
+test('bag-free artwork follows meals, petting, toys and a persistent nap', async ({ page }, info) => {
+  await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
+  await expect(canvas).toHaveAttribute('data-art-state', 'idle');
+  const idle = await canvas.getAttribute('data-source');
+  for (const [name, variant] of [['Little snack', 'snack'], ['Pet the capybara', 'wave'], ['Nap time', 'sleep']]) {
+    await companion.getByRole('button', { name, exact: true }).click();
+    await expect(canvas).toHaveAttribute('data-art-state', variant);
+    expect(await canvas.getAttribute('data-source')).not.toBe(idle);
+    await page.waitForTimeout(250); await companion.screenshot({ path: info.outputPath(`${variant}.png`) });
+  }
+  await page.waitForTimeout(4500); await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
+  await companion.getByRole('button', { name: 'Wake up', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-art-state', 'wave');
+  await play(page, 'bubbles'); await expect(canvas).toHaveAttribute('data-art-state', 'reach');
+  await play(page, 'dance'); await expect(canvas).toHaveAttribute('data-art-state', 'wave');
+  await companion.getByRole('button', { name: 'Put the toy away', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-source', idle!);
+});
+
+test('a delayed earlier pose cannot replace a later action', async ({ page }) => {
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/assets/reach-*.webp', async route => { await held; await route.continue(); });
+  await setup(page); const companion = await room(page), canvas = companion.locator('canvas');
+  await play(page, 'bubbles');
+  await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
+  release(); await page.waitForTimeout(500);
+  await expect(canvas).toHaveAttribute('data-art-state', 'sleep');
+  await expect(canvas).toHaveAttribute('data-ready', 'true');
+});
+
 test('petting, meals and a persistent nap animate without changing shopping progress', async ({ page }) => {
   test.slow(); // Several complete animated interactions on software-rendered CI.
   await setup(page); const writes: string[] = [];
@@ -41,7 +73,7 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
   await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
   await expect(companion).toHaveAttribute('data-renderer', 'three'); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-character', 'original-image');
-  await expect(canvas).toHaveAttribute('data-source', /picolah-capybara-v2.*\.webp/);
+  await expect(canvas).toHaveAttribute('data-art-state', 'idle');
   expect(Number(await canvas.getAttribute('data-geometry'))).toBeLessThan(15000);
   for (const mode of ['ball', 'bubbles', 'swing', 'dance']) {
     await play(page, mode); const before = await canvas.screenshot(); await page.waitForTimeout(450); expect((await canvas.screenshot()).equals(before)).toBe(false);
