@@ -79,6 +79,7 @@ test('an outfit save failure rolls back the model and the selected clothing', as
 });
 
 test('Original outfit artwork survives pause, sleep and graphics context restoration', async ({ page }, info) => {
+  test.slow(); // Restoring a software WebGL context recompiles the scene shaders.
   await setup(page); await wardrobe(page); await page.locator('[data-accessory="duck-raincoat"]').click();
   await expect(page.locator('[data-accessory="duck-raincoat"]')).toBeEnabled();
   await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
@@ -90,7 +91,7 @@ test('Original outfit artwork survives pause, sleep and graphics context restora
   await room.getByRole('button', { name: 'Resume motion', exact: true }).click();
   await canvas.evaluate((c: HTMLCanvasElement) => { const ext = c.getContext('webgl2')!.getExtension('WEBGL_lose_context')!; ext.loseContext(); setTimeout(() => ext.restoreContext(), 500); });
   await expect(canvas).toHaveAttribute('data-ready', 'false'); await expect(room.locator('[data-art="fitted-character"]')).toBeVisible();
-  await expect(canvas).toHaveAttribute('data-ready', 'true'); await expect(room.locator('.pc-play-loading-character')).toHaveCount(0);
+  await expect(canvas).toHaveAttribute('data-ready', 'true', { timeout: 15000 }); await expect(room.locator('.pc-play-loading-character')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-clothing', 'duck-raincoat');
   await room.getByRole('button', { name: 'Nap time', exact: true }).click();
   await expect(canvas).toHaveAttribute('data-action', 'rest'); await expect(canvas).toHaveAttribute('data-clothing', 'duck-raincoat');

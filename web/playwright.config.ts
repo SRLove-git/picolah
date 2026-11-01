@@ -11,6 +11,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],
     channel: 'chrome',
+    // CI has no physical GPU. Select the same software backend explicitly for
+    // first load and context restoration instead of relying on driver probing.
+    launchOptions: process.env.CI ? { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } : undefined,
   },
   webServer: {
     command: 'npm run seed && npm run start',
