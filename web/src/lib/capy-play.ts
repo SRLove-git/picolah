@@ -5,7 +5,7 @@ export interface Point3 { x: number; y: number; z: number }
 export interface PlayBubble extends Point3 { id: number; radius: number; life: number; popped: number }
 export interface CapyPlayState {
   mode: CapyGame | null; action: CapyAction; time: number; actionTime: number; bounds: number;
-  actor: Point3 & { yaw: number; vy: number; speed: number; gait: number; kick: number };
+  actor: Point3 & { yaw: number; vy: number; speed: number; gait: number; kick: number; walk: number; turn: number; anticipation: number; landing: number; settled: number };
   ball: Point3 & { vx: number; vy: number; vz: number; radius: number; spin: number; cooldown: number };
   bubbles: PlayBubble[]; nextBubble: number; swing: { angle: number; velocity: number; length: number };
   contacts: number; lastContact: number; target: Point3 | null;
@@ -16,7 +16,7 @@ const distance = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.y - b.y, a.z 
 export function createCapyPlayState(): CapyPlayState {
   return {
     mode: null, action: 'idle', time: 0, actionTime: 0, bounds: 2.25,
-    actor: { x: 0, y: 0, z: 0, yaw: -0.2, vy: 0, speed: 0, gait: 0, kick: -1 },
+    actor: { x: 0, y: 0, z: 0, yaw: -0.2, vy: 0, speed: 0, gait: 0, kick: -1, walk: 0, turn: 0, anticipation: -1, landing: 0, settled: 0 },
     ball: { x: 1.5, y: 0.22, z: 0.65, vx: 0, vy: 0, vz: 0, radius: 0.22, spin: 0, cooldown: 0 },
     bubbles: [], nextBubble: 0, swing: { angle: 0, velocity: 0, length: 3.05 },
     contacts: 0, lastContact: -10, target: null,
@@ -27,9 +27,9 @@ export function setCapyGame(state: CapyPlayState, mode: CapyGame | null) {
   state.mode = mode; state.action = mode ? 'play' : 'idle'; state.actionTime = 0;
   state.contacts = 0; state.bubbles = []; state.target = null; state.actor.kick = -1;
   state.ball.vx = state.ball.vz = state.ball.vy = 0;
-  // Stationary toys are placed in the centre of the rug. Do not carry a chase
-  // position or an unfinished bubble jump onto the seat or dance floor.
-  if (mode === 'swing' || mode === 'dance') Object.assign(state.actor, { x: 0, y: 0, z: 0, vy: 0, speed: 0 });
+  // Finish an airborne jump and walk back to the rug before sitting/dancing.
+  // Changing toys must never teleport the actor or discard downward velocity.
+  state.actor.anticipation = -1; state.actor.settled = 0;
   if (mode === 'ball') throwCapyBall(state);
   if (mode === 'bubbles') blowCapyBubbles(state);
   if (mode === 'swing') { state.swing.angle = 0; state.swing.velocity = 0.65; }
@@ -68,7 +68,15 @@ export function stepCapyPlay(state: CapyPlayState, dt: number) {
   if (state.action !== 'rest' && !state.mode && state.actionTime > 4.2) state.action = 'idle';
   b.cooldown = Math.max(0, b.cooldown - dt);
   if (a.kick >= 0) { a.kick += dt; if (a.kick > 0.65) a.kick = -1; }
-  if (a.y > 0 || a.vy > 0) { a.vy -= 7.5 * dt; a.y = Math.max(0, a.y + a.vy * dt); if (!a.y) a.vy = 0; }
+  a.landing = Math.max(0, a.landing - dt);
+  if (a.anticipation >= 0) {
+    a.anticipation += dt;
+    if (a.anticipation >= 0.18) { a.vy = 3.3; a.anticipation = -1; }
+  }
+  if (a.y > 0 || a.vy > 0) {
+    a.vy -= 7.5 * dt; a.y = Math.max(0, a.y + a.vy * dt);
+    if (!a.y) { a.vy = 0; a.landing = 0.28; }
+  }
   if (state.mode === 'ball') {
     b.vy -= 7.5 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
     if (b.y < b.radius) { b.y = b.radius; b.vy = Math.abs(b.vy) > 0.35 ? Math.abs(b.vy) * 0.55 : 0; }
@@ -87,8 +95,8 @@ export function stepCapyPlay(state: CapyPlayState, dt: number) {
     state.target = state.bubbles.filter((bubble) => bubble.popped < 0).sort((l, r) => Math.hypot(l.x - a.x, l.z - a.z) - Math.hypot(r.x - a.x, r.z - a.z))[0] ?? null;
   } else if (state.mode === 'swing') {
     const s = state.swing;
-    s.velocity += (-9.81 / s.length * Math.sin(s.angle) - s.velocity * 0.13) * dt;
-    s.angle = clamp(s.angle + s.velocity * dt, -0.65, 0.65);
+    if (a.settled > 0.9) s.velocity += (-9.81 / s.length * Math.sin(s.angle) - s.velocity * 0.13) * dt;
+    if (a.settled > 0.9) s.angle = clamp(s.angle + s.velocity * dt, -0.65, 0.65);
     state.target = null;
   } else state.target = null;
 
@@ -96,15 +104,22 @@ export function stepCapyPlay(state: CapyPlayState, dt: number) {
   const tx = target?.x ?? 0, tz = target ? target.z - (state.mode === 'bubbles' ? 0.2 : 0) : 0;
   const dx = tx - a.x, dz = tz - a.z, gap = Math.hypot(dx, dz);
   const stop = state.mode === 'ball' ? 0.58 : state.mode === 'bubbles' ? 0.2 : 0.01;
-  const moving = gap > stop && a.kick < 0 && state.mode !== 'swing' && state.mode !== 'dance';
-  a.speed = moving ? Math.min(1.25, (gap - stop) * 3.4) : 0;
-  if (a.speed) { a.x += dx / gap * a.speed * dt; a.z += dz / gap * a.speed * dt; a.gait += a.speed * dt * 7; }
-  a.x = clamp(a.x, -state.bounds + 0.38, state.bounds - 0.38); a.z = clamp(a.z, -0.6, 1);
-  const yaw = target ? Math.atan2(target.x - a.x, target.z - a.z) : -0.2;
+  const moving = gap > stop && a.kick < 0 && a.anticipation < 0 && a.landing < 0.1;
+  const yaw = target ? Math.atan2(target.x - a.x, target.z - a.z) : gap > stop + 0.03 ? Math.atan2(dx, dz) : -0.2;
   const difference = Math.atan2(Math.sin(yaw - a.yaw), Math.cos(yaw - a.yaw));
-  a.yaw += difference * Math.min(1, dt * 8);
-  if (state.mode === 'ball' && gap < 0.65 && b.y < 0.5 && b.cooldown === 0 && a.kick < 0) a.kick = 0;
-  if (state.mode === 'bubbles' && target && gap < 0.45 && a.y === 0 && state.time - state.lastContact > 0.5) a.vy = 3.1;
+  const turn = clamp(difference * 5, -3.2, 3.2);
+  a.turn += (turn - a.turn) * (1 - Math.exp(-12 * dt)); a.yaw += a.turn * dt;
+  // Slow down through a tight turn and accelerate into a short, grounded stride.
+  const desired = moving ? Math.min(1.2, (gap - stop) * 3.2) * Math.max(0.12, Math.cos(difference)) : 0;
+  a.speed += clamp(desired - a.speed, -4.8 * dt, 2.6 * dt);
+  const travel = Math.min(a.speed * dt, Math.max(0, gap - stop));
+  if (travel > 0 && gap > 0) { a.x += dx / gap * travel; a.z += dz / gap * travel; a.gait += travel * 8.2; }
+  a.walk += (Math.min(1, a.speed / 0.55) - a.walk) * (1 - Math.exp(-12 * dt));
+  a.x = clamp(a.x, -state.bounds + 0.38, state.bounds - 0.38); a.z = clamp(a.z, -0.6, 1);
+  const atToy = (state.mode === 'swing' || state.mode === 'dance') && gap < 0.04 && a.y === 0 && a.speed < 0.12;
+  a.settled += ((atToy ? 1 : 0) - a.settled) * (1 - Math.exp(-5 * dt));
+  if (state.mode === 'ball' && gap < 0.65 && b.y < 0.5 && b.cooldown === 0 && a.kick < 0 && Math.abs(difference) < 0.35) a.kick = 0;
+  if (state.mode === 'bubbles' && target && gap < 0.45 && a.y === 0 && a.anticipation < 0 && a.landing === 0 && state.time - state.lastContact > 0.5) a.anticipation = 0;
 }
 
 /** Contacts are resolved against the rendered rig's world-space paws/feet.

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CAPY_CLOTHING_IDS, type CapyAccessoryId } from '../../shared/capybara';
 import type { CapyAction } from './capy-motion';
 import { createCapyModel } from './capy-three-model';
@@ -8,14 +9,21 @@ export interface CapyPlayControls { playing: boolean; reduced: boolean; night: b
 export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count: number) => void, onAction?: (action: CapyAction) => void, onAvailable?: (available: boolean) => void) {
   const renderer = new T.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setClearColor(0x000000, 0); renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-  renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.96;
+  renderer.setClearColor(0x000000, 0); renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFShadowMap;
+  renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.90;
   const scene = new T.Scene(), camera = new T.OrthographicCamera(-3.6, 3.6, 2.4, -2.4, 0.1, 40);
-  const fill = new T.HemisphereLight('#fff8ee', '#b49b7d', 2.4); scene.add(fill);
-  const sunlight = new T.DirectionalLight('#fff3e4', 2.8); sunlight.position.set(-3.5, 7, 5); sunlight.castShadow = true;
+  function makeEnvironment() {
+    const room = new RoomEnvironment(), pmrem = new T.PMREMGenerator(renderer);
+    const result = pmrem.fromScene(room, 0.08);
+    scene.environment = result.texture; room.dispose(); pmrem.dispose(); return result;
+  }
+  let environment = makeEnvironment(); scene.environmentIntensity = 0.4;
+  const fill = new T.HemisphereLight('#fff6e8', '#aa8665', 1.15); scene.add(fill);
+  const sunlight = new T.DirectionalLight('#fff1db', 2.35); sunlight.position.set(-3.5, 7, 5); sunlight.castShadow = true;
   sunlight.shadow.mapSize.set(1024, 1024); sunlight.shadow.camera.left = -4; sunlight.shadow.camera.right = 4;
-  sunlight.shadow.camera.top = 5; sunlight.shadow.camera.bottom = -3; sunlight.shadow.normalBias = 0.045;
-  scene.add(sunlight); const rim = new T.DirectionalLight('#ffe6c6', 1.1); rim.position.set(3, 4, -4); scene.add(rim);
+  sunlight.shadow.camera.top = 5; sunlight.shadow.camera.bottom = -3; sunlight.shadow.normalBias = 0.035; sunlight.shadow.radius = 2.5;
+  scene.add(sunlight); const rim = new T.DirectionalLight('#ffe4b7', 1.35); rim.position.set(3, 4, -4); scene.add(rim);
+  const bounceLight = new T.DirectionalLight('#fff6e7', 0.35); bounceLight.position.set(0, 2, 6); scene.add(bounceLight);
   const ground = new T.Mesh(new T.PlaneGeometry(20, 20), new T.ShadowMaterial({ color: '#795739', opacity: 0.25 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
   const model = createCapyModel(); scene.add(model.root);
@@ -62,22 +70,32 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   let reportedAction: CapyAction | null = null;
   const feet = [new T.Vector3(), new T.Vector3()], hands = [new T.Vector3(), new T.Vector3()];
   const swingPosition = new T.Vector3(), grips = [new T.Vector3(), new T.Vector3()];
+  const transition = { time: -10, position: new T.Vector3(), rotation: new T.Quaternion(), scale: new T.Vector3(1, 1, 1) };
+  function retarget() { transition.time = state.time; transition.position.copy(model.root.position); transition.rotation.copy(model.root.quaternion); transition.scale.copy(model.root.scale); }
   const ray = new T.Raycaster(), pointer = new T.Vector2(), plane = new T.Plane(new T.Vector3(0, 1, 0), 0), point = new T.Vector3();
   function pose() {
     const { actor: a, mode } = state;
     swing.visible = mode === 'swing'; danceFloor.visible = mode === 'dance'; ball.visible = mode === 'ball';
     pivot.rotation.x = state.swing.angle; pivot.updateMatrixWorld(true);
+    const dance = mode === 'dance' ? a.settled : 0;
+    const bounce = dance * Math.max(0, Math.sin(state.time * 5)) * 0.06;
+    const settle = T.MathUtils.smoothstep(state.actionTime / 0.5, 0, 1);
+    model.root.position.set(a.x, a.y + bounce - (state.action === 'rest' ? 0.14 * settle : 0), a.z);
+    const outfitTurn = state.action === 'outfit' ? T.MathUtils.smoothstep(state.actionTime / 2, 0, 1) * Math.PI * 2 : 0;
+    const spin = T.MathUtils.smoothstep((state.actionTime % 8 - 6) / 2, 0, 1) * Math.PI * 2;
+    model.root.rotation.set(0, a.yaw * (1 - dance) + (Math.sin(state.time * 1.2) * 0.4 + spin) * dance + outfitTurn, 0);
+    model.root.scale.setScalar(state.action === 'rest' ? 1 - 0.04 * settle : 1);
     if (mode === 'swing') {
       swingPosition.set(0, -3.28, 0); pivot.localToWorld(swingPosition);
-      model.root.position.copy(swingPosition); model.root.rotation.set(state.swing.angle, 0, 0); model.root.scale.setScalar(0.78);
-      grips.forEach((grip, i) => { grip.set(i ? 0.65 : -0.65, -1.85, 0); pivot.localToWorld(grip); });
-    } else {
-      const dance = mode === 'dance';
-      const bounce = dance ? Math.max(0, Math.sin(state.time * 5)) * 0.12 : a.speed * Math.abs(Math.sin(a.gait)) * 0.018;
-      model.root.position.set(a.x, a.y + bounce - (state.action === 'rest' ? 0.14 : 0), a.z);
-      const outfitTurn = state.action === 'outfit' && state.actionTime < 2 ? (1 - Math.cos(state.actionTime / 2 * Math.PI)) * Math.PI : 0;
-      model.root.rotation.set(0, dance ? Math.sin(state.time * 1.2) * 0.6 + Math.floor(state.actionTime / 8) * Math.PI * 2 + (state.actionTime % 8 > 6 ? (state.actionTime % 8 - 6) * Math.PI : 0) : a.yaw + outfitTurn, 0);
-      model.root.scale.setScalar(state.action === 'rest' ? 0.94 : 1);
+      model.root.position.lerp(swingPosition, a.settled);
+      model.root.rotation.set(state.swing.angle * a.settled, a.yaw * (1 - a.settled), 0);
+      grips.forEach((grip, i) => { grip.set(i ? 0.65 : -0.65, -2.30, 0.12); pivot.localToWorld(grip); });
+    }
+    const blend = T.MathUtils.smoothstep((state.time - transition.time) / 0.35, 0, 1);
+    if (blend < 1) {
+      model.root.position.lerpVectors(transition.position, model.root.position, blend);
+      model.root.quaternion.slerpQuaternions(transition.rotation, model.root.quaternion, blend);
+      model.root.scale.lerpVectors(transition.scale, model.root.scale, blend);
     }
     model.pose(state, mode === 'swing' ? grips : undefined);
     model.feet.forEach((foot, i) => foot.getWorldPosition(feet[i])); model.hands.forEach((hand, i) => hand.getWorldPosition(hands[i]));
@@ -123,6 +141,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   const resize = new ResizeObserver(([entry]) => {
     const { width, height } = entry.contentRect; if (!width || !height || lost) return;
     const mobile = width < 600, worldHeight = mobile ? 6.2 : 5.25, aspect = width / height;
+    model.detail(mobile ? 0.68 : 1);
     camera.left = -worldHeight * aspect / 2; camera.right = -camera.left; camera.top = worldHeight / 2; camera.bottom = -camera.top;
     camera.position.set(0.7, 5.5, 13); camera.lookAt(0, mobile ? 1.7 : 1.45, 0); camera.updateProjectionMatrix();
     state.bounds = Math.max(0.8, Math.min(2.3, -camera.left - 0.38));
@@ -133,13 +152,13 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   const visibility = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; resume(); }); visibility.observe(canvas);
   document.addEventListener('visibilitychange', resume);
   function contextLost(event: Event) { event.preventDefault(); lost = true; stop(); canvas.dataset.ready = 'false'; onAvailable?.(false); }
-  function contextRestored() { lost = false; canvas.dataset.ready = 'true'; onAvailable?.(true); render(); resume(); }
+  function contextRestored() { environment.dispose(); environment = makeEnvironment(); lost = false; canvas.dataset.ready = 'true'; onAvailable?.(true); render(); resume(); }
   canvas.addEventListener('webglcontextlost', contextLost); canvas.addEventListener('webglcontextrestored', contextRestored);
   canvas.dataset.ready = 'true'; resume();
   return {
-    controls(next: CapyPlayControls) { controls = next; model.outfit(next.worn); fill.intensity = next.night ? 1.65 : 2.4; sunlight.intensity = next.night ? 1.3 : 2.8; render(); metrics(); resume(); },
-    game(mode: CapyGame | null) { setCapyGame(state, mode); reported = -1; stillInteraction(); },
-    action(action: CapyAction) { setCapyPlayAction(state, action); stillInteraction(); },
+    controls(next: CapyPlayControls) { controls = next; model.outfit(next.worn); fill.intensity = next.night ? 0.8 : 1.15; sunlight.intensity = next.night ? 0.9 : 2.35; render(); metrics(); resume(); },
+    game(mode: CapyGame | null) { retarget(); setCapyGame(state, mode); reported = -1; stillInteraction(); },
+    action(action: CapyAction) { retarget(); setCapyPlayAction(state, action); stillInteraction(); },
     interact(clientX?: number, clientY?: number) {
       if (!controls.playing || lost) return;
       let x = state.bounds * 0.7, z = 0.7;
@@ -151,15 +170,15 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
       else if (state.mode === 'bubbles') blowCapyBubbles(state, T.MathUtils.clamp(x, -1, 1));
       else if (state.mode === 'swing') pushCapySwing(state);
       else if (state.mode === 'dance') state.actionTime = Math.floor(state.actionTime / 8) * 8 + 6;
-      else setCapyPlayAction(state, state.action === 'rest' ? 'wake' : 'pet');
+      else { retarget(); setCapyPlayAction(state, state.action === 'rest' ? 'wake' : 'pet'); }
       stillInteraction();
     },
     dispose() {
       disposed = true; stop(); resize.disconnect(); visibility.disconnect(); document.removeEventListener('visibilitychange', resume);
       canvas.removeEventListener('webglcontextlost', contextLost); canvas.removeEventListener('webglcontextrestored', contextRestored);
       const geometries = new Set<T.BufferGeometry>([bubbleGeometry, ringGeometry]), materials = new Set<T.Material>();
-      scene.traverse((object) => { const mesh = object as T.Mesh; if (mesh.geometry) geometries.add(mesh.geometry); if (mesh.material) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m) => materials.add(m)); });
-      geometries.forEach((g) => g.dispose()); materials.forEach((m) => m.dispose()); renderer.dispose(); renderer.forceContextLoss();
+      scene.traverse((object) => { const mesh = object as T.Mesh; if ((mesh as T.InstancedMesh).isInstancedMesh) (mesh as T.InstancedMesh).dispose(); if (mesh.geometry) geometries.add(mesh.geometry); if (mesh.material) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m) => materials.add(m)); });
+      geometries.forEach((g) => g.dispose()); materials.forEach((m) => m.dispose()); environment.dispose(); renderer.dispose(); renderer.forceContextLoss();
     },
   };
 }

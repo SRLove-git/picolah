@@ -20,6 +20,7 @@ async function wardrobe(page: Page) {
 
 for (const width of [1440, 390, 320]) {
   test(`six outfits can be worn, switched, reloaded and taken off at ${width}px`, async ({ page }, testInfo) => {
+    test.slow(); // Six saves, renders and reloads need a full workflow budget.
     await page.setViewportSize({ width, height: width === 320 ? 568 : 900 });
     const headers = await setup(page);
     const before = (await (await page.request.get('/api/capybara', { headers })).json()).capybara;

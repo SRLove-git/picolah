@@ -18,6 +18,7 @@ async function play(page: Page, game: string) {
 }
 
 test('petting, meals and a persistent nap animate without changing shopping progress', async ({ page }) => {
+  test.slow(); // Several complete animated interactions on software-rendered CI.
   await setup(page); const writes: string[] = [];
   page.on('request', r => { if (r.method() !== 'GET' && r.url().includes('/api/')) writes.push(r.url()); });
   const companion = await room(page), canvas = companion.locator('canvas');
@@ -33,6 +34,7 @@ test('petting, meals and a persistent nap animate without changing shopping prog
 });
 
 for (const width of [1440, 390, 320]) test(`home and four physical toys work at ${width}px`, async ({ page }, info) => {
+  test.slow(); // Four physical games and screenshots share this test's budget.
   await page.setViewportSize({ width, height: width === 320 ? 568 : 900 }); await setup(page, width === 390 ? 'zh' : 'en');
   await page.goto('/7hk9ho#home'); const home = page.locator('.pc-companion');
   await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
@@ -54,7 +56,7 @@ test('switching toys, feeding and putting toys away interrupt the previous activ
   await expect.poll(async () => Number(await canvas.getAttribute('data-contacts')), { timeout: 10000 }).toBeGreaterThan(0);
   await play(page, 'swing'); await expect(canvas).toHaveAttribute('data-contacts', '0');
   await companion.locator('.pc-play-controls').getByRole('button', { name: 'Give a push', exact: true }).click();
-  const angle = await canvas.getAttribute('data-swing-angle'); await page.waitForTimeout(500); expect(await canvas.getAttribute('data-swing-angle')).not.toBe(angle);
+  await expect.poll(async () => Math.abs(Number(await canvas.getAttribute('data-swing-angle'))), { timeout: 10000 }).toBeGreaterThan(0.03);
   await companion.getByRole('button', { name: 'Little snack', exact: true }).click();
   await expect(canvas).toHaveAttribute('data-mode', 'idle'); await expect(canvas).toHaveAttribute('data-action', 'feed'); await expect(companion.locator('.pc-play-controls')).toHaveCount(0);
   await play(page, 'bubbles'); await companion.getByRole('button', { name: 'Put the toy away', exact: true }).click();

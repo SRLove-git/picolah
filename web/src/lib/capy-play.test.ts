@@ -77,8 +77,12 @@ test('switching toys discards stale contacts and a nap lasts until explicitly wo
   assert.ok(state.bubbles.length <= 6);
   state.contacts = 4; Object.assign(state.actor, { x: 1.7, y: 0.5, vy: 2 }); setCapyGame(state, 'swing');
   assert.equal(state.contacts, 0); assert.equal(state.bubbles.length, 0); assert.equal(state.target, null);
-  assert.equal(state.actor.x, 0); assert.equal(state.actor.y, 0); assert.equal(state.actor.vy, 0);
-  state.actor.x = -1.5; setCapyGame(state, 'dance'); assert.equal(state.actor.x, 0);
+  assert.equal(state.actor.x, 1.7); assert.equal(state.actor.y, 0.5); assert.equal(state.actor.vy, 2);
+  for (let i = 0; i < 600; i++) stepCapyPlay(state, 1 / 60);
+  assert.ok(Math.abs(state.actor.x) < 0.04); assert.equal(state.actor.y, 0); assert.ok(state.actor.settled > 0.99);
+  state.actor.x = -1.5; setCapyGame(state, 'dance'); assert.equal(state.actor.x, -1.5);
+  for (let i = 0; i < 600; i++) stepCapyPlay(state, 1 / 60);
+  assert.ok(Math.abs(state.actor.x) < 0.04); assert.ok(state.actor.settled > 0.99);
   setCapyPlayAction(state, 'rest');
   for (let i = 0; i < 1800; i++) stepCapyPlay(state, 1 / 60);
   assert.equal(state.action, 'rest'); assert.equal(state.mode, null);
@@ -113,4 +117,36 @@ test('all six outfits have real geometry and long sleeves belong to the moving a
     arm.rotation.x = -1; model.root.updateMatrixWorld(true);
     assert.ok(before.angleTo(sleeve.getWorldQuaternion(new Quaternion())) > 0.9);
   }
+});
+
+
+test('turns accelerate gradually, jumps anticipate and land before another jump', () => {
+  const state = createCapyPlayState(); setCapyGame(state, 'ball');
+  Object.assign(state.ball, { x: -2, y: 0.22, vx: 0, vy: 0, vz: 0 });
+  let previousSpeed = 0, previousYaw = state.actor.yaw;
+  for (let i = 0; i < 120; i++) {
+    stepCapyPlay(state, 1 / 60);
+    assert.ok(Math.abs(state.actor.speed - previousSpeed) < 0.09, 'speed cannot jump in one frame');
+    assert.ok(Math.abs(state.actor.yaw - previousYaw) < 0.06, 'turning has an angular speed limit');
+    previousSpeed = state.actor.speed; previousYaw = state.actor.yaw;
+  }
+  setCapyGame(state, 'bubbles'); Object.assign(state.actor, { x: 0, y: 0, z: 0, speed: 0 });
+  let prepared = false, jumped = false, landed = false;
+  for (let i = 0; i < 240; i++) {
+    stepCapyPlay(state, 1 / 60);
+    if (state.actor.anticipation >= 0) prepared = true;
+    if (state.actor.y > 0) { assert.ok(prepared, 'jump must have a preparation pose'); jumped = true; }
+    if (jumped && state.actor.landing > 0) { landed = true; assert.equal(state.actor.anticipation, -1); break; }
+  }
+  assert.ok(jumped && landed, 'jump must return to a buffered landing');
+});
+
+test('retargeted joints blend from the current pose only once per simulation step', () => {
+  const state = createCapyPlayState(), model = createCapyModel(); model.outfit([]); model.pose(state);
+  const before = model.arms[1].quaternion.clone(); setCapyPlayAction(state, 'feed'); stepCapyPlay(state, 1 / 60); model.pose(state);
+  const first = model.arms[1].quaternion.clone();
+  assert.ok(before.angleTo(first) > 0.01 && before.angleTo(first) < 0.8, 'feed should start reaching, not snap to the mouth');
+  model.pose(state); assert.ok(first.angleTo(model.arms[1].quaternion) < 1e-7, 'render cannot advance the pose a second time');
+  for (let i = 0; i < 60; i++) { stepCapyPlay(state, 1 / 60); model.pose(state); }
+  assert.ok(before.angleTo(model.arms[1].quaternion) > 1, 'arm must finish reaching');
 });
