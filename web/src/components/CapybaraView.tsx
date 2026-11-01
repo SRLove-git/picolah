@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatMoney, relativeTime } from '../lib/format';
 import { useCapybara } from '../lib/capybara';
-import { CapyCompanion } from './CapyCompanion';
+import { CapyPlayRoom } from './CapyPlayRoom';
 import type { CapyRoomPanel, OpenCapyPanel } from './CapyHabitat';
 import { CapyJournal, type JournalProtection } from './CapyJournal';
 import { CapyWardrobe } from './CapyWardrobe';
@@ -96,7 +96,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
       </PageHeader>
       <div className="pc-page-body pc-capy-body pc-capy-room-body">
         <section className="pc-capy-room-stage" aria-label={english ? "Capy's room" : '卡皮的房间'}>
-          <CapyCompanion view={view} size={440} outfitVersion={outfitVersion} room onOpenPanel={openPanel} roomMenuOpen={panelOpen} />
+          <CapyPlayRoom view={view} outfitVersion={outfitVersion} onOpenPanel={openPanel} roomMenuOpen={panelOpen} />
         </section>
       </div>
       <Dialog.Root open={panelOpen} onOpenChange={(open, details) => {

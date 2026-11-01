@@ -1,0 +1,35 @@
+.is-three-room .pc-companion-scene::after { display: none; }
+.pc-play-canvas-button { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; background: transparent; border-radius: inherit; cursor: pointer; touch-action: manipulation; }
+.pc-play-canvas-button:focus-visible { outline: 3px solid #b58b72; outline-offset: -6px; }
+.pc-play-canvas-button:disabled { cursor: default; opacity: 1; }
+.pc-play-canvas { display: block; width: 100%; height: 100%; }
+.pc-play-loading-character { position: absolute; z-index: 2; left: 50%; bottom: 11%; width: 48%; transform: translateX(-50%); pointer-events: none; }
+.pc-play-controls { position: absolute; z-index: 6; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 7px 8px 7px 15px; border: 2px solid #fffdf5; border-radius: 23px; color: #765643; background: #fff9eeeF; box-shadow: 0 4px 0 #d8bfa472; }
+.pc-play-controls > span { display: flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 12px; }
+.pc-play-controls small { font-size: 10px; color: #9a7c63; }
+.pc-play-controls button { flex-shrink: 0; min-height: 44px; padding: 7px 13px; border: 0; border-radius: 15px; background: #e4eccf; color: #64764d; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.pc-play-controls button:disabled { opacity: 0.5; cursor: default; }
+.pc-play-controls .pc-play-finish { display: grid; place-items: center; width: 44px; padding: 6px; color: #a07a65; background: #f3e7d8; }
+.pc-toybox { max-width: 510px; }
+.pc-toybox-description { margin: 2px 0 19px; font-size: 13px; color: #9c7c67; }
+.pc-toybox-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; overflow-y: auto; }
+.pc-toybox-grid button { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; padding: 23px 16px 20px; border: 1px solid #f0dfca; border-radius: 24px; color: #7f614d; background: #fff8eb; font: inherit; cursor: pointer; }
+.pc-toybox-grid button > span { display: grid; place-items: center; width: 70px; height: 67px; border: 3px solid #fffdf7; border-radius: 25px; box-shadow: 0 5px 0 #c3a58230; }
+.pc-toybox-grid strong { font-size: 15px; }
+.pc-toybox-grid small { color: #9a7d64; font-size: 11px; line-height: 1.65; text-align: center; }
+.pc-toybox-grid button:disabled { opacity: 0.45; cursor: default; }
+@media (hover: hover) and (pointer: fine) {
+  .pc-toybox-grid button:hover { background: #f5efdE; }
+  .pc-play-controls button:hover { filter: brightness(1.03); }
+}
+@media (max-width: 720px) {
+  .is-three-room .pc-companion-speech { top: 22%; font-size: 10px; }
+  .pc-play-loading-character { width: 82%; bottom: 12%; }
+  .pc-play-controls { gap: 6px; padding: 6px 7px 6px 10px; bottom: 10px; border-radius: 20px; }
+  .pc-play-controls > span { font-size: 10px; gap: 5px; flex-wrap: wrap; max-width: 95px; }
+  .pc-play-controls small { width: 100%; padding-left: 22px; font-size: 9px; }
+  .pc-play-controls button { padding: 6px 9px; font-size: 10px; }
+  .pc-toybox-grid { gap: 9px; }
+  .pc-toybox-grid button { padding: 18px 10px; border-radius: 21px; }
+  .pc-toybox-grid button > span { width: 61px; height: 59px; }
+}

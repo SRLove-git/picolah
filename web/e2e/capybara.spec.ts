@@ -1,531 +1,155 @@
 import { expect, test, type Page } from '@playwright/test';
 import { capyXpForLevel, emptyCapyPayload } from '../shared/capybara';
-
-// Asset failure fixtures must reach Playwright instead of the asset-cache worker.
 test.use({ serviceWorkers: 'block' });
-
 async function setup(page: Page, language = 'en') {
   const payload = { ...emptyCapyPayload(), xp: capyXpForLevel(8), createdAt: new Date().toISOString() };
-  await page.addInitScript((language) => localStorage.setItem('picolah.language', language), language);
-  await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user: null, required: false } }));
-  await page.route('**/api/capybara', (route) => route.fulfill({ json: { capybara: payload } }));
+  await page.addInitScript(l => localStorage.setItem('picolah.language', l), language);
+  await page.route('**/api/auth/me', r => r.fulfill({ json: { user: null, required: false } }));
+  await page.route('**/api/capybara', r => r.fulfill({ json: { capybara: payload } }));
   return payload;
 }
-
-test('each interaction changes the artwork and response without changing shopping progress', async ({ page }) => {
-  await setup(page);
-  const writes: string[] = [];
-  page.on('request', (request) => { if (request.method() !== 'GET' && request.url().includes('/api/')) writes.push(request.url()); });
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  const progress = page.getByRole('progressbar');
-  const xp = await progress.getAttribute('aria-valuenow');
-  for (const [name, expression] of [['Pet the capybara', 'happy'], ['Little snack', 'snack'], ['Play', 'playful'], ['Nap time', 'sleepy']]) {
-    await companion.getByRole('button', { name, exact: true }).click();
-    await expect(companion).toHaveAttribute('data-expression', expression);
-    await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', expression);
-    await expect(companion.locator('img.is-visible')).toHaveCount(1);
-    expect(await companion.locator('img.is-visible').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
-  }
-  await expect(progress).toHaveAttribute('aria-valuenow', xp!);
-  expect(writes).toEqual([]);
-});
-
-test('a newer reaction cancels old timers and a nap lasts until the user wakes Capy', async ({ page }) => {
-  await page.clock.install();
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await companion.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
-  const first = await companion.getByRole('status').textContent();
-  await companion.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
-  expect(await companion.getByRole('status').textContent()).not.toBe(first);
-  await page.clock.fastForward(3000);
-  await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
-  await page.clock.fastForward(10000);
-  await expect(companion).toHaveAttribute('data-expression', 'sleepy');
-  await companion.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
-  await expect(companion).toHaveAttribute('data-expression', 'happy');
-  await page.clock.fastForward(4300);
-  await expect(companion).toHaveAttribute('data-expression', 'idle');
-});
-
-for (const width of [1440, 390, 320]) {
-  test(`companion and home stay usable at ${width}px`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: 1000 });
-    await setup(page, width === 390 ? 'zh' : 'en');
-    await page.goto('/7hk9ho#home');
-    const home = page.locator('.pc-companion');
-    await home.locator('.pc-companion-touch').click();
-    await expect(home).toHaveAttribute('data-expression', 'happy');
-    await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
-    await expect(home.locator('img.is-visible')).toHaveCSS('opacity', '1');
-    await expect(home.locator('img.is-visible')).toBeInViewport();
-    await page.screenshot({ path: testInfo.outputPath(`home-${width}.png`), fullPage: true });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await home.locator('.pc-companion-explore').click();
-    await expect(page).toHaveURL(/#capybara$/);
-    const companion = page.locator('.pc-companion');
-    await companion.locator('.pc-room-dock-button.is-play').click();
-    await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'playful');
-    expect(await companion.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(companion.locator('img.is-visible')).toHaveCSS('opacity', '1');
-    await expect(companion.locator('img.is-visible')).toBeInViewport();
-    await page.screenshot({ path: testInfo.outputPath(`capybara-${width}.png`), fullPage: true });
-  });
+async function room(page: Page) {
+  await page.goto('/7hk9ho#capybara'); const room = page.locator('.pc-companion.is-room');
+  await expect(room).toHaveAttribute('data-renderer', 'three'); return room;
+}
+async function play(page: Page, game: string) {
+  await page.locator('.pc-room-dock-button.is-play').click(); await page.locator(`[data-game-choice="${game}"]`).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page.locator('.pc-play-canvas')).toHaveAttribute('data-mode', game);
 }
 
-test('keyboard and reduced-motion users can interact with a still character', async ({ page }) => {
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await companion.getByRole('button', { name: 'Play', exact: true }).focus();
-  await page.keyboard.press('Enter');
-  await expect(companion).toHaveAttribute('data-expression', 'playful');
-  await expect(companion).toHaveAttribute('data-still', 'true');
-  expect(await companion.locator('.pc-capy').evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await companion.getByRole('button', { name: 'Little snack', exact: true }).click();
-  expect(await companion.locator('.pc-companion-pose').evaluate((element) => getComputedStyle(element).transform)).toBe('none');
-  expect(await companion.locator('.pc-capy').evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
-  await expect(companion).toHaveAttribute('data-expression', 'snack');
-  await expect(companion.locator('img.is-visible')).toHaveCSS('opacity', '1');
-  await expect(companion.locator('img.is-visible')).toBeInViewport();
-  await companion.getByRole('button', { name: 'Pause motion', exact: true }).click();
-  await companion.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
-  await expect(companion).toHaveAttribute('data-still', 'true');
+test('petting, meals and a persistent nap animate without changing shopping progress', async ({ page }) => {
+  await setup(page); const writes: string[] = [];
+  page.on('request', r => { if (r.method() !== 'GET' && r.url().includes('/api/')) writes.push(r.url()); });
+  const companion = await room(page), canvas = companion.locator('canvas');
+  const xp = await companion.getByRole('progressbar').getAttribute('aria-valuenow');
+  for (const [name, action] of [['Pet the capybara', 'pet'], ['Little snack', 'feed'], ['Nap time', 'rest']]) {
+    await companion.getByRole('button', { name, exact: true }).click(); await expect(canvas).toHaveAttribute('data-action', action);
+    const before = await canvas.screenshot(); await page.waitForTimeout(400); expect((await canvas.screenshot()).equals(before)).toBe(false);
+  }
+  await page.waitForTimeout(4500); await expect(companion).toHaveAttribute('data-action', 'rest');
+  await companion.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
+  await expect(companion).toHaveAttribute('data-action', 'wake'); await expect(companion).toHaveAttribute('data-night', 'false');
+  await expect(companion.getByRole('progressbar')).toHaveAttribute('aria-valuenow', xp!); expect(writes).toEqual([]);
 });
 
-test('successful outfit changes react and keep accessories on the character', async ({ page }) => {
-  const payload = await setup(page);
-  await page.route('**/api/capybara/outfit', async (route) => {
-    payload.equipped = route.request().postDataJSON().equipped;
-    await route.fulfill({ json: { capybara: payload } });
+for (const width of [1440, 390, 320]) test(`home and four physical toys work at ${width}px`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: width === 320 ? 568 : 900 }); await setup(page, width === 390 ? 'zh' : 'en');
+  await page.goto('/7hk9ho#home'); const home = page.locator('.pc-companion');
+  await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
+  await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
+  await expect(companion).toHaveAttribute('data-renderer', 'three'); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
+  expect(Number(await canvas.getAttribute('data-geometry'))).toBeGreaterThan(30000);
+  for (const mode of ['ball', 'bubbles', 'swing', 'dance']) {
+    await play(page, mode); const before = await canvas.screenshot(); await page.waitForTimeout(450); expect((await canvas.screenshot()).equals(before)).toBe(false);
+    if (mode === 'ball' || mode === 'bubbles') await expect.poll(async () => Number(await canvas.getAttribute('data-contacts')), { timeout: 12000 }).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const dock = (await companion.locator('.pc-room-dock').boundingBox())!, scene = (await canvas.boundingBox())!;
+    expect(scene.y + scene.height).toBeLessThanOrEqual(dock.y + 1); await companion.screenshot({ path: info.outputPath(`${mode}-${width}.png`) });
+  }
+  expect(Number(await canvas.getAttribute('data-draw-calls'))).toBeLessThan(160);
+});
+
+test('switching toys, feeding and putting toys away interrupt the previous activity', async ({ page }) => {
+  await setup(page); const companion = await room(page), canvas = companion.locator('canvas'); await play(page, 'ball');
+  await expect.poll(async () => Number(await canvas.getAttribute('data-contacts')), { timeout: 10000 }).toBeGreaterThan(0);
+  await play(page, 'swing'); await expect(canvas).toHaveAttribute('data-contacts', '0');
+  await companion.locator('.pc-play-controls').getByRole('button', { name: 'Give a push', exact: true }).click();
+  const angle = await canvas.getAttribute('data-swing-angle'); await page.waitForTimeout(500); expect(await canvas.getAttribute('data-swing-angle')).not.toBe(angle);
+  await companion.getByRole('button', { name: 'Little snack', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-mode', 'idle'); await expect(canvas).toHaveAttribute('data-action', 'feed'); await expect(companion.locator('.pc-play-controls')).toHaveCount(0);
+  await play(page, 'bubbles'); await companion.getByRole('button', { name: 'Put the toy away', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-mode', 'idle'); await expect(canvas).toHaveAttribute('data-contacts', '0');
+});
+
+test('pause, reduced motion, background tabs and dialogs stop GPU draws', async ({ page }) => {
+  await page.addInitScript(() => {
+    const draw = WebGL2RenderingContext.prototype.drawElements; (window as any).capyDraws = 0;
+    WebGL2RenderingContext.prototype.drawElements = function (...args) { (window as any).capyDraws++; return draw.apply(this, args); };
   });
-  await page.goto('/7hk9ho#capybara');
-  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
-  await page.getByRole('button', { name: 'Accessories', exact: true }).click();
-  const scarf = page.locator('.pc-capy-item').filter({ hasText: 'Striped scarf' });
-  await scarf.click();
-  await expect(scarf).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.pc-companion')).toHaveAttribute('data-expression', 'playful');
-  await expect(page.locator('.pc-companion .pc-capy-worn')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
-  await expect(page.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  await expect(page.locator('.pc-companion').getByRole('status')).toContainText('New outfit');
+  await setup(page); const companion = await room(page);
+  const draws = () => page.evaluate(() => (window as any).capyDraws as number);
+  const stopped = async () => { await page.waitForTimeout(150); const n = await draws(); await page.waitForTimeout(350); expect(await draws()).toBe(n); };
+  await play(page, 'ball'); await companion.getByRole('button', { name: 'Pause motion', exact: true }).click(); await stopped();
+  await expect(companion.locator('.pc-play-canvas-button')).toBeDisabled(); await companion.getByRole('button', { name: 'Resume motion', exact: true }).click();
+  const n = await draws(); await expect.poll(draws).toBeGreaterThan(n);
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await stopped(); await play(page, 'bubbles'); await stopped();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); }); await stopped();
+  await page.evaluate(() => { delete (document as any).hidden; document.dispatchEvent(new Event('visibilitychange')); });
+  await page.getByRole('button', { name: "Open Capy's diary", exact: true }).click(); await stopped(); await page.keyboard.press('Escape');
+  await page.locator('.pc-room-dock-button.is-play').click(); await stopped(); await page.keyboard.press('Escape');
+  const resumed = await draws(); await expect.poll(draws).toBeGreaterThan(resumed);
 });
 
-test('a failed outfit change does not celebrate or leave an unearned accessory equipped', async ({ page }) => {
-  await setup(page);
-  await page.route('**/api/capybara/outfit', (route) => route.fulfill({ status: 503, json: { message: 'Unavailable' } }));
-  await page.goto('/7hk9ho#capybara');
-  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
-  await page.getByRole('button', { name: 'Accessories', exact: true }).click();
-  const scarf = page.locator('.pc-capy-item').filter({ hasText: 'Striped scarf' });
-  await scarf.click();
-  await expect(scarf).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('.pc-companion')).toHaveAttribute('data-expression', 'idle');
-  await expect(page.locator('.pc-capy-worn')).toHaveCount(0);
+test('keyboard toy selection traps and restores focus with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await setup(page); await room(page);
+  const trigger = page.locator('.pc-room-dock-button.is-play'); await trigger.focus(); await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog'); expect(await dialog.evaluate(e => parseFloat(getComputedStyle(e).transitionDuration))).toBeLessThan(0.001); await expect(page.locator('[data-game-choice]')).toHaveCount(4);
+  for (let i = 0; i < 9; i++) { await page.keyboard.press('Tab'); await expect.poll(() => dialog.evaluate(e => e.contains(document.activeElement))).toBe(true); }
+  await page.locator('[data-game-choice="ball"]').focus(); await page.keyboard.press('Enter'); await expect(trigger).toBeFocused();
+  const canvas = page.locator('.pc-play-canvas'); const before = await canvas.getAttribute('data-frames'); await page.waitForTimeout(350); expect(await canvas.getAttribute('data-frames')).toBe(before);
+  await page.locator('.pc-play-controls').getByRole('button', { name: 'Toss again', exact: true }).focus(); await page.keyboard.press('Enter');
+  expect(Number(await canvas.getAttribute('data-frames'))).toBeGreaterThan(Number(before)); await expect(canvas).toHaveAttribute('data-running', 'false');
 });
 
-test('an unavailable expression image keeps the original character visible', async ({ page }) => {
-  await setup(page);
-  await page.route('**/*snack*.webp', (route) => route.abort());
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await companion.getByRole('button', { name: 'Little snack', exact: true }).click();
-  await expect(companion).toHaveAttribute('data-expression', 'snack');
-  await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'idle');
-  await expect(companion.getByRole('status')).toContainText('Crunch');
-  expect(await companion.locator('img.is-visible').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
-});
-
-test('the largest growth stage keeps its head and feet inside the interaction area on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 1000 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  const payload = await setup(page);
-  payload.xp = capyXpForLevel(30);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await expect(companion).toHaveAttribute('data-stage', 'legend');
-  await companion.getByRole('button', { name: 'Play', exact: true }).click();
-  await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'playful');
-  const image = (await companion.locator('img.is-visible').boundingBox())!;
-  const scene = (await companion.locator('.pc-companion-scene').boundingBox())!;
-  const actions = (await companion.locator('.pc-room-dock').boundingBox())!;
-  expect(image.y).toBeGreaterThanOrEqual(scene.y);
-  expect(image.y + image.height).toBeLessThanOrEqual(actions.y);
-  expect(await companion.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+test('outfit saves react and failed saves roll back the 3D accessory', async ({ page }) => {
+  const payload = await setup(page); let fail = false;
+  await page.route('**/api/capybara/outfit', async r => { if (fail) return r.fulfill({ status: 503, json: { message: 'Unavailable' } }); payload.equipped = r.request().postDataJSON().equipped; await r.fulfill({ json: { capybara: payload } }); });
+  const companion = await room(page);
+  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click(); await page.getByRole('button', { name: 'Accessories', exact: true }).click();
+  const scarf = page.locator('.pc-capy-item').filter({ hasText: 'Striped scarf' }); await scarf.click(); await expect(scarf).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click(); await expect(companion.locator('canvas')).toHaveAttribute('data-worn', 'scarf'); await expect(companion.getByRole('status')).toContainText('New outfit');
+  fail = true; await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click(); await page.getByRole('button', { name: 'Accessories', exact: true }).click();
+  await scarf.click(); await expect(scarf).toBeEnabled(); await expect(scarf).toHaveAttribute('aria-pressed', 'true'); await expect(companion.locator('canvas')).toHaveAttribute('data-worn', 'scarf');
 });
 
 test.describe('touch interaction', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
-  test('tap can feed, put to sleep and wake Capy without hover movement', async ({ page }) => {
-    await setup(page);
-    await page.goto('/7hk9ho#capybara');
-    const companion = page.locator('.pc-companion');
-    await companion.getByRole('button', { name: 'Little snack', exact: true }).tap();
-    await expect(companion).toHaveAttribute('data-expression', 'snack');
-    await companion.getByRole('button', { name: 'Nap time', exact: true }).tap();
-    await expect(companion).toHaveAttribute('data-expression', 'sleepy');
-    await companion.getByRole('button', { name: 'Wake the capybara', exact: true }).tap();
-    await expect(companion).toHaveAttribute('data-expression', 'happy');
-    expect(await companion.locator('.pc-companion-follow').evaluate((element) => getComputedStyle(element).transform)).toBe('none');
+  test('tap feeds, sleeps, wakes and plays without hover transforms', async ({ page }) => {
+    await setup(page); const companion = await room(page);
+    for (const [name, action] of [['Little snack', 'feed'], ['Nap time', 'rest'], ['Wake the capybara', 'wake']]) { await companion.getByRole('button', { name, exact: true }).tap(); await expect(companion).toHaveAttribute('data-action', action); }
+    await play(page, 'ball'); await companion.locator('.pc-play-canvas-button').tap(); await expect.poll(async () => Number(await companion.locator('canvas').getAttribute('data-contacts')), { timeout: 10000 }).toBeGreaterThan(0);
+    expect(await companion.locator('.pc-play-canvas-button').evaluate(e => getComputedStyle(e).transform)).toBe('none');
   });
 });
 
-async function motionFrame(page: Page) {
-  return page.locator('.pc-companion canvas').evaluate((canvas: HTMLCanvasElement) => new Promise<{ hash: number; pixels: number; top: number; bottom: number }>((resolve) => {
-    requestAnimationFrame(() => {
-      const gl = canvas.getContext('webgl')!;
-      const bytes = new Uint8Array(canvas.width * canvas.height * 4);
-      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
-      let hash = 2166136261, pixels = 0, top = canvas.height, bottom = 0;
-      for (let index = 0; index < bytes.length; index += 4) {
-        if (bytes[index + 3] > 64) {
-          pixels++;
-          const row = canvas.height - 1 - Math.floor(index / 4 / canvas.width);
-          top = Math.min(top, row); bottom = Math.max(bottom, row);
-        }
-        hash = Math.imul(hash ^ bytes[index], 16777619) >>> 0;
-      }
-      resolve({ hash, pixels, top, bottom });
-    });
-  }));
-}
-
-test('awake actions render changing frames and the curled sleeping pose breathes', async ({ page }) => {
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  for (const name of ['Pet the capybara', 'Little snack', 'Play']) {
-    await companion.getByRole('button', { name, exact: true }).click();
-    await page.waitForTimeout(400);
-    const first = await motionFrame(page);
-    await page.waitForTimeout(300);
-    const second = await motionFrame(page);
-    expect(first.pixels).toBeGreaterThan(100_000);
-    expect(second.pixels).toBeGreaterThan(100_000);
-    expect(first.hash).not.toBe(second.hash);
-    expect(second.top).toBeGreaterThan(0);
-    expect(second.bottom).toBeLessThan(964);
-  }
-  await companion.getByRole('button', { name: 'Nap time', exact: true }).click();
-  await expect(companion).toHaveAttribute('data-napping', 'true');
-  const nap = companion.locator('.pc-room-nap img');
-  const before = (await nap.boundingBox())!.height;
-  await page.waitForTimeout(450);
-  expect(Math.abs((await nap.boundingBox())!.height - before)).toBeGreaterThan(0.01);
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
-  await companion.getByRole('button', { name: 'Wake up', exact: true }).click();
-  await expect(companion).toHaveAttribute('data-napping', 'false');
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
+test('furniture and lights interrupt play, feed and wake the character', async ({ page }) => {
+  await setup(page); const companion = await room(page); await play(page, 'ball');
+  await companion.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click(); await expect(companion).toHaveAttribute('data-action', 'feed');
+  await companion.getByRole('button', { name: 'Switch to evening', exact: true }).click(); await expect(companion).toHaveAttribute('data-night', 'true');
+  await companion.getByRole('button', { name: 'Turn on daylight', exact: true }).click(); await expect(companion).toHaveAttribute('data-night', 'false');
+  await companion.getByRole('button', { name: 'Rest at the little bed', exact: true }).click(); await expect(companion).toHaveAttribute('data-night', 'true');
+  await companion.getByRole('button', { name: 'Turn on daylight', exact: true }).click(); await expect(companion).toHaveAttribute('data-night', 'false'); await expect(companion).toHaveAttribute('data-action', 'wake');
 });
 
-test('pause, reduced motion, background tabs and the journal stop GPU draws', async ({ page }) => {
-  await page.addInitScript(() => {
-    const draw = WebGLRenderingContext.prototype.drawElements;
-    (window as any).capyDraws = 0;
-    WebGLRenderingContext.prototype.drawElements = function (...args) {
-      (window as any).capyDraws++;
-      return draw.apply(this, args);
-    };
-  });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  const draws = () => page.evaluate(() => (window as any).capyDraws as number);
-  const stopped = async () => {
-    await page.waitForTimeout(100);
-    const count = await draws();
-    await page.waitForTimeout(250);
-    expect(await draws()).toBe(count);
-  };
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  await companion.getByRole('button', { name: 'Pause motion', exact: true }).click();
-  await stopped();
-  await expect(companion.locator('.pc-capy-expressions')).toHaveCSS('opacity', '1');
-  await companion.getByRole('button', { name: 'Resume motion', exact: true }).click();
-  const count = await draws();
-  await expect.poll(draws).toBeGreaterThan(count);
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await stopped();
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
-  await stopped();
-  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
-  const before = await draws();
-  await expect.poll(draws).toBeGreaterThan(before);
-  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await stopped();
-  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
-  const scrolled = await draws();
-  await expect.poll(draws).toBeGreaterThan(scrolled);
+test('wardrobe tabs support arrows, home and end and restore furniture focus', async ({ page }) => {
+  await setup(page); await room(page); await page.getByRole('button', { name: 'Open the wardrobe', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused(); await page.keyboard.press('ArrowRight'); await expect(page.getByRole('tabpanel', { name: 'Growing up', exact: true })).toBeVisible();
+  await page.keyboard.press('End'); await expect(page.getByRole('tabpanel', { name: 'Keepsakes', exact: true })).toBeVisible(); await page.keyboard.press('Home'); await expect(page.getByRole('tabpanel', { name: 'Wardrobe', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click(); await expect(page.getByRole('button', { name: 'Open the wardrobe', exact: true })).toBeFocused();
 });
 
-test('a lost graphics context falls back to the image and resumes after restoration', async ({ page }) => {
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const art = page.locator('.pc-capy-motion');
-  await expect(art).toHaveAttribute('data-ready', 'true');
-  await art.locator('canvas').evaluate((canvas: HTMLCanvasElement) => {
-    const extension = canvas.getContext('webgl')!.getExtension('WEBGL_lose_context')!;
-    (window as any).restoreCapy = () => extension.restoreContext();
-    extension.loseContext();
-  });
-  await expect(art).toHaveAttribute('data-ready', 'false');
-  await expect(art.locator('.pc-capy-expressions')).toHaveCSS('opacity', '1');
-  await page.waitForTimeout(150);
-  await page.evaluate(() => (window as any).restoreCapy());
-  await expect(art).toHaveAttribute('data-ready', 'true');
-  expect((await motionFrame(page)).pixels).toBeGreaterThan(100_000);
+test('a missing portrait background falls back while 3D play stays available', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await setup(page); await page.route('**/*room-mobile*.webp', r => r.abort()); await room(page);
+  await expect.poll(() => page.locator('.pc-room-background img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1536);
+  await play(page, 'ball'); await expect(page.locator('.pc-play-canvas')).toHaveAttribute('data-ready', 'true');
 });
 
-test('an unsupported graphics device keeps the interactive static artwork', async ({ page }) => {
-  await page.addInitScript(() => {
-    const getContext = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
-      return type === 'webgl' ? null : getContext.call(this, type as any, ...args);
-    } as typeof getContext;
-  });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await companion.getByRole('button', { name: 'Little snack', exact: true }).click();
-  await expect(companion.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'snack');
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
-  await expect(companion.locator('.pc-capy-expressions')).toHaveCSS('opacity', '1');
-});
-
-test('animated outfits share the rig and the static outfit returns when paused', async ({ page }) => {
-  const payload = await setup(page);
-  payload.equipped = ['scarf'];
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  await expect(companion.locator('.pc-capy-worn')).toHaveCSS('visibility', 'hidden');
-  expect((await motionFrame(page)).pixels).toBeGreaterThan(100_000);
-  await companion.getByRole('button', { name: 'Pause motion', exact: true }).click();
-  await expect(companion.locator('.pc-capy-worn')).toHaveCSS('visibility', 'visible');
-  await expect(companion.locator('.pc-capy-worn image')).toHaveCount(1);
-});
-
-test('a fully grown animated Capy has room to hop on a narrow screen', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 1000 });
-  const payload = await setup(page);
-  payload.xp = capyXpForLevel(30);
-  await page.goto('/7hk9ho#capybara');
-  const companion = page.locator('.pc-companion');
-  await expect(companion.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  await companion.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.waitForTimeout(550);
-  const pixels = await motionFrame(page);
-  const canvas = (await companion.locator('canvas').boundingBox())!;
-  const scene = (await companion.locator('.pc-companion-scene').boundingBox())!;
-  const actions = (await companion.locator('.pc-room-dock').boundingBox())!;
-  expect(canvas.y + pixels.top / 965 * canvas.height).toBeGreaterThanOrEqual(scene.y);
-  expect(canvas.y + pixels.bottom / 965 * canvas.height).toBeLessThan(actions.y);
+for (const [width, height] of [[1440, 900], [390, 844], [320, 568]]) test(`five room icons contain dialogs and restore focus at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height }); await setup(page); await room(page); const dock = page.locator('.pc-room-dock'); await expect(dock.getByRole('button')).toHaveCount(5);
+  const box = (await dock.boundingBox())!; expect(box.y + box.height).toBeLessThanOrEqual(height);
+  for (const b of await dock.getByRole('button').all()) { const bounds = (await b.boundingBox())!; expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44); }
+  const growth = page.getByRole('button', { name: "See Capy's growth, level 8", exact: true }); await growth.click(); await expect(page.getByRole('tabpanel', { name: 'Growing up', exact: true })).toBeVisible(); await page.keyboard.press('Escape'); await expect(growth).toBeFocused();
+  const wardrobe = page.getByRole('button', { name: 'Dress up Capy', exact: true }); await wardrobe.focus(); await page.keyboard.press('Enter'); const dialog = page.getByRole('dialog'); await expect(dialog).toHaveCSS('transition-duration', '0s');
+  for (let i = 0; i < 12; i++) { await page.keyboard.press(i % 3 === 0 ? 'Shift+Tab' : 'Tab'); await expect.poll(() => dialog.evaluate(e => e.contains(document.activeElement))).toBe(true); }
+  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click(); await expect(wardrobe).toBeFocused();
+  const journal = page.getByRole('button', { name: "Open Capy's diary", exact: true }); await journal.click(); await expect(page.getByRole('tabpanel', { name: 'Diary', exact: true })).toBeVisible(); await page.mouse.click(3, 3); await expect(page.getByRole('dialog')).toHaveCount(0); await expect(journal).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('room furniture triggers meals, play, bedtime and waking without granting XP', async ({ page }) => {
-  await setup(page);
-  const writes: string[] = [];
-  page.on('request', (request) => { if (request.method() !== 'GET' && request.url().includes('/api/')) writes.push(request.url()); });
-  await page.goto('/7hk9ho#capybara');
-  const room = page.locator('.pc-companion.is-room');
-  const xp = await room.getByRole('progressbar').getAttribute('aria-valuenow');
-  await room.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
-  await expect(room).toHaveAttribute('data-action', 'feed');
-  await room.getByRole('button', { name: 'Play with the ball', exact: true }).click();
-  await expect(room).toHaveAttribute('data-action', 'play');
-  await expect(room.locator('.pc-room-ball')).toHaveCSS('animation-name', 'pc-room-ball-hop');
-  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
-  await expect(room).toHaveAttribute('data-night', 'true');
-  await expect(room).toHaveAttribute('data-napping', 'true');
-  await expect(room.locator('.pc-room-nap img')).toBeVisible();
-  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'false');
-  await room.getByRole('button', { name: 'Wake Capy at the bed', exact: true }).click();
-  await expect(room).toHaveAttribute('data-night', 'false');
-  await expect(room).toHaveAttribute('data-napping', 'false');
-  await expect(room).toHaveAttribute('data-action', 'wake');
-  await expect(room.getByRole('progressbar')).toHaveAttribute('aria-valuenow', xp!);
-  expect(writes).toEqual([]);
-});
-
-test('the room light can be changed independently and daylight wakes a sleeping Capy', async ({ page }) => {
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const room = page.locator('.pc-companion.is-room');
-  await room.getByRole('button', { name: 'Switch to evening', exact: true }).click();
-  await expect(room).toHaveAttribute('data-night', 'true');
-  await expect(room).toHaveAttribute('data-action', 'idle');
-  await room.getByRole('button', { name: 'Turn on daylight', exact: true }).click();
-  await expect(room).toHaveAttribute('data-night', 'false');
-  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
-  await room.getByRole('button', { name: 'Turn on daylight', exact: true }).focus();
-  await page.keyboard.press('Enter');
-  await expect(room).toHaveAttribute('data-night', 'false');
-  await expect(room).toHaveAttribute('data-action', 'wake');
-  await expect(room).toHaveAttribute('data-still', 'true');
-});
-
-test('the wardrobe furniture and journal tabs support focus, arrows, home and end', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  await page.getByRole('button', { name: 'Open the wardrobe', exact: true }).click();
-  await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Growing up', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name: 'Growing up', exact: true })).toBeVisible();
-  await expect(page.locator('#capy-panel-wardrobe')).toBeHidden();
-  await page.keyboard.press('End');
-  await expect(page.getByRole('tabpanel', { name: 'Keepsakes', exact: true })).toBeVisible();
-  await page.keyboard.press('Home');
-  await expect(page.getByRole('tabpanel', { name: 'Wardrobe', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open the wardrobe', exact: true })).toBeFocused();
-  await expect(page.locator('.pc-companion-touch')).toBeInViewport();
-});
-
-test('mobile uses the portrait room and the character retains its square canvas layout', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 844 });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const room = page.locator('.pc-companion.is-room');
-  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-  const background = await room.locator('.pc-room-background img').evaluate((img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight }));
-  expect(background).toEqual({ width: 1024, height: 1536 });
-  const avatar = (await room.locator('.pc-capy-live').boundingBox())!;
-  const scene = (await room.locator('.pc-companion-scene').boundingBox())!;
-  expect(Math.abs(avatar.width - avatar.height)).toBeLessThan(1);
-  expect(avatar.y + avatar.height).toBeLessThan(scene.y + scene.height);
-  for (const name of ['Feed Capy at the snack table', 'Rest at the little bed', 'Open the wardrobe', 'Play with the ball']) {
-    const button = room.getByRole('button', { name, exact: true });
-    await expect(button).toBeInViewport();
-    const box = (await button.boundingBox())!;
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(320);
-  }
-});
-
-test('a missing portrait plate falls back to the landscape room', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await setup(page);
-  await page.route('**/*room-mobile*.webp', (route) => route.abort());
-  await page.goto('/7hk9ho#capybara');
-  const background = page.locator('.pc-room-background img');
-  await expect.poll(() => background.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1536);
-  await expect(background).toHaveCSS('opacity', '1');
-  await page.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
-  await expect(page.locator('.pc-companion')).toHaveAttribute('data-action', 'feed');
-});
-
-test('a missing resting pose keeps the original sleepy character visible', async ({ page }) => {
-  await setup(page);
-  await page.route('**/*capy-nap*.webp', (route) => route.abort());
-  await page.goto('/7hk9ho#capybara');
-  const room = page.locator('.pc-companion.is-room');
-  await room.getByRole('button', { name: 'Rest at the little bed', exact: true }).click();
-  await expect(room).toHaveAttribute('data-night', 'true');
-  await expect(room).toHaveAttribute('data-napping', 'false');
-  await expect(room.locator('.pc-companion-follow')).toHaveCSS('opacity', '1');
-  await expect(room.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'sleepy');
-  await expect(room.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-});
-
-test('reduced motion keeps furniture and character hit targets in their layout positions', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  const room = page.locator('.pc-companion.is-room');
-  const bed = room.getByRole('button', { name: 'Rest at the little bed', exact: true });
-  const before = (await bed.boundingBox())!;
-  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
-  await page.mouse.down();
-  const pressed = (await bed.boundingBox())!;
-  expect(pressed.x).toBeCloseTo(before.x, 1);
-  expect(pressed.y).toBeCloseTo(before.y, 1);
-  await page.mouse.up();
-  await expect(room).toHaveAttribute('data-napping', 'true');
-  await room.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
-  await expect(room).toHaveAttribute('data-napping', 'false');
-  await room.getByRole('button', { name: 'Feed Capy at the snack table', exact: true }).click();
-  await expect(room).toHaveAttribute('data-action', 'feed');
-  await room.getByRole('button', { name: 'Play with the ball', exact: true }).click();
-  await expect(room).toHaveAttribute('data-action', 'play');
-  await room.getByRole('button', { name: 'Open the wardrobe', exact: true }).click();
-  await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused();
-});
-
-for (const [width, height] of [[1440, 900], [390, 844], [320, 568]]) {
-  test(`room icons reveal only the requested panel and return to the room at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height });
-    await setup(page);
-    const writes: string[] = [];
-    page.on('request', (request) => { if (request.method() !== 'GET' && request.url().includes('/api/')) writes.push(request.url()); });
-    await page.goto('/7hk9ho#capybara');
-    await expect(page.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.locator('.pc-room-panel')).toHaveCount(0);
-    const dock = page.locator('.pc-room-dock');
-    await expect(dock.getByRole('button')).toHaveCount(5);
-    const dockBox = (await dock.boundingBox())!;
-    expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(height);
-    for (const button of await dock.getByRole('button').all()) {
-      const box = (await button.boundingBox())!;
-      expect(box.width).toBeGreaterThanOrEqual(44);
-      expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    const growth = page.getByRole('button', { name: "See Capy's growth, level 8", exact: true });
-    await growth.click();
-    await expect(page.getByRole('tabpanel', { name: 'Growing up', exact: true })).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(growth).toBeFocused();
-    const wardrobe = page.getByRole('button', { name: 'Dress up Capy', exact: true });
-    await wardrobe.focus();
-    await page.keyboard.press('Enter');
-    const dialog = page.getByRole('dialog');
-    await expect(page.getByRole('tab', { name: 'Wardrobe', exact: true })).toBeFocused();
-    await expect(dialog).toHaveCSS('transition-duration', '0s');
-    for (let i = 0; i < 16; i++) {
-      await page.keyboard.press(i % 3 === 0 ? 'Shift+Tab' : 'Tab');
-      // The focus guard wraps to the next control on the next animation frame.
-      await expect.poll(() => dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
-    }
-    await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
-    await expect(wardrobe).toBeFocused();
-    const journal = page.getByRole('button', { name: "Open Capy's diary", exact: true });
-    await journal.click();
-    await expect(page.getByRole('tabpanel', { name: 'Diary', exact: true })).toBeVisible();
-    await page.mouse.click(3, 3);
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(journal).toBeFocused();
-    await expect(page.locator('.pc-capy-motion')).toHaveAttribute('data-ready', 'true');
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    expect(writes).toEqual([]);
-  });
-}
-
-test('the journal remains scrollable with a reachable close button on a short landscape screen', async ({ page }) => {
-  await page.setViewportSize({ width: 844, height: 390 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await setup(page);
-  await page.goto('/7hk9ho#capybara');
-  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCSS('transition-property', 'opacity');
-  await page.locator('.pc-capy-item').last().scrollIntoViewIfNeeded();
-  await expect(page.locator('.pc-capy-item').last()).toBeInViewport();
-  const close = page.getByRole('button', { name: 'Back to Capy', exact: true });
-  await expect(close).toBeInViewport();
-  const box = (await close.boundingBox())!;
-  expect(box.width).toBeGreaterThanOrEqual(44);
-  expect(box.height).toBeGreaterThanOrEqual(44);
-  await close.click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+test('wardrobe and toy box scroll with a reachable close button on short landscape screens', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 }); await page.emulateMedia({ reducedMotion: 'reduce' }); await setup(page); await room(page);
+  await page.getByRole('button', { name: 'Dress up Capy', exact: true }).click(); await page.locator('.pc-capy-item').last().scrollIntoViewIfNeeded(); await expect(page.locator('.pc-capy-item').last()).toBeInViewport();
+  const close = page.getByRole('button', { name: 'Back to Capy', exact: true }); await expect(close).toBeInViewport(); await close.click();
+  await page.locator('.pc-room-dock-button.is-play').click(); await page.locator('[data-game-choice="dance"]').scrollIntoViewIfNeeded(); await expect(page.locator('[data-game-choice="dance"]')).toBeInViewport(); await expect(close).toBeInViewport(); await close.click(); await expect(page.getByRole('dialog')).toHaveCount(0);
 });

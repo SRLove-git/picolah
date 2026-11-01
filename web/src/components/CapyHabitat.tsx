@@ -10,13 +10,14 @@ export type CapyRoomPanel = 'wardrobe' | 'growth' | 'journal' | 'purchases';
 export type OpenCapyPanel = (panel: CapyRoomPanel, trigger: HTMLButtonElement, keyboard: boolean) => void;
 
 /** Furniture is actionable; the generated room is only the decorative plate. */
-export function CapyHabitat({ sleeping, night, sequence, onLight, onInteract, onOpenPanel }: {
+export function CapyHabitat({ sleeping, night, sequence, onLight, onInteract, onOpenPanel, liveToys = false }: {
   sleeping: boolean;
   night: boolean;
   sequence: number;
   onLight: (pointer: boolean) => void;
   onInteract: (action: CapyAction, pointer: boolean) => void;
   onOpenPanel?: OpenCapyPanel;
+  liveToys?: boolean;
 }) {
   const { i18n } = useTranslation();
   const en = i18n.language.startsWith('en');
@@ -55,11 +56,11 @@ export function CapyHabitat({ sleeping, night, sequence, onLight, onInteract, on
       <span className="pc-room-hotspot-dot"><Shirt size={15} /></span>
       <span className="pc-room-hotspot-label">{en ? 'Dress up' : '换个造型'}</span>
     </button>
-    <button type="button" className="pc-room-toy" aria-label={en ? 'Play with the ball' : '和卡皮玩小球'}
+    {!liveToys && <button type="button" className="pc-room-toy" aria-label={en ? 'Play with the ball' : '和卡皮玩小球'}
       onClick={(event) => onInteract('play', event.detail > 0)}>
       <span key={sequence} className="pc-room-ball" aria-hidden="true" />
-    </button>
-    <span key={`snack-${sequence}`} className="pc-room-snack-trail" aria-hidden="true"><Leaf size={24} /><Leaf size={16} /></span>
+    </button>}
+    {!liveToys && <span key={`snack-${sequence}`} className="pc-room-snack-trail" aria-hidden="true"><Leaf size={24} /><Leaf size={16} /></span>}
   </>;
 }
 
