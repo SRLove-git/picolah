@@ -75,8 +75,10 @@ test('switching toys discards stale contacts and a nap lasts until explicitly wo
   const state = createCapyPlayState(); setCapyGame(state, 'bubbles');
   for (let i = 0; i < 100; i++) blowCapyBubbles(state);
   assert.ok(state.bubbles.length <= 6);
-  state.contacts = 4; setCapyGame(state, 'swing');
+  state.contacts = 4; Object.assign(state.actor, { x: 1.7, y: 0.5, vy: 2 }); setCapyGame(state, 'swing');
   assert.equal(state.contacts, 0); assert.equal(state.bubbles.length, 0); assert.equal(state.target, null);
+  assert.equal(state.actor.x, 0); assert.equal(state.actor.y, 0); assert.equal(state.actor.vy, 0);
+  state.actor.x = -1.5; setCapyGame(state, 'dance'); assert.equal(state.actor.x, 0);
   setCapyPlayAction(state, 'rest');
   for (let i = 0; i < 1800; i++) stepCapyPlay(state, 1 / 60);
   assert.equal(state.action, 'rest'); assert.equal(state.mode, null);

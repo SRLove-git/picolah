@@ -27,6 +27,9 @@ export function setCapyGame(state: CapyPlayState, mode: CapyGame | null) {
   state.mode = mode; state.action = mode ? 'play' : 'idle'; state.actionTime = 0;
   state.contacts = 0; state.bubbles = []; state.target = null; state.actor.kick = -1;
   state.ball.vx = state.ball.vz = state.ball.vy = 0;
+  // Stationary toys are placed in the centre of the rug. Do not carry a chase
+  // position or an unfinished bubble jump onto the seat or dance floor.
+  if (mode === 'swing' || mode === 'dance') Object.assign(state.actor, { x: 0, y: 0, z: 0, vy: 0, speed: 0 });
   if (mode === 'ball') throwCapyBall(state);
   if (mode === 'bubbles') blowCapyBubbles(state);
   if (mode === 'swing') { state.swing.angle = 0; state.swing.velocity = 0.65; }
