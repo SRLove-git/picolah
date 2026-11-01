@@ -2,7 +2,8 @@ import * as T from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CAPY_CLOTHING_IDS, type CapyAccessoryId } from '../../shared/capybara';
 import type { CapyAction } from './capy-motion';
-import { createCapyModel } from './capy-three-model';
+import { createCapyImagePuppet } from './capy-image-puppet';
+import { wornArtwork } from '../components/CapyAccessoryArt';
 import { blowCapyBubbles, createCapyPlayState, pushCapySwing, resolveCapyContacts, setCapyGame, setCapyPlayAction, stepCapyPlay, throwCapyBall, type CapyGame } from './capy-play';
 
 export interface CapyPlayControls { playing: boolean; reduced: boolean; night: boolean; worn: CapyAccessoryId[] }
@@ -26,7 +27,11 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   const bounceLight = new T.DirectionalLight('#fff6e7', 0.35); bounceLight.position.set(0, 2, 6); scene.add(bounceLight);
   const ground = new T.Mesh(new T.PlaneGeometry(20, 20), new T.ShadowMaterial({ color: '#795739', opacity: 0.25 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
-  const model = createCapyModel(); scene.add(model.root);
+  const model = createCapyImagePuppet(available => {
+    if (disposed) return;
+    canvas.dataset.ready = String(available && !lost); onAvailable?.(available && !lost);
+    render(); resume();
+  }); scene.add(model.root);
   const state = createCapyPlayState();
   const ball = new T.Group(); scene.add(ball);
   ['#efbb72', '#fff3cb', '#a9cfb5', '#fff3cb', '#e9a5aa', '#fff3cb'].forEach((color, index) => {
@@ -97,7 +102,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
       model.root.quaternion.slerpQuaternions(transition.rotation, model.root.quaternion, blend);
       model.root.scale.lerpVectors(transition.scale, model.root.scale, blend);
     }
-    model.pose(state, mode === 'swing' ? grips : undefined);
+    model.faceCamera(camera); model.pose(state, mode === 'swing' ? grips : undefined);
     model.feet.forEach((foot, i) => foot.getWorldPosition(feet[i])); model.hands.forEach((hand, i) => hand.getWorldPosition(hands[i]));
     ball.position.set(state.ball.x, state.ball.y, state.ball.z); ball.rotation.set(state.ball.spin * 0.3, 0, state.ball.spin);
     bubblePool.forEach((bubble, i) => {
@@ -118,10 +123,11 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
     canvas.dataset.geometry = String(renderer.info.render.triangles); canvas.dataset.drawCalls = String(renderer.info.render.calls);
     canvas.dataset.clothing = controls.worn.find((id) => CAPY_CLOTHING_IDS.some((clothing) => clothing === id)) ?? 'none';
     canvas.dataset.worn = controls.worn.join(',');
+    canvas.dataset.character = 'original-image'; canvas.dataset.source = model.source;
     canvas.dataset.running = String(active());
   }
   function render() { if (lost || disposed) return; pose(); renderer.render(scene, camera); frames++; if (state.time - metricsAt > 0.2 || !active()) { metricsAt = state.time; metrics(); } }
-  function active() { return !disposed && !lost && visible && !document.hidden && controls.playing && !controls.reduced; }
+  function active() { return !disposed && !lost && model.ready && visible && !document.hidden && controls.playing && !controls.reduced; }
   function stop() { cancelAnimationFrame(frame); frame = 0; last = 0; accumulator = 0; metrics(); }
   function tick(now: number) {
     frame = 0; if (!active()) return;
@@ -152,11 +158,11 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
   const visibility = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; resume(); }); visibility.observe(canvas);
   document.addEventListener('visibilitychange', resume);
   function contextLost(event: Event) { event.preventDefault(); lost = true; stop(); canvas.dataset.ready = 'false'; onAvailable?.(false); }
-  function contextRestored() { environment.dispose(); environment = makeEnvironment(); lost = false; canvas.dataset.ready = 'true'; onAvailable?.(true); render(); resume(); }
+  function contextRestored() { environment.dispose(); environment = makeEnvironment(); lost = false; canvas.dataset.ready = String(model.ready); onAvailable?.(model.ready); render(); resume(); }
   canvas.addEventListener('webglcontextlost', contextLost); canvas.addEventListener('webglcontextrestored', contextRestored);
-  canvas.dataset.ready = 'true'; resume();
+  canvas.dataset.ready = 'false';
   return {
-    controls(next: CapyPlayControls) { controls = next; model.outfit(next.worn); fill.intensity = next.night ? 0.8 : 1.15; sunlight.intensity = next.night ? 0.9 : 2.35; render(); metrics(); resume(); },
+    controls(next: CapyPlayControls) { controls = next; void model.outfit(next.worn, wornArtwork(next.worn.map(id => ({ id })))); fill.intensity = next.night ? 0.8 : 1.15; sunlight.intensity = next.night ? 0.9 : 2.35; render(); metrics(); resume(); },
     game(mode: CapyGame | null) { retarget(); setCapyGame(state, mode); reported = -1; stillInteraction(); },
     action(action: CapyAction) { retarget(); setCapyPlayAction(state, action); stillInteraction(); },
     interact(clientX?: number, clientY?: number) {
@@ -178,7 +184,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, onContact: (count
       canvas.removeEventListener('webglcontextlost', contextLost); canvas.removeEventListener('webglcontextrestored', contextRestored);
       const geometries = new Set<T.BufferGeometry>([bubbleGeometry, ringGeometry]), materials = new Set<T.Material>();
       scene.traverse((object) => { const mesh = object as T.Mesh; if ((mesh as T.InstancedMesh).isInstancedMesh) (mesh as T.InstancedMesh).dispose(); if (mesh.geometry) geometries.add(mesh.geometry); if (mesh.material) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m) => materials.add(m)); });
-      geometries.forEach((g) => g.dispose()); materials.forEach((m) => m.dispose()); environment.dispose(); renderer.dispose(); renderer.forceContextLoss();
+      model.dispose(); geometries.forEach((g) => g.dispose()); materials.forEach((m) => m.dispose()); environment.dispose(); renderer.dispose(); renderer.forceContextLoss();
     },
   };
 }

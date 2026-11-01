@@ -43,7 +43,8 @@ for (const width of [1440, 390, 320]) {
       await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
       await expect(room.locator('.pc-play-canvas')).toHaveAttribute('data-clothing', id);
       await expect(room.locator('.pc-play-canvas')).toHaveAttribute('data-ready', 'true');
-      // Capture the actual 3D outfit at a still, consistent pose.
+      await expect(room.locator('.pc-play-canvas')).toHaveAttribute('data-source', new RegExp(id + '.*\\.webp'));
+      // Capture the complete original outfit at a still, consistent pose.
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await room.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
       await expect(room.locator('.pc-capy-live')).toHaveCount(0);
@@ -77,7 +78,7 @@ test('an outfit save failure rolls back the model and the selected clothing', as
   expect((await (await page.request.get('/api/capybara', { headers })).json()).capybara.equipped).toEqual([]);
 });
 
-test('3D clothes survive pause, sleep and graphics context restoration', async ({ page }, info) => {
+test('Original outfit artwork survives pause, sleep and graphics context restoration', async ({ page }, info) => {
   await setup(page); await wardrobe(page); await page.locator('[data-accessory="duck-raincoat"]').click();
   await expect(page.locator('[data-accessory="duck-raincoat"]')).toBeEnabled();
   await page.getByRole('button', { name: 'Back to Capy', exact: true }).click();
@@ -93,11 +94,11 @@ test('3D clothes survive pause, sleep and graphics context restoration', async (
   await expect(canvas).toHaveAttribute('data-clothing', 'duck-raincoat');
   await room.getByRole('button', { name: 'Nap time', exact: true }).click();
   await expect(canvas).toHaveAttribute('data-action', 'rest'); await expect(canvas).toHaveAttribute('data-clothing', 'duck-raincoat');
-  await room.screenshot({ path: info.outputPath('dressed-3d-nap.png') });
+  await room.screenshot({ path: info.outputPath('dressed-image-nap.png') });
   await room.getByRole('button', { name: 'Wake up', exact: true }).click(); await expect(canvas).toHaveAttribute('data-action', 'wake');
 });
 
-test('hoodie stays on the articulated character through all four games', async ({ page }, info) => {
+test('hoodie stays on the original image character through all four games', async ({ page }, info) => {
   const headers = await setup(page);
   expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['cream-hoodie'] } })).ok()).toBe(true);
   await page.reload(); const room = page.locator('.pc-companion.is-room'), canvas = room.locator('.pc-play-canvas');
@@ -131,7 +132,7 @@ test('unsupported WebGL keeps the complete dressed character, diary and wardrobe
 
 test.describe('cached clothing on mobile', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  test('reload retains the outfit and touch interaction in the 3D scene', async ({ page }) => {
+  test('reload retains the outfit and touch interaction in the animated room', async ({ page }) => {
     const headers = await setup(page);
     expect((await page.request.post('/api/capybara/outfit', { headers, data: { equipped: ['strawberry-dress'] } })).ok()).toBe(true);
     const room = page.locator('.pc-companion.is-room'), canvas = room.locator('.pc-play-canvas');

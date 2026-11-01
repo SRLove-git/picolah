@@ -124,7 +124,7 @@ export function AccessoryLayer({ worn }: { worn: CapyAccessory[] }) {
 }
 
 /** One placement source for both the static SVG and the animated character rig. */
-export function wornArtwork(worn: CapyAccessory[]) {
+export function wornArtwork(worn: Pick<CapyAccessory, 'id'>[]) {
   const bag = worn.filter((accessory) => BAG_IDS.has(accessory.id));
   return DRAW_ORDER.filter((id) => worn.some((accessory) => accessory.id === id)).map((id) => ({
     id, src: GLYPH_IMAGES[id], clothing: CLOTHING_IDS.has(id), layout: layoutFor(id, Math.max(0, bag.findIndex((accessory) => accessory.id === id))),

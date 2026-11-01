@@ -40,7 +40,9 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
   await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
   await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
   await expect(companion).toHaveAttribute('data-renderer', 'three'); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
-  expect(Number(await canvas.getAttribute('data-geometry'))).toBeGreaterThan(30000);
+  await expect(canvas).toHaveAttribute('data-character', 'original-image');
+  await expect(canvas).toHaveAttribute('data-source', /picolah-capybara-v2.*\.webp/);
+  expect(Number(await canvas.getAttribute('data-geometry'))).toBeLessThan(15000);
   for (const mode of ['ball', 'bubbles', 'swing', 'dance']) {
     await play(page, mode); const before = await canvas.screenshot(); await page.waitForTimeout(450); expect((await canvas.screenshot()).equals(before)).toBe(false);
     if (mode === 'ball' || mode === 'bubbles') await expect.poll(async () => Number(await canvas.getAttribute('data-contacts')), { timeout: 12000 }).toBeGreaterThan(0);
@@ -94,7 +96,7 @@ test('keyboard toy selection traps and restores focus with reduced motion', asyn
   expect(Number(await canvas.getAttribute('data-frames'))).toBeGreaterThan(Number(before)); await expect(canvas).toHaveAttribute('data-running', 'false');
 });
 
-test('outfit saves react and failed saves roll back the 3D accessory', async ({ page }) => {
+test('outfit saves react and failed saves roll back the worn accessory', async ({ page }) => {
   const payload = await setup(page); let fail = false;
   await page.route('**/api/capybara/outfit', async r => { if (fail) return r.fulfill({ status: 503, json: { message: 'Unavailable' } }); payload.equipped = r.request().postDataJSON().equipped; await r.fulfill({ json: { capybara: payload } }); });
   const companion = await room(page);
@@ -131,7 +133,7 @@ test('wardrobe tabs support arrows, home and end and restore furniture focus', a
   await page.getByRole('button', { name: 'Back to Capy', exact: true }).click(); await expect(page.getByRole('button', { name: 'Open the wardrobe', exact: true })).toBeFocused();
 });
 
-test('a missing portrait background falls back while 3D play stays available', async ({ page }) => {
+test('a missing portrait background falls back while play stays available', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await setup(page); await page.route('**/*room-mobile*.webp', r => r.abort()); await room(page);
   await expect.poll(() => page.locator('.pc-room-background img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1536);
   await play(page, 'ball'); await expect(page.locator('.pc-play-canvas')).toHaveAttribute('data-ready', 'true');

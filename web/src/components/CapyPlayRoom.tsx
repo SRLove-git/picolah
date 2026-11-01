@@ -15,7 +15,7 @@ const TOYS = [
   { id: 'ball' as const, Icon: CircleDot, name: ['追球球', 'Ball chase'], hint: ['把球抛到地毯上，卡皮会跑过去踢回来。', 'Toss it onto the rug. Capy will run over and kick it back.'], button: ['再抛一次', 'Toss again'], color: '#f7dfac' },
   { id: 'bubbles' as const, Icon: Bubbles, name: ['接泡泡', 'Bubble pop'], hint: ['吹一串泡泡，看卡皮伸爪、跳起来碰它们。', 'Blow some bubbles. Capy will reach up and jump to pop them.'], button: ['吹泡泡', 'Blow bubbles'], color: '#cbe4df' },
   { id: 'swing' as const, Icon: Armchair, name: ['荡秋千', 'Little swing'], hint: ['轻轻推一下，陪卡皮慢慢荡。', 'Give a gentle push and watch Capy sway.'], button: ['推一下', 'Give a push'], color: '#e4d5ed' },
-  { id: 'dance' as const, Icon: Music2, name: ['扭扭舞', 'Happy dance'], hint: ['点一下换个舞步，一起扭扭、转个圈。', 'Tap for a new step, a wiggle and a little spin.'], button: ['换个舞步', 'New dance step'], color: '#efced3' },
+  { id: 'dance' as const, Icon: Music2, name: ['扭扭舞', 'Happy dance'], hint: ['点一下换个舞步，一起摇摇头、扭扭身子。', 'Tap for a new step, a head bob and a little wiggle.'], button: ['换个舞步', 'New dance step'], color: '#efced3' },
 ];
 
 export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }: {
@@ -38,7 +38,7 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
     void import('../lib/capy-play-scene').then(({ createCapyPlayScene }) => {
       if (disposed || !canvas.current) return;
       const scene = createCapyPlayScene(canvas.current, setContacts, setAction, setReady);
-      engine.current = scene; scene.controls(current.current); setReady(true);
+      engine.current = scene; scene.controls(current.current);
     }).catch(() => { if (!disposed) { setFailed(true); setReady(false); } });
     return () => { disposed = true; engine.current?.dispose(); engine.current = null; };
   }, []);
@@ -68,7 +68,7 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
           onClick={(event) => { if (!game) setAction(sleeping ? 'wake' : 'pet'); engine.current?.interact(event.detail ? event.clientX : undefined, event.detail ? event.clientY : undefined); }}>
           <canvas ref={canvas} className="pc-play-canvas" aria-hidden="true" />
         </button>
-        {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyAvatar view={view} size={360} expression={expression} /></div>}
+        {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyAvatar view={view} size={360} expression="idle" /></div>}
         {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
         <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? 'Resume motion' : '继续动作') : (en ? 'Pause motion' : '暂停动作')}
           aria-pressed={paused} onClick={() => setPaused((value) => !value)}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>

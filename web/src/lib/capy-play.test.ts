@@ -1,19 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Quaternion, Vector3 } from 'three';
+import { OrthographicCamera, Vector3 } from 'three';
 import { CAPY_CLOTHING_IDS } from '../../shared/capybara';
-import { createCapyModel } from './capy-three-model';
+import { createCapyImagePuppet as createCapyModel, CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-image-puppet';
 import { blowCapyBubbles, createCapyPlayState, pushCapySwing, resolveCapyContacts, setCapyGame, setCapyPlayAction, stepCapyPlay, type CapyPlayState } from './capy-play';
 
 function rigSimulation(state: CapyPlayState, seconds: number) {
   const model = createCapyModel();
-  model.outfit([]);
+  const camera = new OrthographicCamera(); camera.position.set(.7, 5.5, 13); camera.lookAt(0, 1.45, 0);
+  void model.outfit([]);
   const feet = [new Vector3(), new Vector3()], hands = [new Vector3(), new Vector3()];
   let highest = 0;
   for (let i = 0; i < seconds * 60; i++) {
     stepCapyPlay(state, 1 / 60);
     model.root.position.set(state.actor.x, state.actor.y, state.actor.z);
-    model.root.rotation.y = state.actor.yaw; model.pose(state);
+    model.root.rotation.y = state.actor.yaw; model.faceCamera(camera); model.pose(state);
     model.feet.forEach((p, j) => p.getWorldPosition(feet[j])); model.hands.forEach((p, j) => p.getWorldPosition(hands[j]));
     resolveCapyContacts(state, feet, hands);
     highest = Math.max(highest, state.actor.y);
@@ -91,34 +92,15 @@ test('switching toys discards stale contacts and a nap lasts until explicitly wo
   assert.equal(state.action, 'idle');
 });
 
-test('all six outfits have real geometry and long sleeves belong to the moving arms', () => {
-  const model = createCapyModel();
-  model.outfit([]);
-  let baseline = 0;
-  model.root.traverseVisible((object) => { if ('isMesh' in object && object.isMesh) baseline++; });
+test('the puppet uses the original image and complete fitted outfit artwork', async () => {
+  const model = createCapyModel(); await model.outfit([]);
+  assert.equal(model.source, CAPY_ORIGINAL_ART);
   for (const id of CAPY_CLOTHING_IDS) {
-    model.outfit([id]);
-    let meshes = 0;
-    model.root.traverseVisible((object) => {
-      if ('isMesh' in object && object.isMesh) {
-        meshes++;
-        const mesh = object as import('three').Mesh;
-        assert.notEqual(mesh.geometry.type, 'PlaneGeometry');
-        assert.equal((mesh.material as import('three').MeshStandardMaterial).map, null);
-      }
-    });
-    assert.ok(meshes > baseline, id);
+    await model.outfit([id]); assert.equal(model.source, CAPY_PUPPET_CLOTHES[id]);
   }
-  model.outfit(['cream-hoodie']);
-  for (const arm of model.arms) {
-    const sleeve = arm.children.find((child) => child.type === 'Group' && child.visible && child.children.length === 2);
-    assert.ok(sleeve, 'a sleeve must follow each arm, not be a front overlay');
-    const before = sleeve.getWorldQuaternion(new Quaternion());
-    arm.rotation.x = -1; model.root.updateMatrixWorld(true);
-    assert.ok(before.angleTo(sleeve.getWorldQuaternion(new Quaternion())) > 0.9);
-  }
+  await model.outfit([]); assert.equal(model.source, CAPY_ORIGINAL_ART);
+  model.dispose();
 });
-
 
 test('turns accelerate gradually, jumps anticipate and land before another jump', () => {
   const state = createCapyPlayState(); setCapyGame(state, 'ball');
@@ -141,12 +123,14 @@ test('turns accelerate gradually, jumps anticipate and land before another jump'
   assert.ok(jumped && landed, 'jump must return to a buffered landing');
 });
 
-test('retargeted joints blend from the current pose only once per simulation step', () => {
-  const state = createCapyPlayState(), model = createCapyModel(); model.outfit([]); model.pose(state);
-  const before = model.arms[1].quaternion.clone(); setCapyPlayAction(state, 'feed'); stepCapyPlay(state, 1 / 60); model.pose(state);
-  const first = model.arms[1].quaternion.clone();
-  assert.ok(before.angleTo(first) > 0.01 && before.angleTo(first) < 0.8, 'feed should start reaching, not snap to the mouth');
-  model.pose(state); assert.ok(first.angleTo(model.arms[1].quaternion) < 1e-7, 'render cannot advance the pose a second time');
+test('original-image paw deformations retarget once per simulation step', () => {
+  const state = createCapyPlayState(), model = createCapyModel(); void model.outfit([]); model.pose(state);
+  const before = model.hands[1].position.clone(); setCapyGame(state, 'bubbles');
+  state.target = { x: .1, y: 2.3, z: .45 }; stepCapyPlay(state, 1 / 60); model.pose(state);
+  const first = model.hands[1].position.clone();
+  assert.ok(before.distanceTo(first) < .15, 'the image must not snap to a stretched reach');
+  model.pose(state); assert.ok(first.distanceTo(model.hands[1].position) < 1e-7);
   for (let i = 0; i < 60; i++) { stepCapyPlay(state, 1 / 60); model.pose(state); }
-  assert.ok(before.angleTo(model.arms[1].quaternion) > 1, 'arm must finish reaching');
+  assert.ok(model.hands.some((hand, i) => hand.position.y > (i ? 1.24 : 1.32)), 'the displayed paw should reach upward');
+  model.dispose();
 });

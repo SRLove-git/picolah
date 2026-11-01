@@ -52,7 +52,9 @@ export function blowCapyBubbles(state: CapyPlayState, x = 0) {
   state.bubbles = state.bubbles.filter((b) => b.popped < 0).slice(-2);
   for (let i = 0; i < 4; i++) state.bubbles.push({
     id: state.nextBubble++, x: clamp(x + (i - 1.5) * 0.62, -state.bounds, state.bounds),
-    y: 2.0 + (i % 3) * 0.26, z: 0.45 + (i % 2) * 0.22,
+    // The original artwork has folded paws. Place bubbles within its actual
+    // short reaching/jumping range instead of stretching the face/body to fit.
+    y: 1.8 + (i % 3) * 0.18, z: 0.45 + (i % 2) * 0.22,
     radius: 0.18 + (i % 2) * 0.045, life: 0, popped: -1,
   });
 }
