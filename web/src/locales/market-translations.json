@@ -866,7 +866,17 @@
       "Default avatar restored": "Avatar lalai dipulihkan",
       "Could not remove avatar": "Tidak dapat membuang avatar",
       "Your space": "Ruang anda",
-      "Cozy bed": "Katil selesa"
+      "Cozy bed": "Katil selesa",
+      "Good finds. Like minds.": "Penemuan menarik. Minat seiring.",
+      "A favorite brand. A shared interest. Find your next conversation in the things you love.": "Jenama kegemaran dan minat yang sama boleh menjadi permulaan perbualan baharu.",
+      "From your comparison activity": "Berdasarkan aktiviti perbandingan anda",
+      "View preferences": "Lihat keutamaan",
+      "Your shopping circle is still growing": "Masih mencari rakan yang berkongsi minat anda",
+      "People with similar preferences will appear here. Explore a few things you love while you wait.": "Orang yang berkongsi keutamaan anda akan muncul di sini. Sementara itu, terokai produk yang anda minati.",
+      "Recommended by similarity": "Disyorkan mengikut persamaan",
+      "Explore products to discover more preferences": "Terokai produk untuk mengenali lebih banyak keutamaan anda",
+      "Typical price range": "Julat harga yang biasa dilihat",
+      "A shared taste": "Minat yang sama"
     }
   },
   "th": {
@@ -1736,7 +1746,17 @@
       "Default avatar restored": "คืนค่ารูปโปรไฟล์เริ่มต้นแล้ว",
       "Could not remove avatar": "ไม่สามารถลบรูปโปรไฟล์ได้",
       "Your space": "พื้นที่ของคุณ",
-      "Cozy bed": "เตียงนุ่มสบาย"
+      "Cozy bed": "เตียงนุ่มสบาย",
+      "Good finds. Like minds.": "ของถูกใจ กับคนที่ชอบเหมือนกัน",
+      "A favorite brand. A shared interest. Find your next conversation in the things you love.": "แบรนด์ที่ชอบและความสนใจที่ตรงกัน อาจเป็นจุดเริ่มต้นของบทสนทนาใหม่",
+      "From your comparison activity": "จากประวัติการเปรียบเทียบของคุณ",
+      "View preferences": "ดูความชอบ",
+      "Your shopping circle is still growing": "กำลังมองหาเพื่อนที่มีรสนิยมตรงกับคุณ",
+      "People with similar preferences will appear here. Explore a few things you love while you wait.": "คนที่มีความชอบคล้ายกันจะแสดงที่นี่ ระหว่างรอ ลองสำรวจสินค้าที่คุณสนใจ",
+      "Recommended by similarity": "แนะนำตามความคล้ายกัน",
+      "Explore products to discover more preferences": "สำรวจสินค้าเพื่อค้นพบความชอบของคุณเพิ่มเติม",
+      "Typical price range": "ช่วงราคาที่ดูบ่อย",
+      "A shared taste": "ความชอบที่ตรงกัน"
     }
   },
   "id": {
@@ -2606,7 +2626,17 @@
       "Default avatar restored": "Avatar default dipulihkan",
       "Could not remove avatar": "Tidak dapat menghapus avatar",
       "Your space": "Ruang Anda",
-      "Cozy bed": "Tempat tidur nyaman"
+      "Cozy bed": "Tempat tidur nyaman",
+      "Good finds. Like minds.": "Temuan menarik, selera sejalan.",
+      "A favorite brand. A shared interest. Find your next conversation in the things you love.": "Merek favorit dan minat yang sama bisa menjadi awal percakapan baru.",
+      "From your comparison activity": "Dari aktivitas perbandingan Anda",
+      "View preferences": "Lihat preferensi",
+      "Your shopping circle is still growing": "Masih mencari teman dengan selera serupa",
+      "People with similar preferences will appear here. Explore a few things you love while you wait.": "Orang dengan preferensi serupa akan muncul di sini. Sambil menunggu, jelajahi produk yang Anda sukai.",
+      "Recommended by similarity": "Direkomendasikan berdasarkan kesamaan",
+      "Explore products to discover more preferences": "Jelajahi produk untuk menemukan lebih banyak preferensi",
+      "Typical price range": "Kisaran harga yang sering dilihat",
+      "A shared taste": "Selera yang sama"
     }
   },
   "vi": {
@@ -3476,7 +3506,17 @@
       "Default avatar restored": "Đã khôi phục ảnh đại diện mặc định",
       "Could not remove avatar": "Không thể xóa ảnh đại diện",
       "Your space": "Không gian của bạn",
-      "Cozy bed": "Chiếc giường êm ái"
+      "Cozy bed": "Chiếc giường êm ái",
+      "Good finds. Like minds.": "Cùng gu, cùng khám phá.",
+      "A favorite brand. A shared interest. Find your next conversation in the things you love.": "Thương hiệu yêu thích và sở thích chung có thể mở đầu một cuộc trò chuyện mới.",
+      "From your comparison activity": "Từ hoạt động so sánh của bạn",
+      "View preferences": "Xem sở thích",
+      "Your shopping circle is still growing": "Đang tìm người có cùng gu mua sắm",
+      "People with similar preferences will appear here. Explore a few things you love while you wait.": "Những người có sở thích tương tự sẽ xuất hiện ở đây. Trong lúc chờ, hãy khám phá các sản phẩm bạn yêu thích.",
+      "Recommended by similarity": "Đề xuất theo mức độ tương đồng",
+      "Explore products to discover more preferences": "Khám phá sản phẩm để hiểu thêm về sở thích của bạn",
+      "Typical price range": "Khoảng giá thường xem",
+      "A shared taste": "Sở thích chung"
     }
   }
 }

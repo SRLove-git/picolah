@@ -70,7 +70,12 @@ for (const width of [1440, 390, 320]) {
     const state = await setup(page);
     await expect(page.locator('.radar-candidates > li')).toHaveCount(5);
     await expect(page.getByRole('button', { name: 'Add friend Mia Tan', exact: true })).toHaveCount(0);
-    await expect(page.locator('.radar-signature').first()).toHaveText('Electronics · Sony');
+    await expect(page.locator('.radar-shared-block .radar-tags').first().locator('span')).toHaveText(['Electronics', 'Sony']);
+    await expect(page.getByRole('region', { name: 'My shopping preferences', exact: true })).toContainText('Tech explorer');
+    await expect(page.locator('.radar-shortcuts')).toContainText('New friends1');
+    await page.locator('.radar-filter-bar').getByRole('button', { name: 'Added', exact: true }).click();
+    await expect(page.locator('.radar-candidates > li')).toHaveCount(1);
+    await page.locator('.radar-filter-bar').getByRole('button', { name: 'Everyone', exact: true }).click();
     await expect(page.locator('.radar-candidates')).toContainText('Similarity 93%');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`radar-list-${width}.png`), fullPage: true });
@@ -129,7 +134,8 @@ test('people with no comparisons can still handle incoming requests', async ({ p
 test('English empty results and guest sign-in entry remain readable', async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, { empty: true, en: true });
-  await expect(page.getByText('No one close yet. Check back as more people compare products.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your shopping circle is still growing' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'My shopping preferences', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Radar options', exact: true }).click();
   await page.getByRole('button', { name: 'Added', exact: true }).click();
   await page.getByRole('button', { name: 'Show everyone' }).click();
