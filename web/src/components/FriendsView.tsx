@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ArrowLeft,
   Bell,
   Check,
-  ChevronRight,
+  Plus,
   MessageCircle,
-  Radar,
   RefreshCw,
   Search,
   Send,
@@ -25,7 +25,6 @@ import {
   type SocialMessage,
 } from '../lib/social';
 import { PageHeader } from './PageHeader';
-import './radar.css';
 import './friends.css';
 
 const COPY = {
@@ -33,6 +32,14 @@ const COPY = {
     eyebrow: 'FRIENDS',
     title: '好友',
     description: '查看好友，和懂你消费偏好的人继续聊天。',
+    selectChat: '选择一位好友，开始聊天',
+    back: '返回好友列表',
+    clearSearch: '清除搜索',
+    draft: '[草稿]',
+    sendHint: 'Enter 发送 · Shift + Enter 换行',
+    loadingMessages: '正在加载消息…',
+    retry: '重试',
+    yesterday: '昨天',
     refresh: '刷新',
     guestTitle: '登录后查看好友',
     guestBody: '好友请求、未读消息和聊天记录都会安全地保存在你的账户中。',
@@ -68,6 +75,14 @@ const COPY = {
     eyebrow: 'FRIENDS',
     title: 'Friends',
     description: 'See your friends and keep chatting with people who get your shopping taste.',
+    selectChat: 'Choose a friend to start chatting',
+    back: 'Back to friends',
+    clearSearch: 'Clear search',
+    draft: '[Draft]',
+    sendHint: 'Enter to send · Shift + Enter for a new line',
+    loadingMessages: 'Loading messages…',
+    retry: 'Retry',
+    yesterday: 'Yesterday',
     refresh: 'Refresh',
     guestTitle: 'Sign in to see friends',
     guestBody: 'Friend requests, unread messages and conversations stay safely with your account.',
@@ -127,14 +142,10 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
   const [chatWith, setChatWith] = useState<FriendView | null>(null);
-  const [messages, setMessages] = useState<SocialMessage[]>([]);
-  const [draft, setDraft] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [friendQuery, setFriendQuery] = useState('');
-  const [sending, setSending] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const lastAtRef = useRef('');
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -152,37 +163,6 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    if (!chatWith) return;
-    let active = true;
-    let timer = 0;
-
-    async function poll() {
-      try {
-        const list = await getMessages(chatWith!.id, lastAtRef.current);
-        if (!active) return;
-        if (list.length) {
-          lastAtRef.current = list[list.length - 1].createdAt;
-          setMessages((current) => [...current, ...list]);
-        }
-      } catch {
-        // Polling is best-effort; the next tick retries.
-      } finally {
-        if (active) timer = window.setTimeout(poll, 3000);
-      }
-    }
-
-    void poll();
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [chatWith]);
-
-  useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages]);
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -218,27 +198,20 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
 
   function openChat(friend: FriendView) {
     setNotificationsOpen(false);
-    lastAtRef.current = '';
-    setMessages([]);
-    setDraft('');
     setChatWith(friend);
   }
 
-  async function send() {
-    const body = draft.trim();
-    if (!body || !chatWith || sending) return;
-    setSending(true);
-    try {
-      const message = await postMessage(chatWith.id, body);
-      setMessages((current) => [...current, message]);
-      lastAtRef.current = message.createdAt;
-      setDraft('');
-    } catch (sendError) {
-      notify(sendError instanceof Error ? sendError.message : copy.loading);
-    } finally {
-      setSending(false);
-    }
-  }
+  const updateConversation = useCallback((friendId: string, latest?: SocialMessage) => {
+    setData((current) => current ? {
+      ...current,
+      friends: current.friends.map((friend) => friend.id === friendId ? {
+        ...friend,
+        unread: 0,
+        ...(latest && (!friend.lastMessageAt || latest.createdAt >= friend.lastMessageAt)
+          ? { lastMessage: latest.body, lastMessageAt: latest.createdAt } : {}),
+      } : friend),
+    } : current);
+  }, []);
 
   const friends = data?.friends ?? [];
   const incoming = data?.incoming ?? [];
@@ -251,15 +224,17 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
     return friends
       .slice()
       .filter((friend) => !query || friend.displayName.toLocaleLowerCase().includes(query))
-      .sort((left, right) => collator.compare(left.displayName, right.displayName));
+      .sort((left, right) => {
+        const recent = (Date.parse(right.lastMessageAt ?? '') || 0) - (Date.parse(left.lastMessageAt ?? '') || 0);
+        return recent || collator.compare(left.displayName, right.displayName);
+      });
   }, [en, friendQuery, friends]);
 
   return (
-    <section className="pc-page pc-friends-page" aria-label={copy.title}>
+    <section className={`pc-page pc-friends-page ${chatWith ? 'has-conversation' : ''}`} aria-label={copy.title}>
       <PageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
-        description={copy.description}
         onOpenSidebar={onOpenSidebar}
       >
         {user ? (
@@ -317,7 +292,7 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
                           <ul>
                             {incoming.map((request) => (
                               <li key={request.id}>
-                                <span className="radar-avatar" style={{ background: tint(request.userId) }}>
+                                <span className="friends-contact-avatar" style={{ background: tint(request.userId) }}>
                                   {request.avatar ? <img src={request.avatar} alt="" /> : initial(request.displayName)}
                                 </span>
                                 <span className="friends-notification-person">
@@ -359,7 +334,7 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
                             {unreadFriends.map((friend) => (
                               <li key={friend.id} className="friends-message-notification-item">
                                 <button type="button" className="friends-message-notification" onClick={() => openChat(friend)}>
-                                  <span className="radar-avatar" style={{ background: tint(friend.id) }}>
+                                  <span className="friends-contact-avatar" style={{ background: tint(friend.id) }}>
                                     {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
                                   </span>
                                   <span className="friends-notification-person">
@@ -379,144 +354,230 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
               ) : null}
             </div>
 
-            <button type="button" className="pc-outline-button" onClick={() => void load()} disabled={loading}>
-              <RefreshCw size={14} className={loading ? 'radar-spin' : undefined} />
-              {copy.refresh}
+            <button type="button" className="friends-icon-button" title={copy.refresh} aria-label={copy.refresh} onClick={() => void load()} disabled={loading}>
+              <RefreshCw size={14} className={loading ? 'friends-spin' : undefined} />
             </button>
           </div>
         ) : null}
       </PageHeader>
 
-      <div className="pc-page-body friends-body">
+      <div className="friends-body">
         {!user ? (
-          <div className="radar-guest">
-            <span className="radar-guest-icon"><UsersRound size={30} strokeWidth={1.6} /></span>
+          <div className="friends-guest">
+            <MessageCircle size={54} strokeWidth={1.2} />
             <h2>{copy.guestTitle}</h2>
             <p>{copy.guestBody}</p>
-            <button type="button" className="pc-primary-button" onClick={() => promptLogin('friends')}>
+            <button type="button" className="friends-primary" onClick={() => promptLogin('friends')}>
               {copy.guestCta}
             </button>
           </div>
         ) : (
           <>
-            <section className="radar-panel friends-panel friends-list-panel">
-              <header className="radar-panel-head">
-                <h3>{copy.friendTitle}</h3>
-                <span className="radar-count">{friends.length}</span>
-              </header>
-              {friends.length ? (
-                <div className="friends-contacts-shell">
-                  <label className="friends-search">
-                    <Search size={15} />
-                    <input
-                      type="search"
-                      value={friendQuery}
-                      onChange={(event) => setFriendQuery(event.target.value)}
-                      placeholder={copy.searchFriends}
-                      aria-label={copy.searchFriends}
-                    />
-                    {friendQuery ? (
-                      <button type="button" onClick={() => setFriendQuery('')} aria-label={copy.close}>
-                        <X size={13} />
-                      </button>
-                    ) : null}
-                  </label>
-
-                  {visibleFriends.length ? (
+            <aside className="friends-list-panel" aria-label={copy.friendTitle}>
+              <div className="friends-list-toolbar">
+                <label className="friends-search">
+                  <Search size={15} aria-hidden="true" />
+                  <input type="search" value={friendQuery} onChange={(event) => setFriendQuery(event.target.value)}
+                    placeholder={copy.searchFriends} aria-label={copy.searchFriends} />
+                  {friendQuery ? (
+                    <button type="button" onClick={() => setFriendQuery('')} aria-label={copy.clearSearch}>
+                      <X size={13} />
+                    </button>
+                  ) : null}
+                </label>
+                <button type="button" className="friends-icon-button friends-add" onClick={onOpenRadar}
+                  title={copy.openRadar} aria-label={copy.openRadar}><Plus size={20} /></button>
+              </div>
+              {error ? <div className="friends-error" role="alert">{error}</div> : null}
+              <div className="friends-contacts-scroll" aria-busy={loading}>
+                {loading && !data ? <p className="friends-status" role="status">{copy.loading}</p> : friends.length ? (
+                  visibleFriends.length ? (
                     <ul className="friends-contacts">
                       {visibleFriends.map((friend) => (
                         <li key={friend.id}>
-                          <button
-                            type="button"
-                            className="friends-contact-row"
-                            onClick={() => openChat(friend)}
-                            aria-label={`${copy.chat} ${friend.displayName}`}
-                          >
-                            <span className="friends-contact-avatar" style={{ background: tint(friend.id) }}>
-                              {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
+                          <button type="button"
+                            className={`friends-contact-row ${chatWith?.id === friend.id ? 'is-selected' : ''}`}
+                            onClick={() => openChat(friend)} aria-label={`${copy.chat} ${friend.displayName}`}
+                            aria-pressed={chatWith?.id === friend.id}>
+                            <span className="friends-avatar-wrap">
+                              <span className="friends-contact-avatar" style={{ background: tint(friend.id) }}>
+                                {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
+                              </span>
+                              {friend.unread > 0 ? <span className="friends-unread" aria-label={`${copy.unread}: ${friend.unread}`}>
+                                {friend.unread > 99 ? '99+' : friend.unread}
+                              </span> : null}
                             </span>
-                            <strong>{friend.displayName}</strong>
-                            <ChevronRight size={16} />
+                            <span className="friends-contact-copy">
+                              <span className="friends-contact-top"><strong>{friend.displayName}</strong>
+                                {friend.lastMessageAt ? <time dateTime={friend.lastMessageAt}>{formatTime(friend.lastMessageAt, en)}</time> : null}
+                              </span>
+                              <span className="friends-contact-preview">
+                                {drafts[friend.id]?.trim() ? <><em>{copy.draft}</em> {drafts[friend.id]}</> : friend.lastMessage || copy.noMessage}
+                              </span>
+                            </span>
                           </button>
                         </li>
                       ))}
                     </ul>
-                  ) : (
-                    <div className="friends-search-empty">
-                      <UsersRound size={22} />
-                      <p>{copy.searchEmpty}</p>
-                    </div>
-                  )}
-
-                  <p className="friends-contact-total">{friends.length} {copy.contacts}</p>
-                </div>
-              ) : (
-                <div className="friends-empty">
-                  <span><Radar size={24} /></span>
-                  <p>{copy.friendEmpty}</p>
-                  <button type="button" className="radar-action" onClick={onOpenRadar}>
-                    <Radar size={13} />{copy.openRadar}
-                  </button>
-                </div>
-              )}
-            </section>
-
-            {error ? <p className="radar-error">{error}</p> : null}
+                  ) : <div className="friends-empty"><Search size={26} /><p>{copy.searchEmpty}</p></div>
+                ) : !error ? (
+                  <div className="friends-empty">
+                    <UsersRound size={32} strokeWidth={1.4} /><p>{copy.friendEmpty}</p>
+                    <button type="button" className="friends-text-button" onClick={onOpenRadar}>{copy.openRadar}</button>
+                  </div>
+                ) : null}
+              </div>
+              <footer className="friends-contact-total"><UsersRound size={13} />{friends.length} {copy.contacts}</footer>
+            </aside>
+            {chatWith ? (
+              <FriendConversation key={chatWith.id} friend={chatWith} userId={user.id} userName={user.displayName}
+                userAvatar={user.avatar} en={en} draft={drafts[chatWith.id] ?? ''}
+                onDraftChange={(value, expected) => setDrafts((current) => expected !== undefined && current[chatWith.id] !== expected
+                  ? current : { ...current, [chatWith.id]: value })}
+                onClose={() => setChatWith(null)} onUpdate={updateConversation} notify={notify} />
+            ) : (
+              <div className="friends-conversation-placeholder">
+                <MessageCircle size={76} strokeWidth={1} aria-hidden="true" />
+                <span>Picolah</span><p>{copy.selectChat}</p>
+              </div>
+            )}
           </>
         )}
       </div>
+    </section>
+  );
+}
 
-      {chatWith ? (
-        <div className="radar-chat" role="dialog" aria-label={copy.chat}>
-          <header className="radar-chat-head">
-            <span className="radar-avatar" style={{ background: tint(chatWith.id) }}>
-              {chatWith.avatar ? <img src={chatWith.avatar} alt="" /> : initial(chatWith.displayName)}
-            </span>
-            <strong>{chatWith.displayName}</strong>
-            <button
-              type="button"
-              onClick={() => {
-                setChatWith(null);
-                void load();
-              }}
-              aria-label={copy.close}
-            >
-              <X size={16} />
-            </button>
-          </header>
-          <div className="radar-chat-list" ref={listRef}>
-            {messages.length === 0 ? (
-              <p className="radar-empty">{copy.chatEmpty}</p>
-            ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`radar-bubble ${message.fromUser === user?.id ? 'is-mine' : ''}`}
-                >
-                  {message.body}
-                </div>
-              ))
-            )}
-          </div>
-          <form
-            className="radar-chat-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void send();
-            }}
-          >
-            <input
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder={copy.messagePlaceholder}
-              maxLength={1000}
-            />
-            <button type="submit" disabled={sending || !draft.trim()} aria-label={copy.send}>
-              <Send size={15} />
-            </button>
-          </form>
+function formatTime(value: string, en: boolean, full = false): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const locale = en ? 'en-GB' : 'zh-CN';
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const clock = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (date.toDateString() === today.toDateString()) return clock;
+  if (date.toDateString() === yesterday.toDateString()) return `${en ? COPY.en.yesterday : COPY.zh.yesterday}${full ? ` ${clock}` : ''}`;
+  return `${date.toLocaleDateString(locale, { ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}), month: 'numeric', day: 'numeric' })}${full ? ` ${clock}` : ''}`;
+}
+
+function FriendConversation({ friend, userId, userName, userAvatar, en, draft, onDraftChange, onClose, onUpdate, notify }: {
+  friend: FriendView;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  en: boolean;
+  draft: string;
+  onDraftChange: (value: string, expected?: string) => void;
+  onClose: () => void;
+  onUpdate: (friendId: string, latest?: SocialMessage) => void;
+  notify: (message: string) => void;
+}) {
+  const copy = en ? COPY.en : COPY.zh;
+  const [messages, setMessages] = useState<SocialMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const lastAtRef = useRef('');
+  const listRef = useRef<HTMLDivElement>(null);
+  const nearBottomRef = useRef(true);
+  const sendingRef = useRef(false);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  useEffect(() => {
+    let active = true;
+    let timer = 0;
+    async function poll() {
+      try {
+        const list = await getMessages(friend.id, lastAtRef.current);
+        if (!active) return;
+        if (list.length) {
+          lastAtRef.current = list[list.length - 1].createdAt;
+          setMessages((current) => [...new Map([...current, ...list].map((message) => [message.id, message])).values()]
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+        }
+        onUpdate(friend.id, list.at(-1));
+        setError('');
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : copy.loadingMessages);
+      } finally {
+        if (active) {
+          setLoading(false);
+          timer = window.setTimeout(poll, 3000);
+        }
+      }
+    }
+    void poll();
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [friend.id, onUpdate, copy.loadingMessages, retry]);
+
+  useEffect(() => {
+    if (nearBottomRef.current && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages]);
+
+  async function send() {
+    const body = draft.trim();
+    if (!body || sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
+    try {
+      const message = await postMessage(friend.id, body);
+      nearBottomRef.current = true;
+      setMessages((current) => [...new Map([...current, message].map((item) => [item.id, item])).values()]
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+      onUpdate(friend.id, message);
+      if (draftRef.current.trim() === body) onDraftChange('', draft);
+    } catch (cause) {
+      notify(cause instanceof Error ? cause.message : copy.loadingMessages);
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
+    }
+  }
+
+  return (
+    <section className="friends-conversation" aria-label={`${copy.chat} ${friend.displayName}`}>
+      <header className="friends-conversation-head">
+        <button type="button" className="friends-icon-button friends-back" onClick={onClose} aria-label={copy.back}><ArrowLeft size={21} /></button>
+        <div><h2>{friend.displayName}</h2><span>{copy.friends}</span></div>
+        <button type="button" className="friends-icon-button friends-close" onClick={onClose} aria-label={copy.close}><X size={18} /></button>
+      </header>
+      {error ? <div className="friends-error" role="alert">{error}<button type="button" onClick={() => setRetry((value) => value + 1)}>{copy.retry}</button></div> : null}
+      <div className="friends-message-list" ref={listRef} role="log" aria-label={copy.chat} aria-busy={loading}
+        onScroll={(event) => { const element = event.currentTarget; nearBottomRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }}>
+        {loading ? <p className="friends-status">{copy.loadingMessages}</p> : messages.length === 0 && !error ? <p className="friends-status">{copy.chatEmpty}</p> : null}
+        {messages.map((message, index) => {
+          const mine = message.fromUser === userId;
+          const previous = messages[index - 1];
+          const showTime = !previous || Date.parse(message.createdAt) - Date.parse(previous.createdAt) > 5 * 60 * 1000;
+          const avatar = mine ? userAvatar : friend.avatar;
+          return (
+            <div className="friends-message-group" key={message.id}>
+              {showTime ? <time className="friends-message-time" dateTime={message.createdAt}>{formatTime(message.createdAt, en, true)}</time> : null}
+              <div className={`friends-message ${mine ? 'is-mine' : ''}`}>
+                <span className="friends-contact-avatar" style={{ background: tint(mine ? userId : friend.id) }}>
+                  {avatar ? <img src={avatar} alt="" /> : initial(mine ? userName : friend.displayName)}
+                </span>
+                <div className="friends-bubble">{message.body}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <form className="friends-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>
+        <textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder={copy.messagePlaceholder}
+          aria-label={copy.messagePlaceholder} maxLength={1000} rows={3}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
+              event.preventDefault(); void send();
+            }
+          }} />
+        <div className="friends-composer-footer"><span>{copy.sendHint}</span>
+          <button type="submit" className="friends-primary" disabled={sending || !draft.trim()}><Send size={14} />{copy.send}</button>
         </div>
-      ) : null}
+      </form>
     </section>
   );
 }
