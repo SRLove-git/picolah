@@ -30,7 +30,12 @@ export async function searchCatalog(options: {
   const allowed = [...MARKETS[market].platformIds, 'official'];
   const filters = directive.platformIds;
   const unsupported = [...new Set([...directive.unsupported, ...filters.filter((id) => !allowed.includes(id))])];
-  const products = target ? candidates(target, await listProducts()) : [];
+  const catalog = target ? await listProducts() : [];
+  // A catalog title is already an unambiguous identity. The generic model
+  // parser can misread suffixes such as "Pro 256GB" or "Balance 530".
+  const titleKey = (text: string) => normalizeSearchLanguage(text).normalize('NFKC').toLowerCase().replace(/[\s\p{P}]/gu, '');
+  const exactTitles = catalog.filter((product) => titleKey(product.name) === titleKey(message));
+  const products = exactTitles.length ? exactTitles : target ? candidates(target, catalog) : [];
   const eligibleRows = await db.all<{ id: string }>(
     "SELECT id FROM offers WHERE country = ? AND source NOT IN ('seed', 'picolah-mock')",
     [market],

@@ -82,6 +82,20 @@ test('unknown model does not substitute a nearby model or trigger live fallback'
   assert.deepEqual(result.comparison.offers, []);
   assert.match(result.answer, /暂未收录/);
 });
+test('full catalog titles preserve product identity despite generic model parsing', async () => {
+  for (const [name, id] of [
+    ['iPhone 16 Pro 256GB', 'iphone-16-pro-256'],
+    ['Samsung Galaxy S24 Ultra 256GB', 'galaxy-s24-ultra'],
+    ['Xiaomi 14T Pro 512GB', 'xiaomi-14t-pro'],
+    ['New Balance 530 复古跑鞋', 'new-balance-530'],
+    ['Soundcore Liberty 4 NC 降噪豆', 'soundcore-liberty-4-nc'],
+  ]) {
+    const result = await ask(name);
+    assert.equal(result.comparison.product?.id, id);
+    assert.deepEqual(result.comparison.alternatives, []);
+    assert.deepEqual(result.comparison.offers, []);
+  }
+});
 test('missing imported fees and ratings retain unknown status', async () => {
   await realQuotes();
   await db.run("UPDATE offers SET shipping_fee = 0, rating = 0, reviews = 0, landed_price_confidence = 'estimated' WHERE product_id = 'sony-wh1000xm5'");
