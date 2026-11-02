@@ -16,6 +16,7 @@ attribute vec2 aPosition;
 attribute vec2 aUV;
 uniform vec4 uPose;
 uniform vec4 uDetail;
+uniform vec4 uHands;
 varying vec2 vUV;
 vec2 turn(vec2 p, vec2 pivot, float angle) {
   float c = cos(angle), s = sin(angle);
@@ -47,6 +48,8 @@ void main() {
   p.x = 400.0 + (p.x - 400.0) * (1.0 - uPose.z * 0.5);
   p = turn(p, vec2(400.0, 774.0), uPose.w);
   p.y += uPose.y;
+  p += uHands.xy * spot(aPosition, vec2(265.0, 426.0), vec2(95.0, 90.0));
+  p += uHands.zw * spot(aPosition, vec2(380.0, 447.0), vec2(95.0, 90.0));
   // Extra transparent space above/below the art accommodates hops and ears.
   gl_Position = vec4(p.x / 768.0 * 2.0 - 1.0, 1.0 - (p.y + 80.4) / 964.8 * 2.0, 0.0, 1.0);
   vUV = aUV;
@@ -104,7 +107,7 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    const uniforms = Object.fromEntries(['uPose', 'uDetail', 'uFrom', 'uTo', 'uEyes', 'uMix', 'uBlink'].map((name) => [name, gl.getUniformLocation(program, name)]));
+    const uniforms = Object.fromEntries(['uPose', 'uDetail', 'uHands', 'uFrom', 'uTo', 'uEyes', 'uMix', 'uBlink'].map((name) => [name, gl.getUniformLocation(program, name)]));
     const position = gl.getAttribLocation(program, 'aPosition');
     const uv = gl.getAttribLocation(program, 'aUV');
 
@@ -191,6 +194,7 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniform4f(uniforms.uPose, pose.head, pose.lift, pose.stretch, pose.lean);
         gl.uniform4f(uniforms.uDetail, pose.ears, pose.chew, pose.bag, pose.breath);
+        gl.uniform4f(uniforms.uHands, pose.handLX, pose.handLY, pose.handRX, pose.handRY);
         gl.uniform1i(uniforms.uFrom, 0);
         gl.uniform1i(uniforms.uTo, 1);
         gl.uniform1i(uniforms.uEyes, 2);

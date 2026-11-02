@@ -15,8 +15,10 @@ try {
   const variants = await page.evaluate(() => window.variants);
   const selected = process.argv.slice(2), manifest = {};
   for (const { id } of variants.filter(v => !selected.length || selected.includes(v.id))) {
-    for (const movement of ['alive', 'walk', 'kick-left', 'kick-right']) {
-      if (id === 'sleep' || id === 'snack' || id === 'reach' || id === 'wave') { if (movement !== 'alive') continue; }
+    const movements = id === 'wave' ? ['alive', 'play', 'wake']
+      : ['sleep', 'snack', 'reach'].includes(id) ? ['alive']
+      : ['alive', 'walk', 'kick-left', 'kick-right', ...(id === 'idle' ? [] : ['pet', 'feed', 'rest', 'wake', 'play'])];
+    for (const movement of movements) {
       const key = movement === 'alive' ? id : `${id}-${movement}`;
       const result = await page.evaluate(([id, movement]) => window.bake(id, movement), [id, movement]);
       for (const [i, frame] of result.frames.entries()) {

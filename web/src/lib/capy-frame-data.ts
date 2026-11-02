@@ -22,13 +22,21 @@ export function frameKey(state: CapyPlayState, worn: CapyAccessoryId[]) {
   const clothing = worn.find(id => CAPY_CLOTHING_IDS.includes(id as CapyClothingId));
   const base = art.variant === 'dressed' ? `dressed-${clothing}` : art.variant === 'shopping' ? `shopping${clothing ? `-${clothing}` : ''}` : art.variant;
   const moving = base === 'idle' || art.variant === 'dressed' || art.variant === 'shopping';
-  const suffix = !moving ? '' : state.actor.kick >= 0 ? `-kick-${state.ball.x < state.actor.x ? 'left' : 'right'}` : state.actor.walk > .15 ? '-walk' : '';
+  // Clothing chooses the body, never the action. Each outfit has its own
+  // relaxed paws, feeding, happy wave, stretch and closed-eye sleep sequence.
+  const reaction = state.mode === 'dance' ? 'play' : state.mode === 'bubbles' ? 'wake' : state.mode ? ''
+    : state.action === 'outfit' ? 'play' : state.action === 'idle' ? '' : state.action;
+  const dressed = art.variant === 'dressed' || art.variant === 'shopping';
+  const suffix = reaction && (dressed || (base === 'wave' && ['wake', 'play'].includes(reaction))) ? `-${reaction}`
+    : !moving ? '' : state.actor.kick >= 0 ? `-kick-${state.ball.x < state.actor.x ? 'left' : 'right'}` : state.actor.walk > .15 ? '-walk' : '';
   return { key: `${base}${suffix}`, base, art };
 }
 export function clipFrame(clip: Clip, state: CapyPlayState, key: string, reduced = false) {
   if (reduced) return Math.min(8, clip.frames.length - 1);
   let phase = key.includes('-kick-') ? Math.max(0, Math.min(.999, state.actor.kick / .65))
-    : key.endsWith('-walk') ? state.actor.gait / (Math.PI * 2) % 1 : state.time / clip.duration % (clip.pingPong ? 2 : 1);
+    : key.endsWith('-walk') ? state.actor.gait / (Math.PI * 2) % 1
+    : !clip.loop && !state.mode ? Math.max(0, Math.min(.999, state.actionTime / clip.duration))
+    : state.time / clip.duration % (clip.pingPong ? 2 : 1);
   if (phase > 1) phase = 2 - phase;
   return Math.min(clip.frames.length - 1, Math.floor(phase * clip.frames.length));
 }

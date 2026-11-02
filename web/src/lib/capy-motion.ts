@@ -4,6 +4,7 @@ export interface CapyMotion { action: CapyAction; sequence: number; playing: boo
 export interface CapyPose {
   head: number; lift: number; stretch: number; lean: number;
   ears: number; chew: number; bag: number; breath: number; blink: number;
+  handLX: number; handLY: number; handRX: number; handRY: number;
 }
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t); };
@@ -19,6 +20,8 @@ export function capyPose(action: CapyAction, time: number, clock: number): CapyP
     chew: 0, bag: Math.sin(clock * 1.05 - 0.5) * 0.6,
     breath: breathing * 0.006,
     blink: blinkAt(clock % 5.8, 3.1) + blinkAt(clock % 11.6, 9.2),
+    handLX: Math.sin(clock * .8) * 1.5, handLY: breathing * 1.8,
+    handRX: Math.sin(clock * .8 - .8) * 1.5, handRY: breathing * 1.8,
   };
   const active = envelope(time, 3.9);
   if (action === 'pet') {
@@ -26,11 +29,17 @@ export function capyPose(action: CapyAction, time: number, clock: number): CapyP
     pose.lean = -0.018 * active;
     pose.ears += Math.sin(time * 11) * 0.14 * active;
     pose.stretch = -0.016 * active;
+    pose.handLX -= 8 * active; pose.handLY -= 10 * active;
+    pose.handRX += Math.sin(time * 7) * 18 * active;
+    pose.handRY -= (14 + Math.sin(time * 7 - .5) * 8) * active;
   } else if (action === 'feed') {
     pose.head += (0.025 + Math.sin(time * 6) * 0.018) * active;
     pose.chew = Math.sin(time * 17) * 8 * active;
     pose.bag += Math.sin(time * 8) * 3 * active;
     pose.ears += Math.sin(time * 6 + 1) * 0.06 * active;
+    pose.handLX += 12 * active; pose.handRX -= 10 * active;
+    pose.handLY -= (24 + Math.sin(time * 8) * 4) * active;
+    pose.handRY -= (22 + Math.sin(time * 8 - .3) * 4) * active;
   } else if (action === 'play' || action === 'outfit') {
     // Anticipate, hop, land, then a smaller second hop and a settling bag swing.
     const hop = (start: number, duration: number, height: number) => {
@@ -46,6 +55,10 @@ export function capyPose(action: CapyAction, time: number, clock: number): CapyP
     pose.head += Math.sin(time * 4.2 + 0.4) * 0.05 * active;
     pose.ears += Math.sin(time * 12) * 0.17 * active;
     pose.bag += Math.sin(time * 7 - 0.7) * 8 * active;
+    pose.handLX += Math.sin(time * 5) * 22 * active;
+    pose.handRX -= Math.sin(time * 5) * 22 * active;
+    pose.handLY -= (14 + Math.sin(time * 5) * 12) * active;
+    pose.handRY -= (14 - Math.sin(time * 5) * 12) * active;
   } else if (action === 'rest') {
     const settle = smooth(time / 0.5);
     pose.head = (0.065 + breathing * 0.012) * settle;
@@ -54,11 +67,15 @@ export function capyPose(action: CapyAction, time: number, clock: number): CapyP
     pose.ears = 0;
     pose.bag = breathing * 0.5;
     pose.blink = 0;
+    pose.handLX = 7 * settle; pose.handRX = -7 * settle;
+    pose.handLY = pose.handRY = (12 + breathing * 2) * settle;
   } else if (action === 'wake') {
     const stretch = Math.sin(Math.min(time / 1.5, 1) * Math.PI) * active;
     pose.stretch = stretch * 0.035;
     pose.head -= stretch * 0.055;
     pose.ears += Math.sin(time * 9) * 0.1 * active;
+    pose.handLX -= stretch * 25; pose.handRX += stretch * 30;
+    pose.handLY -= stretch * 42; pose.handRY -= stretch * 48;
   }
   return pose;
 }

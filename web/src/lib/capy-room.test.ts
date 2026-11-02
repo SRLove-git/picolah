@@ -2,8 +2,33 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCapyRoomState, createCapyRoomStore, EMPTY_CAPY_ROOM, roomPreferences, transitionCapyRoom, type CapyRoomSnapshot } from '../../shared/capy-room';
 import { connectCapyRoom, type CapyRoomSyncStatus } from './capy-room-sync';
+import { capySleepPeriod, scheduledCapySleep } from './capy-sleep';
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
+
+test('device-local sleep spans midnight and changes at 22:00 and 07:00', () => {
+  const local = (day: number, hour: number, minute = 0) => new Date(2026, 10, day, hour, minute);
+  const awake = createCapyRoomState();
+  assert.equal(scheduledCapySleep(local(2, 21, 59), EMPTY_CAPY_ROOM, awake), null);
+  assert.deepEqual(scheduledCapySleep(local(2, 22), EMPTY_CAPY_ROOM, awake), { type: 'AUTO_SLEEP' });
+  assert.equal(capySleepPeriod(local(3, 0)).start, local(2, 22).getTime());
+  const sleeping = transitionCapyRoom(awake, { type: 'AUTO_SLEEP' });
+  assert.equal(scheduledCapySleep(local(3, 6, 59), EMPTY_CAPY_ROOM, sleeping), null);
+  assert.deepEqual(scheduledCapySleep(local(3, 7), EMPTY_CAPY_ROOM, sleeping), { type: 'AUTO_WAKE' });
+  assert.deepEqual(roomPreferences(transitionCapyRoom(sleeping, { type: 'AUTO_WAKE' })), { sleeping: false, evening: false });
+});
+
+test('a manual wake survives midnight and reload but the next night sleeps again', () => {
+  const local = (day: number, hour: number) => new Date(2026, 10, day, hour);
+  const saved = { ...EMPTY_CAPY_ROOM, evening: true, revision: 2, updatedAt: local(2, 23).toISOString() };
+  const awake = createCapyRoomState(saved);
+  assert.equal(scheduledCapySleep(local(3, 2), saved, awake), null);
+  assert.deepEqual(scheduledCapySleep(local(3, 7), saved, awake), { type: 'AUTO_WAKE' });
+  assert.deepEqual(scheduledCapySleep(local(3, 22), saved, awake), { type: 'AUTO_SLEEP' });
+  assert.equal(scheduledCapySleep(local(2, 23), EMPTY_CAPY_ROOM, awake, local(2, 23).getTime()), null, 'a local click wins while its save is in flight');
+  const nap = { ...saved, sleeping: true, updatedAt: local(3, 14).toISOString() };
+  assert.equal(scheduledCapySleep(local(3, 15), nap, createCapyRoomState(nap)), null);
+});
 
 test('actions interrupt, late completions are ignored, sleep and toys persist until another event', () => {
   let state = transitionCapyRoom(createCapyRoomState(), { type: 'FEED' });

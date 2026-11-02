@@ -1,14 +1,9 @@
 import { useState } from 'react';
 import type { CapyClothingId } from '../../shared/capybara';
 import { CapyClothedArt } from './CapyClothedArt';
-import idle from '../assets/picolah-capybara-v2.webp';
-import happy from '../assets/capy-expressions-v3/happy.webp';
-import snack from '../assets/capy-expressions-v3/snack.webp';
-import playful from '../assets/capy-expressions-v3/playful.webp';
-import sleepy from '../assets/capy-expressions-v3/sleepy.webp';
-
-export type CapyExpression = 'idle' | 'happy' | 'snack' | 'playful' | 'sleepy';
-export const CAPY_EXPRESSION_ART: Record<CapyExpression, string> = { idle, happy, snack, playful, sleepy };
+import { CAPY_EXPRESSION_ART, type CapyExpression } from '../lib/capy-face';
+export { CAPY_EXPRESSION_ART, type CapyExpression } from '../lib/capy-face';
+const idle = CAPY_EXPRESSION_ART.idle;
 
 /** Keep the previous frame visible until the next expression has loaded. */
 export function CapyExpressionArt({ expression, clothing }: { expression?: CapyExpression; clothing?: CapyClothingId }) {

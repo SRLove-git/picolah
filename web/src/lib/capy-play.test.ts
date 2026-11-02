@@ -2,9 +2,32 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { frameKey, clipFrame, manifest } from './capy-frame-data';
 import { CAPY_CLOTHING_IDS } from '../../shared/capybara';
+import { capyFace } from './capy-face';
 import { createCapyImagePuppet as createCapyModel, CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-image-puppet';
 import { CAPY_ACTION_ART } from './capy-action-art';
 import { blowCapyBubbles, createCapyPlayState, pushCapySwing, resolveCapyContacts, setCapyGame, setCapyPlayAction, stepCapyPlay, type CapyPlayState } from './capy-play';
+
+test('every outfit retains a distinct expressive sleep, feeding, wave and wake clip', () => {
+  const state = createCapyPlayState();
+  for (const clothing of CAPY_CLOTHING_IDS) for (const shopping of [false, true]) {
+    const worn = shopping ? [clothing, 'phone' as const] : [clothing];
+    const keys = new Set<string>();
+    for (const action of ['idle', 'pet', 'feed', 'rest', 'wake', 'play'] as const) {
+      setCapyPlayAction(state, action);
+      const { key } = frameKey(state, worn); keys.add(key);
+      const clip = manifest[key]; assert.ok(clip, `${key} must exist`);
+      if (['pet', 'feed', 'wake', 'play'].includes(action)) {
+        state.actionTime = 0; assert.equal(clipFrame(clip, state, key), 0);
+        state.actionTime = 4.2; assert.equal(clipFrame(clip, state, key), clip.frames.length - 1);
+      }
+    }
+    assert.equal(keys.size, 6);
+  }
+  assert.equal(capyFace('rest', null), 'sleepy');
+  assert.equal(capyFace('feed', null), 'snack');
+  assert.equal(capyFace('pet', null), 'happy');
+  assert.equal(capyFace('play', 'dance'), 'playful');
+});
 
 function rigSimulation(state: CapyPlayState, seconds: number) {
   let highest = 0;

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { CapyView } from '../../shared/capybara';
 import type { CapyExpression } from './CapyExpressionArt';
 import type { CapyAction as Action } from '../lib/capy-motion';
+import { capyRoomAction } from '../../shared/capy-room';
+import { useCapyRoom } from '../lib/use-capy-room';
 import { CapyAvatar } from './CapyAvatar';
 import { Capybara } from './PicolahMark';
 import { CapyHabitat, CapyHabitatHud, type OpenCapyPanel } from './CapyHabitat';
@@ -64,17 +66,17 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
   const { i18n } = useTranslation();
   const en = i18n.language.startsWith('en');
   const copy = en ? COPY.en : COPY.zh;
-  const [reaction, setReaction] = useState<{ action: Action; variation: number }>({ action: 'idle', variation: 0 });
+  const { store, state: roomState } = useCapyRoom();
+  const reaction = { action: capyRoomAction(roomState), variation: roomState.sequence };
   const [keyboard, setKeyboard] = useState(false);
   const [paused, setPaused] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [evening, setEvening] = useState(false);
+  const evening = roomState.evening;
   const [napReady, setNapReady] = useState(false);
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const timer = useRef<number | undefined>(undefined);
-  const repetitions = useRef<Partial<Record<Action, number>>>({});
   const follow = useRef<HTMLSpanElement>(null);
-  const expression = EXPRESSION[reaction.action];
+  const expression = reaction.action === 'pet' && reaction.variation % 3 === 2 ? 'playful' : EXPRESSION[reaction.action];
   const sleeping = expression === 'sleepy';
   // Keep the dressed, breathing rig while resting: the curled illustration
   // has no clothing layers and would otherwise make the selected outfit vanish.
@@ -88,15 +90,19 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
 
   const react = useCallback((action: Action, pointer = true) => {
     clearTimers();
-    const variation = repetitions.current[action] ?? 0;
-    repetitions.current[action] = variation + 1;
-    setReaction({ action, variation });
+    const events = { idle: 'PUT_AWAY', pet: 'PET', feed: 'FEED', play: 'CELEBRATE', rest: 'SLEEP', wake: 'WAKE', outfit: 'DRESS' } as const;
+    store.send({ type: events[action] });
     setKeyboard(!pointer);
     if (follow.current) follow.current.style.transform = '';
-    if (action !== 'rest') {
-      timer.current = window.setTimeout(() => setReaction({ action: 'idle', variation: 0 }), 4200);
+  }, [clearTimers, store]);
+
+  useEffect(() => {
+    clearTimers();
+    if (reaction.action !== 'rest' && reaction.action !== 'idle') {
+      timer.current = window.setTimeout(() => store.send({ type: 'CLIP_FINISHED', sequence: reaction.variation }), 4200);
     }
-  }, [clearTimers]);
+    return clearTimers;
+  }, [reaction.action, reaction.variation, clearTimers, store]);
 
   useEffect(() => {
     function visibility() {
@@ -104,13 +110,13 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
       setHidden(isHidden);
       if (isHidden) {
         clearTimers();
-        setReaction((current) => current.action === 'rest' ? current : { action: 'idle', variation: 0 });
+        store.send({ type: 'CLIP_FINISHED', sequence: store.getSnapshot().sequence });
       }
     }
     visibility();
     document.addEventListener('visibilitychange', visibility);
     return () => { clearTimers(); document.removeEventListener('visibilitychange', visibility); };
-  }, [clearTimers]);
+  }, [clearTimers, store]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -149,14 +155,14 @@ export function CapyCompanion({ view, size = 300, compact = false, outfitVersion
 
   return <div className={`pc-companion ${compact ? 'is-compact' : ''} ${room ? 'is-room' : ''}`}
     data-expression={expression} data-action={reaction.action} data-stage={view?.stage.id}
-    data-night={room && night} data-napping={napping} data-dressed-nap={dressedNap} data-still={paused || keyboard} data-paused={hidden || roomMenuOpen}>
+    data-night={night} data-napping={napping} data-dressed-nap={dressedNap} data-still={paused || keyboard} data-paused={hidden || roomMenuOpen}>
     <p className={`pc-companion-speech ${compact ? 'pc-hero-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">
       {compact || (room && reaction.action === 'idle') ? copy.short[reaction.action] : lines[reaction.variation % lines.length]}
     </p>
     <div className="pc-companion-scene">
       {room && <>
         <CapyHabitat sleeping={sleeping} night={night} sequence={reaction.variation} onInteract={react} onOpenPanel={onOpenPanel}
-          onLight={(pointer) => { if (sleeping) { react('wake', pointer); setEvening(false); } else setEvening((value) => !value); }} />
+          onLight={(pointer) => { setKeyboard(!pointer); store.send({ type: 'TOGGLE_LIGHT' }); }} />
         {view && <CapyHabitatHud view={view} onOpenPanel={onOpenPanel} />}
       </>}
       {!compact && <span className="pc-companion-mood"><i aria-hidden="true" />{copy.moods[expression]}</span>}

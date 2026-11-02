@@ -8,11 +8,11 @@ export interface CapyRoomSnapshot {
 export type CapyRoomChanges = Partial<Pick<CapyRoomSnapshot, 'sleeping' | 'evening'>>;
 export type CapyToy = 'ball' | 'bubbles' | 'swing' | 'dance';
 export type CapyActivity =
-  | { type: 'idle' | 'petting' | 'eating' | 'sleeping' | 'waking' | 'dressing' }
+  | { type: 'idle' | 'petting' | 'eating' | 'sleeping' | 'waking' | 'dressing' | 'celebrating' }
   | { type: 'playing'; toy: CapyToy };
 export interface CapyRoomState { activity: CapyActivity; evening: boolean; sequence: number }
 export type CapyRoomEvent =
-  | { type: 'PET' | 'FEED' | 'SLEEP' | 'WAKE' | 'DRESS' | 'PUT_AWAY' | 'TOGGLE_LIGHT' }
+  | { type: 'PET' | 'FEED' | 'SLEEP' | 'WAKE' | 'DRESS' | 'CELEBRATE' | 'PUT_AWAY' | 'TOGGLE_LIGHT' | 'AUTO_SLEEP' | 'AUTO_WAKE' }
   | { type: 'PLAY'; toy: CapyToy }
   | { type: 'INTERACT'; x?: number; y?: number }
   | { type: 'CLIP_FINISHED'; sequence: number };
@@ -31,18 +31,21 @@ export function transitionCapyRoom(state: CapyRoomState, event: CapyRoomEvent): 
     case 'FEED': return enter({ type: 'eating' });
     case 'SLEEP': return enter({ type: 'sleeping' });
     case 'WAKE': return enter({ type: 'waking' });
+    case 'AUTO_SLEEP': return enter({ type: 'sleeping' }, true);
+    case 'AUTO_WAKE': return enter({ type: 'waking' }, false);
     case 'PLAY': return enter({ type: 'playing', toy: event.toy });
     case 'PUT_AWAY': return enter({ type: 'idle' });
     case 'DRESS': return state.activity.type === 'sleeping' || state.activity.type === 'playing' ? state : enter({ type: 'dressing' });
+    case 'CELEBRATE': return enter({ type: 'celebrating' });
     case 'TOGGLE_LIGHT': return state.activity.type === 'sleeping' ? enter({ type: 'waking' }, false) : { ...state, evening: !state.evening };
     case 'INTERACT': return state.activity.type === 'playing' ? state : transitionCapyRoom(state, { type: 'PET' });
-    case 'CLIP_FINISHED': return event.sequence === state.sequence && ['petting', 'eating', 'waking', 'dressing'].includes(state.activity.type) ? enter({ type: 'idle' }) : state;
+    case 'CLIP_FINISHED': return event.sequence === state.sequence && ['petting', 'eating', 'waking', 'dressing', 'celebrating'].includes(state.activity.type) ? enter({ type: 'idle' }) : state;
   }
 }
-export function capyRoomAction(state: CapyRoomState) {
+export function capyRoomAction(state: CapyRoomState): 'idle' | 'pet' | 'feed' | 'rest' | 'wake' | 'outfit' | 'play' {
   switch (state.activity.type) {
     case 'petting': return 'pet'; case 'eating': return 'feed'; case 'sleeping': return 'rest';
-    case 'waking': return 'wake'; case 'dressing': return 'outfit'; case 'playing': return 'play'; default: return 'idle';
+    case 'waking': return 'wake'; case 'dressing': return 'outfit'; case 'playing': case 'celebrating': return 'play'; default: return 'idle';
   }
 }
 

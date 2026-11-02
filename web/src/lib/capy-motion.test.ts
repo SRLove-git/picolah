@@ -34,3 +34,12 @@ test('interrupting a hop starts exactly at the rendered pose and reaches the new
     assert.ok(Math.abs(blendCapyPose(airborne, sleeping, 1)[key] - sleeping[key]) < 1e-12);
   }
 });
+
+test('hands distinguish a feeding gesture, a wave, waking stretch and relaxed sleep', () => {
+  const idle = capyPose('idle', .7, 2), feed = capyPose('feed', .7, 2), wake = capyPose('wake', .7, 2), rest = capyPose('rest', .7, 2);
+  assert.ok(feed.handLY < idle.handLY - 18 && feed.handRY < idle.handRY - 18);
+  assert.ok(wake.handLY < feed.handLY && wake.handRY < feed.handRY);
+  assert.ok(wake.handLX < idle.handLX && wake.handRX > idle.handRX);
+  assert.ok(rest.handLY > 9 && rest.handRY > 9);
+  assert.ok(Math.abs(capyPose('pet', .7, 2).handRX - capyPose('pet', 1.2, 2).handRX) > 20);
+});

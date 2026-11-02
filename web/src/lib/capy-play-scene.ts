@@ -103,6 +103,15 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, store: CapyRoomSt
     // Whole-body dance placement is composited over the original animated frame.
     if (state.mode === 'dance' && !controls.reduced) ctx.rotate(Math.sin(state.time * 4) * .035 * state.actor.settled);
     player.draw(ctx, state, scale, controls.reduced); drawAccessories(); ctx.restore();
+    if (state.action === 'rest') {
+      ctx.save(); ctx.fillStyle = '#aa9bbb'; ctx.textAlign = 'center';
+      for (let i = 0; i < 3; i++) {
+        const drift = controls.reduced ? 0 : Math.sin(state.time * Math.PI / 2.4 - i * .7) * 3;
+        ctx.font = `600 ${12 + i * 3}px system-ui`;
+        ctx.fillText('z', p.x + scale * (.7 + i * .16), p.y - scale * (2.5 + i * .2) + drift);
+      }
+      ctx.restore();
+    }
     if (state.mode === 'ball') ball(); if (state.mode === 'bubbles') bubbles();
     frames++; if (reported !== state.contacts) { reported = state.contacts; onContact(state.contacts); } metrics();
   }
@@ -116,7 +125,12 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, store: CapyRoomSt
     frame = 0; if (!moving()) return;
     if (last) accumulator += Math.min((now - last) / 1000, .05); last = now;
     while (accumulator >= 1 / 60) {
-      stepCapyPlay(state, 1 / 60); player.update(state); contacts(); accumulator -= 1 / 60;
+      const actionTime = state.actionTime;
+      stepCapyPlay(state, 1 / 60); player.update(state);
+      // A cold atlas must not consume the gesture while the previous pose is
+      // still visible. Start its full reaction when the matching art is ready.
+      if (!state.mode && player.loading) state.actionTime = actionTime;
+      contacts(); accumulator -= 1 / 60;
       if (!state.mode && state.action !== 'idle' && state.action !== 'rest' && state.actionTime >= 4.2) complete();
     }
     render(); frame = requestAnimationFrame(tick);
@@ -125,7 +139,7 @@ export function createCapyPlayScene(canvas: HTMLCanvasElement, store: CapyRoomSt
     if (moving()) { if (staticTimer) stop(); if (!frame) frame = requestAnimationFrame(tick); }
     else {
       stop();
-      if (active() && controls.reduced && !state.mode && state.action !== 'idle' && state.action !== 'rest') {
+      if (active() && !player.loading && controls.reduced && !state.mode && state.action !== 'idle' && state.action !== 'rest') {
         const id = sequence; staticStarted = performance.now();
         staticTimer = setTimeout(() => { staticTimer = undefined; store.send({ type: 'CLIP_FINISHED', sequence: id }); }, Math.max(0, 4.2 - state.actionTime) * 1000);
       }

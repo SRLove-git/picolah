@@ -3,6 +3,7 @@ import type { CapyArtRig } from './capy-action-art';
 import type { CapyAccessoryId } from '../../shared/capybara';
 import type { CapyPlayState, Point3 } from './capy-play';
 import { CAPY_ART_UNIT, manifest, frameKey, clipFrame, type Clip, type CapyFrame } from './capy-frame-data';
+import { capyFace, CAPY_EXPRESSION_ART, createCapyFacePlate, type CapyExpression } from './capy-face';
 export { CAPY_ART_UNIT } from './capy-frame-data';
 const urls = import.meta.glob('../assets/capy-frames-v1/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 function posterFrame(rig: CapyArtRig): CapyFrame {
@@ -27,14 +28,26 @@ export function createCapyFramePlayer(changed: (available: boolean) => void) {
       entry.controller.abort(); entry.loaded?.bitmap.close(); cache.delete(key);
     }
   }
-  async function request(key: string, source: string, art: ReturnType<typeof capyArtwork>, clip?: Clip) {
+  async function request(key: string, source: string, art: ReturnType<typeof capyArtwork>, expression: CapyExpression, clip?: Clip) {
     const existing = cache.get(key);
     if (existing) { if (existing.loaded) select(existing.loaded); return; }
     const entry: Entry = { controller: new AbortController(), requested: Date.now() }; cache.set(key, entry); trim();
     try {
       const response = await fetch(source, { signal: entry.controller.signal });
       if (!response.ok) throw new Error('Missing clip');
-      const bitmap = await createImageBitmap(await response.blob());
+      let bitmap = await createImageBitmap(await response.blob());
+      if (!clip && expression !== 'idle' && art.variant !== 'sleep') {
+        // A missing atlas still shows the correct face, including clothed sleep.
+        let face: ImageBitmap | undefined;
+        try {
+          const mood = await fetch(CAPY_EXPRESSION_ART[expression], { signal: entry.controller.signal });
+          if (!mood.ok) throw new Error('Missing face');
+          face = await createImageBitmap(await mood.blob());
+          const plate = createCapyFacePlate(bitmap, face, face, expression, false); plate.draw(0);
+          const composed = await createImageBitmap(plate.canvas); bitmap.close(); bitmap = composed;
+        } catch { /* The original character remains available if both assets fail. */ }
+        finally { face?.close(); }
+      }
       if (disposed || entry.controller.signal.aborted) { bitmap.close(); return; }
       entry.loaded = { bitmap, clip, rig: art.rig, source: art.src, variant: art.variant, key };
       if (key === desired) select(entry.loaded);
@@ -42,7 +55,7 @@ export function createCapyFramePlayer(changed: (available: boolean) => void) {
     } catch {
       if (disposed || entry.controller.signal.aborted) return;
       // Keep the matching original pose functional if a frame sheet cannot load.
-      if (clip && key === desired) { desired = `poster:${art.src}`; void request(desired, art.src, art); }
+      if (clip && key === desired) { desired = `poster:${key}`; void request(desired, art.src, art, expression); }
       // Leave a failed entry briefly to avoid retrying a broken URL every frame.
       entry.requested = Date.now();
       if (!clip && key === desired) { unavailable = true; changed(false); }
@@ -67,11 +80,11 @@ export function createCapyFramePlayer(changed: (available: boolean) => void) {
     outfit(ids: CapyAccessoryId[]) { worn = ids; },
     update(state: CapyPlayState) {
       lastState = state; const { key, art } = frameKey(state, worn);
-      const entry = cache.get(key), pendingPoster = desired === `poster:${art.src}`;
+      const entry = cache.get(key), pendingPoster = desired === `poster:${key}`;
       if (pendingPoster && entry && Date.now() - entry.requested < 10000) return;
       if (entry && !entry.loaded && Date.now() - entry.requested > 10000) { entry.controller.abort(); cache.delete(key); }
       desired = key;
-      void request(key, urls[`../assets/capy-frames-v1/${key}.webp`] ?? art.src, art, manifest[key]);
+      void request(key, urls[`../assets/capy-frames-v1/${key}.webp`] ?? art.src, art, capyFace(state.action, state.mode), manifest[key]);
     },
     metadata(state: CapyPlayState, reduced: boolean) {
       if (!current) return null;

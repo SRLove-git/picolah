@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Keep ordinary UI cases in daytime without changing the epoch used by SQLite.
+// capy-night.spec.ts supplies its own timezone and clock for sleep boundaries.
+const daylightOffset = 12 - new Date().getUTCHours();
+const daylightTimezone = daylightOffset === 0 ? 'UTC' : `Etc/GMT${daylightOffset > 0 ? '-' : '+'}${Math.abs(daylightOffset)}`;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -11,6 +16,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],
     channel: 'chrome',
+    timezoneId: daylightTimezone,
   },
   webServer: {
     command: 'npm run seed && npm run start',

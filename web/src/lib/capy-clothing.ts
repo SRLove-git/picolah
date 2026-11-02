@@ -16,4 +16,4 @@ export const CAPY_CLOTHING_ART: Record<CapyClothingId, string> = {
 
 /** Feather only the facial features. The neck, silhouette, garment and limbs
  * remain one continuous painted surface in both SVG and WebGL rendering. */
-export const CAPY_CLOTHING_FACE = { x: 370, y: 216, rx: 178, ry: 140, solid: 0.84 } as const;
+export { CAPY_CLOTHING_FACE } from './capy-face';

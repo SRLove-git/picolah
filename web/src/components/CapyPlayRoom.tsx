@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { Armchair, Bubbles, CircleDot, Leaf, Moon, Music2, NotebookPen, Pause, Play, Shirt, Sparkles, Sun, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import type { CapyAction } from '../lib/capy-motion';
 import type { CapyGame } from '../lib/capy-play';
 import type { createCapyPlayScene } from '../lib/capy-play-scene';
 import { capyArtwork, capyArtState } from '../lib/capy-action-art';
+import { CAPY_CLOTHING_FACE, CAPY_EXPRESSION_ART, capyFace } from '../lib/capy-face';
 import { wornArtwork } from './CapyAccessoryArt';
 import { CapyHabitat, CapyHabitatHud, type OpenCapyPanel } from './CapyHabitat';
 import './capy-companion.css';
@@ -25,10 +26,17 @@ const TOYS = [
 function CapyRoomStill({ view, action, game }: { view: CapyView; action: CapyAction; game: CapyGame | null }) {
   const art = capyArtwork(view.worn.map(item => item.id), capyArtState(action, game));
   const scale = art.rig.scale;
+  const mask = useId(), gradient = `${mask}-gradient`, face = capyFace(action, game);
+  const { x, y, rx, ry, solid } = CAPY_CLOTHING_FACE;
   return <svg viewBox="0 0 768 804" width="360" className="pc-play-still" aria-hidden="true"
     data-art={art.variant === 'dressed' || art.variant === 'shopping' ? 'fitted-character' : 'action-character'} data-art-state={art.variant}>
     <g transform={`translate(400 774) scale(${scale}) translate(-400 -774)`}>
+      <defs>
+        <radialGradient id={gradient}><stop offset={`${solid * 100}%`} stopColor="white" /><stop offset="100%" stopColor="white" stopOpacity="0" /></radialGradient>
+        <mask id={mask}><ellipse cx={x} cy={y} rx={rx} ry={ry} fill={`url(#${gradient})`} /></mask>
+      </defs>
       <image href={art.src} width="768" height="804" />
+      {art.variant !== 'sleep' && face !== 'idle' && <image href={CAPY_EXPRESSION_ART[face]} width="768" height="804" mask={`url(#${mask})`} />}
       {wornArtwork(view.worn).filter(layer => !layer.clothing).map(({ id, src, layout }) => {
         const x = layout.x + (id === 'watch' ? art.rig.hands[0][0] - 265 : 0);
         const y = layout.y + (id === 'watch' ? art.rig.hands[0][1] - 426 : scale < 1 ? art.rig.headY - 355 : 0);

@@ -3,6 +3,7 @@ import type { CapyAccessoryId } from '../../shared/capybara';
 import { capyPose, blendCapyPose } from './capy-motion';
 import type { CapyPlayState, Point3 } from './capy-play';
 import { CAPY_ACTION_ART, capyArtwork, capyArtState, type CapyArtRig, type CapyArtState } from './capy-action-art';
+import { capyFace, CAPY_EXPRESSION_ART, createCapyFacePlate, type CapyExpression } from './capy-face';
 export { CAPY_ORIGINAL_ART, CAPY_PUPPET_CLOTHES } from './capy-action-art';
 
 export interface PuppetLayer {
@@ -30,13 +31,14 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
   board.position.z = .3;
   const hands = [new T.Object3D(), new T.Object3D()], feet = [new T.Object3D(), new T.Object3D()];
   [...hands, ...feet].forEach(p => board.add(p));
-  type Record = { mesh: T.Mesh<T.BufferGeometry, T.MeshBasicMaterial>; points: Control[]; rig: CapyArtRig };
+  type Record = { mesh: T.Mesh<T.BufferGeometry, T.MeshBasicMaterial>; points: Control[]; rig: CapyArtRig; face?: ReturnType<typeof createCapyFacePlate> };
   let records: Record[] = [], outgoing: Record[] = [];
   const textures = new Map<string, Promise<T.Texture>>();
   const loaded = new Set<T.Texture>();
   const loader = typeof document === 'undefined' ? null : new T.TextureLoader();
   let disposed = false, ready = false, artworkVersion = 0, outfitKey = '', retryAt = 0, motion = true;
   let art = capyArtwork([], 'idle'), previousArt = art, artAt = -1, artState: CapyArtState = 'idle';
+  let expression: CapyExpression = 'idle';
   let wornIds: CapyAccessoryId[] = [], wornLayers: PuppetLayer[] = [];
   let pawControls = [...art.rig.hands, ...art.rig.feet].map(([x, y]) => control(x, y, art.rig));
   let previousPaws = pawControls;
@@ -121,6 +123,7 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       position.needsUpdate = true;
       mesh.material.opacity = outgoing.length ? (outgoing.some(record => record.mesh === mesh) ? 1 - fade : fade) : 1;
     }
+    for (const record of records) if (record.face) { record.face.draw(pose.blink); record.mesh.material.map!.needsUpdate = true; }
     [...hands, ...feet].forEach((paw, i) => {
       deform(pawControls[i], paw.position, art.rig);
       if (fade < 1) { deform(previousPaws[i], oldPaw, previousArt.rig); paw.position.lerp(oldPaw, 1 - fade); }
@@ -130,13 +133,20 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
   }
   async function updateArtwork() {
     const next = capyArtwork(wornIds, artState), accessories = wornLayers.filter(layer => !layer.clothing);
-    const key = JSON.stringify([next.src, accessories]);
+    const key = JSON.stringify([next.src, expression, accessories]);
     if (key === outfitKey || Date.now() < retryAt) return;
     outfitKey = key; const version = ++artworkVersion;
     try {
+      const mood = expression;
       const maps = loader ? await Promise.all([next.src, ...accessories.map(a => a.src)].map(texture)) : [];
+      const faces = loader ? await Promise.all([CAPY_EXPRESSION_ART[mood], CAPY_EXPRESSION_ART.sleepy].map(texture)) : [];
       if (disposed || version !== artworkVersion) return;
-      const replacements = maps.map((map, i) => makeLayer(i ? accessories[i - 1] : null, map, next.rig));
+      const replacements: Record[] = maps.map((map, i) => makeLayer(i ? accessories[i - 1] : null, map, next.rig));
+      if (replacements[0]) {
+        const face = createCapyFacePlate(maps[0].image as HTMLImageElement, faces[0].image as HTMLImageElement, faces[1].image as HTMLImageElement, mood, next.variant === 'sleep');
+        face.draw(0); const map = new T.CanvasTexture(face.canvas); map.colorSpace = T.SRGBColorSpace;
+        loaded.add(map); replacements[0].face = face; replacements[0].mesh.material.map = map;
+      }
       remove(outgoing); outgoing = records; records = replacements;
       previousArt = art; previousPaws = pawControls;
       art = next; artAt = ready ? poseTime : poseTime - 1;
@@ -173,14 +183,14 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
     },
     pose(state: CapyPlayState, _swingGrip?: Point3[]) {
       const a = state.actor, t = state.time;
-      artState = capyArtState(state.action, state.mode); void updateArtwork();
+      artState = capyArtState(state.action, state.mode); expression = capyFace(state.action, state.mode); void updateArtwork();
       if (poseTime === t) { root.updateMatrixWorld(true); return; }
       const dt = poseTime < 0 ? 1 : Math.min(.05, t - poseTime); poseTime = t;
       const nextClip = `${state.action}:${state.mode ?? ''}`;
       if (clip !== nextClip) { clip = nextClip; previous = pose; clipAt = t; }
       const next = capyPose(state.mode ? 'idle' : state.action, state.actionTime, t);
       // Fixed artwork cannot turn around. A small lean and grounded foot cycle
-      // communicate travel while its original face stays visible and unchanged.
+      // communicate travel while the original image keeps facing the viewer.
       next.lean += Math.sin(a.gait) * .012 * a.walk;
       next.bag += Math.sin(a.gait - .4) * 2 * a.walk;
       next.head += T.MathUtils.clamp(a.turn * .008, -.028, .028);
@@ -196,15 +206,21 @@ export function createCapyImagePuppet(onArtwork?: (ready: boolean) => void) {
       pose = blendCapyPose(previous, next, (t - clipAt) / .18);
       headCos = Math.cos(pose.head); headSin = Math.sin(pose.head); earCos = Math.cos(pose.ears); earSin = Math.sin(pose.ears);
       leanCos = Math.cos(pose.lean); leanSin = Math.sin(pose.lean);
-      targetHands.forEach(p => p.set(0, 0, 0)); targetFeet.forEach(p => p.set(0, 0, 0));
+      targetHands[0].set(pose.handLX * UNIT, -pose.handLY * UNIT, 0);
+      targetHands[1].set(pose.handRX * UNIT, -pose.handRY * UNIT, 0);
+      targetFeet.forEach(p => p.set(0, 0, 0));
       for (let i = 0; i < 2; i++) {
         const phase = a.gait + i * Math.PI;
         targetFeet[i].set(Math.sin(phase) * .022 * a.walk, Math.max(0, Math.sin(phase)) * .065 * a.walk, 0);
       }
       if (art.variant === 'wave') {
-        targetHands[1].set(Math.sin(t * 5) * .04, Math.sin(t * 5 - .6) * .035, 0);
+        targetHands[1].x += Math.sin(t * 5) * .085; targetHands[1].y += Math.sin(t * 5 - .6) * .055;
       } else if (art.variant === 'snack') {
-        targetHands.forEach(p => p.set(0, Math.sin(t * 17) * .008, 0));
+        targetHands.forEach(p => { p.y += Math.sin(t * 17) * .012; });
+      }
+      if (state.mode === 'dance') {
+        targetHands[0].x += Math.sin(t * 4) * .07; targetHands[1].x -= Math.sin(t * 4) * .07;
+        targetHands[0].y += (.5 + Math.sin(t * 4)) * .04; targetHands[1].y += (.5 - Math.sin(t * 4)) * .04;
       }
       root.updateMatrixWorld(true);
       if (state.mode === 'ball' && a.kick >= 0) {
