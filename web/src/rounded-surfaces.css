@@ -1,0 +1,105 @@
+/* Shared surface shapes, loaded after component styles. Keep flags, circular
+   controls, mascot artwork and full-viewport layouts at their own proportions. */
+:root {
+  --pc-radius-detail: 8px;
+  --pc-radius-control: 12px;
+  --pc-radius-field: 16px;
+  --pc-radius-card: 20px;
+  --pc-radius-dialog: 24px;
+}
+
+/* Explicit component selectors also cover dialogs rendered outside .pc-app. */
+:root body :is(
+  .new-chat-icon, .context-chip, .stream-result-hint,
+  .offer-rank, .platform-badge, .official-tag, .best-tag,
+  .pc-picker-option-icon, .pc-price-option-icon, .offer-metric-cell i,
+  .pc-model-pill, .pc-follow, .radar-signature, .radar-tags span
+) {
+  border-radius: var(--pc-radius-detail);
+}
+
+:root body :is(
+  .sidebar-close, .new-chat, .conversation-item, .mobile-menu-btn,
+  .price-tab, .market-trigger, .market-option, .text-action, .icon-action,
+  .send-button, .composer-attach, .drawer-close, .copy-button,
+  .refresh-button, .chat-error button, .alternative-arrow,
+  .pc-side-close, .pc-nav-item, .pc-recent-item, .pc-more-menu > button,
+  .pc-account-card, .pc-mobile-menu, .pc-round-tool, .pc-picker-trigger,
+  .pc-picker-option, .pc-mode-tab, .pc-primary-button, .pc-outline-button,
+  .pc-msg-new, .pc-msg-search button, .pc-filter-tabs button,
+  .pc-market-chip, .pc-price-option, .pc-activity-list > button,
+  .pc-chat-new, .pc-reel-cta, .pc-auth-tabs button,
+  .pc-auth-code button, .pc-auth-submit, .pc-watch-actions button,
+  .pc-search-clear, .pc-guest-cta, .persona-reset,
+  .account-button, .shop-ask, .shop-active-filters button,
+  .radar-icon-button, .radar-action, .radar-primary,
+  .radar-chat-head button, .radar-chat-form button,
+  .radar-menu-filters button, .radar-menu-actions > button,
+  .friends-icon-button, .friends-bell, .friends-search button,
+  .friends-primary, .friends-notifications-head > button,
+  .friends-notification-actions button, .pc-room-tabs button
+) {
+  border-radius: var(--pc-radius-control);
+}
+
+:root body :is(
+  .sidebar-search, .price-tabs, .prompt-art, .composer-attachment,
+  .composer-attachment img, .user-image, .chat-error,
+  .gateway-stat, .drawer-inline-error, .code-details, .curl-note, .drawer-note,
+  .pc-mini-reel-art, .pc-attachment, .pc-attachment img,
+  .pc-composer-error, .pc-listening, .pc-mode-tabs, .pc-filter-tabs,
+  .pc-msg-search, .pc-explore-art, .pc-notification-icon,
+  .pc-profile-card-icon, .pc-activity-icon, .pc-source-grid,
+  .pc-account-rows, .offer-metric-cell, .pc-chat-error,
+  .pc-reel-price-tag, .pc-reel-sticker, .pc-reel-avatar,
+  .pc-reel-author-avatar, .pc-reel-product, .pc-toast,
+  .persona-card-icon, .persona-budget-tip, .persona-dimension,
+  .pc-auth-tabs, .pc-auth-form input, .pc-auth-dev, .pc-auth-notice,
+  .pc-auth-error, .pc-watch-art, .pc-danger-zone input,
+  .pc-search-bar, .pc-search-icon, .pc-search-hero button,
+  .pc-search-card > :first-child,
+  .discover-search, .shop-select, .discover-product-image,
+  .friends-search, .friends-contact-avatar, .radar-avatar,
+  .radar-chat-form input, .pc-room-level-icon, .pc-room-book-icon,
+  .pc-journal-editor input, .pc-journal-editor textarea
+) {
+  border-radius: var(--pc-radius-field);
+}
+
+:root body :is(
+  .gateway-card, .prompt-card, .thinking-panel, .comparison-card,
+  .alternative-card, .skeleton-card, .endpoint-card, .run-list, .runs-empty,
+  .user-bubble, .markdown-copy, .pc-chat-skeleton-user, .pc-chat-skeleton-card,
+  .pc-mini-reel, .pc-msg-row, .pc-msg-source-card, .pc-search-hero,
+  .pc-trend-list, .pc-explore-card, .pc-search-guide, .pc-notification,
+  .pc-profile-card, .pc-panel, .pc-watchlist-summary, .pc-watchlist-empty,
+  .pc-watch-card, .pc-legal-card, .pc-search-card, .pc-empty-card,
+  .persona-card, .pc-guest-gate-icon, .discover-product-button,
+  .discover-empty, .discover-skeletons li > div,
+  .friends-contact-row, .friends-bubble, .radar-person-row, .radar-bubble,
+  .pc-room-hud, .pc-room-stage-note
+) {
+  border-radius: var(--pc-radius-card);
+}
+
+:root body :is(
+  .market-menu, .pc-more-menu, .pc-picker-menu, .pc-reels-menu,
+  .composer, .pc-composer-card, .pc-msg-panel, .pc-msg-new-card,
+  .pc-auth-card, .pc-login-dialog, .pc-guest-gate, .pc-reel,
+  .persona-hero, .persona-empty, .persona-loading,
+  .friends-notifications, .radar-sheet, .radar-chat, .pc-room-notebook
+) {
+  border-radius: var(--pc-radius-dialog);
+}
+
+/* The dialog owns its outer edge; the inner form should not cut a second edge. */
+:root .pc-login-dialog .pc-auth-card {
+  border-radius: 0;
+}
+
+/* A mobile sheet meets the bottom viewport edge. */
+@media (max-width: 760px) {
+  :root body .radar-sheet {
+    border-radius: var(--pc-radius-dialog) var(--pc-radius-dialog) 0 0;
+  }
+}

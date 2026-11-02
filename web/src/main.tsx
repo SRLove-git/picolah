@@ -8,6 +8,7 @@ import './styles.css';
 import './tangmi.css';
 import './picolah.css';
 import './components/capybara.css';
+import './rounded-surfaces.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
