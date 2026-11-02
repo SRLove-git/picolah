@@ -1,0 +1,19 @@
+.pc-side-head .pc-capy-brand {
+  overflow: visible;
+  filter: drop-shadow(0 2px 3px rgb(146 89 54 / 10%));
+}
+
+.pc-side-head .pc-capy-brand img {
+  object-fit: contain;
+}
+
+.pc-sidebar .pc-account-avatar.is-default {
+  color: #4e6b59;
+  background: #eaf1eb;
+  border-color: #d1e0d4;
+}
+
+.pc-sidebar .pc-account-avatar.is-default i {
+  background: #3f9572;
+  border-color: #fff;
+}

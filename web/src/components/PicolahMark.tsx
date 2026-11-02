@@ -3,6 +3,7 @@ import { CapyExpressionArt, type CapyExpression } from './CapyExpressionArt';
 import { CapyMotionArt } from './CapyMotionArt';
 import type { CapyMotion } from '../lib/capy-motion';
 import type { CapyAccessory, CapyClothingId } from '../../shared/capybara';
+import brandHead from '../assets/brand-v3/capybara-head.webp';
 
 const LETTER_COLORS = ['#ef4f7e', '#ff8b5e', '#f2b53c', '#4fc5a5', '#5b9cf5', '#9a78f0', '#ef5fa7'];
 
@@ -148,7 +149,9 @@ export function BrandLockup({
       aria-label="Picolah"
       data-tooltip="Picolah"
     >
-      <Capybara variant="face" size={size + 12} />
+      <span className="pc-capy pc-capy-brand" style={{ width: size + 21, height: size + 21 }} aria-hidden="true">
+        <img src={brandHead} width={256} height={256} alt="" draggable={false} decoding="async" />
+      </span>
       <Wordmark size={size} />
     </button>
   );

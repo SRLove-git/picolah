@@ -4,6 +4,7 @@ import type { CountryCode } from '../../shared/types';
 import { useSession } from '../lib/session';
 import { MarketPicker } from './Controls';
 import { BrandLockup } from './PicolahMark';
+import './sidebar-identity.css';
 
 export type AppView = 'home' | 'capybara' | 'search' | 'radar' | 'friends' | 'watchlist' | 'messages' | 'reels' | 'profile' | 'account' | 'privacy' | 'terms' | 'chat';
 
@@ -103,7 +104,7 @@ export function AppSidebar({
           aria-label={accountLabel}
           data-tooltip={accountLabel}
         >
-          <span className="pc-account-avatar">
+          <span className={`pc-account-avatar${user?.avatar ? '' : ' is-default'}`}>
             {user?.avatar ? <img src={user.avatar} alt="" /> : <UserRound size={25} strokeWidth={1.6} aria-hidden="true" />}
             <i />
           </span>
