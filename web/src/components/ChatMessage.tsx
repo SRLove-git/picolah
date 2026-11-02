@@ -6,6 +6,7 @@ import { formatClock, relativeTime } from '../lib/format';
 import { Capybara } from './PicolahMark';
 import { MarkdownText } from './MarkdownText';
 import { AlternativeGrid, ComparisonPanel } from './ComparisonPanel';
+import { shoppingReplyText } from '../lib/chat-content';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -14,21 +15,12 @@ interface ChatMessageProps {
   onAsk: (query: string) => void;
 }
 
-function stripPriceReminder(content: string) {
-  return content
-    .split('\n')
-    .filter((line) => !/(?:下单前|去平台前).*(?:优惠券|券后价|券后到手价)/.test(line.trim()))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
 export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessageProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const displayContent =
-    message.role === 'assistant' ? stripPriceReminder(message.content) : message.content;
+    message.role === 'assistant' ? shoppingReplyText(message.content) : message.content;
 
   async function copyAnswer() {
     try {
@@ -122,7 +114,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
           >
             <ThumbsDown size={14} />
           </button>
-          <span className="assistant-actions-meta">{t(comparison?.search ? 'chat.liveSource' : 'chat.source')} · {relativeTime(message.createdAt)}</span>
+          <span className="assistant-actions-meta">{relativeTime(message.createdAt)}</span>
         </div>
       </div>
     </article>

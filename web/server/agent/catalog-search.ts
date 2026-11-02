@@ -77,26 +77,24 @@ export function catalogQuotes(comparison: Comparison): Offer[] {
 }
 
 export function catalogAnswer(comparison: Comparison, target: Target | null): string {
-  if (!target) return '请告诉我商品名称或完整型号，我会从商品库中查找。';
-  if (comparison.unsupportedPlatforms?.length) return '当前市场的商品库不支持所选平台，请切换市场或平台后查询。';
+  if (!target) return '想买什么？告诉我商品名称或完整型号，我来帮你比价。';
+  if (comparison.unsupportedPlatforms?.length) return '当前市场暂不支持所选平台，请切换市场或平台后查询。';
   const quotes = catalogQuotes(comparison);
   if (!comparison.product && !comparison.alternatives.length) {
-    return `商品库暂未收录与「${target.query}」匹配的型号。可以补充品牌、完整型号或容量；这不代表商家没有在售商品。`;
+    return `暂未找到与「${target.query}」匹配的商品。可以补充品牌、完整型号或容量再试。`;
   }
   if (!quotes.length) {
     const names = comparison.product?.name || comparison.alternatives.map((item) => item.product.name).join('、');
-    return `商品库已找到 **${names}**，但${MARKETS[comparison.market].nameZh}${target.maxPrice !== undefined ? '在当前预算和筛选条件下' : '在当前筛选条件下'}暂无有效报价。过期和演示报价不会用于比价，当前不会自动发起实时抓取。`;
+    return `**${names}** 在${MARKETS[comparison.market].nameZh}${target.maxPrice !== undefined ? '的当前预算和筛选条件下' : '的当前筛选条件下'}暂无有效报价。可以调整筛选条件再试。`;
   }
   if (comparison.product) {
     const best = [...quotes].sort((a, b) => a.finalPrice - b.finalPrice)[0];
-    return `商品库已找到 **${comparison.product.name}** 的 ${quotes.length} 条报价。**${best.platform} · ${best.seller}** 的已入库${best.landedPriceConfidence === 'exact' ? '到手价' : '预估到手价'}最低，为 **${formatMoney(best.finalPrice, comparison.market)}**。`;
+    const shipping = best.shippingKnown === false || (best.shippingFee === 0 && best.landedPriceConfidence !== 'exact')
+      ? '运费待确认' : `运费 ${formatMoney(best.shippingFee, comparison.market)}`;
+    const discount = best.discount > 0 ? `，优惠 ${formatMoney(best.discount, comparison.market)}` : '';
+    return `找到 **${comparison.product.name}** 的 ${quotes.length} 条报价。**${best.platform} · ${best.seller}**：商品价 **${formatMoney(best.itemPrice, comparison.market)}**，${shipping}${discount}，${best.landedPriceConfidence === 'exact' ? '合计' : '预估合计'} **${formatMoney(best.finalPrice, comparison.market)}**。最终运费和优惠以商家结算页为准。`;
   }
-  return '商品库中的匹配商品：' + comparison.alternatives.map(({ product, offer }) =>
+  return '找到这些商品：' + comparison.alternatives.map(({ product, offer }) =>
     `**${product.name}**${offer ? `（${offer.platform}，${formatMoney(offer.finalPrice, comparison.market)}）` : '（暂无有效报价）'}`).join('；') + '。';
 }
 
-export function catalogQuoteNote(comparison: Comparison): string {
-  return catalogQuotes(comparison).length
-    ? `\n\n以上为已入库报价，最近采集时间：${comparison.updatedAt}；本次未实时抓取，下单前请核对商家页面。`
-    : '';
-}

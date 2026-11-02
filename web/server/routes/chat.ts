@@ -14,7 +14,7 @@ import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
 import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
 import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts';
-import { catalogAnswer, catalogQuoteNote, catalogQuotes, searchCatalog } from '../agent/catalog-search.ts';
+import { catalogAnswer, catalogQuotes, searchCatalog } from '../agent/catalog-search.ts';
 import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
 export const chatRouter = Router();
@@ -126,7 +126,7 @@ chatRouter.post('/', async (req, res) => {
   comparison.platformFilter = platformRestriction ? directive.platformIds : undefined;
   let clarification: string | undefined;
   if (catalogMode) {
-    sse(res, 'status', { label: '正在查询商品库…' });
+    sse(res, 'status', { label: '正在查找商品报价…' });
     comparison = await searchCatalog({ message, market, target, previous });
     clarification = catalogAnswer(comparison, target);
   } else if (!target) {
@@ -188,10 +188,6 @@ chatRouter.post('/', async (req, res) => {
   else if (usedLlm) {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }
-  }
-  if (catalogMode) {
-    const note = catalogQuoteNote(comparison);
-    if (note) { answer += note; sse(res, 'delta', { text: note }); }
   }
   const assistantMessageId = await addAssistantReply(conversation.id, answer, { comparison, usedLlm, source: catalogMode ? 'catalog' : 'live-tools' });
   if (!assistantMessageId) {

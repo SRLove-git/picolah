@@ -55,7 +55,9 @@ async function ask(message: string, conversationId?: string, market = 'SG') {
   });
   assert.ok(events.some((event) => event.name === 'done'));
   assert.equal(crawlerCalls, 0, 'catalog mode must never call the configured crawler');
-  assert.ok(events.some((event) => event.name === 'status' && event.data.label === '正在查询商品库…'));
+  const reply = events.filter((event) => event.name === 'delta').map((event) => event.data.text).join('');
+  assert.doesNotMatch(reply, /商品库|数据库|入库|采集|抓取|爬虫/);
+  assert.ok(events.some((event) => event.name === 'status' && event.data.label === '正在查找商品报价…'));
   return {
     comparison: events.find((event) => event.name === 'results')!.data as Comparison,
     conversationId: events.find((event) => event.name === 'meta')!.data.conversationId as string,
@@ -71,8 +73,9 @@ test('catalog mode returns stored real quotes and preserves their collection tim
   assert.equal(result.comparison.search, undefined);
   assert.ok(result.comparison.offers.every((offer) => offer.source === 'catalog'));
 
-  assert.match(result.answer, /已入库报价/);
-  assert.match(result.answer, /本次未实时抓取/);
+  assert.match(result.answer, /商品价/);
+  assert.match(result.answer, /预估合计|合计/);
+  assert.doesNotMatch(result.answer, /商品库|数据库|入库|采集|抓取|爬虫/);
 });
 test('unknown model does not substitute a nearby model or trigger live fallback', async () => {
   await realQuotes();
@@ -80,7 +83,7 @@ test('unknown model does not substitute a nearby model or trigger live fallback'
   assert.equal(result.comparison.product, null);
   assert.deepEqual(result.comparison.alternatives, []);
   assert.deepEqual(result.comparison.offers, []);
-  assert.match(result.answer, /暂未收录/);
+  assert.match(result.answer, /暂未找到/);
 });
 test('full catalog titles preserve product identity despite generic model parsing', async () => {
   for (const [name, id] of [
@@ -146,7 +149,7 @@ test('category search returns catalog candidates and never guesses unknown capac
 test('greeting and unsupported platform requests do not launch a crawler', async () => {
   const hello = await ask('你好');
   assert.deepEqual(hello.comparison.offers, []);
-  assert.match(hello.answer, /商品库/);
+  assert.match(hello.answer, /帮你比价/);
   await realQuotes();
   const unsupported = await ask('Amazon Sony WH-1000XM5', undefined, 'MY');
   assert.ok(unsupported.comparison.unsupportedPlatforms?.includes('amazon-sg'));
