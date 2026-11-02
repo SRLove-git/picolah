@@ -11,6 +11,8 @@ export const config = {
   port: num(process.env.PORT, 8787),
   host: process.env.HOST || '127.0.0.1',
   isProduction: production,
+  /** Catalog mode never invokes the on-demand marketplace crawler. */
+  productSearchSource: process.env.PRODUCT_SEARCH_SOURCE === 'catalog' ? 'catalog' : 'live',
   /**
    * Guests can always browse, chat and compare. When true, account-owned data
    * (watchlist, price alerts, account settings) asks the visitor to sign in.

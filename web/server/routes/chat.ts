@@ -14,6 +14,7 @@ import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
 import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agent/tools/model-search.ts';
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
 import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts';
+import { catalogAnswer, catalogQuoteNote, catalogQuotes, searchCatalog } from '../agent/catalog-search.ts';
 
 export const chatRouter = Router();
 const chatSchema = z.object({
@@ -95,7 +96,22 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
   sse(res, 'status', { label: image ? '正在识别图片里的商品…' : '正在搜索商品信息' });
 
-  let target = liveSearchQuery(rawMessage, previous);
+  const catalogMode = config.productSearchSource === 'catalog';
+  // Reconstruct query constraints, never historical prices, across catalog turns.
+  let context = previous;
+  if (catalogMode) {
+    let queryContext: Comparison | null = null;
+    for (const entry of priorMessages) {
+      if (entry.role !== 'assistant' || !entry.comparison) continue;
+      const saved = entry.comparison;
+      const queryTarget = liveSearchQuery(saved.query, queryContext);
+      queryContext = queryTarget
+        ? { ...saved, search: { ...queryTarget, model: queryTarget.model || queryTarget.query, platforms: [], status: 'matched' } }
+        : saved;
+    }
+    context = queryContext ?? previous;
+  }
+  let target = liveSearchQuery(rawMessage, context);
   if (image) {
     const recognized = await visualSearchQuery(image, rawMessage);
     if (recognized) target = liveSearchQuery(recognized, null);
@@ -108,7 +124,11 @@ chatRouter.post('/', async (req, res) => {
   // Conversation history supplies only the previous query/filter, never cached prices.
   comparison.platformFilter = platformRestriction ? directive.platformIds : undefined;
   let clarification: string | undefined;
-  if (!target) {
+  if (catalogMode) {
+    sse(res, 'status', { label: '正在查询商品库…' });
+    comparison = await searchCatalog({ message, market, target, previous });
+    clarification = catalogAnswer(comparison, target);
+  } else if (!target) {
     clarification = image
       ? '暂时无法确定图片里的具体商品，请补充品牌、型号或商品名称，我会直接搜索实时商品信息。'
       : '请告诉我商品名称或具体型号，我会直接搜索实时商品信息。';
@@ -146,7 +166,7 @@ chatRouter.post('/', async (req, res) => {
   // explicit "补充型号" clarification.
   const chatOnly = !target && !image;
   const canAnswer = !comparison.unsupportedPlatforms?.length && (Boolean(target) || chatOnly);
-  if (llmConfigured && canAnswer) {
+  if (llmConfigured && canAnswer && (!catalogMode || catalogQuotes(comparison).length > 0)) {
     try {
       const stream = target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
       for await (const delta of stream) {
@@ -167,7 +187,11 @@ chatRouter.post('/', async (req, res) => {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }
   }
-  const assistantMessageId = await addAssistantReply(conversation.id, answer, { comparison, usedLlm, source: 'live-tools' });
+  if (catalogMode) {
+    const note = catalogQuoteNote(comparison);
+    if (note) { answer += note; sse(res, 'delta', { text: note }); }
+  }
+  const assistantMessageId = await addAssistantReply(conversation.id, answer, { comparison, usedLlm, source: catalogMode ? 'catalog' : 'live-tools' });
   if (!assistantMessageId) {
     sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
     return res.end();
