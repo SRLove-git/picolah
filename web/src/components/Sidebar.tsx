@@ -1,3 +1,4 @@
+import { shoppingReplyText } from '../lib/chat-content';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUpRight,
@@ -64,7 +65,7 @@ export function Sidebar({
     return conversations.filter((conversation) => {
       return (
         conversation.title.toLowerCase().includes(needle) ||
-        conversation.preview.toLowerCase().includes(needle)
+        shoppingReplyText(conversation.preview).toLowerCase().includes(needle)
       );
     });
   }, [conversations, query]);
@@ -140,7 +141,7 @@ export function Sidebar({
               <div className="conversation-group-label">{group.label}</div>
               {group.items.map((conversation) => {
                 const market = MARKETS[conversation.market] || MARKETS.SG;
-                const preview = stripMarkdown(conversation.preview || '还没有回复');
+                const preview = stripMarkdown(shoppingReplyText(conversation.preview) || '还没有回复');
                 return (
                   <button
                     type="button"

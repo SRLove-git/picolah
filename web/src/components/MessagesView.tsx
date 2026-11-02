@@ -1,3 +1,4 @@
+import { shoppingReplyText } from '../lib/chat-content';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, MessageCircle, Plus, Search, X } from 'lucide-react';
@@ -32,7 +33,7 @@ export function MessagesView({
     return conversations.filter(
       (conversation) =>
         conversation.title.toLowerCase().includes(needle) ||
-        conversation.preview.toLowerCase().includes(needle),
+        shoppingReplyText(conversation.preview).toLowerCase().includes(needle),
     );
   }, [conversations, query]);
 
@@ -100,7 +101,7 @@ export function MessagesView({
                 </h2>
                 <ul className="pc-msg-rows">
                   {group.items.map((conversation) => {
-                    const preview = stripMarkdown(conversation.preview || t('messages.noReply'));
+                    const preview = stripMarkdown(shoppingReplyText(conversation.preview) || t('messages.noReply'));
                     return (
                       <li key={conversation.id}>
                         <button
