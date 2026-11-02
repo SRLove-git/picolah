@@ -25,14 +25,14 @@ async function clock(page: Page, time: string) {
 
 test('night sleep and manual wake survive navigation, midnight and reload; the next night resets', async ({ page }) => {
   const saved = await setup(page, 23);
-  await page.goto('/7hk9ho#home');
-  const home = page.locator('.pc-companion.is-compact');
-  await expect(home).toHaveAttribute('data-action', 'rest');
-  await expect.poll(() => saved().sleeping).toBe(true);
-  await home.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
-  await expect.poll(() => saved().sleeping).toBe(false);
-  await home.getByRole('button', { name: 'Play with Capy', exact: true }).click();
+  await page.goto('/7hk9ho#capybara');
   const room = page.locator('.pc-companion.is-room');
+  await expect(room).toHaveAttribute('data-action', 'rest');
+  await expect.poll(() => saved().sleeping).toBe(true);
+  await room.getByRole('button', { name: 'Wake the capybara', exact: true }).click();
+  await expect.poll(() => saved().sleeping).toBe(false);
+  await page.locator('.pc-nav').getByRole('button', { name: 'Home', exact: true }).click();
+  await page.locator('.pc-nav').getByRole('button', { name: 'Growth', exact: true }).click();
   await expect(room).toHaveAttribute('data-action', 'idle');
   await clock(page, '2026-11-03T00:30:00+08:00');
   await page.reload(); await expect(room).toHaveAttribute('data-action', 'idle');
@@ -59,12 +59,12 @@ test('an early interaction wins over night sleep while the session is still load
   const held = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/api/auth/me', async r => { await held; await r.fulfill({ json: { user: null, required: false } }); });
   try {
-    await page.goto('/7hk9ho#home');
-    const home = page.locator('.pc-companion.is-compact');
-    await home.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
+    await page.goto('/7hk9ho#capybara');
+    const room = page.locator('.pc-companion.is-room');
+    await room.getByRole('button', { name: 'Pet the capybara', exact: true }).click();
     const loaded = page.waitForResponse('**/api/capybara/room'); release(); await loaded;
-    await page.waitForTimeout(100); await expect(home).toHaveAttribute('data-action', 'pet');
-    await page.waitForTimeout(4300); await expect(home).toHaveAttribute('data-action', 'idle');
+    await page.waitForTimeout(100); await expect(room).toHaveAttribute('data-action', 'pet');
+    await page.waitForTimeout(4300); await expect(room).toHaveAttribute('data-action', 'idle');
   } finally { release(); }
 });
 

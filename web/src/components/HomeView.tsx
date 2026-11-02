@@ -2,7 +2,7 @@ import { Menu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
 import { Wordmark } from './PicolahMark';
-import { CapyCompanion } from './CapyCompanion';
+import { PicoRoamer } from './PicoRoamer';
 import { PromptComposer } from './PromptComposer';
 
 interface HomeViewProps {
@@ -16,7 +16,6 @@ interface HomeViewProps {
   onMarketChange: (market: CountryCode) => void;
   onPriceModeChange: (mode: PriceMode) => void;
   onOpenSidebar: () => void;
-  onOpenCapybara: () => void;
 }
 
 export function HomeView({
@@ -30,7 +29,6 @@ export function HomeView({
   onMarketChange,
   onPriceModeChange,
   onOpenSidebar,
-  onOpenCapybara,
 }: HomeViewProps) {
   const { t } = useTranslation();
 
@@ -60,15 +58,7 @@ export function HomeView({
 
       <div className="pc-home-scroll">
         <div className="pc-home-main">
-          <div className="pc-hero-mascot">
-            <CapyCompanion size={176} compact onExplore={onOpenCapybara} />
-            <span className="pc-hero-spark pc-hero-spark-a" aria-hidden="true">
-              ✦
-            </span>
-            <span className="pc-hero-spark pc-hero-spark-b" aria-hidden="true">
-              ✧
-            </span>
-          </div>
+          <PicoRoamer />
 
           <Wordmark size={64} className="pc-hero-wordmark" />
           <p className="pc-hero-tagline">

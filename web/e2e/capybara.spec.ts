@@ -73,9 +73,12 @@ test('petting, meals and a persistent nap animate without changing shopping prog
 for (const width of [1440, 390, 320]) test(`home and four physical toys work at ${width}px`, async ({ page }, info) => {
   test.slow(); // Four physical games and screenshots share this test's budget.
   await page.setViewportSize({ width, height: width === 320 ? 568 : 900 }); await setup(page, width === 390 ? 'zh' : 'en');
-  await page.goto('/7hk9ho#home'); const home = page.locator('.pc-companion');
-  await home.locator('.pc-companion-touch').click(); await expect(home.locator('.pc-capy-expressions')).toHaveAttribute('data-visible-expression', 'happy');
-  await home.locator('.pc-companion-explore').click(); const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
+  await page.goto('/7hk9ho#home'); const home = page.locator('.pc-pico-roamer');
+  await home.getByRole('button', { name: 'Pico', exact: true }).click(); await expect(home).toHaveAttribute('data-activity', 'wave');
+  const menu = page.locator('.pc-home .pc-mobile-menu');
+  if (await menu.isVisible()) await menu.click();
+  await page.locator('.pc-nav').getByRole('button', { name: width === 390 ? '成长' : 'Growth', exact: true }).click();
+  const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
   await expect(companion).toHaveAttribute('data-renderer', 'frames', { timeout: 15000 }); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-character', 'original-image');
   await expect(canvas).toHaveAttribute('data-art-state', 'idle');
