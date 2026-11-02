@@ -42,7 +42,15 @@ export async function searchCatalog(options: {
       eligible.has(offer.id) && allowed.includes(offer.platformId) &&
       (!filters.length || filters.includes(offer.platformId)) &&
       offer.currency === MARKETS[market].currency && Number.isFinite(offer.finalPrice) && offer.finalPrice > 0 &&
-      (target?.maxPrice === undefined || offer.finalPrice <= target.maxPrice)),
+      (target?.maxPrice === undefined || offer.finalPrice <= target.maxPrice)).map((offer) => ({
+        ...offer,
+        // Legacy ingestion uses zero for missing fees/ratings. Keep those
+        // placeholders from being presented as free delivery or a zero rating.
+        shippingKnown: offer.shippingFee > 0 || offer.landedPriceConfidence === 'exact',
+        discountKnown: offer.discount > 0 || offer.landedPriceConfidence === 'exact',
+        ratingKnown: offer.rating > 0,
+        reviewsKnown: offer.reviews > 0,
+      })),
   })));
   const exact = entries.length === 1 ? entries[0] : null;
   const offers = exact?.offers ?? [];

@@ -80,6 +80,13 @@ test('unknown model does not substitute a nearby model or trigger live fallback'
   assert.deepEqual(result.comparison.offers, []);
   assert.match(result.answer, /暂未收录/);
 });
+test('missing imported fees and ratings retain unknown status', async () => {
+  await realQuotes();
+  await db.run("UPDATE offers SET shipping_fee = 0, rating = 0, reviews = 0, landed_price_confidence = 'estimated' WHERE product_id = 'sony-wh1000xm5'");
+  const result = await ask('Sony WH-1000XM5');
+  assert.ok(result.comparison.offers.length > 0);
+  assert.ok(result.comparison.offers.every((offer) => offer.shippingKnown === false && offer.ratingKnown === false && offer.reviewsKnown === false));
+});
 test('fresh demo and expired real quotes are excluded without claiming stock absence', async () => {
   const demo = await ask('Sony WH-1000XM5');
   assert.equal(demo.comparison.product?.id, 'sony-wh1000xm5');

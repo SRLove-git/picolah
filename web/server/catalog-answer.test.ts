@@ -33,3 +33,10 @@ test('one observation and an absent store certification are never exposed as his
   }
   assert.match(messages[0].content as string, /不能宣称.*30 天最低/);
 });
+test('an unreported delivery fee is not described as free shipping', () => {
+  const messages = buildCatalogAnswerMessages({ ...comparison, offers: [{ ...offer, shippingFee: 0, finalPrice: 329 }] }, '多少钱');
+  assert.equal(JSON.parse(messages[1].content as string).quotes[0].shipping, null);
+  assert.match(messages[0].content as string, /运费尚未核实/);
+  const exact = buildCatalogAnswerMessages({ ...comparison, offers: [{ ...offer, shippingFee: 0, landedPriceConfidence: 'exact' }] }, '多少钱');
+  assert.equal(JSON.parse(exact[1].content as string).quotes[0].shipping, 'S$0.00');
+});
