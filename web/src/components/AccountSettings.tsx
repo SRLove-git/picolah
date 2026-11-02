@@ -87,7 +87,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
             <button key={item.code} type="button" className={`pc-market-chip ${item.code === market ? 'is-active' : ''}`}
               aria-pressed={item.code === market} onClick={() => onMarketChange(item.code)}>
               <CountryFlag code={item.code} width={18} />
-              <span><strong>{marketName(item.code, i18n.language)}</strong><small>{item.currency}</small></span>
+              <span className="pc-market-chip-copy"><strong>{marketName(item.code, i18n.language)}</strong><small>{item.currency}</small></span>
               {item.code === market && <Check size={13} aria-hidden="true" />}
             </button>
           ))}

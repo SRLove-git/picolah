@@ -3602,7 +3602,7 @@
   border-color: #f5c4d3;
 }
 
-.pc-market-chip > span {
+.pc-market-chip-copy {
   display: flex;
   flex: 1;
   flex-direction: column;
