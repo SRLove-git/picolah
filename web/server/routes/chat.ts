@@ -15,6 +15,7 @@ import { ModelSearchError, modelSearchTool, type LiveSearchInput } from '../agen
 import { liveSearchQuery, visualSearchQuery } from '../agent/live-query.ts';
 import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts';
 import { catalogAnswer, catalogQuoteNote, catalogQuotes, searchCatalog } from '../agent/catalog-search.ts';
+import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
 export const chatRouter = Router();
 const chatSchema = z.object({
@@ -168,7 +169,8 @@ chatRouter.post('/', async (req, res) => {
   const canAnswer = !comparison.unsupportedPlatforms?.length && (Boolean(target) || chatOnly);
   if (llmConfigured && canAnswer && (!catalogMode || catalogQuotes(comparison).length > 0)) {
     try {
-      const stream = target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
+      const stream = catalogMode ? streamCatalogAnswer(comparison, message)
+        : target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
       for await (const delta of stream) {
         usedLlm = true;
         answer += delta;
