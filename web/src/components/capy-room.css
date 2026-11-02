@@ -1,30 +1,42 @@
-/* A single play space. Wardrobe and records only appear when their icon opens them. */
-.pc-capy-home-page { background: radial-gradient(circle, #eedbd2 1px, transparent 1px) 0 0 / 22px 22px, #fff8ef; }
-.pc-capy-home-page .pc-page-head { min-height: 76px; padding-block: 12px; background: #fffaf3e6; border-color: #f4e3d6; backdrop-filter: none; }
-.pc-capy-home-page .pc-page-title h1 { color: #765043; letter-spacing: -0.04em; }
-.pc-capy-home-page .pc-eyebrow { color: #b77c73; }
-.pc-capy-home-page .pc-capy-chip { color: #a76b65; background: #ffece6; border-color: #f3d2ca; }
-.pc-capy-home-page .pc-capy-chip svg { fill: #f4b4ac; }
-.pc-capy-room-body { display: block; max-width: 1200px; padding: 16px 24px 20px; }
-.pc-capy-room-stage { width: min(100%, 1000px, calc((100dvh - 210px) * 1.5)); min-width: min(100%, 480px); margin: 0 auto; }
+/* The page itself is the habitat; controls float over one continuous scene. */
+.pc-capy-home-page { position: relative; background: #d3b28a; }
+.pc-capy-home-page .pc-page-head {
+  position: absolute; inset: 0 0 auto; z-index: 8; min-height: 92px;
+  padding: 22px 148px 28px 28px; border: 0; pointer-events: none;
+  background: linear-gradient(#48332080, #48332000); backdrop-filter: none;
+}
+.pc-capy-home-page .pc-page-head button { pointer-events: auto; }
+.pc-capy-home-page .pc-page-title h1 { color: #fff9ef; letter-spacing: -0.04em; text-shadow: 0 2px 8px #49321e66; }
+.pc-capy-home-page .pc-eyebrow { color: #fff1d5; text-shadow: 0 1px 5px #49321e66; }
+.pc-capy-home-page .pc-capy-chip { color: #765043; background: #fff8e9de; border-color: #fff5dc70; }
+.pc-capy-home-page .pc-capy-chip svg { fill: #eeb5a5; }
+.pc-capy-home-page .pc-capy-room-body { display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; overflow: hidden; }
+.pc-capy-room-stage { width: 100%; height: 100%; min-width: 0; margin: 0; }
 .pc-companion.is-room {
+  --pc-room-dock-space: 128px;
   display: block;
   width: 100%;
+  height: 100%;
   max-width: none;
   overflow: hidden;
-  background: #fff5e7;
-  border: 5px solid #fffdf6;
-  border-radius: 32px;
-  box-shadow: 0 0 0 1px #edd5c8, 0 7px 0 #ead3c3, 0 15px 32px -14px #b8957670;
+  background: #d3b28a;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 .pc-companion.is-room .pc-companion-scene {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 2;
+  height: 100%;
+  aspect-ratio: auto;
   min-height: 0;
   padding: 0;
   overflow: hidden;
   background: linear-gradient(#ecd7b8 58%, #cfaa7a 58%, #ead1a5);
+}
+.pc-companion.is-room .pc-companion-scene::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(transparent 65%, #60402300 78%, #60402380);
 }
 .pc-companion.is-room .pc-companion-scene::after {
   z-index: 1; bottom: 11.5%; left: 34%; width: 32%; height: 7%;
@@ -65,22 +77,22 @@
 @keyframes pc-room-sleep-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.008, 1.018); } }
 .pc-companion.is-room[data-night='true'] .pc-companion-pose { filter: brightness(0.91); }
 .pc-companion.is-room .pc-companion-speech {
-  position: absolute; z-index: 6; top: 23%; left: 57%; width: 208px; max-width: 36%; min-height: 46px;
+  position: absolute; z-index: 6; top: 26%; left: 58%; width: 208px; max-width: 36%; min-height: 46px;
   margin: 0; padding: 10px 13px; font-size: 11px; border-radius: 16px 16px 16px 4px;
   color: #6b503d; background: #fffdf2ed; border-color: #fffaf0; box-shadow: 0 5px 20px -12px #76502e5c;
   pointer-events: none;
 }
 .pc-companion.is-room .pc-companion-mood { display: none; }
 .pc-companion.is-room .pc-companion-pause,
-.pc-room-light { position: absolute; z-index: 7; top: 14px; right: 14px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; color: #92715c; background: #fffdf2f0; border: 2px solid #fffdf6; border-radius: 17px; cursor: pointer; box-shadow: 0 3px 0 #d6bea877; }
-.pc-room-light { right: 66px; }
+.pc-room-light { position: absolute; z-index: 7; top: 24px; right: 28px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; color: #92715c; background: #fffdf2f0; border: 2px solid #fffdf6; border-radius: 17px; cursor: pointer; box-shadow: 0 3px 0 #d6bea877; }
+.pc-room-light { right: 80px; }
 .pc-companion.is-room .pc-companion-effect.is-one { left: 12%; }
 .pc-companion.is-room .pc-companion-effect.is-two { right: 8%; }
 .pc-companion.is-room[data-napping='true'] .pc-companion-effects { transform: translateY(18%); }
 .pc-companion.is-room .pc-companion-zzz { top: 30%; left: 24%; color: #eee2ff; }
 
 .pc-room-hud {
-  position: absolute; z-index: 6; top: 14px; left: 14px; width: 150px; padding: 0 0 9px;
+  position: absolute; z-index: 6; top: 106px; left: 28px; width: 150px; padding: 0 0 9px;
   color: #6e553d; background: #fffdf0f0; border: 2px solid #fffdf6; border-radius: 20px;
   box-shadow: 0 3px 0 #d6bea877;
 }
@@ -112,9 +124,9 @@
 @keyframes pc-room-leaf { 0% { opacity: 0; transform: translate(0, 0) scale(0.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-90px, -65px) rotate(-20deg); } }
 .pc-companion.is-room[data-night='true'] .pc-room-hotspot { background: #f5eddbd9; }
 
-/* Five little buttons replace the long dashboard below the room. */
-.pc-room-dock { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; width: min(100%, 590px); margin: 0 auto; padding: 12px 20px 13px; }
-.pc-room-dock-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 78px; padding: 0; color: #876553; background: transparent; border: 0; border-radius: 18px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+/* The action dock floats on the room floor, with no separate footer panel. */
+.pc-room-dock { position: absolute; z-index: 7; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; width: min(calc(100% - 48px), 520px); margin: 0; padding: 0; }
+.pc-room-dock-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 78px; padding: 0; color: #fff9ef; text-shadow: 0 1px 5px #51351c; background: transparent; border: 0; border-radius: 18px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
 .pc-room-dock-icon { position: relative; display: grid; place-items: center; width: 56px; height: 53px; border: 2px solid #fffef4; border-radius: 19px; color: #72904b; background: linear-gradient(#e5f2ba, #c7dfa2); box-shadow: 0 4px 0 #a7bd84, inset 0 2px 0 #ffffffb3, 0 5px 8px #a0936d22; transition: transform 140ms var(--pc-ease-out); }
 .pc-room-dock-icon::before { content: ''; position: absolute; top: 5px; left: 8px; width: 15px; height: 3px; border-radius: 50%; background: #ffffff94; transform: rotate(-18deg); }
 .pc-room-dock-button.is-play .pc-room-dock-icon { color: #b1883f; background: linear-gradient(#ffedbb, #f7d593); box-shadow: 0 4px 0 #d6b573, inset 0 2px 0 #ffffffb3, 0 5px 8px #a0936d22; }
@@ -179,26 +191,26 @@
   .pc-room-close:hover { background: #ffe8de; }
 }
 @media (max-width: 720px) {
-  .pc-capy-home-page .pc-page-head { min-height: 68px; gap: 10px; padding: 10px 14px; }
-  .pc-capy-home-page .pc-page-title h1 { font-size: 19px; }
+  .pc-capy-home-page .pc-page-head { min-height: 88px; gap: 10px; padding: 18px 122px 24px 16px; }
+  .pc-capy-home-page .pc-page-head-right { position: absolute; top: 72px; left: 16px; }
+  .pc-capy-home-page .pc-mobile-menu { color: #fff9ef; background: #fff7e926; border-color: #fff4de70; }
+  .pc-capy-home-page .pc-eyebrow { font-size: 7px; letter-spacing: 0.08em; }
+  .pc-capy-home-page .pc-page-title h1 { font-size: 17px; }
   .pc-capy-home-page .pc-capy-chip { font-size: 9px; padding: 5px 8px; gap: 4px; }
-  .pc-capy-room-body { padding: 12px 12px 20px !important; }
-  .pc-capy-room-stage { width: min(100%, 450px, calc((100dvh - 186px) * 2 / 3)); min-width: min(100%, 252px); }
-  .pc-companion.is-room { border-width: 4px; border-radius: 28px; }
-  .pc-companion.is-room .pc-companion-scene { aspect-ratio: 2 / 3; }
+  .pc-companion.is-room { --pc-room-dock-space: calc(108px + env(safe-area-inset-bottom)); }
   .pc-companion.is-room .pc-companion-touch { width: 86% !important; min-width: 0; max-width: 340px; bottom: 11%; }
   .pc-companion.is-room[data-action='feed'] .pc-companion-touch { transform: translateX(-41%); }
   .pc-companion.is-room[data-napping='true'] .pc-companion-touch { transform: translateX(-61%); }
-  .pc-companion.is-room .pc-companion-speech { top: 24%; left: 50%; width: 196px; max-width: 70%; transform: translateX(-50%); padding: 9px 11px; border-radius: 16px 16px 4px 16px; font-size: 11px; }
-  .pc-room-hud { top: 10px; left: 10px; width: 142px; }
-  .pc-companion.is-room .pc-companion-pause { top: 10px; right: 10px; }
-  .pc-room-light { top: 10px; right: 61px; }
+  .pc-companion.is-room .pc-companion-speech { top: 27%; left: 50%; width: 196px; max-width: 70%; transform: translateX(-50%); padding: 9px 11px; border-radius: 16px 16px 4px 16px; font-size: 11px; }
+  .pc-room-hud { top: 112px; left: 16px; width: 142px; }
+  .pc-companion.is-room .pc-companion-pause { top: 20px; right: 16px; }
+  .pc-room-light { top: 20px; right: 68px; }
   .pc-room-hotspot.is-bed { left: 17%; top: 58%; }
   .pc-room-hotspot.is-table { left: 85%; top: 62%; }
   .pc-room-hotspot.is-wardrobe { left: 85%; top: 40%; }
   .pc-room-toy { left: 77%; bottom: 6%; width: 54px; height: 54px; }
   .pc-room-ball { width: 37px; height: 37px; }
-  .pc-room-dock { gap: 5px; padding: 10px 9px 11px; }
+  .pc-room-dock { width: calc(100% - 24px); gap: 5px; bottom: max(16px, env(safe-area-inset-bottom)); }
   .pc-room-dock-button { gap: 5px; font-size: 10px; min-height: 69px; }
   .pc-room-dock-icon { width: 48px; height: 47px; border-radius: 17px; }
   .pc-room-dock-icon svg { width: 24px; height: 24px; }
@@ -210,13 +222,27 @@
 @media (max-width: 350px) {
   .pc-capy-home-page .pc-capy-chip { max-width: 115px; }
   .pc-room-hud { width: 127px; }
+  .pc-companion.is-room .pc-companion-speech { top: 112px; right: 12px; left: auto; width: 145px; max-width: calc(100% - 165px); transform: none; }
+  .pc-capy-home-page .pc-page-title h1 { font-size: 15px; }
+  .pc-capy-home-page .pc-eyebrow { display: none; }
   .pc-room-level { gap: 6px; padding-inline: 7px; }
   .pc-room-hud-title span { font-size: 8px; }
-  .pc-room-dock { gap: 3px; padding-inline: 5px; }
+  .pc-room-dock { gap: 3px; }
   .pc-room-dock-icon { width: 44px; height: 44px; border-radius: 16px; }
   .pc-room-dock-button { font-size: 9px; }
   .pc-room-notebook .pc-capy-item { padding: 10px; }
   .pc-room-notebook .pc-capy-item-tag { top: 9px; right: 7px; font-size: 8px; }
+}
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .pc-companion.is-room { --pc-room-dock-space: 88px; }
+  .pc-capy-home-page .pc-page-head { min-height: 68px; padding-top: 14px; padding-bottom: 14px; }
+  .pc-capy-home-page .pc-page-head-right { display: none; }
+  .pc-room-hud { top: 88px; left: 20px; }
+  .pc-room-dock { bottom: max(10px, env(safe-area-inset-bottom)); width: min(70%, 440px); }
+  .pc-room-dock-button { min-height: 64px; font-size: 10px; }
+  .pc-room-dock-icon { width: 44px; height: 44px; border-radius: 16px; }
+  .pc-room-dock-icon svg { width: 23px; height: 23px; }
+  .pc-companion.is-room .pc-companion-speech { top: 26%; left: 63%; max-width: 28%; transform: none; }
 }
 @media (hover: none), (pointer: coarse) {
   .pc-room-notebook .pc-capy-item:hover { transform: none; }

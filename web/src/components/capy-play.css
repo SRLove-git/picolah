@@ -1,12 +1,12 @@
 .is-frame-room .pc-companion-scene::after { display: none; }
-.pc-play-canvas-button { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; background: transparent; border-radius: inherit; cursor: pointer; touch-action: manipulation; }
+.pc-play-canvas-button { position: absolute; inset: 0 0 var(--pc-room-dock-space); z-index: 2; width: 100%; height: calc(100% - var(--pc-room-dock-space)); margin: 0; padding: 0; border: 0; background: transparent; border-radius: inherit; cursor: pointer; touch-action: manipulation; }
 .pc-play-canvas-button:focus-visible { outline: 3px solid #b58b72; outline-offset: -6px; }
 .pc-play-canvas-button:disabled { cursor: default; opacity: 1; }
 .pc-play-canvas { display: block; width: 100%; height: 100%; }
 .is-frame-room:not([data-renderer="frames"]) .pc-play-canvas { visibility: hidden; }
-.pc-play-loading-character { position: absolute; z-index: 2; left: 50%; bottom: 11%; width: 48%; transform: translateX(-50%); pointer-events: none; }
+.pc-play-loading-character { position: absolute; z-index: 2; left: 50%; bottom: calc(var(--pc-room-dock-space) + 10%); width: min(48%, 55dvh); transform: translateX(-50%); pointer-events: none; }
 .pc-play-still { display: block; max-width: 100%; height: auto; margin: auto; }
-.pc-play-controls { position: absolute; z-index: 6; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 7px 8px 7px 15px; border: 2px solid #fffdf5; border-radius: 23px; color: #765643; background: #fff9eeeF; box-shadow: 0 4px 0 #d8bfa472; }
+.pc-play-controls { position: absolute; z-index: 6; bottom: calc(var(--pc-room-dock-space) + 8px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 7px 8px 7px 15px; border: 2px solid #fffdf5; border-radius: 23px; color: #765643; background: #fff9eeeF; box-shadow: 0 4px 0 #d8bfa472; }
 .pc-play-controls > span { display: flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 12px; }
 .pc-play-controls small { font-size: 10px; color: #9a7c63; }
 .pc-play-controls button { flex-shrink: 0; min-height: 44px; padding: 7px 13px; border: 0; border-radius: 15px; background: #e4eccf; color: #64764d; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
@@ -25,9 +25,9 @@
   .pc-play-controls button:hover { filter: brightness(1.03); }
 }
 @media (max-width: 720px) {
-  .is-frame-room .pc-companion-speech { top: 22%; font-size: 10px; }
-  .pc-play-loading-character { width: 82%; bottom: 12%; }
-  .pc-play-controls { gap: 6px; padding: 6px 7px 6px 10px; bottom: 10px; border-radius: 20px; }
+  .is-frame-room .pc-companion-speech { font-size: 10px; }
+  .pc-play-loading-character { width: min(82%, 48dvh); bottom: calc(var(--pc-room-dock-space) + 10%); }
+  .pc-play-controls { gap: 6px; padding: 6px 7px 6px 10px; border-radius: 20px; }
   .pc-play-controls > span { font-size: 10px; gap: 5px; flex-wrap: wrap; max-width: 95px; }
   .pc-play-controls small { width: 100%; padding-left: 22px; font-size: 9px; }
   .pc-play-controls button { padding: 6px 9px; font-size: 10px; }
@@ -36,4 +36,8 @@
   .pc-toybox-grid button > span { width: 61px; height: 59px; }
 }
 
-.pc-room-save-retry { position: absolute; z-index: 7; top: 14px; right: 60px; max-width: 190px; min-height: 36px; padding: 6px 10px; border: 1px solid #dac3ac; border-radius: 12px; color: #845638; background: #fff5df; font: inherit; font-size: 11px; cursor: pointer; }
+.pc-room-save-retry { position: absolute; z-index: 7; top: 80px; right: 28px; max-width: 190px; min-height: 36px; padding: 6px 10px; border: 1px solid #dac3ac; border-radius: 12px; color: #845638; background: #fff5df; font: inherit; font-size: 11px; cursor: pointer; }
+
+@media (max-width: 720px) {
+  .pc-room-save-retry { top: 72px; right: 16px; max-width: 145px; font-size: 10px; }
+}

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, MessageCircle, Plus, Search, X } from 'lucide-react';
+import { ArrowUpRight, MessageCircle, Plus, Search, X } from 'lucide-react';
 import type { ConversationSummary } from '../../shared/types';
-import { dayGroup, relativeTime, stripMarkdown, truncate } from '../lib/format';
+import { dayGroup, relativeTime, stripMarkdown } from '../lib/format';
 import { PageHeader } from './PageHeader';
-import { Capybara } from './PicolahMark';
+import './messages.css';
 
 interface MessagesViewProps {
   conversations: ConversationSummary[];
@@ -52,92 +52,92 @@ export function MessagesView({
         title={t('messages.label')}
         description={t('messages.description')}
         onOpenSidebar={onOpenSidebar}
-      />
+      >
+        <button type="button" className="pc-msg-new" onClick={onNew}>
+          <Plus size={16} />
+          <span>{t('messages.new')}</span>
+        </button>
+      </PageHeader>
 
       <div className="pc-page-body pc-messages-body">
-        <div className="pc-msg-panel">
-          <div className="pc-msg-toolbar">
-            <label className="pc-msg-search">
-              <Search size={16} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('messages.search')}
-                aria-label={t('messages.search')}
-              />
-              {query && (
-                <button type="button" onClick={() => setQuery('')} aria-label={t('messages.clear')}>
-                  <X size={13} />
-                </button>
-              )}
-            </label>
-            <button type="button" className="pc-primary-button" onClick={onNew}>
-              <Plus size={15} />
-              {t('messages.new')}
-            </button>
-          </div>
+        <div className="pc-msg-toolbar">
+          <label className="pc-msg-search">
+            <Search size={16} />
+            <input
+              type="search"
+              autoComplete="off"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('messages.search')}
+              aria-label={t('messages.search')}
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery('')} aria-label={t('messages.clear')}>
+                <X size={13} />
+              </button>
+            )}
+          </label>
+        </div>
 
-          <div className="pc-msg-list">
-            {loading && !conversations.length ? (
-              <div className="pc-msg-skeletons" aria-hidden="true">
-                {[0, 1, 2, 3].map((item) => (
-                  <div className="pc-msg-skeleton" key={item}>
-                    <span className="pc-skeleton-lines">
-                      <i style={{ width: '46%' }} />
-                      <i style={{ width: '84%' }} />
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : groups.length ? (
-              groups.map((group) => (
-                <div className="pc-msg-group" key={group.label}>
-                  <div className="pc-msg-group-head">
-                    {t(group.label === '今天' ? 'messages.today' : group.label === '昨天' ? 'messages.yesterday' : 'messages.earlier')}
-                  </div>
+        <div className="pc-msg-list" aria-busy={loading}>
+          {loading && !conversations.length ? (
+            <div className="pc-msg-skeletons" aria-hidden="true">
+              {[0, 1, 2, 3].map((item) => (
+                <div className="pc-msg-skeleton" key={item}>
+                  <span className="pc-skeleton-lines">
+                    <i style={{ width: '46%' }} />
+                    <i style={{ width: '84%' }} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : groups.length ? (
+            groups.map((group, index) => (
+              <section className="pc-msg-group" key={group.label} aria-labelledby={`trail-group-${index}`}>
+                <h2 className="pc-msg-group-head" id={`trail-group-${index}`}>
+                  {t(group.label === '今天' ? 'messages.today' : group.label === '昨天' ? 'messages.yesterday' : 'messages.earlier')}
+                  <span>{group.items.length}</span>
+                </h2>
+                <ul className="pc-msg-rows">
                   {group.items.map((conversation) => {
                     const preview = stripMarkdown(conversation.preview || t('messages.noReply'));
                     return (
-                      <button
-                        type="button"
-                        className="pc-msg-row"
-                        key={conversation.id}
-                        onClick={() => onSelect(conversation.id)}
-                      >
-                        <span className="pc-msg-main">
-                          <span className="pc-msg-row-top">
-                            <strong>{conversation.title}</strong>
-                            <time>{relativeTime(conversation.updatedAt)}</time>
+                      <li key={conversation.id}>
+                        <button
+                          type="button"
+                          className="pc-msg-row"
+                          onClick={() => onSelect(conversation.id)}
+                        >
+                          <MessageCircle size={16} className="pc-msg-thread-icon" aria-hidden="true" />
+                          <span className="pc-msg-main">
+                            <strong title={conversation.title}>{conversation.title}</strong>
+                            <span className="pc-msg-preview">{preview}</span>
                           </span>
-                          <span className="pc-msg-preview">{truncate(preview, 72)}</span>
-                          <span className="pc-msg-meta">
-                            {t('messages.comparison')}
-                          </span>
-                        </span>
-                        <ChevronRight size={17} className="pc-msg-chevron" />
-                      </button>
+                          <time dateTime={conversation.updatedAt}>{relativeTime(conversation.updatedAt)}</time>
+                          <ArrowUpRight size={15} className="pc-msg-chevron" aria-hidden="true" />
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
-              ))
-            ) : (
-              <div className="pc-msg-empty">
-                <Capybara size={92} />
-                <strong>{t(query ? 'messages.noMatch' : 'messages.empty')}</strong>
-                <p>
-                  {query
-                    ? t('messages.tryAgain')
-                    : t('messages.emptyHint')}
-                </p>
-                <button type="button" className="pc-primary-button" onClick={onNew}>
-                  <MessageCircle size={15} />
-                  {t('messages.start')}
-                </button>
-              </div>
-            )}
-          </div>
+                </ul>
+              </section>
+            ))
+          ) : (
+            <div className="pc-msg-empty">
+              <MessageCircle size={28} strokeWidth={1.5} aria-hidden="true" />
+              <strong>{t(query ? 'messages.noMatch' : 'messages.empty')}</strong>
+              <p>
+                {query
+                  ? t('messages.tryAgain')
+                  : t('messages.emptyHint')}
+              </p>
+              <button type="button" className="pc-msg-new" onClick={onNew}>
+                <MessageCircle size={15} />
+                {t('messages.start')}
+              </button>
+            </div>
+          )}
         </div>
-
       </div>
     </section>
   );
