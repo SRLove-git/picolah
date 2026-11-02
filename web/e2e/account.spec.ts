@@ -11,32 +11,30 @@ const activity = {
 };
 
 async function setup(page: Page, signedIn = true) {
-  await page.addInitScript(() => localStorage.setItem('picolah.language', 'en'));
+  await page.addInitScript(() => localStorage.setItem('picolah.market', 'SG'));
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user: signedIn ? user : null, required: false } }));
   await page.route('**/api/profile', (route) => route.fulfill({ json: { profile: activity } }));
 }
 
 for (const width of [1440, 390, 320]) {
-  test(`account activity is readable without mascot placeholders at ${width}px`, async ({ page }, testInfo) => {
+  test(`account settings replace duplicate history at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 });
     await setup(page);
     await page.goto('/7hk9ho#account');
     const account = page.getByRole('region', { name: 'Your space' });
-    await expect(account.locator('.account-post')).toHaveCount(3);
+    await expect(account.locator('.account-post')).toHaveCount(0);
+    await expect(account.getByRole('tab', { name: 'History' })).toHaveCount(0);
+    await expect(account.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
     await expect(account.locator('.pc-capy')).toHaveCount(0);
     await expect(account.getByText('A little Pico', { exact: true })).toHaveCount(0);
-    await expect(account.locator('.account-post').nth(1)).toContainText('Merchant visit');
-    await expect(account.locator('.account-post').nth(1)).toContainText('Malaysia');
-    await expect(account.locator('.account-post').first()).toContainText('Singapore');
+    await expect(account.locator('.account-context')).toContainText('Singapore');
+    await expect(page).toHaveTitle('PICOLAH');
     await expect(account.locator('.account-avatar-default')).toBeVisible();
     expect(await account.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`account-${width}.png`), fullPage: true });
-    const history = account.getByRole('tab', { name: 'History' });
-    await history.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(account.getByRole('tab', { name: 'Settings' })).toBeFocused();
-    await expect(account.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
+    await account.getByRole('button', { name: 'Preferences' }).click();
+    await expect(account.getByRole('heading', { name: 'Settings', exact: true })).toBeFocused();
   });
 }
 
@@ -48,18 +46,19 @@ test('guest avatar upload opens sign-in instead of an unusable file picker', asy
   await expect(page.locator('.account-avatar-input')).toBeDisabled();
 });
 
-test('failed history fetch can be retried and empty history stays honest', async ({ page }) => {
+test('account settings do not load the removed browsing history', async ({ page }) => {
   await setup(page);
-  let fail = true;
-  await page.route('**/api/profile', (route) => fail
-    ? route.fulfill({ status: 503, json: { message: 'Unavailable' } })
-    : route.fulfill({ json: { profile: { recent: [] } } }));
+  let profileRequests = 0;
+  await page.route('**/api/profile', route => {
+    profileRequests += 1;
+    return route.fulfill({ status: 503, json: { message: 'Unavailable' } });
+  });
   await page.goto('/7hk9ho#account');
-  await expect(page.getByText('Activity is unavailable')).toBeVisible();
-  fail = false;
-  await page.getByRole('button', { name: 'Try again', exact: true }).click();
-  await expect(page.getByText('No recent activity here')).toBeVisible();
-  await expect(page.locator('.account-post')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await page.locator('.pc-profile-account summary').click();
+  await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible();
+  expect(profileRequests).toBe(0);
+  await expect(page.getByText('Activity is unavailable')).toHaveCount(0);
 });
 
 test('custom avatar upload and restore update the profile and sidebar', async ({ page }) => {
@@ -98,7 +97,6 @@ test('sign-out removes the previous account conversation cache', async ({ page }
   await page.goto('/7hk9ho#messages');
   await expect(page.getByText('Private account conversation', { exact: true })).toBeVisible();
   await page.locator('.pc-account-card').click();
-  await page.getByRole('tab', { name: 'Settings' }).click();
   await page.locator('.pc-profile-account summary').click();
   await page.getByRole('button', { name: 'Log out', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Guest', exact: true })).toBeVisible();
@@ -151,7 +149,6 @@ test('a delayed avatar session refresh cannot restore an account after logout', 
     buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
   });
   await started;
-  await page.getByRole('tab', { name: 'Settings' }).click();
   await page.locator('.pc-profile-account summary').click();
   await page.getByRole('button', { name: 'Log out', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Guest', exact: true })).toBeVisible();

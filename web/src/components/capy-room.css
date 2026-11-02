@@ -1,13 +1,13 @@
 /* The page itself is the habitat; controls float over one continuous scene. */
-.pc-capy-home-page { position: relative; background: #d3b28a; }
+.pc-capy-home-page { position: relative; background: var(--pc-bg); }
 .pc-capy-home-page .pc-page-head {
   position: absolute; inset: 0 0 auto; z-index: 8; min-height: 92px;
   padding: 22px 148px 28px 28px; border: 0; pointer-events: none;
-  background: linear-gradient(#48332080, #48332000); backdrop-filter: none;
+  background: var(--pc-bg); backdrop-filter: none;
 }
 .pc-capy-home-page .pc-page-head button { pointer-events: auto; }
-.pc-capy-home-page .pc-page-title h1 { color: #fff9ef; letter-spacing: -0.04em; text-shadow: 0 2px 8px #49321e66; }
-.pc-capy-home-page .pc-eyebrow { color: #fff1d5; text-shadow: 0 1px 5px #49321e66; }
+.pc-capy-home-page .pc-page-title h1 { color: var(--pc-ink); letter-spacing: -0.04em; text-shadow: none; }
+.pc-capy-home-page .pc-eyebrow { color: var(--pc-muted); text-shadow: none; }
 .pc-capy-home-page .pc-capy-chip { color: #765043; background: #fff8e9de; border-color: #fff5dc70; }
 .pc-capy-home-page .pc-capy-chip svg { fill: #eeb5a5; }
 .pc-capy-home-page .pc-capy-room-body { display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; overflow: hidden; }
@@ -19,7 +19,7 @@
   height: 100%;
   max-width: none;
   overflow: hidden;
-  background: #d3b28a;
+  background: var(--pc-bg);
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -32,7 +32,7 @@
   min-height: 0;
   padding: 0;
   overflow: hidden;
-  background: linear-gradient(#ecd7b8 58%, #cfaa7a 58%, #ead1a5);
+  background: var(--pc-bg);
 }
 .pc-companion.is-room .pc-companion-scene::before {
   content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -140,7 +140,7 @@
 /* Base UI supplies the modal focus trap, Escape/outside dismissal and restoration. */
 .pc-room-backdrop { position: fixed; inset: 0; z-index: 1000; background: #69463d70; transition: opacity 220ms var(--ease-out); }
 .pc-room-modal-viewport { position: fixed; inset: 0; z-index: 1001; display: grid; place-items: center; padding: 24px; overflow: auto; overscroll-behavior: contain; }
-.pc-room-notebook { width: min(100%, 520px); min-width: 0; min-height: 0; max-height: min(740px, calc(100dvh - 48px)); display: flex; flex-direction: column; padding: 20px; color: #76594d; background: #fffbf3; border: 4px solid #fffef8; border-radius: 30px; box-shadow: 0 7px 0 #e9cfc0, 0 20px 60px #4b2f3940; }
+.pc-room-notebook { width: min(100%, 520px); min-width: 0; min-height: 0; max-height: min(740px, calc(100dvh - 48px)); display: flex; flex-direction: column; padding: 20px; color: #76594d; background: var(--pc-card); border: 1px solid var(--pc-line); border-radius: 30px; box-shadow: 0 20px 60px #00000026; }
 .pc-room-popup { transform: scale(1); opacity: 1; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); outline: none; }
 .pc-room-popup[data-starting-style], .pc-room-popup[data-ending-style] { opacity: 0; transform: scale(0.96); }
 .pc-room-backdrop[data-starting-style], .pc-room-backdrop[data-ending-style] { opacity: 0; }
@@ -150,9 +150,9 @@
 .pc-room-book-icon { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 16px; color: #b77d78; background: #ffe6df; }
 .pc-room-notebook-head h2 { margin: 0; color: #815e50; font-family: var(--pc-font-display); font-size: 19px; letter-spacing: -0.5px; }
 .pc-room-close { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; color: #ae8a79; border: 1px solid #efdfd0; border-radius: 50%; background: #fff7e9; cursor: pointer; }
-.pc-room-tabs { display: grid; flex: 0 0 auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; padding: 5px; margin-bottom: 16px; border-radius: 18px; background: #f6ecdf; }
+.pc-room-tabs { display: grid; flex: 0 0 auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; padding: 5px; margin-bottom: 16px; border-radius: 18px; background: var(--pc-bg); }
 .pc-room-tabs button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 0; padding: 8px 3px; font: inherit; font-size: 12px; font-weight: 600; border: 0; border-radius: 14px; color: #a38770; background: transparent; cursor: pointer; }
-.pc-room-tabs button[aria-selected='true'] { background: #fffcf6; color: #a57068; box-shadow: 0 3px 0 #e6d7c5; }
+.pc-room-tabs button[aria-selected='true'] { background: var(--pc-card); color: #a57068; box-shadow: 0 3px 0 #e6d7c5; }
 .pc-room-panel-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #dec6b5 transparent; padding: 3px 3px 4px; }
 .pc-room-panel[hidden] { display: none; }
 .pc-room-notebook .pc-room-panel { padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; min-width: 0; }
@@ -160,7 +160,7 @@
 .pc-room-notebook .pc-capy-panel-head h2 { color: #947663; font-size: 12px; font-weight: 600; }
 .pc-room-notebook .pc-capy-panel-count { color: #9e8a71; background: #f7f1e6; font-size: 10px; }
 .pc-room-notebook .pc-capy-wardrobe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.pc-room-notebook .pc-capy-item { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 12px; min-width: 0; border-color: #efe0d0; background: #fff8ed; border-radius: 20px; }
+.pc-room-notebook .pc-capy-item { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 12px; min-width: 0; border-color: #efe0d0; background: var(--pc-paper); border-radius: 20px; }
 .pc-room-notebook .pc-capy-item-art { width: 58px; height: 58px; border-radius: 17px; }
 .pc-room-notebook .pc-capy-item-art svg { width: 42px; height: 42px; }
 .pc-room-notebook .pc-capy-item-copy { width: 100%; }
@@ -176,7 +176,7 @@
 .pc-room-stage-note strong { font-size: 14px; }
 .pc-room-stage-note p, .pc-room-stage-note small { font-size: 11px; line-height: 1.7; }
 .pc-room-notebook .pc-capy-xp-list { grid-template-columns: minmax(0, 1fr); }
-.pc-room-notebook .pc-capy-empty { padding: 40px 14px; color: #b59d85; border-radius: 20px; background: #fbf4e8; }
+.pc-room-notebook .pc-capy-empty { padding: 40px 14px; color: #b59d85; border-radius: 20px; background: var(--pc-paper); }
 .pc-room-notebook .pc-capy-empty > svg { padding: 13px; width: 62px; height: 62px; border-radius: 22px; color: #bd9475; background: #f5e4ce; }
 .pc-room-notebook .pc-capy-empty p { font-size: 12px; line-height: 1.8; }
 .pc-room-notebook button:focus-visible, .pc-room-panel:focus-visible { outline: 2px solid #b98173; outline-offset: 2px; }
@@ -193,7 +193,7 @@
 @media (max-width: 720px) {
   .pc-capy-home-page .pc-page-head { min-height: 88px; gap: 10px; padding: 18px 122px 24px 16px; }
   .pc-capy-home-page .pc-page-head-right { position: absolute; top: 72px; left: 16px; }
-  .pc-capy-home-page .pc-mobile-menu { color: #fff9ef; background: #fff7e926; border-color: #fff4de70; }
+  .pc-capy-home-page .pc-mobile-menu { color: var(--pc-ink); background: var(--pc-card); border-color: var(--pc-line); }
   .pc-capy-home-page .pc-eyebrow { font-size: 7px; letter-spacing: 0.08em; }
   .pc-capy-home-page .pc-page-title h1 { font-size: 17px; }
   .pc-capy-home-page .pc-capy-chip { font-size: 9px; padding: 5px 8px; gap: 4px; }

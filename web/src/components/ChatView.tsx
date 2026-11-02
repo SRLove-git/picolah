@@ -1,4 +1,5 @@
 import { ArrowDown, Menu, Plus, X } from 'lucide-react';
+import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   AppConfig,
@@ -19,6 +20,7 @@ export interface StreamState {
 }
 
 interface ChatViewProps {
+  hidden?: boolean;
   title: string | null;
   market: CountryCode;
   priceMode: PriceMode;
@@ -66,6 +68,7 @@ function ChatSkeleton() {
 }
 
 export function ChatView({
+  hidden = false,
   title,
   market,
   priceMode,
@@ -90,8 +93,21 @@ export function ChatView({
   onOpenSidebar,
 }: ChatViewProps) {
   const { t } = useTranslation();
+  const scrollTopRef = useRef(0);
+
+  useLayoutEffect(() => {
+    if (!hidden && scrollRef.current) scrollRef.current.scrollTop = scrollTopRef.current;
+  }, [hidden, scrollRef]);
+
+  function handleScroll() {
+    // Hidden panels have no layout; ignore their scroll events and restore on return.
+    if (hidden) return;
+    scrollTopRef.current = scrollRef.current?.scrollTop ?? 0;
+    onScroll();
+  }
+
   return (
-    <section className="pc-chat" aria-label={t('chat.label')}>
+    <section className="pc-chat" hidden={hidden} style={hidden ? { display: 'none' } : undefined} aria-label={t('chat.label')}>
       <header className="pc-chat-head">
         <button
           type="button"
@@ -125,7 +141,7 @@ export function ChatView({
       </header>
 
       <div className="pc-chat-stage">
-        <div className="pc-chat-scroll" ref={scrollRef} onScroll={onScroll}>
+        <div className="pc-chat-scroll" ref={scrollRef} onScroll={handleScroll}>
           <div className="pc-chat-thread">
             {loading ? (
               <ChatSkeleton />
@@ -175,6 +191,7 @@ export function ChatView({
 
         <div className="pc-chat-composer">
           <PromptComposer
+            active={!hidden}
             variant="dock"
             market={market}
             priceMode={priceMode}

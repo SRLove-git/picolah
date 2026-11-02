@@ -12,6 +12,7 @@ import type {
 import { COUNTRY_CODES } from '../shared/types';
 import { getConfig, getConversation, getConversations, streamChat } from './lib/api';
 import { languageForMarket } from './lib/market-language';
+import { uiText } from './lib/ui-copy';
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
 import { ChatView } from './components/ChatView';
@@ -99,6 +100,7 @@ function AppWorkspace() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
   const [view, setView] = useState<AppView>(initialView);
+  const [newChatVersion, setNewChatVersion] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -111,6 +113,10 @@ function AppWorkspace() {
   const nearBottomRef = useRef(true);
   const scrollFrameRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    void i18n.changeLanguage(languageForMarket(market));
+  }, [market, i18n]);
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -147,7 +153,6 @@ function AppWorkspace() {
       writeStorage(MARKET_KEY, conversation.market);
       nearBottomRef.current = true;
       setNearBottom(true);
-      setView('chat');
     },
     [],
   );
@@ -171,10 +176,6 @@ function AppWorkspace() {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    document.title = title ? `${title} · Picolah` : t('app.title');
-  }, [title, t, i18n.language]);
 
   useEffect(() => {
     const hash = view === 'chat' ? '' : `#${view}`;
@@ -232,9 +233,10 @@ function AppWorkspace() {
   }, []);
 
   const cancelStream = useCallback((preservePartial: boolean) => {
+    // Invalidate callbacks even between the final SSE event and its cleanup.
+    streamTokenRef.current += 1;
     const active = abortRef.current;
     if (active) {
-      streamTokenRef.current += 1;
       active.abort();
       abortRef.current = null;
     }
@@ -244,13 +246,14 @@ function AppWorkspace() {
         const partial: ChatMessageType = {
           id: `stopped-${Date.now()}`,
           role: 'assistant',
-          content: `${current.text.trim()}\n\n（已停止生成）`,
+          content: `${current.text.trim()}\n\n(${uiText('Stopped generating')})`,
           createdAt: new Date().toISOString(),
           comparison: current.comparison || undefined,
         };
         setMessages((previous) => [...previous, partial]);
       }
     }
+    streamRef.current = null;
     setStream(null);
   }, []);
 
@@ -264,7 +267,13 @@ function AppWorkspace() {
     setChatError(null);
     setConversationLoading(false);
     setSidebarOpen(false);
+    setNewChatVersion((version) => version + 1);
     setView('home');
+    // A fresh conversation must also stay fresh after reloading a history link.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('conversation');
+    url.hash = 'home';
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
     window.requestAnimationFrame(() => {
       if (window.matchMedia('(min-width: 821px)').matches) composerRef.current?.focus();
     });
@@ -278,21 +287,18 @@ function AppWorkspace() {
         return;
       }
       if (next === 'home') {
-        if (view === 'home' && !messages.length) {
-          if (window.matchMedia('(min-width: 821px)').matches) composerRef.current?.focus();
-          return;
-        }
         handleNewChat();
         return;
       }
       setView(next);
     },
-    [handleNewChat, messages.length, promptLogin, required, user, view],
+    [handleNewChat, promptLogin, required, user],
   );
 
   const loadConversation = useCallback(
     async (id: string) => {
-      if (activeIdRef.current === id && !conversationLoading && !streamRef.current) {
+      // Reopening the active chat must not abort its stream or reload a partial DB snapshot.
+      if (activeIdRef.current === id) {
         setSidebarOpen(false);
         setView('chat');
         return;
@@ -347,7 +353,7 @@ function AppWorkspace() {
       const optimisticUser: ChatMessageType = {
         id: `local-user-${Date.now()}`,
         role: 'user',
-        content: message || '帮我看看这张图里的商品，推荐一下',
+        content: message || t('composer.imageQuery'),
         createdAt: new Date().toISOString(),
         image,
       };
@@ -383,7 +389,7 @@ function AppWorkspace() {
       try {
         await streamChat(
           {
-            message: message || '帮我看看这张图里的商品，推荐一下',
+            message: message || t('composer.imageQuery'),
             market,
             conversationId: startingId,
             image,
@@ -457,7 +463,7 @@ function AppWorkspace() {
                 finalize(
                   collected.trim(),
                   `error-${Date.now()}`,
-                  '（生成中断，以上为已生成的部分建议。）',
+                  uiText('The answer was interrupted.'),
                 );
               } else {
                 setStream(null);
@@ -469,19 +475,19 @@ function AppWorkspace() {
         );
 
         if (!settled && !controller.signal.aborted && streamTokenRef.current === token) {
-          setChatError('连接提前结束，请再问一次。');
+          setChatError(uiText('Connection ended early. Please try again.'));
           if (collected.trim()) {
-            finalize(collected.trim(), `incomplete-${Date.now()}`, '（回答可能不完整。）');
+            finalize(collected.trim(), `incomplete-${Date.now()}`, uiText('The answer may be incomplete.'));
           } else {
             setStream(null);
           }
         }
       } catch (error) {
         if (controller.signal.aborted || streamTokenRef.current !== token) return;
-        const messageText = error instanceof Error ? error.message : '网络连接失败';
+        const messageText = error instanceof Error ? error.message : uiText('Network connection failed');
         setChatError(messageText);
         if (collected.trim()) {
-          finalize(collected.trim(), `error-${Date.now()}`, '（回答生成中断。）');
+          finalize(collected.trim(), `error-${Date.now()}`, uiText('The answer was interrupted.'));
         } else {
           setStream(null);
         }
@@ -501,11 +507,7 @@ function AppWorkspace() {
   const handleMarketChange = useCallback((next: CountryCode) => {
     setMarket(next);
     writeStorage(MARKET_KEY, next);
-    const nextLanguage = languageForMarket(next, i18n.language);
-    if (!i18n.language.startsWith(nextLanguage)) {
-      void i18n.changeLanguage(nextLanguage);
-    }
-  }, [i18n]);
+  }, []);
 
   const handlePriceModeChange = useCallback((next: PriceMode) => {
     setPriceMode(next);
@@ -531,7 +533,7 @@ function AppWorkspace() {
   return (
     <div className={`pc-app ${sidebarOpen ? 'is-sidebar-open' : ''}`}>
       <a className="pc-skip-link" href="#main-content">
-        {i18n.language.startsWith('zh') ? '跳到主要内容' : 'Skip to main content'}
+        {uiText('Skip to main content')}
       </a>
       <div
         className={`pc-sidebar-scrim ${sidebarOpen ? 'is-open' : ''}`}
@@ -557,6 +559,7 @@ function AppWorkspace() {
         >
         {view === 'home' && (
           <HomeView
+            key={newChatVersion}
             market={market}
             priceMode={priceMode}
             config={config}
@@ -582,8 +585,9 @@ function AppWorkspace() {
           />
         )}
 
-        {view === 'chat' && (
+        {(view === 'chat' || activeId || messages.length > 0 || stream) && (
           <ChatView
+            hidden={view !== 'chat'}
             title={title}
             market={market}
             priceMode={priceMode}
@@ -654,7 +658,6 @@ function AppWorkspace() {
             onMarketChange={handleMarketChange}
             onPriceModeChange={handlePriceModeChange}
             onOpenSidebar={() => setSidebarOpen(true)}
-            onOpenHome={() => navigate('home')}
             notify={notify}
           />
         )}

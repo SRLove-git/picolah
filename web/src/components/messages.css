@@ -1,9 +1,9 @@
 /* Trail is one continuous workspace, with compact conversation rows. */
 .pc-messages-page {
   --trail-ink: #292929;
-  --trail-muted: #858581;
-  --trail-line: #e9e9e5;
-  background: #fafaf8;
+  --trail-muted: var(--pc-muted);
+  --trail-line: var(--pc-line);
+  background: var(--pc-bg);
   color: var(--trail-ink);
 }
 
@@ -33,7 +33,7 @@
 }
 .pc-messages-page .pc-msg-search {
   flex: 0 1 520px; min-width: 0; height: 42px; padding: 0 12px; gap: 9px;
-  color: var(--trail-muted); background: #f0f0ed; border: 1px solid #e4e4df; border-radius: 10px;
+  color: var(--trail-muted); background: var(--pc-card); border: 1px solid var(--pc-line); border-radius: 10px;
 }
 .pc-messages-page .pc-msg-search:focus-within { background: #fff; border-color: #94948c; box-shadow: 0 0 0 3px #30302e0a; }
 .pc-messages-page .pc-msg-search > svg { flex-shrink: 0; }
@@ -66,7 +66,7 @@
 .pc-messages-page .pc-msg-preview { flex: 1; min-width: 0; color: var(--trail-muted); font-size: 12px; line-height: 20px; }
 .pc-messages-page .pc-msg-row > time { flex-shrink: 0; color: var(--trail-muted); font-size: 11px; line-height: 20px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pc-messages-page .pc-msg-chevron { color: #73736c; transform: none; transition: opacity 120ms ease; }
-.pc-messages-page .pc-msg-row:focus-visible { background: #efefeb; outline: 2px solid #83837c; outline-offset: -2px; }
+.pc-messages-page .pc-msg-row:focus-visible { background: var(--pc-paper); outline: 2px solid #83837c; outline-offset: -2px; }
 .pc-messages-page .pc-msg-row:focus-visible .pc-msg-chevron { opacity: 1; }
 .pc-messages-page .pc-msg-new:focus-visible,
 .pc-messages-page .pc-msg-search button:focus-visible { outline: 2px solid #83837c; outline-offset: 3px; }
@@ -80,7 +80,7 @@
 .pc-messages-page .pc-msg-empty .pc-msg-new { margin-top: 12px; }
 
 @media (hover: hover) and (pointer: fine) {
-  .pc-messages-page .pc-msg-row:hover { background: #efefeb; transform: none; }
+  .pc-messages-page .pc-msg-row:hover { background: var(--pc-paper); transform: none; }
   .pc-messages-page .pc-msg-row:hover .pc-msg-chevron { opacity: 1; transform: none; }
   .pc-messages-page .pc-msg-new:hover { background: #494945; }
   .pc-messages-page .pc-msg-search button:hover { background: #eaeae6; }

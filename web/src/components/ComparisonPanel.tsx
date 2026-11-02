@@ -1,3 +1,4 @@
+import { marketName } from '../lib/market-language';
 import { ArrowUpRight, BadgeCheck, BellPlus, Clock3, PackageSearch } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -58,7 +59,7 @@ function MetricComparison({ offers, market, priceMode }: { offers: Offer[]; mark
   const ratingMax = Math.max(...ratings);
   const reviewMin = Math.min(...reviews);
   const reviewMax = Math.max(...reviews);
-  const numberFormat = new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'zh-CN');
+  const numberFormat = new Intl.NumberFormat(i18n.language);
 
   return (
     <section className="offer-metrics" aria-label={t('comparison.chartTitle')}>
@@ -247,7 +248,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                       <span className="offer-rating">
                         <span aria-hidden="true">★</span> {offer.ratingKnown === false ? t('liveComparison.notProvided') : offer.rating.toFixed(1)}
                         <span className="review-count">
-                          · {offer.reviewsKnown === false ? t('liveComparison.notProvided') : new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : 'zh-CN').format(offer.reviews)} {t('comparison.reviews')}
+                          · {offer.reviewsKnown === false ? t('liveComparison.notProvided') : new Intl.NumberFormat(i18n.language).format(offer.reviews)} {t('comparison.reviews')}
                         </span>
                       </span>
                     </div>
@@ -275,7 +276,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
         <div className="comparison-empty">
           <span className="empty-orbit" aria-hidden="true" />
           <div>
-            <strong>{t('comparison.unavailable', { market: i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh })}</strong>
+            <strong>{t('comparison.unavailable', { market: marketName(market, i18n.language) })}</strong>
             <p>{t('comparison.unavailableHint')}</p>
           </div>
         </div>
@@ -305,7 +306,7 @@ export function AlternativeGrid({
     <div className="alternatives">
       <div className="alternatives-head">
         <span>{title || t('comparison.seeAlso')}</span>
-        <small>{i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh} · {t('comparison.currentMarket')}</small>
+        <small>{marketName(market, i18n.language)} · {t('comparison.currentMarket')}</small>
       </div>
       <div className="alternatives-grid">
         {alternatives.map((item) => {
@@ -353,7 +354,7 @@ export function AlternativeGrid({
               key={item.product.id}
               type="button"
               onClick={() =>
-                onAsk(t('comparison.askCheapest', { product: item.product.name, market: i18n.language === 'en' ? MARKETS[item.market].nameEn : MARKETS[item.market].nameZh }))
+                onAsk(t('comparison.askCheapest', { product: item.product.name, market: marketName(item.market, i18n.language) }))
               }
             >{content}</button>
           );

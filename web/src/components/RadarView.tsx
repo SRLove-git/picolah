@@ -1,3 +1,4 @@
+import { uiText, localizeCopy } from '../lib/ui-copy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import {
@@ -162,7 +163,7 @@ function tint(seed: string): string {
 function budgetLabel(budget: RadarData['self']['budget'], en: boolean): string {
   if (!budget) return '—';
   try {
-    const format = new Intl.NumberFormat(en ? 'en-US' : 'zh-CN', {
+    const format = new Intl.NumberFormat(document.documentElement.lang || 'en', {
       style: 'currency',
       currency: budget.currency,
       maximumFractionDigits: 0,
@@ -175,8 +176,8 @@ function budgetLabel(budget: RadarData['self']['budget'], en: boolean): string {
 
 export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
   const { i18n } = useTranslation();
-  const en = i18n.language.startsWith('en');
-  const copy = en ? COPY.en : COPY.zh;
+  const en = !i18n.language.startsWith('zh');
+  const copy = en ? localizeCopy(COPY.en) : COPY.zh;
   const { user, promptLogin } = useSession();
   const [data, setData] = useState<RadarData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -486,7 +487,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                     <p>{en ? self?.taglineEn : self?.taglineZh}</p>
                     <div className="radar-tags">{preferenceTags.map((tag) => <span key={`${tag.zh}-${tag.en}`}>{en ? tag.en : tag.zh}</span>)}</div>
                     <dl><div><dt>{copy.budget}</dt><dd>{budgetLabel(self?.budget ?? null, en)}</dd></div>
-                      <div><dt>{en ? 'Activity' : '消费足迹'}</dt><dd>{self?.comparisons ?? 0} {copy.comparisons} · {self?.clicks ?? 0} {copy.clicks}</dd></div></dl>
+                      <div><dt>{en ? uiText('Activity') : '消费足迹'}</dt><dd>{self?.comparisons ?? 0} {copy.comparisons} · {self?.clicks ?? 0} {copy.clicks}</dd></div></dl>
                   </div>
                 ) : panel === 'friends' ? (
                   friends.length ? <ul className="radar-list radar-compact-list">

@@ -1,3 +1,4 @@
+import { uiText } from '../lib/ui-copy';
 import { Clapperboard, Heart, Tags, UserRound, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { VideoInterest, VideoProfile, ReelEventType } from '../../shared/reels';
@@ -21,11 +22,11 @@ function Interests({ title, items, english }: {
       <h4>{title}</h4>
       {items.length ? <ul>
         {items.slice(0, 4).map((item) => <li key={item.id}>
-          <span>{english ? item.labelEn : item.labelZh}</span>
+          <span>{english ? uiText(item.labelEn) : item.labelZh}</span>
           <span className="video-profile-track" aria-hidden="true"><i style={{ width: `${Math.min(100, item.share * 100)}%` }} /></span>
           <small>{Math.round(item.share * 100)}%</small>
         </li>)}
-      </ul> : <p>{english ? 'Keep exploring to build your interests.' : '多看一些内容，兴趣会逐渐清晰。'}</p>}
+      </ul> : <p>{english ? uiText('Keep exploring to build your interests.') : '多看一些内容，兴趣会逐渐清晰。'}</p>}
     </div>
   );
 }
@@ -36,8 +37,8 @@ export function VideoProfileCard({ profile, onReset, resetting }: {
   resetting: boolean;
 }) {
   const { i18n, t } = useTranslation();
-  const english = i18n.language === 'en';
-  const copy = (zh: string, en: string) => english ? en : zh;
+  const english = !i18n.language.startsWith('zh');
+  const copy = (zh: string, en: string) => english ? uiText(en) : zh;
   return <section className="persona-card video-profile-card" aria-label={copy('视频兴趣画像', 'Video interests')}>
     <header className="persona-card-head">
       <span className="persona-card-icon tone-lilac"><Clapperboard size={17} /></span>
@@ -63,13 +64,13 @@ export function VideoProfileCard({ profile, onReset, resetting }: {
     <div className="video-profile-labels">
       <Tags size={14} aria-hidden="true" />
       <span>{copy('兴趣标签', 'Topics')}</span>
-      {profile.topics.slice(0, 6).map((item) => <span className="video-profile-tag" key={item.id}>{english ? item.labelEn : item.labelZh}</span>)}
+      {profile.topics.slice(0, 6).map((item) => <span className="video-profile-tag" key={item.id}>{english ? uiText(item.labelEn) : item.labelZh}</span>)}
       {!profile.topics.length && <small>{copy('尚未形成明确标签', 'No clear topics yet')}</small>}
     </div>
     <div className="video-profile-labels">
       <UserRound size={14} aria-hidden="true" />
       <span>{copy('喜欢的作者', 'Creators you enjoy')}</span>
-      {profile.creators.slice(0, 3).map((item) => <span className="video-profile-tag" key={item.id}>{english ? item.labelEn : item.labelZh}</span>)}
+      {profile.creators.slice(0, 3).map((item) => <span className="video-profile-tag" key={item.id}>{english ? uiText(item.labelEn) : item.labelZh}</span>)}
       {!profile.creators.length && <small>{copy('尚未形成明显偏好', 'No clear preference yet')}</small>}
     </div>
     {profile.recent.length > 0 && <details className="video-profile-history">

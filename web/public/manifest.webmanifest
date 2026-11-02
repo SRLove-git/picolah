@@ -1,13 +1,13 @@
 {
-  "name": "Picolah 比价工作台",
-  "short_name": "Picolah",
+  "name": "PICOLAH",
+  "short_name": "PICOLAH",
   "description": "面向东南亚的 AI 比价工作台，一次提问看清六个市场的到手价。",
   "lang": "zh-CN",
   "dir": "ltr",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#fbf7f2",
-  "theme_color": "#fbf7f2",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "scope": "/",
   "icons": [
     {

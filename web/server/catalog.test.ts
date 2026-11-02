@@ -21,8 +21,9 @@ after(
 );
 
 type CatalogBody = {
-  products: Array<{ id: string; name: string; category: string }>;
+  products: Array<{ id: string; name: string; brand: string; category: string }>;
   categories: string[];
+  brands: string[];
   total: number;
 };
 
@@ -57,4 +58,39 @@ test('returns an empty result for an unknown query', async () => {
   ).json()) as CatalogBody;
   assert.equal(body.total, 0);
   assert.deepEqual(body.products, []);
+});
+
+
+test('filters by exact brand while retaining available brand facets', async () => {
+  const all = (await (await fetch(`${baseUrl}/api/catalog`)).json()) as CatalogBody;
+  const sony = (await (await fetch(`${baseUrl}/api/catalog?brand=Sony`)).json()) as CatalogBody;
+  assert.equal(sony.total, 2);
+  assert.ok(sony.products.every(product => product.brand === 'Sony'));
+  assert.deepEqual(sony.brands, all.brands);
+  assert.ok(sony.brands.includes('Apple'));
+  const unknown = (await (await fetch(`${baseUrl}/api/catalog?brand=Unknown`)).json()) as CatalogBody;
+  assert.equal(unknown.total, 0);
+  assert.deepEqual(unknown.brands, all.brands);
+});
+
+test('combines query, category and brand without dropping category navigation', async () => {
+  const all = (await (await fetch(`${baseUrl}/api/catalog`)).json()) as CatalogBody;
+  const params = new URLSearchParams({ q: 'WH-1000XM5', category: '耳机', brand: 'Sony' });
+  const body = (await (await fetch(`${baseUrl}/api/catalog?${params}`)).json()) as CatalogBody;
+  assert.equal(body.total, 1);
+  assert.equal(body.products[0].name, 'Sony WH-1000XM5 无线降噪耳机');
+  assert.deepEqual(body.brands, ['Sony']);
+  assert.deepEqual(body.categories, all.categories);
+});
+
+test('sorts by name in either direction or groups by brand', async () => {
+  const get = async (sort: string) => (await (await fetch(`${baseUrl}/api/catalog?sort=${sort}`)).json()) as CatalogBody;
+  const asc = await get('name-asc');
+  const desc = await get('name-desc');
+  assert.deepEqual(desc.products.map(p => p.id), asc.products.map(p => p.id).reverse());
+  const compare = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
+  const grouped = await get('brand-asc');
+  assert.deepEqual(grouped.products.map(p => p.id), [...asc.products]
+    .sort((a, b) => compare(a.brand, b.brand) || compare(a.name, b.name) || compare(a.id, b.id)).map(p => p.id));
+  assert.deepEqual((await get('unknown')).products, asc.products);
 });

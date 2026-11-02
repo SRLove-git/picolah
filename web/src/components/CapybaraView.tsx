@@ -1,3 +1,4 @@
+import { uiText } from '../lib/ui-copy';
 import { Heart, NotebookPen, Shirt, ShoppingBag, Sprout, Trash2, X } from 'lucide-react';
 import { Dialog } from '@base-ui/react/dialog';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +25,7 @@ interface CapybaraViewProps {
  */
 export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   const { t, i18n } = useTranslation();
-  const english = i18n.language.startsWith('en');
+  const english = !i18n.language.startsWith('zh');
   const { view, available, syncing, toggleAccessory, removePurchase } = useCapybara();
   const [outfitVersion, setOutfitVersion] = useState(0);
   const [panel, setPanel] = useState<CapyRoomPanel>('wardrobe');
@@ -37,10 +38,10 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   const returnFocus = useRef<HTMLButtonElement>(null);
   const tabRefs = useRef<Partial<Record<CapyRoomPanel, HTMLButtonElement | null>>>({});
   const panels = [
-    { id: 'wardrobe' as const, label: english ? 'Wardrobe' : '衣橱', Icon: Shirt },
-    { id: 'growth' as const, label: english ? 'Growing up' : '成长', Icon: Sprout },
-    { id: 'journal' as const, label: english ? 'Diary' : '日记', Icon: NotebookPen },
-    { id: 'purchases' as const, label: english ? 'Keepsakes' : '购物记', Icon: ShoppingBag },
+    { id: 'wardrobe' as const, label: english ? uiText('Wardrobe') : '衣橱', Icon: Shirt },
+    { id: 'growth' as const, label: english ? uiText('Growing up') : '成长', Icon: Sprout },
+    { id: 'journal' as const, label: english ? uiText('Diary') : '日记', Icon: NotebookPen },
+    { id: 'purchases' as const, label: english ? uiText('Keepsakes') : '购物记', Icon: ShoppingBag },
   ];
   const openPanel: OpenCapyPanel = (next, trigger, keyboard) => {
     returnFocus.current = trigger;
@@ -83,8 +84,8 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   return (
     <div className="pc-page pc-capy-page pc-capy-home-page">
       <PageHeader
-        eyebrow={english ? 'MY LITTLE CAPY' : '和卡皮的每一天'}
-        title={english ? "Capy's little home" : '卡皮的小窝'}
+        eyebrow={english ? uiText('MY LITTLE CAPY') : '和卡皮的每一天'}
+        title={english ? uiText("Capy's little home") : '卡皮的小窝'}
         onOpenSidebar={onOpenSidebar}
       >
         <div className="pc-capy-head-meta">
@@ -95,7 +96,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
         </div>
       </PageHeader>
       <div className="pc-page-body pc-capy-body pc-capy-room-body">
-        <section className="pc-capy-room-stage" aria-label={english ? "Capy's room" : '卡皮的房间'}>
+        <section className="pc-capy-room-stage" aria-label={english ? uiText("Capy's room") : '卡皮的房间'}>
           <CapyPlayRoom view={view} outfitVersion={outfitVersion} onOpenPanel={openPanel} roomMenuOpen={panelOpen} />
         </section>
       </div>
@@ -116,11 +117,11 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
               onKeyDownCapture={() => setInstantPanel(true)}>
               <header className="pc-room-notebook-head">
                 <div><span className="pc-room-book-icon" aria-hidden="true"><NotebookPen size={22} /></span>
-                  <Dialog.Title>{english ? "Capy's little journal" : '卡皮的小手帐'}</Dialog.Title>
+                  <Dialog.Title>{english ? uiText("Capy's little journal") : '卡皮的小手帐'}</Dialog.Title>
                 </div>
-                <Dialog.Close className="pc-room-close" disabled={journalProtection.busy} aria-label={english ? 'Back to Capy' : '回到卡皮'} title={english ? 'Back to Capy' : '回到卡皮'}><X size={20} /></Dialog.Close>
+                <Dialog.Close className="pc-room-close" disabled={journalProtection.busy} aria-label={english ? uiText('Back to Capy') : '回到卡皮'} title={english ? uiText('Back to Capy') : '回到卡皮'}><X size={20} /></Dialog.Close>
               </header>
-              <div className="pc-room-tabs" role="tablist" aria-label={english ? "Capy's journal" : '小窝手帐'}>
+              <div className="pc-room-tabs" role="tablist" aria-label={english ? uiText("Capy's journal") : '小窝手帐'}>
                 {panels.map(({ id, label, Icon }, index) => <button key={id} type="button" role="tab"
                   id={`capy-tab-${id}`} aria-controls={`capy-panel-${id}`} aria-selected={panel === id}
                   tabIndex={panel === id ? 0 : -1} ref={(node) => { tabRefs.current[id] = node; }}
@@ -129,16 +130,16 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                 </button>)}
               </div>
               {confirmClose && <div className="pc-journal-feedback pc-journal-close-confirm" role="alert">
-                <span>{english ? 'Your entry has unsaved changes.' : '这篇日记还有没保存的修改。'}</span>
+                <span>{english ? uiText('Your entry has unsaved changes.') : '这篇日记还有没保存的修改。'}</span>
                 <button type="button" autoFocus onClick={(event) => {
                   setConfirmClose(false);
                   event.currentTarget.closest('[role="dialog"]')?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
-                }}>{english ? 'Keep writing' : '继续写'}</button>
+                }}>{english ? uiText('Keep writing') : '继续写'}</button>
                 <button type="button" onClick={() => {
                   setJournalVersion((version) => version + 1);
                   setJournalProtection({ dirty: false, busy: false });
                   setConfirmClose(false); setPanelOpen(false);
-                }}>{english ? 'Discard and close' : '放弃并关闭'}</button>
+                }}>{english ? uiText('Discard and close') : '放弃并关闭'}</button>
               </div>}
               <div className="pc-room-panel-scroll">
                 <section className="pc-room-panel" id="capy-panel-journal" role="tabpanel" aria-labelledby="capy-tab-journal" hidden={panel !== 'journal'} tabIndex={0}>
@@ -212,9 +213,9 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                     <span><strong>{view.purchases.length}</strong>{t('capybara.unitPurchases')}</span>
                     <span><strong>{view.worn.length}</strong>{t('capybara.unitWorn')}</span>
                   </div>
-                  <p className="pc-room-growth-note">{english ? 'Every thoughtful comparison is part of growing together.' : '每次认真比价，都在陪它一点点长大。'}</p>
-                  <div className="pc-room-stage-note"><strong>{english ? view.stage.nameEn : view.stage.nameZh}</strong>
-                    <p>{english ? view.stage.taglineEn : view.stage.taglineZh}</p>
+                  <p className="pc-room-growth-note">{english ? uiText('Every thoughtful comparison is part of growing together.') : '每次认真比价，都在陪它一点点长大。'}</p>
+                  <div className="pc-room-stage-note"><strong>{english ? uiText(view.stage.nameEn) : view.stage.nameZh}</strong>
+                    <p>{english ? uiText(view.stage.taglineEn) : view.stage.taglineZh}</p>
                     {!view.maxed && <small>{t('capybara.toNext', { xp: Math.max(0, view.nextLevelAt - view.xp) })}</small>}
                   </div>
 
@@ -222,7 +223,7 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                     <ul className="pc-capy-xp-list">
                       {activeRows.map((row) => (
                         <li key={row.source}>
-                          <span className="pc-capy-xp-label">{english ? row.labelEn : row.labelZh}</span>
+                          <span className="pc-capy-xp-label">{english ? uiText(row.labelEn) : row.labelZh}</span>
                           <span className="pc-capy-xp-count">
                             {row.count} × {row.unit}
                           </span>

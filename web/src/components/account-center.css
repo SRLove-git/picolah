@@ -1,24 +1,24 @@
 .pc-account-center {
-  --account-ink: #242326;
-  --account-muted: #6c696f;
-  --account-line: #e9e7e7;
+  --account-ink: var(--pc-ink);
+  --account-muted: var(--pc-muted);
+  --account-line: var(--pc-line);
   color: var(--account-ink);
-  background: #fdfcfa;
+  background: var(--pc-bg);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   font-optical-sizing: auto;
   overflow-y: auto;
 }
-.account-toolbar { position: sticky; top: 0; z-index: 9; display: flex; align-items: center; min-height: 70px; gap: 14px; padding: 10px clamp(20px, 4vw, 48px); background: #fdfcfad9; backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); }
+.account-toolbar { position: sticky; top: 0; z-index: 9; display: flex; align-items: center; min-height: 70px; gap: 14px; padding: 10px clamp(20px, 4vw, 48px); background: var(--pc-bg); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); }
 .account-toolbar h1 { flex: 1; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
-.account-icon-button { display: inline-grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid #e9e7e7; border-radius: 50%; background: #ffffffb8; color: var(--account-ink); cursor: pointer; }
+.account-icon-button { display: inline-grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--pc-line); border-radius: 50%; background: #ffffffb8; color: var(--account-ink); cursor: pointer; }
 .account-menu { display: none; }
 .account-content { width: min(100% - 64px, 940px); margin: 0 auto; padding-bottom: 48px; }
 .account-identity { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 36px; align-items: center; padding: 48px 0 42px; }
 .account-avatar-editor { display: flex; flex-direction: column; align-items: center; gap: 9px; justify-self: center; }
 .account-avatar-editor > small { color: var(--account-muted); font-size: 10px; line-height: 1.3; text-align: center; }
-.account-avatar { position: relative; width: 158px; height: 158px; display: grid; place-items: center; padding: 0; border-radius: 50%; background: #fff0e4; border: 7px solid #fff; box-shadow: 0 0 0 1px #eae5df, 0 10px 28px #674e2610; cursor: pointer; }
+.account-avatar { position: relative; width: 158px; height: 158px; display: grid; place-items: center; padding: 0; border-radius: 50%; background: var(--pc-paper); border: 7px solid #fff; box-shadow: 0 0 0 1px #eae5df, 0 10px 28px #674e2610; cursor: pointer; }
 .account-avatar > img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.account-avatar-default { width: 48%; height: 48%; color: #9a7d67; }
+.account-avatar-default { width: 48%; height: 48%; color: #737373; }
 .account-avatar-edit { position: absolute; right: 5px; bottom: 5px; display: grid; place-items: center; width: 36px; height: 36px; color: #fff; background: #29272ce8; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 5px 16px #2c253033; }
 .account-avatar-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .account-avatar-spin { animation: account-avatar-spin 900ms linear infinite; }
@@ -29,53 +29,28 @@
 .account-email { margin: 7px 0 0; color: var(--account-muted); font-size: 13px; overflow-wrap: anywhere; }
 .account-context { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 13px; font-size: 12px; color: var(--account-muted); }
 .account-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 23px; }
-.account-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 16px; border: 1px solid #e5e3e3; background: #f2f1f1; color: var(--account-ink); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.account-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 16px; border: 1px solid #e5e3e3; background: var(--pc-paper); color: var(--account-ink); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
 .account-button-primary { background: #29272c; color: #fff; border-color: #29272c; }
 .pc-account-center button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .pc-account-center button:active { transform: scale(.97); transition: transform 90ms ease-out; }
 .pc-account-center button:focus-visible, .pc-account-center a:focus-visible, .pc-account-center summary:focus-visible { outline: 2px solid #9761ad; outline-offset: 4px; }
 .pc-account-center button:disabled { opacity: .5; cursor: default; }
-.account-tabs { display: flex; justify-content: center; gap: clamp(12px, 4vw, 46px); border-top: 1px solid var(--account-line); }
-.account-tabs button { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 64px; padding: 0 9px; border: 0; background: transparent; color: var(--account-muted); font-size: 12px; font-weight: 500; cursor: pointer; }
-.account-tabs button::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--account-ink); opacity: 0; }
-.account-tabs button[aria-selected=true] { color: var(--account-ink); font-weight: 650; }
-.account-tabs button[aria-selected=true]::before { opacity: 1; }
-.account-panel { outline: none; min-height: 300px; }
-.account-panel:focus-visible { outline: 2px solid #9761ad; outline-offset: 4px; }
-.account-section-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 10px 0 18px; }
-.account-section-head h3 { margin: 0; font-size: 13px; font-weight: 600; }
-.account-section-head h3 span { margin-left: 8px; color: var(--account-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-.account-section-head > span { font-size: 11px; color: var(--account-muted); }
-.account-post-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.account-post { min-width: 0; display: flex; align-items: flex-start; gap: 15px; padding: 22px; border: 1px solid var(--account-line); border-radius: 16px; background: #fff; }
-.account-activity-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 12px; background: #f1edf6; color: #79658c; }
-.account-post-merchant .account-activity-icon { background: #edf3ee; color: #5b7863; }
-.account-post-kind { display: block; color: var(--account-muted); font-size: 10px; font-weight: 500; line-height: 1.4; }
-.account-post-caption { min-width: 0; flex: 1; }
-.account-post-caption h4 { margin: 7px 0 0; font-size: 15px; line-height: 1.5; font-weight: 550; overflow-wrap: anywhere; }
-.account-post-caption p { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 14px; margin: 13px 0 0; font-size: 11px; color: var(--account-muted); line-height: 1.5; }
-.account-activity-market { display: inline-flex; align-items: center; gap: 5px; }
-.account-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px 60px; text-align: center; min-height: 300px; }
-.account-empty-icon { display: grid; place-items: center; width: 66px; height: 66px; border: 1px solid #d8d3da; border-radius: 50%; margin-bottom: 17px; }
-.account-empty h3 { font-size: 21px; font-weight: 600; letter-spacing: -.025em; margin: 0 0 10px; }
-.account-empty p { color: var(--account-muted); font-size: 13px; line-height: 1.65; max-width: 330px; margin: 0 0 22px; }
-.account-private-note { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 25px 8px 0; color: var(--account-muted); font-size: 11px; line-height: 1.5; }
-.account-loading { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 280px; color: var(--account-muted); font-size: 13px; }
-.account-loading > span { width: 7px; height: 7px; border-radius: 50%; background: #be94ae; }
+.account-panel { padding-top: 22px; border-top: 1px solid var(--account-line); }
+.account-settings-heading { display: flex; align-items: center; gap: 8px; max-width: 740px; margin: 0 auto 18px; color: var(--account-ink); font-size: 14px; font-weight: 600; scroll-margin-top: 86px; }
+.account-settings-heading:focus-visible { outline: 2px solid #07c160; outline-offset: 5px; }
 .pc-account-center .pc-account-settings { display: grid; gap: 12px; max-width: 740px; margin: 12px auto 0; }
 .pc-account-center .pc-profile-card { border: 1px solid var(--account-line); border-radius: 16px; box-shadow: none; background: #fff; padding: 18px 20px; }
 .pc-account-center .pc-profile-card summary { min-height: 40px; }
 .pc-account-center .pc-profile-card summary h3 { font-size: 13px; color: var(--account-ink); }
 .pc-account-center .pc-profile-card summary p { color: var(--account-muted); font-size: 11px; }
-.pc-account-center .pc-profile-card-icon { width: 35px; height: 35px; background: #f3f1f4; color: #6e6372; border-radius: 10px; }
+.pc-account-center .pc-profile-card-icon { width: 35px; height: 35px; background: var(--pc-paper); color: #6e6372; border-radius: 10px; }
 .pc-account-center .pc-market-chip { min-height: 52px; }
-.pc-account-center .pc-market-chip.is-active, .pc-account-center .pc-price-option.is-active { border-color: #b9a5be; background: #f7f3f8; }
-.pc-account-center .pc-account-rows { border-color: var(--account-line); background: #f8f7f7; }
+.pc-account-center .pc-market-chip.is-active, .pc-account-center .pc-price-option.is-active { border-color: #b9dfc6; background: #e8f5e9; }
+.pc-account-center .pc-account-rows { border-color: var(--account-line); background: var(--pc-paper); }
 .pc-account-setting-value { margin-left: auto; color: var(--account-muted); font-size: 11px; white-space: nowrap; }
 @media (hover: hover) {
-  .account-button:hover, .account-icon-button:hover { background: #e9e6e9; }
+  .account-button:hover, .account-icon-button:hover { background: #e5e5e5; }
   .account-button-primary:hover { background: #444047; }
-  .account-tabs button:hover { color: var(--account-ink); }
 }
 @media (max-width: 760px) {
   .account-toolbar { min-height: 62px; padding: 8px 18px; }
@@ -87,10 +62,6 @@
   .account-name-row h2 { font-size: 26px; }
   .account-member-label { font-size: 10px; }
   .account-context { margin-top: 15px; }
-  .account-tabs { justify-content: space-between; gap: 0; }
-  .account-tabs button { min-height: 58px; padding: 0 10px; }
-  .account-post-grid { gap: 12px; }
-  .account-post { gap: 12px; padding: 18px; }
 }
 @media (max-width: 520px) {
   .account-identity { grid-template-columns: 86px minmax(0, 1fr); gap: 18px; align-items: start; padding-top: 24px; }
@@ -104,19 +75,14 @@
   .account-context { gap: 6px; font-size: 11px; }
   .account-actions { gap: 7px; margin-top: 18px; }
   .account-actions .account-button { padding: 8px 10px; font-size: 11px; }
-  .account-tabs button { flex-direction: column; gap: 5px; min-width: 50px; font-size: 10px; }
-  .account-section-head > span { font-size: 10px; }
-  .account-post-grid { grid-template-columns: minmax(0, 1fr); }
-  .account-post-caption h4 { font-size: 14px; }
   .pc-account-center .pc-profile-card { padding: 15px; }
   .pc-account-center .pc-market-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pc-account-center .pc-danger-zone > div { flex-direction: column; }
   .pc-account-setting-value { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .pc-account-center button:active { transform: none; transition: none; } .account-avatar-spin { animation: none; } }
-@media (prefers-reduced-transparency: reduce) { .account-toolbar { background: #fdfcfa; backdrop-filter: none; -webkit-backdrop-filter: none; } }
+@media (prefers-reduced-transparency: reduce) { .account-toolbar { background: var(--pc-bg); backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media (prefers-contrast: more) {
   .pc-account-center { --account-muted: #49454b; --account-line: #817a85; }
   .account-toolbar { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .account-tabs button, .account-section-head > span, .account-private-note { color: #49454b; }
 }

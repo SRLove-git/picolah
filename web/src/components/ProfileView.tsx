@@ -1,3 +1,4 @@
+import { uiText } from '../lib/ui-copy';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowRight,
@@ -70,7 +71,7 @@ function DimensionList({
           {items.slice(0, 4).map((item) => (
             <li key={item.id}>
               <span className="persona-dimension-label">
-                {english ? item.labelEn : item.labelZh}
+                {english ? uiText(item.labelEn) : item.labelZh}
               </span>
               <span className="persona-dimension-bar">
                 <i style={{ width: `${Math.max(8, item.share * 100)}%` }} />
@@ -92,7 +93,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resetting, setResetting] = useState(false);
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = !i18n.language.startsWith('zh');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -248,7 +249,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
                   {profile?.traits.map((trait) => (
                     <div className="persona-trait" key={trait.key}>
                       <div className="persona-trait-head">
-                        <span>{isEnglish ? trait.labelEn : trait.labelZh}</span>
+                        <span>{isEnglish ? uiText(trait.labelEn) : trait.labelZh}</span>
                         <strong>{trait.score}</strong>
                       </div>
                       <div className="persona-track">
@@ -347,7 +348,7 @@ export function ProfileView({ onStart, onOpenSidebar, notify }: ProfileViewProps
                         <div>
                           <strong>{isEnglish ? activity.titleEn : activity.titleZh}</strong>
                           <small>
-                            {market ? (isEnglish ? market.nameEn : market.nameZh) : activity.market}
+                            {market ? (isEnglish ? uiText(market.nameEn) : market.nameZh) : activity.market}
                             {' · '}
                             {activity.type === 'offer_click' ? t('profile.clickEvent') : t('profile.compareEvent')}
                             {' · '}

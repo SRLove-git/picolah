@@ -1,3 +1,4 @@
+import { localizeCopy } from '../lib/ui-copy';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -134,8 +135,8 @@ function tint(seed: string): string {
 
 export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewProps) {
   const { i18n } = useTranslation();
-  const en = i18n.language.startsWith('en');
-  const copy = en ? COPY.en : COPY.zh;
+  const en = !i18n.language.startsWith('zh');
+  const copy = en ? localizeCopy(COPY.en) : COPY.zh;
   const { user, promptLogin } = useSession();
   const [data, setData] = useState<RadarData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -220,7 +221,7 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
   const notificationCount = incoming.length + unread;
   const visibleFriends = useMemo(() => {
     const query = friendQuery.trim().toLocaleLowerCase();
-    const collator = new Intl.Collator(en ? 'en' : 'zh-CN', { sensitivity: 'base' });
+    const collator = new Intl.Collator(i18n.language, { sensitivity: 'base' });
     return friends
       .slice()
       .filter((friend) => !query || friend.displayName.toLocaleLowerCase().includes(query))
@@ -451,13 +452,13 @@ export function FriendsView({ onOpenSidebar, onOpenRadar, notify }: FriendsViewP
 function formatTime(value: string, en: boolean, full = false): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  const locale = en ? 'en-GB' : 'zh-CN';
+  const locale = document.documentElement.lang || 'en';
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   const clock = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
   if (date.toDateString() === today.toDateString()) return clock;
-  if (date.toDateString() === yesterday.toDateString()) return `${en ? COPY.en.yesterday : COPY.zh.yesterday}${full ? ` ${clock}` : ''}`;
+  if (date.toDateString() === yesterday.toDateString()) return `${en ? localizeCopy(COPY.en).yesterday : COPY.zh.yesterday}${full ? ` ${clock}` : ''}`;
   return `${date.toLocaleDateString(locale, { ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}), month: 'numeric', day: 'numeric' })}${full ? ` ${clock}` : ''}`;
 }
 
@@ -473,7 +474,7 @@ function FriendConversation({ friend, userId, userName, userAvatar, en, draft, o
   onUpdate: (friendId: string, latest?: SocialMessage) => void;
   notify: (message: string) => void;
 }) {
-  const copy = en ? COPY.en : COPY.zh;
+  const copy = en ? localizeCopy(COPY.en) : COPY.zh;
   const [messages, setMessages] = useState<SocialMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

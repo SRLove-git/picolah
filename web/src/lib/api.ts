@@ -195,13 +195,18 @@ export interface CatalogProduct {
 export interface CatalogResponse {
   products: CatalogProduct[];
   categories: string[];
+  brands?: string[];
   total: number;
 }
 
-export async function searchCatalog(query = '', category = ''): Promise<CatalogResponse> {
+export type CatalogSort = 'name-asc' | 'name-desc' | 'brand-asc';
+
+export async function searchCatalog(query = '', category = '', brand = '', sort: CatalogSort = 'name-asc'): Promise<CatalogResponse> {
   const params = new URLSearchParams();
   if (query.trim()) params.set('q', query.trim());
   if (category) params.set('category', category);
+  if (brand) params.set('brand', brand);
+  if (sort !== 'name-asc') params.set('sort', sort);
   const suffix = params.toString() ? `?${params}` : '';
   return getJson<CatalogResponse>(`/api/catalog${suffix}`);
 }

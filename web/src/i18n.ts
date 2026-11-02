@@ -1,14 +1,32 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { initialMarketLanguage } from './lib/market-language';
+import { marketLocales } from './locales/market-locales';
 
 const resources = {
   zh: {
     translation: {
       app: { title: 'Picolah · 全网低价 PICO 一下', understanding: '正在理解问题…', generating: '正在生成比价结果…', loadFailed: '对话加载失败' },
-      language: { switch: 'Switch to English', short: 'EN' },
+      language: { current: '当前语言：中文', switch: '切换为 English', short: '中文' },
       nav: { main: '主导航', home: '首页', capybara: '成长', search: '发现', radar: '雷达', friends: '好友', watchlist: '关注', reels: '短视频', profile: '画像', messages: '足迹', account: '账号', close: '关闭导航' },
       search: {
         label: '发现', title: '发现', body: '',
+        heroHint: "发现新灵感，找到心仪好物。",
+        searchHint: "先逛一逛，再让 Pico 帮你比价。",
+        askPico: "问问 Pico",
+        collection: "发现好物",
+        brand: "品牌",
+        allBrands: "全部品牌",
+        sort: "排序",
+        nameAsc: "名称 A–Z",
+        nameDesc: "名称 Z–A",
+        brandAsc: "品牌 A–Z",
+        allProducts: "全部商品",
+        activeFilters: "当前筛选",
+        removeFilter: "移除筛选",
+        illustration: "示意图",
+        clearFilters: "清除筛选",
+        categoryNames: {"headphones": "耳机", "phones": "手机", "skincare": "护肤", "home": "家电", "shoes": "鞋履", "wearables": "穿戴", "audio": "音频"},
         placeholder: '搜索商品、品牌或型号', clear: '清空搜索', categories: '品类', all: '全部',
         results: '{{count}} 件商品', loading: '正在搜索…', empty: '没有找到匹配的商品，换个词或品类试试。',
         error: '商品目录暂时加载失败，请稍后再试。', compare: '去比价',
@@ -141,10 +159,26 @@ const resources = {
   en: {
     translation: {
       app: { title: 'Picolah · Price Lower, PiCO Checker', understanding: 'Understanding your request…', generating: 'Preparing the comparison…', loadFailed: 'Could not load the conversation' },
-      language: { switch: '切换为中文', short: '中' },
+      language: { current: 'Current language: English', switch: 'Switch to 中文', short: 'EN' },
       nav: { main: 'Main navigation', home: 'Home', capybara: 'Growth', search: 'Discover', radar: 'Radar', friends: 'Friends', watchlist: 'Watchlist', reels: 'Reels', profile: 'Profile', messages: 'Trail', account: 'Account', close: 'Close navigation' },
       search: {
         label: 'Discover', title: 'Discover', body: '',
+        heroHint: "A little inspiration for your next good find.",
+        searchHint: "Browse here. Compare with Pico.",
+        askPico: "Ask Pico",
+        collection: "Explore the collection",
+        brand: "Brand",
+        allBrands: "All brands",
+        sort: "Sort",
+        nameAsc: "Name, A–Z",
+        nameDesc: "Name, Z–A",
+        brandAsc: "Brand, A–Z",
+        allProducts: "All products",
+        activeFilters: "Active filters",
+        removeFilter: "Remove filter",
+        illustration: "Illustration",
+        clearFilters: "Clear filters",
+        categoryNames: {"headphones": "Headphones", "phones": "Phones", "skincare": "Skincare", "home": "Home", "shoes": "Shoes", "wearables": "Wearables", "audio": "Audio"},
         placeholder: 'Search products, brands or models', clear: 'Clear search', categories: 'Categories', all: 'All',
         results: '{{count}} products', loading: 'Searching…', empty: 'No matching products. Try another word or category.',
         error: 'The catalog could not load. Please try again.', compare: 'Compare',
@@ -276,30 +310,23 @@ const resources = {
   },
 } as const;
 
-const savedLanguage = (() => {
-  try {
-    return localStorage.getItem('picolah.language');
-  } catch {
-    return null;
-  }
-})();
-
 void i18n.use(initReactI18next).init({
-  resources,
-  lng: savedLanguage === 'en' ? 'en' : 'zh',
-  fallbackLng: 'zh',
+  resources: { ...resources, ...marketLocales },
+  lng: initialMarketLanguage(),
+  fallbackLng: 'en',
   interpolation: { escapeValue: false },
 });
 
 i18n.on('languageChanged', (language) => {
   document.documentElement.lang = language;
   try {
-    localStorage.setItem('picolah.language', language);
+    localStorage.removeItem('picolah.language');
   } catch {
     // Keep language in memory when storage is unavailable.
   }
 });
 
 document.documentElement.lang = i18n.language;
+try { localStorage.removeItem('picolah.language'); } catch { /* Storage is optional. */ }
 
 export default i18n;

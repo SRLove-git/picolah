@@ -1,4 +1,4 @@
-import { Fingerprint, Footprints, Home, Languages, Radar, Search, UserRound, UsersRound, X } from 'lucide-react';
+import { Fingerprint, Footprints, Home, Radar, Search, UserRound, UsersRound, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { useSession } from '../lib/session';
@@ -33,14 +33,10 @@ export function AppSidebar({
   onNavigate,
   onClose,
 }: AppSidebarProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, promptLogin } = useSession();
   const activeKey = view === 'chat' ? 'messages' : view;
   const accountLabel = user ? t('nav.account') : t('auth.loginCta');
-
-  function toggleLanguage() {
-    void i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en');
-  }
 
   return (
     <aside className={`pc-sidebar ${open ? 'is-open' : ''}`} aria-label={t('nav.main')}>
@@ -94,18 +90,8 @@ export function AppSidebar({
           </button>
         </div>
         <div className="pc-side-market">
-          <MarketPicker market={market} onChange={onMarketChange} compact direction="up" tone="ghost" />
+          <MarketPicker market={market} onChange={onMarketChange} flagOnly direction="up" tone="ghost" />
         </div>
-        <button
-          type="button"
-          className="pc-language-toggle"
-          onClick={toggleLanguage}
-          aria-label={t('language.switch')}
-          data-tooltip={t('language.switch')}
-        >
-          <Languages size={24} strokeWidth={1.9} />
-          <span>{t('language.short')}</span>
-        </button>
         <button
           type="button"
           className={`pc-account-card ${view === 'account' ? 'is-active' : ''}`}

@@ -1,3 +1,4 @@
+import { marketName } from '../lib/market-language';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,6 +16,7 @@ import { getComposerInputHeight, shouldSubmitComposerKey } from '../lib/composer
 import { PriceModePicker } from './Controls';
 
 interface PromptComposerProps {
+  active?: boolean;
   market: CountryCode;
   priceMode: PriceMode;
   config: AppConfig | null;
@@ -78,6 +80,7 @@ function readRecognitionCtor(): SpeechRecognitionCtor | null {
 }
 
 export function PromptComposer({
+  active = true,
   market,
   priceMode,
   busy,
@@ -130,11 +133,12 @@ export function PromptComposer({
   }, [value, inputRef, variant, i18n.language]);
 
   useEffect(() => {
+    if (!active) setListening(false);
     return () => {
       disposeRecognition(recognitionRef.current);
       recognitionRef.current = null;
     };
-  }, []);
+  }, [active]);
 
   async function handleFile(file: File | null | undefined) {
     if (!file || busy || loadingConversation || imagePendingRef.current) return;
@@ -199,7 +203,7 @@ export function PromptComposer({
     }
     try {
       const recognition = new Ctor();
-      recognition.lang = i18n.language === 'en' ? 'en-US' : 'zh-CN';
+      recognition.lang = marketInfo.locale;
       recognition.continuous = false;
       recognition.interimResults = true;
       baseTextRef.current = value.trim();
@@ -305,7 +309,7 @@ export function PromptComposer({
               variant === 'hero'
                 ? t('composer.homePlaceholder')
                 : t('composer.followupPlaceholder', {
-                    market: i18n.language === 'en' ? marketInfo.nameEn : marketInfo.nameZh,
+                    market: marketName(market, i18n.language),
                   })
             }
             aria-label={t('composer.inputLabel')}

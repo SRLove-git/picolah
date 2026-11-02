@@ -274,7 +274,7 @@ export function ReelsView({
                 {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
               </span>
             </div>
-            <div className="pc-reel-reason"><span>{t('reels.why')}</span>{i18n.language.startsWith('en') ? reel.reason.labelEn : reel.reason.labelZh}</div>
+            <div className="pc-reel-reason"><span>{t('reels.why')}</span>{!i18n.language.startsWith('zh') ? reel.reason.labelEn : reel.reason.labelZh}</div>
           </div>
 
           {!reel.videoUrl && <div className="pc-reel-scene" aria-hidden="true">
@@ -289,7 +289,7 @@ export function ReelsView({
               <strong>{reel.price}</strong>
             </span>
             <span className="pc-reel-market-tag">
-              {MARKETS[reel.market].flag} {i18n.language === 'en' ? MARKETS[reel.market].nameEn : MARKETS[reel.market].nameZh}
+              {MARKETS[reel.market].flag} {!i18n.language.startsWith('zh') ? MARKETS[reel.market].nameEn : MARKETS[reel.market].nameZh}
             </span>
             <span className="pc-reel-sticker">{t('reels.worth')}</span>
           </div>}
@@ -410,7 +410,7 @@ export function ReelsView({
 
       <footer className="pc-reels-foot">
         <span>
-          {t('reels.currentMarket')} <b>{i18n.language === 'en' ? MARKETS[market].nameEn : MARKETS[market].nameZh}</b> · {t('reels.demoPrice')}
+          {t('reels.currentMarket')} <b>{!i18n.language.startsWith('zh') ? MARKETS[market].nameEn : MARKETS[market].nameZh}</b> · {t('reels.demoPrice')}
         </span>
         <span>{t('reels.navigate')}</span>
       </footer>

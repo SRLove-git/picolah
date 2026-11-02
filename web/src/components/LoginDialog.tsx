@@ -1,3 +1,4 @@
+import { uiText } from '../lib/ui-copy';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
@@ -30,7 +31,7 @@ const REASONS = {
 export function LoginDialog() {
   const { i18n } = useTranslation();
   const { loginPrompt, closeLoginPrompt } = useSession();
-  const en = i18n.language.startsWith('en');
+  const en = !i18n.language.startsWith('zh');
 
   useEffect(() => {
     if (!loginPrompt) return;
@@ -60,17 +61,17 @@ export function LoginDialog() {
         className="pc-login-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={en ? 'Sign in to Picolah' : '登录 Picolah'}
+        aria-label={en ? uiText('Sign in to Picolah') : '登录 Picolah'}
       >
         <button
           type="button"
           className="pc-login-close"
           onClick={closeLoginPrompt}
-          aria-label={en ? 'Close' : '关闭'}
+          aria-label={en ? uiText('Close') : '关闭'}
         >
           <X size={18} />
         </button>
-        <p className="pc-login-reason">{en ? reason.en : reason.zh}</p>
+        <p className="pc-login-reason">{en ? uiText(reason.en) : reason.zh}</p>
         <AuthCard compact onSuccess={closeLoginPrompt} />
       </div>
     </div>

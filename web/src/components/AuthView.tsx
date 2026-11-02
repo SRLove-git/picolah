@@ -1,3 +1,4 @@
+import { localizeCopy } from '../lib/ui-copy';
 import { useEffect, useState, type FormEvent } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -87,7 +88,7 @@ interface AuthCardProps {
 export function AuthCard({ onSuccess, compact = false }: AuthCardProps) {
   const { i18n } = useTranslation();
   const { login, register } = useSession();
-  const text = i18n.language.startsWith('zh') ? COPY.zh : COPY.en;
+  const text = i18n.language.startsWith('zh') ? COPY.zh : localizeCopy(COPY.en);
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

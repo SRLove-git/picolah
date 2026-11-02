@@ -1,3 +1,4 @@
+import { uiText } from '../lib/ui-copy';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { Armchair, Bubbles, CircleDot, Leaf, Moon, Music2, NotebookPen, Pause, Play, Shirt, Sparkles, Sun, X } from 'lucide-react';
@@ -51,7 +52,7 @@ function CapyRoomStill({ view, action, game }: { view: CapyView; action: CapyAct
 export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }: {
   view: CapyView; outfitVersion: number; onOpenPanel: OpenCapyPanel; roomMenuOpen: boolean;
 }) {
-  const { i18n } = useTranslation(), en = i18n.language.startsWith('en'), language = en ? 1 : 0;
+  const { i18n } = useTranslation(), en = !i18n.language.startsWith('zh'), language = en ? 1 : 0;
   const canvas = useRef<HTMLCanvasElement>(null), engine = useRef<ReturnType<typeof createCapyPlayScene> | null>(null);
   const [ready, setReady] = useState(false), [failed, setFailed] = useState(false);
   const { store, state: roomState, sync, retry } = useCapyRoom();
@@ -91,8 +92,8 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
   function play(next: CapyGame) { send({ type: 'PLAY', toy: next }); setToysOpen(false); }
   function finish() { send({ type: 'PUT_AWAY' }); }
   const expression = sleeping ? 'sleepy' : action === 'feed' ? 'snack' : action === 'play' || action === 'outfit' ? 'playful' : action === 'pet' || action === 'wake' ? 'happy' : 'idle';
-  const message = toy ? toy.hint[language] : sleeping ? (en ? 'A little dream, then more adventures.' : '先做一个小小的梦，睡醒再陪你玩。') : action === 'feed' ? (en ? 'Crunch, crunch. A tasty little leaf!' : '咔嚓咔嚓，小叶子真好吃。') : action === 'pet' ? (en ? 'Hehe. One more head pat?' : '嘿嘿，再摸摸头嘛。') : action === 'outfit' ? (en ? 'New outfit, ready to play!' : '穿好新衣服，准备出门玩！') : (en ? 'Pick a toy. Let’s play together!' : '挑个玩具，我们一起玩吧！');
-  const interaction = toy ? toy.button[language] : sleeping ? (en ? 'Wake the capybara' : '叫醒卡皮巴拉') : (en ? 'Pet the capybara' : '摸摸卡皮巴拉');
+  const message = toy ? uiText(toy.hint[language]) : sleeping ? (en ? uiText('A little dream, then more adventures.') : '先做一个小小的梦，睡醒再陪你玩。') : action === 'feed' ? (en ? uiText('Crunch, crunch. A tasty little leaf!') : '咔嚓咔嚓，小叶子真好吃。') : action === 'pet' ? (en ? uiText('Hehe. One more head pat?') : '嘿嘿，再摸摸头嘛。') : action === 'outfit' ? (en ? uiText('New outfit, ready to play!') : '穿好新衣服，准备出门玩！') : (en ? uiText('Pick a toy. Let’s play together!') : '挑个玩具，我们一起玩吧！');
+  const interaction = toy ? uiText(toy.button[language]) : sleeping ? (en ? uiText('Wake the capybara') : '叫醒卡皮巴拉') : (en ? uiText('Pet the capybara') : '摸摸卡皮巴拉');
   return <Dialog.Root open={toysOpen} onOpenChange={setToysOpen}>
     <div className="pc-companion is-room is-frame-room" data-action={action} data-game={game ?? 'none'} data-expression={expression}
       data-night={night} data-sync={sync} data-paused={paused || roomMenuOpen || toysOpen} data-renderer={ready ? 'frames' : failed ? 'fallback' : 'loading'}>
@@ -105,37 +106,37 @@ export function CapyPlayRoom({ view, outfitVersion, onOpenPanel, roomMenuOpen }:
           <canvas ref={canvas} className="pc-play-canvas" aria-hidden="true" />
         </button>
         {!ready && <div className="pc-play-loading-character" aria-hidden="true"><CapyRoomStill view={view} action={action} game={game} /></div>}
-        {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? 'The toys could not open on this device. Your wardrobe and diary are still here.' : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
-        <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? 'Resume motion' : '继续动作') : (en ? 'Pause motion' : '暂停动作')}
+        {(!toy || failed) && <p className="pc-companion-speech" role="status" aria-live="polite">{failed ? (en ? uiText('The toys could not open on this device. Your wardrobe and diary are still here.') : '这台设备暂时打不开互动玩具，衣橱和日记仍然可以使用。') : message}</p>}
+        <button type="button" className="pc-companion-pause" aria-label={paused ? (en ? uiText('Resume motion') : '继续动作') : (en ? uiText('Pause motion') : '暂停动作')}
           aria-pressed={paused} onClick={() => setPaused((value) => !value)}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>
-        {sync === 'error' && <button type="button" className="pc-room-save-retry" onClick={retry} aria-live="polite">{en ? 'Room not saved · Retry' : '房间未保存 · 重试'}</button>}
-        {toy && <div className="pc-play-controls" aria-label={en ? 'Toy controls' : '玩具操作'}>
-          <span><toy.Icon size={17} /><strong>{toy.name[language]}</strong>{(game === 'ball' || game === 'bubbles') && <small aria-live="polite">{contacts} {en ? (game === 'ball' ? 'kicks' : 'pops') : (game === 'ball' ? '次踢回' : '个泡泡')}</small>}</span>
-          <button type="button" onClick={() => store.send({ type: 'INTERACT' })} disabled={paused || !ready}>{toy.button[language]}</button>
-          <button type="button" className="pc-play-finish" onClick={finish} aria-label={en ? 'Put the toy away' : '收起玩具'}><X size={16} /></button>
+        {sync === 'error' && <button type="button" className="pc-room-save-retry" onClick={retry} aria-live="polite">{en ? uiText('Room not saved · Retry') : '房间未保存 · 重试'}</button>}
+        {toy && <div className="pc-play-controls" aria-label={en ? uiText('Toy controls') : '玩具操作'}>
+          <span><toy.Icon size={17} /><strong>{uiText(toy.name[language])}</strong>{(game === 'ball' || game === 'bubbles') && <small aria-live="polite">{contacts} {en ? uiText(game === 'ball' ? 'kicks' : 'pops') : (game === 'ball' ? '次踢回' : '个泡泡')}</small>}</span>
+          <button type="button" onClick={() => store.send({ type: 'INTERACT' })} disabled={paused || !ready}>{uiText(toy.button[language])}</button>
+          <button type="button" className="pc-play-finish" onClick={finish} aria-label={en ? uiText('Put the toy away') : '收起玩具'}><X size={16} /></button>
         </div>}
       </div>
-      <div className="pc-room-dock" role="group" aria-label={en ? "Capy's daily life" : '卡皮的日常'}>
-        <button type="button" className="pc-room-dock-button is-feed" aria-label={en ? 'Little snack' : '喂小叶子'} onClick={() => act('feed')}><span className="pc-room-dock-icon"><Leaf size={27} /></span><span>{en ? 'Snack' : '喂食'}</span></button>
-        <Dialog.Trigger className="pc-room-dock-button is-play" aria-label={en ? "Open Capy's toy box" : '打开卡皮的玩具箱'} onClick={(event) => setInstant(event.detail === 0)}>
-          <span className="pc-room-dock-icon"><CircleDot size={27} /></span><span>{en ? 'Play' : '玩耍'}</span>
+      <div className="pc-room-dock" role="group" aria-label={en ? uiText("Capy's daily life") : '卡皮的日常'}>
+        <button type="button" className="pc-room-dock-button is-feed" aria-label={en ? uiText('Little snack') : '喂小叶子'} onClick={() => act('feed')}><span className="pc-room-dock-icon"><Leaf size={27} /></span><span>{en ? uiText('Snack') : '喂食'}</span></button>
+        <Dialog.Trigger className="pc-room-dock-button is-play" aria-label={en ? uiText("Open Capy's toy box") : '打开卡皮的玩具箱'} onClick={(event) => setInstant(event.detail === 0)}>
+          <span className="pc-room-dock-icon"><CircleDot size={27} /></span><span>{en ? uiText('Play') : '玩耍'}</span>
         </Dialog.Trigger>
-        <button type="button" className={`pc-room-dock-button is-${sleeping ? 'wake' : 'rest'}`} aria-label={en ? (sleeping ? 'Wake up' : 'Nap time') : (sleeping ? '叫醒它' : '小睡一下')} onClick={() => act(sleeping ? 'wake' : 'rest')}>
-          <span className="pc-room-dock-icon">{sleeping ? <Sun size={27} /> : <Moon size={27} />}</span><span>{en ? (sleeping ? 'Wake' : 'Sleep') : (sleeping ? '起床' : '睡觉')}</span>
+        <button type="button" className={`pc-room-dock-button is-${sleeping ? 'wake' : 'rest'}`} aria-label={en ? uiText(sleeping ? 'Wake up' : 'Nap time') : (sleeping ? '叫醒它' : '小睡一下')} onClick={() => act(sleeping ? 'wake' : 'rest')}>
+          <span className="pc-room-dock-icon">{sleeping ? <Sun size={27} /> : <Moon size={27} />}</span><span>{en ? uiText(sleeping ? 'Wake' : 'Sleep') : (sleeping ? '起床' : '睡觉')}</span>
         </button>
-        <button type="button" className="pc-room-dock-button is-wardrobe" aria-haspopup="dialog" aria-label={en ? 'Dress up Capy' : '给卡皮换装'} onClick={(event) => onOpenPanel('wardrobe', event.currentTarget, event.detail === 0)}><span className="pc-room-dock-icon"><Shirt size={27} /></span><span>{en ? 'Dress up' : '换装'}</span></button>
-        <button type="button" className="pc-room-dock-button is-journal" aria-haspopup="dialog" aria-label={en ? "Open Capy's diary" : '打开卡皮的日记'} onClick={(event) => onOpenPanel('journal', event.currentTarget, event.detail === 0)}><span className="pc-room-dock-icon"><NotebookPen size={27} /></span><span>{en ? 'Journal' : '日记'}</span></button>
+        <button type="button" className="pc-room-dock-button is-wardrobe" aria-haspopup="dialog" aria-label={en ? uiText('Dress up Capy') : '给卡皮换装'} onClick={(event) => onOpenPanel('wardrobe', event.currentTarget, event.detail === 0)}><span className="pc-room-dock-icon"><Shirt size={27} /></span><span>{en ? uiText('Dress up') : '换装'}</span></button>
+        <button type="button" className="pc-room-dock-button is-journal" aria-haspopup="dialog" aria-label={en ? uiText("Open Capy's diary") : '打开卡皮的日记'} onClick={(event) => onOpenPanel('journal', event.currentTarget, event.detail === 0)}><span className="pc-room-dock-icon"><NotebookPen size={27} /></span><span>{en ? uiText('Journal') : '日记'}</span></button>
       </div>
     </div>
     <Dialog.Portal>
       <Dialog.Backdrop className="pc-room-backdrop" data-instant={instant} />
       <Dialog.Viewport className="pc-room-modal-viewport">
         <Dialog.Popup className="pc-room-notebook pc-room-popup pc-toybox" data-instant={instant}>
-          <header className="pc-room-notebook-head"><div><span className="pc-room-book-icon"><Sparkles size={22} /></span><Dialog.Title>{en ? "Capy's toy box" : '卡皮的玩具箱'}</Dialog.Title></div>
-            <Dialog.Close className="pc-room-close" aria-label={en ? 'Back to Capy' : '回到卡皮'}><X size={20} /></Dialog.Close></header>
-          <Dialog.Description className="pc-toybox-description">{en ? 'A little playtime, just the two of you.' : '挑一个喜欢的，陪卡皮玩一会儿。'}</Dialog.Description>
+          <header className="pc-room-notebook-head"><div><span className="pc-room-book-icon"><Sparkles size={22} /></span><Dialog.Title>{en ? uiText("Capy's toy box") : '卡皮的玩具箱'}</Dialog.Title></div>
+            <Dialog.Close className="pc-room-close" aria-label={en ? uiText('Back to Capy') : '回到卡皮'}><X size={20} /></Dialog.Close></header>
+          <Dialog.Description className="pc-toybox-description">{en ? uiText('A little playtime, just the two of you.') : '挑一个喜欢的，陪卡皮玩一会儿。'}</Dialog.Description>
           <div className="pc-toybox-grid">{TOYS.map((item) => <button type="button" key={item.id} data-game-choice={item.id} disabled={!ready} onClick={() => play(item.id)}>
-            <span style={{ background: item.color }}><item.Icon size={35} strokeWidth={1.7} /></span><strong>{item.name[language]}</strong><small>{item.hint[language]}</small>
+            <span style={{ background: item.color }}><item.Icon size={35} strokeWidth={1.7} /></span><strong>{uiText(item.name[language])}</strong><small>{uiText(item.hint[language])}</small>
           </button>)}</div>
         </Dialog.Popup>
       </Dialog.Viewport>

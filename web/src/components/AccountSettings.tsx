@@ -1,3 +1,5 @@
+import { marketName } from '../lib/market-language';
+import { uiText } from '../lib/ui-copy';
 import { BadgeCheck, Check, ChevronDown, Download, Globe2, LogOut, Pencil, ShieldCheck, Sparkles, Trash2, Wallet } from 'lucide-react';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,14 +29,14 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
   const [loggingOut, setLoggingOut] = useState(false);
   const passwordId = useId();
   const warningId = useId();
-  const en = i18n.language.startsWith('en');
+  const en = !i18n.language.startsWith('zh');
   const marketInfo = MARKETS[market];
-  const guestLabel = en ? 'Guest' : '访客';
+  const guestLabel = en ? uiText('Guest') : '访客';
   const guestHint = en
-    ? 'You are browsing as a guest. No account is signed in.'
+    ? uiText('You are browsing as a guest. No account is signed in.')
     : '当前以访客身份浏览，尚未登录账号。';
   const privacyGuestHint = en
-    ? 'Account export and deletion are available after signing in.'
+    ? uiText('Account export and deletion are available after signing in.')
     : '登录后可导出数据或删除账号。';
 
   const removeAccount = async () => {
@@ -48,7 +50,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
       } catch {
         // Deletion already succeeded. A failed session refresh must not claim
         // that the account still exists or encourage another deletion attempt.
-        notify(en ? 'Account deleted. Refresh the page to update your session.' : '账户已删除，请刷新页面更新登录状态。');
+        notify(en ? uiText('Account deleted. Refresh the page to update your session.') : '账户已删除，请刷新页面更新登录状态。');
       }
     } catch (error) {
       notify(error instanceof Error ? error.message : t('account.deleteFailed'));
@@ -65,7 +67,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
       await logout();
       notify(t('account.logoutNotice'));
     } catch (error) {
-      notify(error instanceof Error ? error.message : (en ? 'Could not sign out. Please try again.' : '退出登录失败，请重试。'));
+      notify(error instanceof Error ? error.message : (en ? uiText('Could not sign out. Please try again.') : '退出登录失败，请重试。'));
     } finally {
       setLoggingOut(false);
     }
@@ -77,7 +79,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
         <summary>
           <span className="pc-profile-card-icon tone-pink"><Globe2 size={18} /></span>
           <div><h3>{t('account.defaultMarket')}</h3><p>{t('account.defaultMarketHint')}</p></div>
-          <span className="pc-account-setting-value">{en ? marketInfo.nameEn : marketInfo.nameZh}</span>
+          <span className="pc-account-setting-value">{marketName(market, i18n.language)}</span>
           <ChevronDown size={17} className="pc-collapse-chevron" />
         </summary>
         <div className="pc-market-chips">
@@ -85,7 +87,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
             <button key={item.code} type="button" className={`pc-market-chip ${item.code === market ? 'is-active' : ''}`}
               aria-pressed={item.code === market} onClick={() => onMarketChange(item.code)}>
               <CountryFlag code={item.code} width={18} />
-              <span><strong>{en ? item.nameEn : item.nameZh}</strong><small>{item.currency}</small></span>
+              <span><strong>{marketName(item.code, i18n.language)}</strong><small>{item.currency}</small></span>
               {item.code === market && <Check size={13} aria-hidden="true" />}
             </button>
           ))}
@@ -119,7 +121,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
         <summary>
           <span className="pc-profile-card-icon tone-lilac"><BadgeCheck size={18} /></span>
           <div><h3>{t('account.security')}</h3><p>{user ? t('account.securityHint') : guestHint}</p></div>
-          <span className="pc-account-setting-value">{loading ? (en ? 'Loading…' : '读取中…') : user ? (en ? 'Signed in' : '已登录') : guestLabel}</span>
+          <span className="pc-account-setting-value">{loading ? (en ? uiText('Loading…') : '读取中…') : user ? (en ? uiText('Signed in') : '已登录') : guestLabel}</span>
           <ChevronDown size={17} className="pc-collapse-chevron" />
         </summary>
         {user ? (
@@ -134,7 +136,7 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
                 <Pencil size={14} />{t('account.changePassword')}
               </button>
               <button type="button" className="pc-text-button is-danger" disabled={loggingOut || deleting} onClick={() => void signOut()}>
-                <LogOut size={14} />{loggingOut ? (en ? 'Signing out…' : '正在退出…') : t('account.logout')}
+                <LogOut size={14} />{loggingOut ? (en ? uiText('Signing out…') : '正在退出…') : t('account.logout')}
               </button>
             </div>
           </>

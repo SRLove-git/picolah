@@ -77,7 +77,7 @@ for (const width of [1440, 390, 320]) test(`home and four physical toys work at 
   await home.getByRole('button', { name: 'Pico', exact: true }).click(); await expect(home).toHaveAttribute('data-activity', 'wave');
   const menu = page.locator('.pc-home .pc-mobile-menu');
   if (await menu.isVisible()) await menu.click();
-  await page.locator('.pc-nav').getByRole('button', { name: width === 390 ? '成长' : 'Growth', exact: true }).click();
+  await page.locator('.pc-nav').getByRole('button', { name: 'Growth', exact: true }).click();
   const companion = page.locator('.pc-companion.is-room'), canvas = companion.locator('canvas');
   await expect(companion).toHaveAttribute('data-renderer', 'frames', { timeout: 15000 }); await expect(companion.locator('.pc-capy-live')).toHaveCount(0);
   await expect(canvas).toHaveAttribute('data-character', 'original-image');

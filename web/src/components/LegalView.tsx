@@ -1,3 +1,4 @@
+import { localizeCopy } from '../lib/ui-copy';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from './PageHeader';
 
@@ -107,7 +108,7 @@ export function LegalView({ kind, onOpenSidebar }: LegalViewProps) {
   const { t, i18n } = useTranslation();
   const zh = i18n.language.startsWith('zh');
   const title = kind === 'privacy' ? t('legal.privacy') : t('legal.terms');
-  const sections = CONTENT[kind][zh ? 'zh' : 'en'];
+  const sections = zh ? CONTENT[kind].zh : localizeCopy(CONTENT[kind].en);
 
   return (
     <section className="pc-page pc-legal-page" aria-label={title}>

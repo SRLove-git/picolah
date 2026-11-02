@@ -1,21 +1,16 @@
-import type { CountryCode } from '../../shared/types';
+import { COUNTRY_CODES, MARKETS, type CountryCode } from '../../shared/types';
 
-/**
- * Interface languages that make sense for each market, most common first.
- * The app only ships zh/en today; markets whose mainstream language is not
- * supported yet fall back to English.
- */
-export const MARKET_LANGUAGES: Record<CountryCode, ReadonlyArray<'zh' | 'en'>> = {
-  SG: ['en', 'zh'],
-  MY: ['en', 'zh'],
-  TH: ['en'],
-  ID: ['en'],
-  PH: ['en'],
-  VN: ['en'],
-};
+export type MarketLanguage = 'en' | 'ms' | 'th' | 'id' | 'vi';
+export function languageForMarket(market: CountryCode): MarketLanguage {
+  return MARKETS[market].locale.split('-')[0] as MarketLanguage;
+}
 
-export function languageForMarket(market: CountryCode, current: string): 'zh' | 'en' {
-  const languages = MARKET_LANGUAGES[market];
-  const normalized = current.startsWith('zh') ? 'zh' : 'en';
-  return languages.includes(normalized) ? normalized : languages[0];
+export function initialMarketLanguage(): MarketLanguage {
+  let market = 'SG';
+  try { market = localStorage.getItem('picolah.market') || 'SG'; } catch { /* In-memory defaults still work. */ }
+  return languageForMarket(COUNTRY_CODES.includes(market as CountryCode) ? market as CountryCode : 'SG');
+}
+
+export function marketName(market: CountryCode, language: string): string {
+  return new Intl.DisplayNames([language], { type: 'region' }).of(market) || MARKETS[market].nameEn;
 }

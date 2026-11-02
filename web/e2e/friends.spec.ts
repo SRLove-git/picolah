@@ -13,7 +13,7 @@ const message = (id: string, fromUser: string, toUser: string, body: string): So
 });
 
 async function setup(page: Page, options: { guest?: boolean; empty?: boolean; language?: string } = {}) {
-  await page.addInitScript((language) => localStorage.setItem('picolah.language', language), options.language ?? 'zh');
+  await page.addInitScript((language) => localStorage.setItem('picolah.market', 'SG'), options.language ?? 'zh');
   const friends = options.empty ? [] : [friend('alice', '小林', '周末一起去看看？', 2), friend('bob', 'Alex Chen', '这款耳机的价格很不错'), friend('long', '这是一个非常非常长的好友名称用来检查列表显示', '一条很长的最近消息，应该自动省略而不会挤压时间或头像。')];
   const history: Record<string, SocialMessage[]> = {
     alice: [message('a1', 'alice', 'me', '看到你分享的比价了，这款耳机很不错。'), message('a2', 'me', 'alice', '我也觉得，等周末一起看看。')],
@@ -63,24 +63,24 @@ for (const width of [1440, 390, 320]) {
     await expect(page.locator('.friends-unread')).toHaveText('2');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`friends-list-${width}.png`) });
-    await page.getByRole('searchbox', { name: '搜索好友' }).fill('不存在');
-    await expect(page.getByText('没有找到匹配的好友')).toBeVisible();
-    await page.getByRole('button', { name: '清除搜索' }).click();
-    await page.getByRole('button', { name: '聊天 小林', exact: true }).click();
+    await page.getByRole('searchbox', { name: 'Search friends' }).fill('不存在');
+    await expect(page.getByText('No matching friends')).toBeVisible();
+    await page.getByRole('button', { name: 'Clear search' }).click();
+    await page.getByRole('button', { name: 'Chat 小林', exact: true }).click();
     await expect(page.getByRole('heading', { name: '小林' })).toBeVisible();
     await expect(page.locator('.friends-bubble')).toHaveCount(2);
     if (width > 760) {
       await expect(rows.first()).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('.friends-unread')).toHaveCount(0);
     } else await expect(page.locator('.friends-list-panel')).toBeHidden();
-    const input = page.getByRole('textbox', { name: '说点什么…' });
+    const input = page.getByRole('textbox', { name: 'Say something…' });
     await input.fill('保留给小林的草稿');
-    await page.getByRole('button', { name: width > 760 ? '关闭' : '返回好友列表', exact: true }).click();
-    await expect(page.getByRole('button', { name: '聊天 小林', exact: true })).toContainText('[草稿]');
-    await page.getByRole('button', { name: '聊天 Alex Chen', exact: true }).click();
+    await page.getByRole('button', { name: width > 760 ? 'Close' : 'Back to friends', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Chat 小林', exact: true })).toContainText('[Draft]');
+    await page.getByRole('button', { name: 'Chat Alex Chen', exact: true }).click();
     await expect(input).toHaveValue('');
-    await page.getByRole('button', { name: width > 760 ? '关闭' : '返回好友列表', exact: true }).click();
-    await page.getByRole('button', { name: '聊天 小林', exact: true }).click();
+    await page.getByRole('button', { name: width > 760 ? 'Close' : 'Back to friends', exact: true }).click();
+    await page.getByRole('button', { name: 'Chat 小林', exact: true }).click();
     await expect(input).toHaveValue('保留给小林的草稿');
     await input.fill('周末见');
     await input.press('Shift+Enter');
@@ -89,7 +89,7 @@ for (const width of [1440, 390, 320]) {
     await input.press('Enter');
     await expect(input).toHaveValue('');
     await expect(page.locator('.friends-bubble').last()).toHaveText('周末见\nz');
-    await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`friends-chat-${width}.png`) });
   });
@@ -104,45 +104,45 @@ test('a slow send stays with its friend and preserves a newer draft after switch
     await pending;
     await route.fulfill({ json: { message: message('slow', 'me', body.toUserId, body.body) } });
   });
-  await page.getByRole('button', { name: '聊天 小林', exact: true }).click();
-  const input = page.getByRole('textbox', { name: '说点什么…' });
+  await page.getByRole('button', { name: 'Chat 小林', exact: true }).click();
+  const input = page.getByRole('textbox', { name: 'Say something…' });
   await input.fill('旧消息');
   const request = page.waitForRequest('**/api/social/messages');
   await input.press('Enter');
   await request;
-  await page.getByRole('button', { name: '聊天 Alex Chen', exact: true }).click();
+  await page.getByRole('button', { name: 'Chat Alex Chen', exact: true }).click();
   await input.fill('给 Alex 的草稿');
-  await page.getByRole('button', { name: '聊天 小林', exact: true }).click();
+  await page.getByRole('button', { name: 'Chat 小林', exact: true }).click();
   await input.fill('小林的新草稿');
   const response = page.waitForResponse('**/api/social/messages');
   release(); await response;
   await expect(input).toHaveValue('小林的新草稿');
-  await page.getByRole('button', { name: '聊天 Alex Chen', exact: true }).click();
+  await page.getByRole('button', { name: 'Chat Alex Chen', exact: true }).click();
   await expect(input).toHaveValue('给 Alex 的草稿');
   await expect(page.locator('.friends-bubble')).not.toContainText(['旧消息']);
 });
 
 test('requests remain actionable and notification popover closes with Escape', async ({ page }) => {
   await setup(page);
-  await page.getByRole('button', { name: '通知', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '通知' })).toBeVisible();
-  await page.getByRole('button', { name: '接受 新朋友' }).click();
-  await expect(page.getByRole('button', { name: '接受 新朋友' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Notifications', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toBeVisible();
+  await page.getByRole('button', { name: 'Accept 新朋友' }).click();
+  await expect(page.getByRole('button', { name: 'Accept 新朋友' })).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: '通知' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toHaveCount(0);
 });
 
 test('empty friends offer a working Radar entry', async ({ page }) => {
   await setup(page, { empty: true });
-  await expect(page.getByText('还没有好友，去雷达发现与你偏好相近的人。')).toBeVisible();
-  await page.getByRole('button', { name: '去雷达找好友', exact: true }).last().click();
-  await expect(page.getByRole('heading', { name: '雷达', exact: true })).toBeVisible();
+  await expect(page.getByText('No friends yet. Use Radar to find people with similar taste.')).toBeVisible();
+  await page.getByRole('button', { name: 'Find friends on Radar', exact: true }).last().click();
+  await expect(page.getByRole('heading', { name: 'Radar', exact: true })).toBeVisible();
 });
 
 test('guest sign-in entry opens the login dialog', async ({ page }) => {
   await setup(page, { guest: true });
-  await expect(page.getByRole('heading', { name: '登录后查看好友' })).toBeVisible();
-  await page.locator('.friends-guest').getByRole('button', { name: '登录 / 注册', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in to see friends' })).toBeVisible();
+  await page.locator('.friends-guest').getByRole('button', { name: 'Sign in / Sign up', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 

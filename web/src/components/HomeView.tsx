@@ -34,19 +34,6 @@ export function HomeView({
 
   return (
     <section className="pc-home" aria-label={t('home.label')}>
-      <div className="pc-home-aurora" aria-hidden="true">
-        <span className="pc-aurora pc-aurora-pink" />
-        <span className="pc-aurora pc-aurora-lilac" />
-        <span className="pc-aurora pc-aurora-mint" />
-      </div>
-      <div className="pc-doodles" aria-hidden="true">
-        <span className="pc-doodle pc-doodle-1">✦</span>
-        <span className="pc-doodle pc-doodle-2">✧</span>
-        <span className="pc-doodle pc-doodle-3">✦</span>
-        <span className="pc-doodle pc-doodle-4">♡</span>
-        <span className="pc-doodle pc-doodle-5">✧</span>
-      </div>
-
       <button
         type="button"
         className="pc-mobile-menu"

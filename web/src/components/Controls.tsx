@@ -12,6 +12,7 @@ import type { CountryCode, PriceMode } from '../../shared/types';
 import { COUNTRY_LIST, MARKETS } from '../../shared/types';
 import { PRICE_MODES } from '../lib/format';
 import { CountryFlag } from './CountryFlag';
+import { marketName } from '../lib/market-language';
 
 const PRICE_ICONS = {
   landed: Wallet,
@@ -47,12 +48,14 @@ export function MarketPicker({
   onChange,
   direction = 'up',
   compact = false,
+  flagOnly = false,
   tone = 'light',
 }: {
   market: CountryCode;
   onChange: (market: CountryCode) => void;
   direction?: 'up' | 'down';
   compact?: boolean;
+  flagOnly?: boolean;
   tone?: 'light' | 'ghost';
 }) {
   const { t, i18n } = useTranslation();
@@ -64,17 +67,19 @@ export function MarketPicker({
     <div className={`pc-picker pc-market-picker ${open ? 'is-open' : ''}`} ref={rootRef}>
       <button
         type="button"
-        className={`pc-picker-trigger pc-picker-trigger-${tone}`}
+        className={`pc-picker-trigger pc-picker-trigger-${tone} ${flagOnly ? 'is-flag-only' : ''}`}
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="listbox"
         aria-expanded={open}
         title={t('controls.changeMarket')}
+        aria-label={flagOnly ? `${t('controls.changeMarket')} · ${marketName(market, i18n.language)}` : undefined}
+        data-market={market}
       >
-        <CountryFlag code={market} width={compact ? 16 : 18} />
-        <span className="pc-picker-label">
-          {compact ? current.currency : i18n.language === 'en' ? current.nameEn : current.nameZh}
+        <CountryFlag code={market} width={flagOnly ? 24 : compact ? 16 : 18} />
+        {!flagOnly && <><span className="pc-picker-label">
+          {compact ? current.currency : marketName(market, i18n.language)}
         </span>
-        <ChevronDown size={13} className={open ? 'is-flipped' : ''} />
+        <ChevronDown size={13} className={open ? 'is-flipped' : ''} /></>}
       </button>
 
       {open && (
@@ -93,6 +98,7 @@ export function MarketPicker({
               role="option"
               aria-selected={item.code === market}
               key={item.code}
+              data-market={item.code}
               className={`pc-picker-option ${item.code === market ? 'is-selected' : ''}`}
               onClick={() => {
                 onChange(item.code);
@@ -101,8 +107,8 @@ export function MarketPicker({
             >
               <CountryFlag code={item.code} width={20} />
               <span className="pc-picker-option-copy">
-                <strong>{i18n.language === 'en' ? item.nameEn : item.nameZh}</strong>
-                <small>{i18n.language === 'en' ? item.nameZh : item.nameEn}</small>
+                <strong>{marketName(item.code, i18n.language)}</strong>
+                <small>{marketName(item.code, item.locale)}</small>
               </span>
               <span className="pc-picker-option-meta">{item.currency}</span>
               {item.code === market && <Check size={14} className="pc-picker-check" />}
