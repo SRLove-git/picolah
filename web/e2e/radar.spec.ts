@@ -69,26 +69,35 @@ for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: width === 320 ? 568 : 1000 });
     const state = await setup(page);
     await expect(page.locator('.radar-candidates > li')).toHaveCount(5);
-    await expect(page.locator('.radar-stage')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '加好友 Mia Tan', exact: true })).toHaveCount(0);
+    await expect(page.locator('.radar-signature').first()).toHaveText('数码电子 · 索尼');
     await expect(page.locator('.radar-candidates')).toContainText('相似度 93%');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`radar-list-${width}.png`), fullPage: true });
-    await page.getByRole('combobox', { name: '筛选相似的人' }).selectOption('friends');
+    await page.getByRole('button', { name: '雷达选项', exact: true }).click();
+    await page.getByRole('button', { name: '已添加', exact: true }).click();
     await expect(page.locator('.radar-candidates > li')).toHaveCount(1);
+    await page.getByRole('button', { name: '查看资料 小林', exact: true }).click();
     await page.getByRole('button', { name: '聊天 小林', exact: true }).click();
     await page.getByRole('textbox', { name: '说点什么…' }).fill('周末见');
     await page.getByRole('button', { name: '发送', exact: true }).click();
     await expect(page.locator('.radar-bubble')).toHaveText('周末见');
     await page.getByRole('button', { name: '关闭', exact: true }).click();
-    await page.getByRole('combobox', { name: '筛选相似的人' }).selectOption('new');
+    await page.getByRole('button', { name: '雷达选项', exact: true }).click();
+    await page.getByRole('button', { name: '未添加', exact: true }).click();
     await expect(page.locator('.radar-candidates > li')).toHaveCount(4);
+    await page.getByRole('button', { name: '查看资料 Mia Tan', exact: true }).click();
     await page.getByRole('button', { name: '加好友 Mia Tan', exact: true }).click();
     await expect(page.locator('.radar-candidates > li').filter({ hasText: 'Mia Tan' })).toContainText('已申请');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: '查看资料 小悦', exact: true }).click();
     await page.getByRole('button', { name: '查看申请 小悦', exact: true }).click();
     await expect(page.getByRole('button', { name: '接受 小悦', exact: true })).toBeVisible();
     await page.getByRole('button', { name: '接受 小悦', exact: true }).click();
     await expect(page.locator('.radar-candidates > li')).toHaveCount(3);
-    await page.getByText('我的消费偏好', { exact: true }).click();
+    await page.getByRole('button', { name: '关闭', exact: true }).click();
+    await page.getByRole('button', { name: '雷达选项', exact: true }).click();
+    await page.getByRole('button', { name: '我的消费偏好', exact: true }).click();
     await expect(page.getByText('12 次比价 · 8 次跳转', { exact: true })).toBeVisible();
     expect(state.errors).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -108,9 +117,11 @@ test('a failed API response has a visible retry and never masquerades as missing
 test('people with no comparisons can still handle incoming requests', async ({ page }) => {
   await setup(page, { noData: true });
   await expect(page.getByRole('heading', { name: '先比几次价，雷达才能读懂你' })).toBeVisible();
-  await page.getByText('新的朋友', { exact: true }).click();
+  await page.getByRole('button', { name: '雷达选项', exact: true }).click();
+  await page.getByRole('button', { name: /^新的朋友/ }).click();
   await page.getByRole('button', { name: '拒绝 小悦', exact: true }).click();
   await expect(page.getByText('暂无新的好友请求', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '去发现商品', exact: true }).click();
   await expect(page.getByRole('heading', { name: '发现', exact: true })).toBeVisible();
 });
@@ -119,9 +130,10 @@ test('English empty results and guest sign-in entry remain readable', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, { empty: true, en: true });
   await expect(page.getByText('No one close yet. Check back as more people compare products.')).toBeVisible();
-  await page.getByRole('combobox', { name: 'Filter similar people' }).selectOption('friends');
+  await page.getByRole('button', { name: 'Radar options', exact: true }).click();
+  await page.getByRole('button', { name: 'Added', exact: true }).click();
   await page.getByRole('button', { name: 'Show everyone' }).click();
-  await expect(page.getByRole('combobox')).toHaveValue('all');
+  await expect(page.getByRole('button', { name: 'Show everyone' })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('radar-empty-en.png') });
 });
 
@@ -133,4 +145,26 @@ test('guest has a working login action without requesting protected radar data',
   await page.locator('.radar-guest').getByRole('button', { name: '登录 / 注册' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(radarRequests).toBe(0);
+});
+
+
+test('profile and options support keyboard entry, focus containment and return to the list', async ({ page }) => {
+  await setup(page);
+  const person = page.getByRole('button', { name: '查看资料 Mia Tan', exact: true });
+  await person.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Mia Tan' })).toBeVisible();
+  for (let step = 0; step < 5; step++) await page.keyboard.press('Tab');
+  expect(await page.getByRole('dialog').evaluate((node) => node.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(person).toBeFocused();
+  const more = page.getByRole('button', { name: '雷达选项', exact: true });
+  await more.click();
+  await page.getByRole('button', { name: '刷新', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(more).toBeFocused();
+  await expect(page.locator('.radar-candidates > li')).toHaveCount(5);
+  await page.getByRole('button', { name: '返回发现', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '发现', exact: true })).toBeVisible();
 });

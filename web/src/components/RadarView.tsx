@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Dialog } from '@base-ui/react/dialog';
 import {
   Check,
-  ChevronDown,
+  ChevronLeft,
+  Ellipsis,
+  Menu,
   ChevronRight,
   SlidersHorizontal,
   UsersRound,
@@ -27,12 +30,14 @@ import {
   type SharedPreference,
   type SocialMessage,
 } from '../lib/social';
-import { PageHeader } from './PageHeader';
 import './radar.css';
 
 const COPY = {
   zh: {
-    eyebrow: 'RADAR',
+    more: '雷达选项',
+    back: '返回发现',
+    profile: '查看资料',
+    navigation: '打开导航',
     title: '雷达',
     description: '根据消费偏好，找到和你相似的人。',
     guestTitle: '登录后开启雷达',
@@ -83,7 +88,10 @@ const COPY = {
     loading: '正在匹配…',
   },
   en: {
-    eyebrow: 'RADAR',
+    more: 'Radar options',
+    back: 'Back to Discover',
+    profile: 'View profile',
+    navigation: 'Open navigation',
     title: 'Radar',
     description: 'Meet people whose shopping preferences look like yours.',
     guestTitle: 'Sign in to use Radar',
@@ -179,8 +187,9 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [filter, setFilter] = useState('all');
-  const [requestsOpen, setRequestsOpen] = useState(false);
-  const requestsRef = useRef<HTMLDetailsElement>(null);
+  const [panel, setPanel] = useState<'more' | 'requests' | 'preferences' | 'friends' | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const panelTriggerRef = useRef<HTMLElement | null>(null);
   const activeChatRef = useRef<string | null>(null);
   const draftRef = useRef(draft);
   draftRef.current = draft;
@@ -296,26 +305,44 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
   const friends = data?.friends ?? [];
 
   function showRequests() {
-    setRequestsOpen(true);
-    requestsRef.current?.scrollIntoView({ block: 'nearest' });
+    setSelectedId(null);
+    setPanel('requests');
   }
   const preferenceTags: SharedPreference[] = self
     ? [...self.categories.slice(0, 2), ...self.brands.slice(0, 2)]
     : [];
 
+  const selected = candidates.find((candidate) => candidate.id === selectedId);
+  const panelTitle = selected?.displayName ?? (panel === 'requests' ? copy.requests : panel === 'preferences' ? copy.mine : panel === 'friends' ? copy.friends : copy.more);
+
+  function closePanel() {
+    setPanel(null);
+    setSelectedId(null);
+  }
+
+  function candidateChat(candidate: RadarCandidate) {
+    closePanel();
+    openChat(friends.find((friend) => friend.id === candidate.id) ?? {
+      ...candidate, lastMessage: null, lastMessageAt: null, unread: 0,
+    });
+  }
+
   return (
     <section className="pc-page pc-radar-page" aria-label={copy.title}>
-      <PageHeader
-        eyebrow={copy.eyebrow}
-        title={copy.title}
-        onOpenSidebar={onOpenSidebar}
-      >
+      <header className="radar-header">
+        <button type="button" className="radar-icon-button" onClick={onStart} aria-label={copy.back}>
+          <ChevronLeft size={27} strokeWidth={1.8} />
+        </button>
+        <h1>{copy.title}</h1>
         {user ? (
-          <button type="button" className="radar-refresh" onClick={() => void load()} disabled={loading} aria-label={copy.refresh} title={copy.refresh}>
-            <RefreshCw size={18} className={loading ? 'radar-spin' : undefined} />
+          <button type="button" className="radar-icon-button radar-more" aria-label={copy.more}
+            aria-haspopup="dialog" aria-expanded={panel === 'more'}
+            onClick={(event) => { panelTriggerRef.current = event.currentTarget; setPanel('more'); }}>
+            {loading ? <RefreshCw size={21} className="radar-spin" /> : <Ellipsis size={27} />}
+            {incoming.length > 0 ? <span className="radar-notification-dot" /> : null}
           </button>
-        ) : null}
-      </PageHeader>
+        ) : <span className="radar-header-spacer" />}
+      </header>
 
       <div className="radar-body">
         <div className="radar-directory">
@@ -324,9 +351,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
               <span className="radar-guest-icon"><Radar size={42} strokeWidth={1.3} /></span>
               <h2>{copy.guestTitle}</h2>
               <p>{copy.guestBody}</p>
-              <button type="button" className="radar-primary" onClick={() => promptLogin('radar')}>
-                {copy.guestCta}
-              </button>
+              <button type="button" className="radar-primary" onClick={() => promptLogin('radar')}>{copy.guestCta}</button>
             </div>
           ) : (
             <>
@@ -340,160 +365,144 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
                 <div className="radar-state" role="status"><RefreshCw size={24} className="radar-spin" /><p>{copy.loading}</p></div>
               ) : !data ? (
                 <div className="radar-state"><Radar size={36} strokeWidth={1.3} /><h2>{copy.loadError}</h2></div>
-              ) : (
-                <>
-                  <div className="radar-intro"><Radar size={17} strokeWidth={1.6} /><span>{copy.description}</span></div>
-                  <div className="radar-utilities">
-                    <details className="radar-disclosure" ref={requestsRef} open={requestsOpen}
-                      onToggle={(event) => setRequestsOpen(event.currentTarget.open)}>
-                      <summary>
-                        <span className="radar-utility-icon is-requests"><UserPlus size={20} /></span>
-                        <strong>{copy.requests}</strong>
-                        {incoming.length > 0 ? <span className="radar-unread">{incoming.length}</span> : null}
-                        <ChevronRight className="radar-disclosure-arrow" size={17} />
-                      </summary>
-                      {incoming.length ? (
-                        <ul className="radar-list radar-compact-list">
-                          {incoming.map((request) => (
-                            <li key={request.id}>
-                              <span className="radar-avatar" style={{ background: tint(request.userId) }}>
-                                {request.avatar ? <img src={request.avatar} alt="" /> : initial(request.displayName)}
-                              </span>
-                              <span className="radar-person"><strong>{request.displayName}</strong></span>
-                              <span className="radar-request-actions">
-                                <button type="button" className="radar-action" disabled={busyId === request.id}
-                                  onClick={() => void respond(request, true)} aria-label={`${copy.accept} ${request.displayName}`}>
-                                  <Check size={14} /><span>{copy.accept}</span>
-                                </button>
-                                <button type="button" className="radar-action is-ghost" disabled={busyId === request.id}
-                                  onClick={() => void respond(request, false)} aria-label={`${copy.decline} ${request.displayName}`}>
-                                  <X size={14} /><span>{copy.decline}</span>
-                                </button>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="radar-disclosure-empty">{copy.requestsEmpty}</p>}
-                    </details>
-                  </div>
-
-                  {self?.hasData ? (
-                    <section className="radar-people" aria-label={copy.people}>
-                      <header className="radar-list-heading">
-                        <h2>{copy.people}<span>{visibleCandidates.length}</span></h2>
-                        <label className="radar-filter">
-                          <select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label={copy.filter}>
-                            <option value="all">{copy.all}</option>
-                            <option value="new">{copy.notAdded}</option>
-                            <option value="friends">{copy.added}</option>
-                          </select>
-                          <ChevronDown size={13} aria-hidden="true" />
-                        </label>
-                      </header>
-                      {visibleCandidates.length ? (
-                        <ul className="radar-list radar-candidates" aria-busy={loading}>
-                          {visibleCandidates.map((candidate) => (
-                            <li key={candidate.id}>
+              ) : self?.hasData ? (
+                <section className="radar-people" aria-label={copy.people}>
+                  {filter !== 'all' ? (
+                    <div className="radar-active-filter"><span>{filter === 'friends' ? copy.added : copy.notAdded}</span>
+                      <button type="button" onClick={() => setFilter('all')}>{copy.resetFilter}</button>
+                    </div>
+                  ) : null}
+                  {visibleCandidates.length ? (
+                    <ul className="radar-list radar-candidates" aria-busy={loading}>
+                      {visibleCandidates.map((candidate) => {
+                        const shared = candidate.shared.map((tag) => en ? tag.en : tag.zh).join(' · ');
+                        return (
+                          <li key={candidate.id}>
+                            <button type="button" className="radar-person-row" aria-label={`${copy.profile} ${candidate.displayName}`}
+                              aria-haspopup="dialog" onClick={(event) => { panelTriggerRef.current = event.currentTarget; setSelectedId(candidate.id); }}>
                               <span className="radar-avatar" style={{ background: tint(candidate.id) }}>
                                 {candidate.avatar ? <img src={candidate.avatar} alt="" /> : initial(candidate.displayName)}
                               </span>
-                              <div className="radar-person">
-                                <strong title={candidate.displayName}>{candidate.displayName}</strong>
-                                <span className="radar-match">{copy.similarity} {candidate.similarity}%</span>
-                                <small title={candidate.shared.map((tag) => en ? tag.en : tag.zh).join(' · ')}>
-                                  {candidate.shared.length ? candidate.shared.map((tag) => en ? tag.en : tag.zh).join(' · ') : copy.sharedEmpty}
-                                </small>
-                              </div>
-                              {candidate.relationship === 'friend' ? (
-                                <button type="button" className="radar-action is-ghost"
-                                  aria-label={`${copy.chat} ${candidate.displayName}`}
-                                  onClick={() => {
-                                    const friend = friends.find((item) => item.id === candidate.id);
-                                    openChat(friend ?? { ...candidate, lastMessage: null, lastMessageAt: null, unread: 0 });
-                                  }}>
-                                  <MessagesSquare size={14} />{copy.chat}
-                                </button>
-                              ) : candidate.relationship === 'requested' ? (
-                                <span className="radar-requested"><Check size={13} />{copy.requested}</span>
-                              ) : candidate.relationship === 'incoming' ? (
-                                <button type="button" className="radar-action is-ghost" onClick={showRequests}
-                                  aria-label={`${copy.showRequest} ${candidate.displayName}`}>{copy.showRequest}</button>
-                              ) : (
-                                <button type="button" className="radar-action" disabled={busyId === candidate.id}
-                                  onClick={() => void addFriend(candidate)} aria-label={`${copy.add} ${candidate.displayName}`}>
-                                  <UserPlus size={14} />{copy.add}
-                                </button>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="radar-state radar-list-empty">
-                          <UsersRound size={32} strokeWidth={1.3} />
-                          <p>{candidates.length ? copy.filterEmpty : copy.peopleEmpty}</p>
-                          {filter !== 'all' ? <button type="button" className="radar-text-button" onClick={() => setFilter('all')}>{copy.resetFilter}</button> : null}
-                        </div>
-                      )}
-                    </section>
+                              <span className="radar-person">
+                                <span className="radar-name-line"><strong title={candidate.displayName}>{candidate.displayName}</strong>
+                                  {candidate.relationship === 'friend' ? <Check size={15} className="radar-friend-mark" aria-label={copy.added} /> : null}
+                                </span>
+                                <span className="radar-match">{copy.similarity} {candidate.similarity}%
+                                  {candidate.relationship === 'requested' ? <span className="radar-relationship"> · {copy.requested}</span> : null}
+                                  {candidate.relationship === 'incoming' ? <span className="radar-relationship"> · {copy.incoming}</span> : null}
+                                </span>
+                              </span>
+                              {shared ? <span className="radar-signature" title={`${copy.shared}：${shared}`}>{shared}</span> : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   ) : (
-                    <div className="radar-guest radar-no-data">
-                      <span className="radar-guest-icon"><Radar size={42} strokeWidth={1.3} /></span>
-                      <h2>{copy.noDataTitle}</h2>
-                      <p>{copy.noDataBody}</p>
-                      <button type="button" className="radar-primary" onClick={onStart}>{copy.noDataCta}</button>
+                    <div className="radar-state radar-list-empty">
+                      <UsersRound size={36} strokeWidth={1.3} />
+                      <p>{candidates.length ? copy.filterEmpty : copy.peopleEmpty}</p>
                     </div>
                   )}
-
-                  <div className="radar-utilities radar-secondary">
-                    <details className="radar-disclosure">
-                      <summary>
-                        <span className="radar-utility-icon"><SlidersHorizontal size={18} /></span>
-                        <strong>{copy.mine}</strong>
-                        <span className="radar-summary-note">{en ? self?.personaEn : self?.personaZh}</span>
-                        <ChevronRight className="radar-disclosure-arrow" size={17} />
-                      </summary>
-                      <div className="radar-preferences">
-                        <p>{en ? self?.taglineEn : self?.taglineZh}</p>
-                        <div className="radar-tags">
-                          {preferenceTags.length ? preferenceTags.map((tag) => <span key={`${tag.zh}-${tag.en}`}>{en ? tag.en : tag.zh}</span>) : <span>{copy.noPersona}</span>}
-                        </div>
-                        <dl>
-                          <div><dt>{copy.budget}</dt><dd>{budgetLabel(self?.budget ?? null, en)}</dd></div>
-                          <div><dt>{en ? 'Activity' : '消费足迹'}</dt><dd>{self?.comparisons ?? 0} {copy.comparisons} · {self?.clicks ?? 0} {copy.clicks}</dd></div>
-                        </dl>
-                      </div>
-                    </details>
-                    <details className="radar-disclosure">
-                      <summary>
-                        <span className="radar-utility-icon"><UsersRound size={19} /></span>
-                        <strong>{copy.friends}</strong><span className="radar-summary-note">{friends.length}</span>
-                        <ChevronRight className="radar-disclosure-arrow" size={17} />
-                      </summary>
-                      {friends.length ? (
-                        <ul className="radar-list radar-compact-list">
-                          {friends.map((friend) => (
-                            <li key={friend.id}>
-                              <span className="radar-avatar" style={{ background: tint(friend.id) }}>
-                                {friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}
-                              </span>
-                              <span className="radar-person"><strong>{friend.displayName}</strong><small>{friend.lastMessage ?? copy.chatEmpty}</small></span>
-                              {friend.unread > 0 ? <span className="radar-unread">{friend.unread > 99 ? '99+' : friend.unread}</span> : null}
-                              <button type="button" className="radar-action is-ghost" onClick={() => openChat(friend)} aria-label={`${copy.chat} ${friend.displayName}`}>
-                                <MessagesSquare size={14} />{copy.chat}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="radar-disclosure-empty">{copy.friendsEmpty}</p>}
-                    </details>
-                  </div>
-                  <p className="radar-footnote">{copy.matchNote}</p>
-                </>
+                </section>
+              ) : (
+                <div className="radar-guest radar-no-data">
+                  <span className="radar-guest-icon"><Radar size={42} strokeWidth={1.3} /></span>
+                  <h2>{copy.noDataTitle}</h2><p>{copy.noDataBody}</p>
+                  <button type="button" className="radar-primary" onClick={onStart}>{copy.noDataCta}</button>
+                </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      <Dialog.Root open={panel !== null || selectedId !== null} onOpenChange={(open) => { if (!open) closePanel(); }}>
+        <Dialog.Portal>
+          <Dialog.Backdrop className="radar-dialog-backdrop" />
+          <Dialog.Viewport className="radar-dialog-viewport">
+            <Dialog.Popup className="radar-sheet" finalFocus={panelTriggerRef}>
+              <header className="radar-sheet-head">
+                <Dialog.Title>{panelTitle}</Dialog.Title>
+                <Dialog.Close className="radar-icon-button" aria-label={copy.close}><X size={21} /></Dialog.Close>
+              </header>
+              <div className="radar-sheet-body">
+                {selected ? (
+                  <>
+                    <div className="radar-profile">
+                      <span className="radar-avatar" style={{ background: tint(selected.id) }}>
+                        {selected.avatar ? <img src={selected.avatar} alt="" /> : initial(selected.displayName)}
+                      </span>
+                      <div className="radar-person"><strong>{selected.displayName}</strong><span className="radar-match">{copy.similarity} {selected.similarity}%</span></div>
+                    </div>
+                    <div className="radar-profile-preferences">
+                      <h3>{copy.shared}</h3>
+                      <div className="radar-tags">{selected.shared.map((tag) => <span key={`${tag.zh}-${tag.en}`}>{en ? tag.en : tag.zh}</span>)}</div>
+                      <p>{copy.matchNote}</p>
+                    </div>
+                    <div className="radar-profile-actions">
+                      {selected.relationship === 'friend' ? (
+                        <button type="button" className="radar-primary" aria-label={`${copy.chat} ${selected.displayName}`} onClick={() => candidateChat(selected)}><MessagesSquare size={17} />{copy.chat}</button>
+                      ) : selected.relationship === 'requested' ? (
+                        <span className="radar-requested"><Check size={16} />{copy.requested}</span>
+                      ) : selected.relationship === 'incoming' ? (
+                        <button type="button" className="radar-primary" onClick={showRequests} aria-label={`${copy.showRequest} ${selected.displayName}`}>{copy.showRequest}</button>
+                      ) : (
+                        <button type="button" className="radar-primary" disabled={busyId === selected.id} onClick={() => void addFriend(selected)} aria-label={`${copy.add} ${selected.displayName}`}><UserPlus size={17} />{copy.add}</button>
+                      )}
+                    </div>
+                  </>
+                ) : panel === 'more' ? (
+                  <>
+                    <div className="radar-menu-filters" role="group" aria-label={copy.filter}>
+                      {([['all', copy.all], ['new', copy.notAdded], ['friends', copy.added]] as const).map(([value, label]) => (
+                        <button type="button" key={value} aria-pressed={filter === value} onClick={() => { setFilter(value); closePanel(); }}>
+                          <span>{label}</span>{filter === value ? <Check size={18} /> : null}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="radar-menu-actions">
+                      <button type="button" onClick={showRequests}><UserPlus size={19} /><span>{copy.requests}</span>{incoming.length > 0 ? <span className="radar-unread">{incoming.length}</span> : null}<ChevronRight size={17} /></button>
+                      <button type="button" onClick={() => setPanel('preferences')}><SlidersHorizontal size={18} /><span>{copy.mine}</span><ChevronRight size={17} /></button>
+                      <button type="button" onClick={() => setPanel('friends')}><UsersRound size={19} /><span>{copy.friends}</span><small>{friends.length}</small><ChevronRight size={17} /></button>
+                      <button type="button" disabled={loading} onClick={() => { closePanel(); void load(); }}><RefreshCw size={18} /><span>{copy.refresh}</span></button>
+                      <button type="button" className="radar-navigation-action" onClick={() => { closePanel(); onOpenSidebar(); }}><Menu size={19} /><span>{copy.navigation}</span></button>
+                    </div>
+                  </>
+                ) : panel === 'requests' ? (
+                  incoming.length ? <ul className="radar-list radar-compact-list">
+                    {incoming.map((request) => <li key={request.id}>
+                      <span className="radar-avatar" style={{ background: tint(request.userId) }}>{request.avatar ? <img src={request.avatar} alt="" /> : initial(request.displayName)}</span>
+                      <span className="radar-person"><strong>{request.displayName}</strong></span>
+                      <span className="radar-request-actions">
+                        <button type="button" className="radar-action" disabled={busyId === request.id} onClick={() => void respond(request, true)} aria-label={`${copy.accept} ${request.displayName}`}>{copy.accept}</button>
+                        <button type="button" className="radar-action is-ghost" disabled={busyId === request.id} onClick={() => void respond(request, false)} aria-label={`${copy.decline} ${request.displayName}`}>{copy.decline}</button>
+                      </span>
+                    </li>)}
+                  </ul> : <p className="radar-panel-empty">{copy.requestsEmpty}</p>
+                ) : panel === 'preferences' ? (
+                  <div className="radar-preferences">
+                    <h3>{(en ? self?.personaEn : self?.personaZh) || copy.noPersona}</h3>
+                    <p>{en ? self?.taglineEn : self?.taglineZh}</p>
+                    <div className="radar-tags">{preferenceTags.map((tag) => <span key={`${tag.zh}-${tag.en}`}>{en ? tag.en : tag.zh}</span>)}</div>
+                    <dl><div><dt>{copy.budget}</dt><dd>{budgetLabel(self?.budget ?? null, en)}</dd></div>
+                      <div><dt>{en ? 'Activity' : '消费足迹'}</dt><dd>{self?.comparisons ?? 0} {copy.comparisons} · {self?.clicks ?? 0} {copy.clicks}</dd></div></dl>
+                  </div>
+                ) : panel === 'friends' ? (
+                  friends.length ? <ul className="radar-list radar-compact-list">
+                    {friends.map((friend) => <li key={friend.id}>
+                      <span className="radar-avatar" style={{ background: tint(friend.id) }}>{friend.avatar ? <img src={friend.avatar} alt="" /> : initial(friend.displayName)}</span>
+                      <span className="radar-person"><strong>{friend.displayName}</strong><small>{friend.lastMessage ?? copy.chatEmpty}</small></span>
+                      {friend.unread > 0 ? <span className="radar-unread">{friend.unread > 99 ? '99+' : friend.unread}</span> : null}
+                      <button type="button" className="radar-action" onClick={() => { closePanel(); openChat(friend); }} aria-label={`${copy.chat} ${friend.displayName}`}>{copy.chat}</button>
+                    </li>)}
+                  </ul> : <p className="radar-panel-empty">{copy.friendsEmpty}</p>
+                ) : null}
+              </div>
+            </Dialog.Popup>
+          </Dialog.Viewport>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {chatWith ? (
         <div className="radar-chat" role="dialog" aria-label={copy.chat}>
