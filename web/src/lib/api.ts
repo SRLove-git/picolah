@@ -367,7 +367,7 @@ export async function markAllAlertsRead(): Promise<void> {
   await fetch('/api/alerts/read-all', { method: 'POST', headers: userHeaders() });
 }
 
-export function outboundUrl(offer: { id: string; url: string; source?: 'live' }): string {
+export function outboundUrl(offer: { id: string; url: string; source?: 'live' | 'catalog' }): string {
   if (offer.source === 'live') {
     // Live listings have not been registered in the local offers table.
     try {

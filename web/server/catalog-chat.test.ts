@@ -69,6 +69,8 @@ test('catalog mode returns stored real quotes and preserves their collection tim
   assert.equal(result.comparison.offers.length, 4);
   assert.ok(result.comparison.offers.every((offer) => offer.country === 'SG' && offer.finalPrice === 404));
   assert.equal(result.comparison.search, undefined);
+  assert.ok(result.comparison.offers.every((offer) => offer.source === 'catalog'));
+
   assert.match(result.answer, /已入库报价/);
   assert.match(result.answer, /本次未实时抓取/);
 });

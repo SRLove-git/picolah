@@ -39,7 +39,7 @@ function ProductResultImage({ src, name, fallbackMascot = false }: { src?: strin
 // Only compare values supported by every live source. Missing shipping is not
 // free shipping, and a current quote is never a 30-day low.
 function comparablePriceMode(offers: Offer[], requested: PriceMode): PriceMode {
-  const live = offers.filter((offer) => offer.source === 'live');
+  const live = offers.filter((offer) => offer.source === 'live' || offer.source === 'catalog');
   if (!live.length) return requested;
   if (requested === 'history' || requested === 'landed') {
     return live.every((offer) => offer.landedPriceConfidence === 'exact') ? 'landed' : 'item';
@@ -212,7 +212,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
             <div className="offer-table-head">
               <span className="col-rank">#</span>
               <span>{t('comparison.seller')}</span>
-              <span className="col-trend">{t(isLive ? 'liveComparison.priceHistory' : 'comparison.trend')}</span>
+              <span className="col-trend">{t(isLive || comparison.offers.some((offer) => offer.source === 'catalog') ? 'liveComparison.priceHistory' : 'comparison.trend')}</span>
               <span className="col-price">{t(`controls.${displayMode}.label`)}</span>
             </div>
             {sorted.map((offer, index) => {
@@ -254,7 +254,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                     </div>
                   </div>
                   <div className="offer-trend">
-                    {offer.source === 'live' ? <span>{t('liveComparison.noHistory')}</span> : <>
+                    {(offer.source === 'live' || offer.source === 'catalog') ? <span>{t('liveComparison.noHistory')}</span> : <>
                       <Sparkline values={offer.history} accent={index === 0 ? '#111827' : '#9ca3af'} />
                       <span>{t('comparison.low')} {formatMoney(offer.low30d, market)}</span>
                     </>}

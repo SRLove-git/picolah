@@ -137,7 +137,7 @@ export interface PricePoint {
 }
 
 export interface Offer {
-  source?: 'live';
+  source?: 'live' | 'catalog';
   imageUrl?: string;
   shippingKnown?: boolean;
   discountKnown?: boolean;

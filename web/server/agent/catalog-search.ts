@@ -44,6 +44,7 @@ export async function searchCatalog(options: {
       offer.currency === MARKETS[market].currency && Number.isFinite(offer.finalPrice) && offer.finalPrice > 0 &&
       (target?.maxPrice === undefined || offer.finalPrice <= target.maxPrice)).map((offer) => ({
         ...offer,
+        source: 'catalog' as const,
         // Legacy ingestion uses zero for missing fees/ratings. Keep those
         // placeholders from being presented as free delivery or a zero rating.
         shippingKnown: offer.shippingFee > 0 || offer.landedPriceConfidence === 'exact',
