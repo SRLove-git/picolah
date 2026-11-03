@@ -6,7 +6,7 @@ import { searchCatalog, type CatalogProduct, type CatalogSort } from '../lib/api
 import { marketName } from '../lib/market-language';
 import { CountryFlag } from './CountryFlag';
 import { PageHeader } from './PageHeader';
-import { ProductArt } from './ProductArt';
+import { DiscoverProductArt } from './DiscoverProductArt';
 import './discover.css';
 
 interface SearchViewProps {
@@ -159,11 +159,11 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
             <Search size={30} strokeWidth={1.3} aria-hidden="true" /><p>{t('search.empty')}</p>
             <button type="button" onClick={resetFilters}>{t('search.clearFilters')}</button>
           </div> : <ul className="discover-grid">
-            {products.map((product) => <li key={product.id} className="discover-product">
+            {products.map((product, index) => <li key={product.id} className="discover-product">
               <button type="button" className="discover-product-button" aria-label={`${t('search.compare')}: ${product.name}`}
                 onClick={() => onAsk(product.name)}>
                 <div className="discover-product-image">
-                  <ProductArt visual={product.visual} size={240} />
+                  <DiscoverProductArt product={product} priority={index < 4} />
                   <span className="discover-illustration">{t('search.illustration')}</span>
                   <span className="discover-product-arrow" aria-hidden="true"><ArrowUpRight size={21} /></span>
                 </div>

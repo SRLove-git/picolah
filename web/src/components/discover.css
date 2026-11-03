@@ -39,12 +39,8 @@
 .discover-product { min-width: 0; }
 .discover-product-button { display: block; width: 100%; height: 100%; text-align: left; border-radius: 16px; }
 .discover-product-image { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 5; max-height: 300px; overflow: hidden; border-radius: 12px; background: var(--pc-paper); }
-.discover-product-image .product-art { width: 82% !important; height: auto !important; aspect-ratio: 1; background: transparent; border: 0; box-shadow: none; transition: transform 200ms ease; }
-.discover-product-image .product-art svg { display: block; width: 100%; height: 100%; }
-/* The existing category illustration is clearly labelled; it is not a model photograph. */
-.discover-product-image .product-art svg > rect:first-of-type,
-.discover-product-image .product-art svg > circle,
-.discover-product-image .product-art svg > path { display: none; }
+.discover-capy-art { display: block; width: 100%; height: 100%; min-height: 0; padding: 10px 6px 38px; object-fit: contain; object-position: center bottom; user-select: none; transition: transform 220ms ease; }
+/* These are category try-on illustrations, not photographs of specific models. */
 .discover-illustration { position: absolute; bottom: 13px; left: 14px; color: #888; font-size: 9px; }
 .discover-product-arrow { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 34px; height: 34px; background: var(--pc-paper); border-radius: 50%; color: var(--pc-ink); }
 .discover-product-copy { padding: 15px 2px 0; }
@@ -61,7 +57,7 @@
 .discover-skeletons li > span { display: block; width: 70%; height: 10px; margin: 17px 0 0; border-radius: 3px; background: #dedede; }
 .discover-skeletons li > span:last-child { width: 45%; margin-top: 10px; }
 @media (hover: hover) and (pointer: fine) {
-  .discover-product-button:hover .product-art { transform: translateY(-3px) scale(1.035); }
+  .discover-product-button:hover .discover-capy-art { transform: translateY(-3px) scale(1.025); }
   .discover-product-button:hover .discover-product-arrow { background: #202020; color: #fff; }
 }
 @media (min-width: 721px) and (max-width: 1120px) {
@@ -100,4 +96,7 @@
   .discover-product-arrow svg { width: 16px; }
   .discover-illustration { left: 10px; bottom: 15px; font-size: 8px; max-width: calc(100% - 48px); }
 }
-@media (prefers-reduced-motion: reduce) { .discover-product-image .product-art, .discover-search { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .discover-capy-art, .discover-search { transition: none; }
+  .discover-product-button:hover .discover-capy-art { transform: none; }
+}
