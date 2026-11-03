@@ -1,0 +1,582 @@
+[
+  {
+    "productId": "adidas-samba-og",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/1f4fd65d5d63e36ae5fd58c3c81da37e.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear a PAIR of these exact Adidas Samba OG B75806 sneakers: white leather, grey suede T-toe, THREE black stripes, black heel and slim DARK BROWN gum sole, small gold SAMBA lettering. Do not use thick beige soles. Both feet inside shoes, one foot forward, visible outer side."
+  },
+  {
+    "productId": "airpods-pro-2",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://cdsassets.apple.com/live/7WUAS350/images/tech-specs/airpods-pro-2.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara gently holding OPEN Apple AirPods Pro 2 WHITE charging case in one paw near chest, wearing one white short-stem earbud in visible ear, other bud in case. Exact rounded wide case with small green front indicator, opaque white hinged lid, earbuds have white silicone tips and BLACK oval acoustic vents. No angular long stems, no transparent lid."
+  },
+  {
+    "productId": "apple-watch-se-2",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.1p.sg/cdn/shop/files/Se40mmGPS_1_1b86119a-0eb8-4711-9477-1e8e0e14dfd8.jpg?v=1707134586"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara WEARING exact Apple Watch SE 2nd generation 44mm GPS MIDNIGHT on LEFT forearm wrist, forearm lifted to show face. Smooth MIDNIGHT verydarkblue silicone Sport Band with pin-and-tuck holes, rounded RECTANGULAR dark aluminum case, BLACK round digital crown without red cellular ring, small sidebutton, black screen white 10:09 and green activity chart matching reference. No braided band, no round sport watch."
+  },
+  {
+    "productId": "asics-gel-kayano-14",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://images.asics.com/is/image/asics/1201A019_104_SR_LT_GLB?%24sfcc-product%24="
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara WEARING a pair of exact ASICS GEL-KAYANO 14 WHITE/PURE SILVER, one shoe per hind foot, slight threequarter stance. White mesh, many metallic SILVER overlays, black-outlined ASICS crossing tiger stripes side mark, segmented sculpted WHITE midsole, small black and burgundy outsole accents. Match photo exact design, not Nike or NB."
+  },
+  {
+    "productId": "bose-qc-ultra",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/f1cdb7437cdcd56bd1178eb4c1fff092.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear these exact BLACK Bose QuietComfort Ultra headphones with oval earcups, distinct curved yoke and visible Bose logo. Headband behind rainbow horn; one paw touching an earcup."
+  },
+  {
+    "productId": "delonghi-dedica-ec685",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/fa2c2c2435bd9695aa2be05d1cef7d51.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara standing beside and touching this exact SILVER DeLonghi EC685.M Dedica. Tall slim brushed stainless body, 3 round topfront buttons, black forward portafilter handle, side steam wand, oval silver drip tray black base. Not a capsule machine."
+  },
+  {
+    "productId": "dyson-v12-detect",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/58828b7b96f33e8e449514c97b66aac9.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara operating this exact Dyson V12 Detect Slim Absolute HEPA. One paw grasping handle. Gold cyclone motor with turquoise blue filter, clear dust canister, gray slender wand, yellow/blue striped soft roller head. Entire stick and head visible at correct angle. No separate accessory attachments."
+  },
+  {
+    "productId": "estee-lauder-anr-50",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/6041d28b0e7cb9fefd09f23829aa8faa.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara holds exact Estee Lauder Advanced Night Repair 50ml small square amber BROWN glass bottle with rounded corners, metallic GOLD collar and ivory dropper bulb. Gold lettering on brown bottle, no white paper label. No carton box. Bottle at chest level."
+  },
+  {
+    "productId": "galaxy-buds3-pro",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://images.samsung.com/is/image/samsung/p6pim/ca/2407/gallery/ca-galaxy-buds3-pro-r630-sm-r630nzwaxac-542124830?$Q90_1368_1094_F_JPG$"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara WEARING these exact Samsung Galaxy Buds3 Pro WHITE earbuds on small ears, one clearly visible in threequarter view. White rounded earbud body with silicone tips, long STRAIGHT ANGULAR BLADE stems with BLACK vertical light strip and small blue/red tip accents. Do not replace with curved AirPods stems. No headset or case needed."
+  },
+  {
+    "productId": "galaxy-s24-ultra",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://images.samsung.com/is/image/samsung/p6pim/ae/2401/gallery/ae-galaxy-s24-s928-sm-s928bztcmea-539263921?$Q90_1368_1094_F_JPG$"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holding exact Samsung Galaxy S24 Ultra TITANIUM GRAY upright with BACK facing viewer in one paw at chest. Squared sharp corners, flat matte warmgray back, three LARGE separate black lens circles stacked vertical on left plus two SMALL circles on right, tiny flash, subtle SAMSUNG lowerback. No square camera bump, no rounded iPhone silhouette."
+  },
+  {
+    "productId": "garmin-forerunner-265",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/03bfd161e3cd509af7a612a90de258bf.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear the exact BLACK Garmin Forerunner 265 ROUND sports watch with five side buttons, black outer and light-grey inner perforated strap. Raise wrist toward viewer, circular screen has colored training arc like reference. Other paw points at watch. Never make this watch rectangular."
+  },
+  {
+    "productId": "huawei-watch-gt5",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://consumer.huawei.com/dam/content/dam/huawei-cbg-site/common/mkt/pdp/admin-image/wearables/watch-gt5/list/46mm-black.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara WEARING exact Huawei Watch GT5 46mm BLACK on LEFT forearm wrist raised toward viewer. Black silicone strap, angular metallic graphite octagonal outer case around ROUND black dial, white minute markings, two right side buttons including ridged crown. Colorful faceted red orange yellow blue polygon watchface from photo. Not rectangular Apple Watch."
+  },
+  {
+    "productId": "iphone-15-128",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.apple.com/newsroom/images/2023/09/apple-debuts-iphone-15-and-iphone-15-plus/article/Apple-iPhone-15-lineup-design-230912_big.jpg.large.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holding exact Apple iPhone 15 BLUE upright in one paw at chest, back facing viewer. Very pale icy BLUE glass back and lightblue frame, TWO diagonal large lenses in rounded square camera island, small flash, centered Apple logo. Not Pro triple camera; not dark blue. One phone only."
+  },
+  {
+    "productId": "iphone-16-pro-256",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.apple.com/newsroom/images/2024/09/apple-debuts-iphone-16-pro-and-iphone-16-pro-max/article/Apple-iPhone-16-Pro-finish-lineup-240909_big.jpg.large.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holding ONE iPhone 16 Pro NATURAL TITANIUM 256GB in one paw upright, BACK facing viewer. From reference color lineup select SECOND FROM LEFT neutral gray/beige natural titanium only, not black, white or copper desert. Three large lenses triangularly arranged in rounded-square bump plus flash and dark LiDAR, centered Apple logo and straight titanium edges. Do not include other phones."
+  },
+  {
+    "productId": "jbl-charge-5",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.jbl.com/dw/image/v2/BFND_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw65eaac1a/JBL_CHARGE5_HERO_BLACK_0046_x1.png?sh=535&sw=535"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holding exact JBL Charge 5 BLACK horizontal speaker in both paws at belly. Rounded cylindrical capsule with woven black mesh, large gray raised JBL letters with thin red outline on front, side black passive radiator with exclamation symbol, top rubber controls, small white charge indicator below logo. No strap, no Marshall rectangular substitute."
+  },
+  {
+    "productId": "la-roche-posay-mela-b3",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/f094e5b32eb8bdd5d33bf01a339b5a44.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara holds exact La Roche-Posay Mela B3 30ml PURPLE glass serum bottle with white label and WHITE dropper bulb/collar. Preserve bottle proportions and recognizable MELA B3 label. No advertising slogans or background. Bottle label facing viewer."
+  },
+  {
+    "productId": "marshall-emberton-iii",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/4cfb9540ffc0cc553a3e6db24bd4a578.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Hold this exact BLACK and BRASS Marshall Emberton III speaker in both paws at chest height. Preserve its compact rectangular shape, crosshatched grille, gold cursive Marshall on front and gold top control."
+  },
+  {
+    "productId": "nespresso-vertuo-pop",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/19226fe13a1e2235250252c5ba30640f.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside and paw on exact Nespresso Vertuo Pop in mint turquoise and black. Short rounded mint domed brewing head, black lower body and extended circular cup platform, clear rear water tank. One small glass coffee cup on tray optional. No espresso portafilter."
+  },
+  {
+    "productId": "new-balance-530",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/1dfb14efd58d99343db5fae30d783b7c.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear a PAIR of these exact New Balance 530 white/silver mesh running shoes: silver layered trim, outlined N on the side, 530 near heel and sculpted segmented ABZORB sole. Both feet inside shoes, three-quarter pose with visible outer shoe side."
+  },
+  {
+    "productId": "nike-air-force-1",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/b7d9211c-26e7-431a-ac24-b0540fb3c00f/AIR+FORCE+1+%2707.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara WEARING a pair of exact Nike Air Force 1 07 WHITE/WHITE shoes, one on each hind foot, threequarter pose to expose outside panels. White leather, perforated toebox, prominent white stitched SWOOSH, white laces with metallic AF1 lace tag, thick flat white midsole with AIR embossed near heel, white outsole. Shoes attached correctly to feet, no extra pair."
+  },
+  {
+    "productId": "philips-ac3420-10",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/16605a7e9aa5f61102645a6c52d61451.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara standing alongside exact Philips AC3420/10 purifier humidifier, paw touching upper rim. OVAL cylindrical body with dense VERTICAL black-and-silver fins on upper two thirds, WHITE water tank base with narrow vertical water level window, white oval top with blue ring. Do not substitute rectangular perforated purifier."
+  },
+  {
+    "productId": "philips-airfryer-xxl",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/0b60e49632c5e52c473946b441926516.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips HD9285/91 XXL 5000 Series black airfryer. Squarish rounded all BLACK body, large rectangular digital touch display on upper FRONT with PHILIPS and 180 digits/icons, vertical black drawer handle with SILVER outline, no viewing window. Paw holding handle, no accessories."
+  },
+  {
+    "productId": "philips-ais6010-10",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/ce68d38b326a034b4891ad3b7cd6b793.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara beside and touching exact Philips AIS6010/10 all-in-one steamer: WHITE base with beige lower rim and clear upright water tank, SINGLE silver central pole, large vertical BEIGE padded board with rounded pointed bottom and hanger hook, white/beige steam iron attached by beige hose. Full apparatus visible. Not dark twinpole model."
+  },
+  {
+    "productId": "philips-bar300-60",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/0da50ff146f8db1ae308a972d0072c5f.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara touching exact Philips Baristina BAR300/60 BLACK espresso machine. Black rounded cuboid upper body and ribbed black lower right panel, clear shallow bean hopper on top, black portafilter projecting leftfront, black circular cup tray on rectangular base, clear rear water tank. Correct machine next to full body mascot."
+  },
+  {
+    "productId": "philips-cx7550-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/9ce32ef7a6b565a25460be8b70ca5108.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact BLACK Philips CX7550/01 tower fan, paw touching it. Tall very slender dark graphite tower with vertical narrow grille, oval digital display with blue accent near top, silver band low down, round flat base. Entire fan visible. No air purifier substituting."
+  },
+  {
+    "productId": "philips-dst1020-30",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/b39f9af1b9b198362b9a44da8e1dbb04.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara holding exact Philips DST1020/30 1000 Series steam iron by top handle, soleplate pointed leftfront away from body. WHITE handle shell, translucent light PURPLE reservoir, purple top cap, white temperature dial. Preserve real iron silhouette and colors. No clothing or board needed."
+  },
+  {
+    "productId": "philips-dst3040-76",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/22d544663dbc0de057ed1073e8e34f31.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Philips DST3040/76 3000 Series steam iron by top handle. Bright CYAN TURQUOISE translucent body and handle, WHITE round temperature dial, WHITE lower trim above silver soleplate, white rear cord. Preserve bright turquoise color, not darkblue Azur."
+  },
+  {
+    "productId": "philips-dst8020-26",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/9091514d6f6a5be9a588ef07749f90e9.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Philips DST8020/26 AZUR 8000 iron by dark handle. Dark NAVY body with smoky BLUE reservoir, pale skyblue stripe along top handle, COPPER/GOLD soleplate edge, no temperature dial inside handle. Forward pointed iron away from body. Not white/purple iron."
+  },
+  {
+    "productId": "philips-fc9352-61",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/4fce76febf9b8f740ff92d132bb89c53.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara using exact Philips FC9352/61 PowerPro Compact DEEP BLUE bagless canister vacuum. Blue shell and clear front dustbin, large silver star-spoke wheels, gray corrugated hose connected to black grip and silver telescopic wand, black floorhead. Entire vacuum visible; not white XB2023."
+  },
+  {
+    "productId": "philips-hd2582-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://filebroker-cdn.lazada.sg/kf/Sa8780df9ca23400486131f12af00f7d5q.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact WHITE Philips HD2582/01 two-slot toaster. White gently tapered rounded body, silver wire warming rack on top, gray bottom band, side white round browning dial. Paw near side lever. Two golden toast slices may peek from correct top slots. Do not invent digital screen."
+  },
+  {
+    "productId": "philips-hd3170-62",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://filebroker-cdn.lazada.sg/kf/S7925ef3db7304e51ba08fb3cfd7ba72dr.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips HD3170/62 mini rice cooker. Rounded rectangular brushed STAINLESS SILVER lower body, WHITE lid and rim, swept front TOP control panel with small buttons and digital display, white carry handle. Paw resting on closed white lid. Preserve exact white/silver shape."
+  },
+  {
+    "productId": "philips-hd3300-20",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/6c07243015dfcb4ba416b2f1b26ee1b8.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips HD3300/20 electric steamer and hotpot. WHITE rounded rectangular base, CHROME oval front panel with large BLACK circular dial on right, stack of rectangular STAINLESS steel steaming pot and domed lid with white handle, white side handles. Full product visible paw touches handle."
+  },
+  {
+    "productId": "philips-hd9137-91",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/a6dfe2ff4e2b59927cdd9b452ddb4003.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara holding exact Philips HD9137/91 black egg cooker. Compact rounded rectangle BLACK base with round front knob, clear tall transparent domed lid, six egg tray. Optional 3 eggs visible under clear lid. No rice cooker or steam tower. Supporting from base with both paws."
+  },
+  {
+    "productId": "philips-hd9316-03",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://filebroker-cdn.lazada.sg/kf/Sef934303d7314561b02c0902ca141ec5s.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara carries exact Philips HD9316/03 SILVER stainless steel 1.7L kettle by its BLACK curved closed handle. Cylindrical silver body, black/silver lid, small triangular spout, black circular keep-warm button low front, silver base with thin black ring. Product label faces viewer."
+  },
+  {
+    "productId": "philips-hd9395-90",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/2efcd971723a56a9a0a6c8739a148ed0.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara carries exact Philips HD9395/90 BLACK double wall kettle. Slightly tapered tall black body, silver band near bottom, flat black lid, straight black handle with silver outer face hanging open at bottom, small triangular spout. Not the shiny stainless round-handle model."
+  },
+  {
+    "productId": "philips-hr2221-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/4d3359afcdb6f056fd43c36111fd7314.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips HR2221/01 blender with paw near controls. WHITE motor base, light lavender button panel and foot rim, clear tall plastic jug with OPAQUE LAVENDER HANDLE and lavender lid. Berries and mango inside optional. No extra accessory. Ensure handle lavender not clear."
+  },
+  {
+    "productId": "philips-hr2222-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://filebroker-cdn.lazada.sg/kf/Saca1f26ff6344d089e30a3f587e9a1efT.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips HR2222/01 blender with paw near controls. WHITE motor base, light lavender button panel and foot rim, transparent GLASS jar with CLEAR GLASS HANDLE and lavender lid. Berries and mango inside optional. Handle must be clear glass not lavender plastic. No extra accessory."
+  },
+  {
+    "productId": "philips-hr2684-00",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/8cafdef6faaf81edd02e28d2cc213e59.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Philips HR2684/00 immersion hand blender vertically at chest height, BLACK contoured upper motor grip, brushed stainless panel, slim steel shaft and flared steel bell bladeguard. Product fully visible. No extra accessory attachments."
+  },
+  {
+    "productId": "philips-hr3705-11",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://filebroker-cdn.lazada.sg/kf/S81364298c33d4e008664127f500c97dfq.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Philips HR3705/11 BLACK hand mixer by its open loop top handle, two attached SILVER rectangular loop beaters pointing downward, small top controls, gray PHILIPS side label. No stand mixer, no extra loose dough hooks."
+  },
+  {
+    "productId": "philips-na120-09",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/fc73d3de1c8087bfdf80f4216c78982c.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips NA120/09 black airfryer holding drawer handle. Compact rounded black body, BLACK vertical front handle, round black mechanical timer dial upper front, small temperature dial at top lip, glossy black central band. NO window and NO digital touchscreen. Exclude grill kit."
+  },
+  {
+    "productId": "philips-na221-09",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/c3ae4ef170b8e5a06593f44caa4c1be2.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips NA221/09 black airfryer touching SILVER vertical handle. Rounded black body, rectangular transparent cooking WINDOW in drawer behind handle, CIRCULAR front digital control arrangement above drawer. Keep these features. Exclude accessories."
+  },
+  {
+    "productId": "philips-na342-09",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/ebcaee70507105835f8ca30ff0933180.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips NA342/09 airfryer. BLACK lower drawer and BRONZE gold vertical handle and horizontal band, fluted smoked transparent bell-shaped upper housing narrowing upward, flat black TOP touch controls. No front display rectangle. Paw resting on handle, exclude accessories."
+  },
+  {
+    "productId": "philips-na462-79",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/1d16fe08b337fb437fd81c4eda50f8dd.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips NA462/79 DOUBLE STACKED VERTICAL airfryer. Tall BLACK rectangular body, two separate drawers vertically stacked each with bronze GOLD handle and dark cooking window, bronze middle horizontal band, tilted black digital controls on upper front. Two drawers not side-by-side."
+  },
+  {
+    "productId": "philips-na543-00",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/37dd14170cfc202e9364e32b8554a2f2.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Philips NA543/00 steam airfryer. BLACK rounded lower body, bronze olive GOLD long handle and band, pale metallic fluted top inside transparent domed tapered housing with black TOP control panel. Tall dark translucent ribbed WATER TANK attached to RIGHT side. This tank is essential."
+  },
+  {
+    "productId": "philips-ste3170-80",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/523912182a466f20a38aba69314056dd.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara beside and holding head of exact Philips STE3170/80 GREY standing garment steamer. Dark graphite tapered boiler base with GOLD rim, TWO silver upright poles supporting darkgray rounded rectangular vertical fabric board, dark flexible hose connected to base and held steam head. Entire stand and board visible."
+  },
+  {
+    "productId": "philips-sth1000-16",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/24167b259c91b93e3da0f7218c109e80.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Philips STH1000/16 WHITE compact garment steamer. Upright white handle, horizontal rounded triangular silver steamface with single row of dark holes, short translucent light BLUE water reservoir at handle bottom, white power cord. No hairdryer/no standing steamer."
+  },
+  {
+    "productId": "philips-xb2023-61",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/c4b0455d739724adc246d63f2264e509.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara using exact Philips XB2023/61 WHITE bagless CANISTER vacuum. Floor canister has white outer shell, dark wheels, clear bin with CYAN cyclone, gray corrugated hose connected to black curved grip, silver wand and flat black floor nozzle. Capy holds grip. Entire canister, hose and head visible."
+  },
+  {
+    "productId": "philips-xv5113-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/5096dabc66a0900cad3b83f44ba2f40c.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara using exact Philips XV5113/01 OneUp BLUE electric mop. Thin long dark blue shaft with skyblue topgrip, translucent blue inline water tanks, slim dark lower cylinder, flat rectangular dark blue mophead edged brightblue. Not stick vacuum motor. No loose detergent or USB cable."
+  },
+  {
+    "productId": "skii-facial-essence-230",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/24abf76c6ca4ce3964c21a54d5842ffb.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holding exact SK-II Facial Treatment Essence 230ml bottle. TALL frosted ivory glass cylindrical body, large shiny SILVER cylindrical screw cap, red SK-II logo, small gray text, embossed PITERA near lower body. No dropper, no red bottle. No advertisement graphics."
+  },
+  {
+    "productId": "sony-wh-ch720n",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/04169ace45a57f65d18818e9155dc3e4.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear these exact BLACK Sony WH-CH720N headphones, preserving their wider flat headband arms, conventional cup hinges, oval cups and SONY marking shown in reference. Headband behind horn; one paw touches earcup."
+  },
+  {
+    "productId": "sony-wh1000xm5",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/59b9b0db283e71ced72c9fda53b62af5.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear these exact BLACK Sony WH-1000XM5 headphones. Preserve their very slim cylindrical telescoping arms with small gold SONY marking and smooth elongated earcups. No bulky conventional hinges. Headband behind horn; one paw touches earcup."
+  },
+  {
+    "productId": "soundcore-liberty-4-nc",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/47b29c2fc113e29e6eff5a13cf05b0aa.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. Wear this exact pair of WHITE Soundcore Liberty 4 NC earbuds in the ears, preserve their flat metallic-silver stem faces and soundcore logo. Hold the matching rounded open charging case at chest height, keep the original case proportions."
+  },
+  {
+    "productId": "the-ordinary-niacinamide",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://my-test-11.slatic.net/p/42650f885b5a3b87ad39e15d79555777.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara holds up exact The Ordinary Niacinamide 10% + Zinc 1% 30ml bottle at chest height. Frosted clear cylindrical bottle, white ribbed dropper cap, white black type label gray horizontal band. Label faces camera. No carton box. Bottle at plausible small hand scale."
+  },
+  {
+    "productId": "xiaomi-14t-pro",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://i02.appmifile.com/mi-com-product/fly-birds/xiaomi-14t-pro/PC/new_slide1_bg3.jpg?f=webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size. \nCapybara holds exact Xiaomi 14T Pro 512GB TITAN BLACK phone in one paw upright at chest with BACK facing viewer. Matte dark graphite/black back, rounded metallic frame, square rounded-corner camera platform upper left with FOUR circles arranged 2x2 (three lenses and a FLASH circle), Leica lettering between circles, small Xiaomi mark lower back. Match reference correct rotation, no Samsung separate cameras or iPhone triple triangle."
+  },
+  {
+    "productId": "xiaomi-air-fryer-6l",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/07f75651481910a7eb227b0a9f0690bc.png"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact WHITE Xiaomi Air Fryer Essential 6L with paw lightly grasping vertical drawer handle. Smooth square white body TWO stacked white circular mechanical dials with silver rims on upper FRONT, large bottom drawer and white handle. NO digital panel, NO window, NO single dial. Match actual photo."
+  },
+  {
+    "productId": "xiaomi-air-purifier-4-lite",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/358042854196dffa1fa80dddb85e0cbf.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara beside exact Xiaomi Smart Air Purifier 4 Lite, one paw resting on top edge. WHITE tall rectangular tower with rounded edges, circular black display on upper front, densely perforated lower half, top grille. No phone or spare filter."
+  },
+  {
+    "productId": "xiaomi-vacuum-g20",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/f7990024a4df9e38aa65a9bd924d7959.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara using exact Xiaomi G20 WHITE and SILVER stick vacuum. WHITE motor and grip, brushed silver circular side, clear bin, slender silver wand, white/gray roller head. Keep G20 white, not dark gray G20 Max. Remove all advertisement elements and extra filter."
+  },
+  {
+    "productId": "xiaomi-vacuum-g20-max",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://laz-img-sg.alicdn.com/p/6ccad6cb1ade52d13c4466fb6ccf7489.jpg"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara using exact Xiaomi G20 Max dark graphite stick vacuum, gripping angular handle, dark gray cylindrical motor, metallic circular side and clear bin with orange inner element, darkgray wand, orange roller in broad gray floorhead. Entire vacuum visible, no unattached accessories."
+  }
+]

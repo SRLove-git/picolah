@@ -1,0 +1,821 @@
+[
+  {
+    "productId": "adidas-samba-og",
+    "name": "Adidas Samba OG 复古德训鞋",
+    "catalogSpecs": "白黑 · US 5–12",
+    "sourcePage": "https://www.lazada.sg/products/adidas-authentic-three-leaves-samba-og-mens-womens-casual-sports-sneakers-b75806-i13701038129-s124600681170.html",
+    "sourceTitle": "Adidas Authentic Three Leaves SAMBA OG Men's Women's Casual Sports Sneakers B75806",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/1f4fd65d5d63e36ae5fd58c3c81da37e.jpg",
+    "sourceCapturedAt": null,
+    "selectedVariant": [
+      "Size:45",
+      "B75806"
+    ],
+    "skuId": "124600681170",
+    "referenceSha256": "2c61796c2aec6b248548c6ee6e29de881c538a5406040fea569d32ccfaabd033",
+    "artSha256": "ac076fc1a4d28d55f6000b551f0f50e498fd3531ea3edbea561b93dba7ca8d24"
+  },
+  {
+    "productId": "airpods-pro-2",
+    "name": "AirPods Pro 2 (USB-C)",
+    "catalogSpecs": "USB-C 充电盒 · 白色",
+    "sourcePage": "https://support.apple.com/en-gb/111834",
+    "sourceTitle": "AirPods Pro 2 (USB-C)",
+    "imageUrl": "https://cdsassets.apple.com/live/7WUAS350/images/tech-specs/airpods-pro-2.png",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "USB-C 充电盒 · 白色",
+    "skuId": null,
+    "referenceSha256": "826a464510733c84516c4020df520be72020e046d2e58fa408e89c18627f38aa",
+    "artSha256": "d20b5046d351008b46bd5a2f93ac1a981f7e3963c344ba5230ca7c4b5e30754e"
+  },
+  {
+    "productId": "apple-watch-se-2",
+    "name": "Apple Watch SE (第 2 代) 44mm",
+    "catalogSpecs": "44mm · GPS · 午夜色",
+    "sourcePage": "https://www.1p.sg/products/apple-watch-se-2-gps-44mm?variant=43896614355184",
+    "sourceTitle": "Apple Watch SE (第 2 代) 44mm",
+    "imageUrl": "https://www.1p.sg/cdn/shop/files/Se40mmGPS_1_1b86119a-0eb8-4711-9477-1e8e0e14dfd8.jpg?v=1707134586",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": [
+      "Midnight Aluminium Case with Midnight Sport Band (M/L)",
+      "44mm GPS"
+    ],
+    "skuId": "43896614355184",
+    "referenceSha256": "958470cf169efb01f200e04efc896f6422bc7506e685fd0d9c6eae43cb824e1f",
+    "artSha256": "d27fccdfaed0ad3c3764ea48173329cc88b19c06852cadb126300aa6d62f515b"
+  },
+  {
+    "productId": "asics-gel-kayano-14",
+    "name": "ASICS GEL-KAYANO 14 跑鞋",
+    "catalogSpecs": "银白 · US 5–13",
+    "sourcePage": "https://www.asics.com/de/en-de/gel-kayano-14/p/1201A019-104.html",
+    "sourceTitle": "ASICS GEL-KAYANO 14 跑鞋",
+    "imageUrl": "https://images.asics.com/is/image/asics/1201A019_104_SR_LT_GLB?%24sfcc-product%24=",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "银白 · US 5–13",
+    "skuId": null,
+    "referenceSha256": "e86da4616bcabb46532473889da452727789ccd798ba5d15d667b8659fd2e4b9",
+    "artSha256": "4afa39c3f57a9fffec17b6f0907b532bfa5ef109582b7cceb9c175e20e5fb51d"
+  },
+  {
+    "productId": "bose-qc-ultra",
+    "name": "Bose QuietComfort Ultra 头戴式耳机",
+    "catalogSpecs": "黑色 · 蓝牙 5.3",
+    "sourcePage": "https://www.lazada.sg/products/bose-quietcomfort-ultra-headphones-wireless-noise-cancelling-premium-over-ear-audio-bluetooth-i2866897728-s19793644365.html",
+    "sourceTitle": "Bose QuietComfort Ultra Headphones (Wireless Noise Cancelling, Premium Over-Ear Audio, Bluetooth)",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/f1cdb7437cdcd56bd1178eb4c1fff092.jpg",
+    "sourceCapturedAt": "2026-11-02T11:35:56.353Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "19793644365",
+    "referenceSha256": "35a5b2effd50293b8899fec454527fa094a9ad429a72d19ed1a2d2d44e6bf51f",
+    "artSha256": "31a117a96c3c0d3dc3fe9480193029c7dba8a95a220c03a9def7ac879a310b7d"
+  },
+  {
+    "productId": "delonghi-dedica-ec685",
+    "name": "De’Longhi Dedica 意式半自动咖啡机",
+    "catalogSpecs": "EC685 · 银色",
+    "sourcePage": "https://www.lazada.sg/products/bulky-delonghi-ec685m-dedica-pump-espresso-coffee-machine-ec685-silver-1-year-warranty-coffee-maker-i1795089700-s9445301647.html",
+    "sourceTitle": "(Bulky) DELONGHI EC685.M DEDICA PUMP ESPRESSO COFFEE MACHINE, EC685 (SILVER), 1 YEAR WARRANTY, COFFEE MAKER",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/fa2c2c2435bd9695aa2be05d1cef7d51.jpg",
+    "sourceCapturedAt": "2026-11-02T11:38:19.420Z",
+    "selectedVariant": [
+      "Silver"
+    ],
+    "skuId": "9445301647",
+    "referenceSha256": "36a9b2563a9930b56b6ba3c5f81cf6ca34e2e7ba8015abf63d4c6f247a4f1b4a",
+    "artSha256": "f85ca20068708d59452a8c0c15392e298eacc0fcd39fd102b73ef3f4b32ca864"
+  },
+  {
+    "productId": "dyson-v12-detect",
+    "name": "Dyson V12 Detect Slim 无线吸尘器",
+    "catalogSpecs": "V12 · 60 分钟续航",
+    "sourcePage": "https://www.lazada.sg/products/1111-specials-dyson-v12-detect-slim-absolute-yellownickel-hepa-vacuum-with-complimentary-v12-dok-worth174-i2801151487-s22929100138.html",
+    "sourceTitle": "[11.11 Specials] Dyson V12 Detect Slim Absolute Yellow/Nickel (HEPA) Vacuum with Complimentary V12 Dok worth $174",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/58828b7b96f33e8e449514c97b66aac9.jpg",
+    "sourceCapturedAt": "2026-11-02T11:30:38.700Z",
+    "selectedVariant": [
+      "V12 Absolute (HEPA)"
+    ],
+    "skuId": "22929100138",
+    "referenceSha256": "28df23057f69da3d1c52487a417a7145b1f41dc2db3d3de432b05951ae47ff1a",
+    "artSha256": "d21ae080a6b4de8bced64cc5ca1597f4b440b8032c64597603af4e673f1651cc"
+  },
+  {
+    "productId": "estee-lauder-anr-50",
+    "name": "雅诗兰黛小棕瓶精华 50ml",
+    "catalogSpecs": "50ml · 特润修护",
+    "sourcePage": "https://www.lazada.sg/products/estee-lauder-advanced-night-repair-synchronized-multi-recovery-complex-50ml-7th-generation-i10301818-s12908665.html",
+    "sourceTitle": "Estee Lauder Advanced Night Repair Synchronized Multi-Recovery Complex 50ml (7th Generation)",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/6041d28b0e7cb9fefd09f23829aa8faa.jpg",
+    "sourceCapturedAt": "2026-11-02T11:35:21.407Z",
+    "selectedVariant": [
+      "50 ml"
+    ],
+    "skuId": "12908665",
+    "referenceSha256": "8ff675989b685aacc406d5ed241dc1704fbe51e55cb29a06921fc7859fdca55f",
+    "artSha256": "1ab3f364189f94c1159b2c44f0f5e29c8e900ea9c8963c1a1b1a17d097f03b7c"
+  },
+  {
+    "productId": "galaxy-buds3-pro",
+    "name": "Samsung Galaxy Buds3 Pro",
+    "catalogSpecs": "月光白 · IP57",
+    "sourcePage": "https://www.samsung.com/ca/audio-sound/galaxy-buds/galaxy-buds3-pro-white-sm-r630nzwaxac/",
+    "sourceTitle": "Samsung Galaxy Buds3 Pro",
+    "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ca/2407/gallery/ca-galaxy-buds3-pro-r630-sm-r630nzwaxac-542124830?$Q90_1368_1094_F_JPG$",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "月光白 · IP57",
+    "skuId": null,
+    "referenceSha256": "2ade1295d9550bd13a4576942c596c0c82fe0431f8776942002addd0b5e1a7cc",
+    "artSha256": "464a945389a5f5f1df0bb076bac5f056ef6f374bd649c84c5cfd2f64218b50c5"
+  },
+  {
+    "productId": "galaxy-s24-ultra",
+    "name": "Samsung Galaxy S24 Ultra 256GB",
+    "catalogSpecs": "256GB · 钛灰",
+    "sourcePage": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-ultra-titanium-gray-256gb-sm-s928bztcmea/buy/",
+    "sourceTitle": "Samsung Galaxy S24 Ultra 256GB",
+    "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2401/gallery/ae-galaxy-s24-s928-sm-s928bztcmea-539263921?$Q90_1368_1094_F_JPG$",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "256GB · 钛灰",
+    "skuId": null,
+    "referenceSha256": "189118ee8500b2ee269bfce3960984b82f3ad9701659eae0bdfd64fe69780182",
+    "artSha256": "af8e2d14d27b21f5674df6547e0629212b544cffc16eefb1ada7a9a42c09566e"
+  },
+  {
+    "productId": "garmin-forerunner-265",
+    "name": "Garmin Forerunner 265 运动手表",
+    "catalogSpecs": "46mm · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/garmin-forerunner-265-watch-46mm-black-gm-010-02810-60-i3639735872-s24067950519.html",
+    "sourceTitle": "GARMIN FORERUNNER 265 WATCH 46MM, BLACK GM-010-02810-60",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/03bfd161e3cd509af7a612a90de258bf.png",
+    "sourceCapturedAt": "2026-11-02T11:33:17.000Z",
+    "selectedVariant": [],
+    "skuId": "24067950519",
+    "referenceSha256": "bd1c39dc350d21e8ef8dfe2e49f94a86e58ae9477200f18a2ebde428a70533e4",
+    "artSha256": "6543d003d401c95cb98aaeffd1454b0115f4ccfeabffabbb7ca94aef34681ac1"
+  },
+  {
+    "productId": "huawei-watch-gt5",
+    "name": "HUAWEI WATCH GT 5 46mm",
+    "catalogSpecs": "46mm · 黑色氟橡胶",
+    "sourcePage": "https://consumer.huawei.com/ie/wearables/watch-gt5/specs/",
+    "sourceTitle": "HUAWEI WATCH GT 5 46mm",
+    "imageUrl": "https://consumer.huawei.com/dam/content/dam/huawei-cbg-site/common/mkt/pdp/admin-image/wearables/watch-gt5/list/46mm-black.png",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "46mm · 黑色氟橡胶",
+    "skuId": null,
+    "referenceSha256": "6e7b14ec9131d2bc35dcf74e389395ebe97b4cb49fdb8988390e7500b60c4c18",
+    "artSha256": "ddc64bf7b3ac575400d96610aca5513900c9c344cf30e752f70d0bd92f05a3ac"
+  },
+  {
+    "productId": "iphone-15-128",
+    "name": "iPhone 15 128GB",
+    "catalogSpecs": "128GB · 蓝色",
+    "sourcePage": "https://www.apple.com/newsroom/2023/09/apple-debuts-iphone-15-and-iphone-15-plus/",
+    "sourceTitle": "iPhone 15 128GB",
+    "imageUrl": "https://www.apple.com/newsroom/images/2023/09/apple-debuts-iphone-15-and-iphone-15-plus/article/Apple-iPhone-15-lineup-design-230912_big.jpg.large.jpg",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "128GB · 蓝色",
+    "skuId": null,
+    "referenceSha256": "228d86636f7f81a1b81423ee306377fe0515607d108db6612775c134dbcb051d",
+    "artSha256": "528df587cf8b36773dc4e19440df28d23a3e0f59a4cc6aa1684b6772ac73db14"
+  },
+  {
+    "productId": "iphone-16-pro-256",
+    "name": "iPhone 16 Pro 256GB",
+    "catalogSpecs": "256GB · 原色钛金属",
+    "sourcePage": "https://www.apple.com/newsroom/2024/09/apple-debuts-iphone-16-pro-and-iphone-16-pro-max/",
+    "sourceTitle": "iPhone 16 Pro 256GB",
+    "imageUrl": "https://www.apple.com/newsroom/images/2024/09/apple-debuts-iphone-16-pro-and-iphone-16-pro-max/article/Apple-iPhone-16-Pro-finish-lineup-240909_big.jpg.large.jpg",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "256GB · 原色钛金属",
+    "skuId": null,
+    "referenceSha256": "f6ab45ba255e2593a39aa67fc8fc4fd74c5808030363b9033df9a6d074dbf2c4",
+    "artSha256": "33db967c20910ec2689557ef5d430e95bd828b810a533b2bd2016e465ef1099c"
+  },
+  {
+    "productId": "jbl-charge-5",
+    "name": "JBL Charge 5 便携蓝牙音箱",
+    "catalogSpecs": "黑色 · 蓝牙 5.1",
+    "sourcePage": "https://www.jbl.com/CHARGE5-.html",
+    "sourceTitle": "JBL Charge 5 便携蓝牙音箱",
+    "imageUrl": "https://www.jbl.com/dw/image/v2/BFND_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw65eaac1a/JBL_CHARGE5_HERO_BLACK_0046_x1.png?sh=535&sw=535",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "黑色 · 蓝牙 5.1",
+    "skuId": null,
+    "referenceSha256": "8550ea37666b974dd7acfb47d68b7f31b5673065b789826df7e85e15cbd8a2be",
+    "artSha256": "905b5651ed2dac80474400f4747d9bb78fd63e3c645582c4fe427d83176bf495"
+  },
+  {
+    "productId": "la-roche-posay-mela-b3",
+    "name": "理肤泉 Mela B3 淡斑精华 30ml",
+    "catalogSpecs": "30ml · 敏感肌适用",
+    "sourcePage": "https://www.lazada.sg/products/la-roche-posay-mela-b3-serum-30ml-for-dark-spots-hyperpigmentation-i3050411048-s20808467317.html",
+    "sourceTitle": "La Roche-Posay Mela B3 Serum (30ml)​ for Dark Spots & Hyperpigmentation",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/f094e5b32eb8bdd5d33bf01a339b5a44.jpg",
+    "sourceCapturedAt": "2026-11-02T11:35:40.718Z",
+    "selectedVariant": [],
+    "skuId": "20808467317",
+    "referenceSha256": "3cd093213556f0d8c1fe551a6907038bcf83da9968947e7ad2cfbd7b7a59e79d",
+    "artSha256": "dda806c9b15a307dcf0a9a53cf3432f974d618762af715f0b92606541f8c6a94"
+  },
+  {
+    "productId": "marshall-emberton-iii",
+    "name": "Marshall Emberton III 便携音箱",
+    "catalogSpecs": "黑金 · IP67",
+    "sourcePage": "https://www.lazada.sg/products/new-marshall-emberton-iii-portable-wireless-bluetooth-speaker-i2384705531-s13976999499.html",
+    "sourceTitle": "[NEW] Marshall Emberton III Portable Wireless Bluetooth Speaker",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/4cfb9540ffc0cc553a3e6db24bd4a578.jpg",
+    "sourceCapturedAt": "2026-11-02T11:40:21.215Z",
+    "selectedVariant": [
+      "Black & Brass"
+    ],
+    "skuId": "13976999499",
+    "referenceSha256": "7427463e8dab46f2f2e35e1f396ec602013f4e591bc3977b2650fadd53ed33c6",
+    "artSha256": "471821f36e79b0333b9bca0f211ae06613b408c5037c760fa4fb763ef851222a"
+  },
+  {
+    "productId": "nespresso-vertuo-pop",
+    "name": "Nespresso Vertuo Pop 咖啡机",
+    "catalogSpecs": "薄荷绿 · Centrifusion 旋转萃取",
+    "sourcePage": "https://www.lazada.sg/products/nespresso-vertuo-pop-coffee-machine-aqua-mint-gcv2-gb-aq-ne-i13795016919-s124790054596.html",
+    "sourceTitle": "NESPRESSO VERTUO POP COFFEE MACHINE AQUA MINT GCV2-GB-AQ-NE",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/19226fe13a1e2235250252c5ba30640f.png",
+    "sourceCapturedAt": "2026-11-02T11:30:24.800Z",
+    "selectedVariant": [],
+    "skuId": "124790054596",
+    "referenceSha256": "fd4214c122077975ba5575086c79ea6f9eeba88837465fac72b804893bb8ad70",
+    "artSha256": "6a3bc1d0d8e00fe0599b1f2a6d294b8290728d31961eee1e128ec52a3cea16c2"
+  },
+  {
+    "productId": "new-balance-530",
+    "name": "New Balance 530 复古跑鞋",
+    "catalogSpecs": "男女同款 · US 8–11",
+    "sourcePage": "https://www.lazada.sg/products/new-balance-unisex-530-standard-white-i2435309104-s14407583969.html",
+    "sourceTitle": "New Balance Unisex 530 (Standard) - White",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/1dfb14efd58d99343db5fae30d783b7c.jpg",
+    "sourceCapturedAt": null,
+    "selectedVariant": [
+      "Size:US:5.5",
+      "White"
+    ],
+    "skuId": "14407583969",
+    "referenceSha256": "b935fbd9e07704aa2d0f6c39b5a5c9ab0bf3108a9035ab22e5f24b51cde961c3",
+    "artSha256": "17b7c3295f6483b5e90cdfce4bd8432f7bcb57057e898232ebf833ba89d81171"
+  },
+  {
+    "productId": "nike-air-force-1",
+    "name": "Nike Air Force 1 ’07 板鞋",
+    "catalogSpecs": "白色 · US 6–12",
+    "sourcePage": "https://www.nike.com/sg/t/air-force-1-07-mens-shoes-WrLlWX",
+    "sourceTitle": "Nike Air Force 1 ’07 板鞋",
+    "imageUrl": "https://static.nike.com/a/images/t_web_pdp_936_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/b7d9211c-26e7-431a-ac24-b0540fb3c00f/AIR+FORCE+1+%2707.png",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "白色 · US 6–12",
+    "skuId": null,
+    "referenceSha256": "db4d827286e9c7b3ce53c406c5a6b84da7e24faaa847ac0be5c806e064811142",
+    "artSha256": "bd9aa3589479a134bd9eec68e616e93ae0db74cc7aabd35e826871d6e2e54975"
+  },
+  {
+    "productId": "philips-ac3420-10",
+    "name": "飞利浦 AC3420/10 空气净化加湿一体机",
+    "catalogSpecs": "AC3420/10 · 3.2L 水箱",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-pureprotect-water-ac342010-2-in-1-air-purifier-and-humidifier-32l-water-tank-hepa-active-carbon-filter-i13929960367-s124940837314.html",
+    "sourceTitle": "[NEW] Philips PureProtect Water AC3420/10 | 2-in-1 Air Purifier and Humidifier | 3.2L water tank | HEPA & Active Carbon filter",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/16605a7e9aa5f61102645a6c52d61451.png",
+    "sourceCapturedAt": "2026-11-02T13:51:30.801Z",
+    "selectedVariant": [],
+    "skuId": "124940837314",
+    "referenceSha256": "704c828ba095c5a72a59964c85566908a90b15d6d590146210d18969dc52d258",
+    "artSha256": "4654d8f2e66d63ef2d337cab4c3dfd16e966327d4849b8bfef01d3a7bbf19cb7"
+  },
+  {
+    "productId": "philips-airfryer-xxl",
+    "name": "飞利浦 XXL 空气炸锅 7.2L",
+    "catalogSpecs": "7.2L · 家用大容量",
+    "sourcePage": "https://www.lazada.sg/products/latest-philips-hd928591-hd9285-airfryer-5000-series-xxl-connected-16-in-1-airfryer-72l-capacity-safety-mark-approved-2-year-warranty-i2912303919-s20128391503.html",
+    "sourceTitle": "Latest Philips HD9285/91 | HD9285 Airfryer. 5000 Series XXL Connected. 16-in-1 Airfryer. 7.2L Capacity. Safety Mark Approved. 2 Year Warranty.",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/0b60e49632c5e52c473946b441926516.jpg",
+    "sourceCapturedAt": "2026-11-02T11:31:15.669Z",
+    "selectedVariant": [
+      "Solo"
+    ],
+    "skuId": "20128391503",
+    "referenceSha256": "86cf0cda77074fe626f64354653e80f97cc58399ca0559bb20a10774ac3dc934",
+    "artSha256": "dfad4e1812d4c2e349ae6aeb0c0d963276be7d8581b1f2baa4f92f9ed82bdbdf"
+  },
+  {
+    "productId": "philips-ais6010-10",
+    "name": "飞利浦 AIS6010/10 一体式熨烫机",
+    "catalogSpecs": "AIS6010/10 · 1.2L 水箱",
+    "sourcePage": "https://www.lazada.sg/products/philips-ais601010-all-in-one-ironing-solution-optimal-temp-tech-no-burns-pro-velocity-technology-multi-angle-board-fast-heating-large-detachable-12l-tank-integrated-wheels-official-store-i3183268829-s21653524168.html",
+    "sourceTitle": "Philips AIS6010/10 | All-In-One Ironing Solution | Optimal TEMP Tech - No Burns | Pro-Velocity Technology | Multi-angle Board | Fast Heating | Large detachable 1.2L Tank | Integrated Wheels | Official Store",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/ce68d38b326a034b4891ad3b7cd6b793.jpg",
+    "sourceCapturedAt": "2026-11-02T13:50:34.287Z",
+    "selectedVariant": [],
+    "skuId": "21653524168",
+    "referenceSha256": "122f0ed0e930b14f8dcd2c936cb74c4f953bc407f58b8e528875219dd14da813",
+    "artSha256": "f4366f39dd8299543daccc71d0168433db925be39fbf24a72f5b69570b272793"
+  },
+  {
+    "productId": "philips-bar300-60",
+    "name": "飞利浦 BAR300/60 意式咖啡机",
+    "catalogSpecs": "BAR300/60 · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/philips-baristina-espresso-machine-bar30060-black-i13713836773-s124642092488.html",
+    "sourceTitle": "Philips Baristina Espresso Machine BAR300/60 (Black)",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/0da50ff146f8db1ae308a972d0072c5f.jpg",
+    "sourceCapturedAt": "2026-11-02T13:47:31.870Z",
+    "selectedVariant": [],
+    "skuId": "124642092488",
+    "referenceSha256": "97e553137f1c5cd98766c4b4ee9fafe98e9deae0f8880b9cb982b97b35e968b1",
+    "artSha256": "18d6fb29376974e2be6588ab8afa4430af8f651a384a940d6e914c076761f074"
+  },
+  {
+    "productId": "philips-cx7550-01",
+    "name": "飞利浦 CX7550/01 智能塔扇",
+    "catalogSpecs": "CX7550/01",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-smart-tower-fan-cx755001-low-energy-consumption-ultra-quiet-operation-i13811619017-s124809221170.html",
+    "sourceTitle": "[NEW] Philips Smart Tower Fan CX7550/01| Low Energy Consumption | Ultra-Quiet Operation",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/9ce32ef7a6b565a25460be8b70ca5108.jpg",
+    "sourceCapturedAt": "2026-11-02T13:49:57.281Z",
+    "selectedVariant": [],
+    "skuId": "124809221170",
+    "referenceSha256": "44269e08e5090d6440e094b0b0f71bb451df9fbfe86600585cfea0ebf7bf282a",
+    "artSha256": "f5e6a9c9e6655d7abe5d617ebb9ad21f1feb65949c45552fe06ab6a91ed641dc"
+  },
+  {
+    "productId": "philips-dst1020-30",
+    "name": "飞利浦 DST1020/30 蒸汽熨斗",
+    "catalogSpecs": "DST1020/30 · 1800W · 紫色",
+    "sourcePage": "https://www.lazada.sg/products/philips-1000-series-steam-iron-dst102030-1800w-250ml-water-tank-i2945207399-s20254315542.html",
+    "sourceTitle": "PHILIPS 1000 Series Steam Iron - DST1020/30, 1800W, 250ml water tank",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/b39f9af1b9b198362b9a44da8e1dbb04.jpg",
+    "sourceCapturedAt": "2026-11-02T13:27:57.659Z",
+    "selectedVariant": [
+      "Purple"
+    ],
+    "skuId": "20254315542",
+    "referenceSha256": "fcdaeed639ce12c1a6e6f195ba0c0e23046986a91ac06c90af42adef5b228c9d",
+    "artSha256": "2b91e7cd4d6638603043f662956d14d98de9015628cc45dd88a73e0d56d28b59"
+  },
+  {
+    "productId": "philips-dst3040-76",
+    "name": "飞利浦 DST3040/76 蒸汽熨斗",
+    "catalogSpecs": "DST3040/76 · 3000 系列 · 蓝色",
+    "sourcePage": "https://www.lazada.sg/products/philips-3000-steam-iron-dst304076-ceramic-soleplate-i2035587742-s11115025777.html",
+    "sourceTitle": "PHILIPS 3000 Steam Iron - DST3040/76 - Ceramic soleplate",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/22d544663dbc0de057ed1073e8e34f31.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:43.492Z",
+    "selectedVariant": [
+      "Blue"
+    ],
+    "skuId": "11115025777",
+    "referenceSha256": "3a0b736569329e1cf428555b9fa37858a06ba1d78c103b37236dd6f90e2aee7a",
+    "artSha256": "05d81ff161486f0bf3a6bcd58f4b582f06d41d7b76fb75c1a2afd1de5e6d56b1"
+  },
+  {
+    "productId": "philips-dst8020-26",
+    "name": "飞利浦 DST8020/26 Azur 蒸汽熨斗",
+    "catalogSpecs": "DST8020/26 · 8000 系列 · 蓝色",
+    "sourcePage": "https://www.lazada.sg/products/philips-azur-steam-iron-8000-series-with-optimaltemp-technology-dst802026-i2383344117-s13966247000.html",
+    "sourceTitle": "PHILIPS Azur Steam Iron 8000 series with OptimalTEMP technology - DST8020/26",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/9091514d6f6a5be9a588ef07749f90e9.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:04.092Z",
+    "selectedVariant": [
+      "Blue"
+    ],
+    "skuId": "13966247000",
+    "referenceSha256": "dda98a1c4dac80b54d414404b9fb5939cbb110950b417a3abc31f6dff38945f0",
+    "artSha256": "1ca51b2d1916790fe8ad0026517de222780c6c45ae042a1325a899d8385a431e"
+  },
+  {
+    "productId": "philips-fc9352-61",
+    "name": "飞利浦 FC9352/61 PowerPro Compact 无尘袋吸尘器",
+    "catalogSpecs": "FC9352/61 · 蓝色",
+    "sourcePage": "https://www.lazada.sg/products/philips-powerpro-compact-bagless-vacuum-cleaner-fc935261-i968340263-s3460986891.html",
+    "sourceTitle": "PHILIPS Powerpro Compact Bagless Vacuum Cleaner - FC9352/61",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/4fce76febf9b8f740ff92d132bb89c53.jpg",
+    "sourceCapturedAt": "2026-11-02T13:50:50.724Z",
+    "selectedVariant": [
+      "Blue"
+    ],
+    "skuId": "3460986891",
+    "referenceSha256": "e5b2909cdb022eb92eee16313a183c02dd079b4e8ea798748fb8b5ff6407b6b2",
+    "artSha256": "793a5dc6c316e1fe11a2d96811529764cd7298f0eb900eeaae0ccaf7d4004000"
+  },
+  {
+    "productId": "philips-hd2582-01",
+    "name": "飞利浦 HD2582/01 烤面包机",
+    "catalogSpecs": "HD2582/01 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-daily-collection-toaster-hd258201-i968290872-s3461004589.html",
+    "sourceTitle": "PHILIPS Daily Collection Toaster - HD2582/01",
+    "imageUrl": "https://filebroker-cdn.lazada.sg/kf/Sa8780df9ca23400486131f12af00f7d5q.jpg",
+    "sourceCapturedAt": "2026-11-02T13:49:38.895Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "3461004589",
+    "referenceSha256": "c86a00437a672da445ab7623189757e765ac35fc19418259921637e6fa832a90",
+    "artSha256": "60135514822205ee261b5d6ac94020832103b0645c126b9d69cc9392924fc958"
+  },
+  {
+    "productId": "philips-hd3170-62",
+    "name": "飞利浦 HD3170/62 迷你电饭煲",
+    "catalogSpecs": "HD3170/62 · 0.85L · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-3000-series-mini-rice-cooker-085l-hd317062-8-menu-30-min-fast-cook-non-stick-inner-pot-i2873366117-s19850788865.html",
+    "sourceTitle": "Philips 3000 Series Mini Rice Cooker 0.85L - HD3170/62, 8 menu, 30 min fast cook, Non-stick inner pot",
+    "imageUrl": "https://filebroker-cdn.lazada.sg/kf/S7925ef3db7304e51ba08fb3cfd7ba72dr.jpg",
+    "sourceCapturedAt": "2026-11-02T13:23:44.046Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "19850788865",
+    "referenceSha256": "ef590129f16a0aca5ec22237e8767ea27e049b98d45d4c1661bd5c7467d50b84",
+    "artSha256": "6e377ab97e6cd823be38b5b26efb4cbb84fe8ac2e5dca098583aa131d087a933"
+  },
+  {
+    "productId": "philips-hd3300-20",
+    "name": "飞利浦 HD3300/20 蒸煮一体电火锅",
+    "catalogSpecs": "HD3300/20 · 2.6L 火锅 · 2 层 3L 蒸笼",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-2in1-steamer-hot-pot-3000s-hd330020-2-x-3l-steamer-26l-hot-pot-4-presets-i13668650502-s124355127859.html",
+    "sourceTitle": "[NEW] Philips 2in1 Steamer Hot Pot 3000s HD3300/20 | 2 x 3L Steamer | 2.6L Hot Pot | 4 presets",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/6c07243015dfcb4ba416b2f1b26ee1b8.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:14.389Z",
+    "selectedVariant": [],
+    "skuId": "124355127859",
+    "referenceSha256": "80f829e8ff471424b1bfd8e87da195937d19dfb340d5d704ef86e284a43bae43",
+    "artSha256": "40b1ce10968883766a259b5404de103774b43947d52b3599841e76b95e8fea9c"
+  },
+  {
+    "productId": "philips-hd9137-91",
+    "name": "飞利浦 HD9137/91 煮蛋器",
+    "catalogSpecs": "HD9137/91 · 400W · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-electric-egg-cooker-3000-series-hd913791-400w-poached-soft-medium-hard-boil-6-eggs-capacity-egg-pi-i3006472116-s20557973330.html",
+    "sourceTitle": "(NEW) PHILIPS Electric Egg Cooker 3000 Series HD9137/91, 400W, Poached, Soft, Medium, Hard Boil, 6 Eggs Capacity, Egg Pi",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/a6dfe2ff4e2b59927cdd9b452ddb4003.jpg",
+    "sourceCapturedAt": "2026-11-02T13:27:59.824Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "20557973330",
+    "referenceSha256": "9514cf70899b289c36a17b536493de5393d57be10284c8606ddfa982ae54b87f",
+    "artSha256": "501ed357ee076cb0bf4c4980947639372d11b725bf0dfb9ba1df0052bf42f18b"
+  },
+  {
+    "productId": "philips-hd9316-03",
+    "name": "飞利浦 HD9316/03 电热水壶",
+    "catalogSpecs": "HD9316/03 · 1.7L · 银色",
+    "sourcePage": "https://www.lazada.sg/products/philips-viva-collection-kettle-17l-hd931603-i968354015-s3461014447.html",
+    "sourceTitle": "PHILIPS Viva Collection Kettle 1.7L - HD9316/03",
+    "imageUrl": "https://filebroker-cdn.lazada.sg/kf/Sef934303d7314561b02c0902ca141ec5s.jpg",
+    "sourceCapturedAt": "2026-11-02T13:48:51.480Z",
+    "selectedVariant": [
+      "Silver"
+    ],
+    "skuId": "3461014447",
+    "referenceSha256": "49b63b1825ac144b938d26743ad755b5a67e5ecba907e0f5bacc953d7b22f3ad",
+    "artSha256": "d3216f1ea4750a2b7c9e562248d23bde248ca23b53f15dc18ff831cc727bc3b1"
+  },
+  {
+    "productId": "philips-hd9395-90",
+    "name": "飞利浦 HD9395/90 双层电热水壶 1.7L",
+    "catalogSpecs": "HD9395/90 · 1.7L · 不锈钢",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-double-wall-kettle-5000-series-hd939590-17l-stainless-steel-i3006484019-s20557862672.html",
+    "sourceTitle": "(NEW) PHILIPS Double Wall Kettle 5000 Series HD9395/90, 1.7L, Stainless Steel",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/2efcd971723a56a9a0a6c8739a148ed0.jpg",
+    "sourceCapturedAt": "2026-11-02T13:27:55.686Z",
+    "selectedVariant": [],
+    "skuId": "20557862672",
+    "referenceSha256": "e66f148972f56546005814c34f23ab932cab909dc9d8d8583fe6aa5200403f3b",
+    "artSha256": "a90528d6371785d35342770397891ec36115dde6d5c020f76829b67a8bc19d01"
+  },
+  {
+    "productId": "philips-hr2221-01",
+    "name": "飞利浦 HR2221/01 搅拌机",
+    "catalogSpecs": "HR2221/01 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-blender-core-5000-series-problend-crush-technology-powerful-perfectly-crushed-ice-2x-faster-hr222101-i968314899-s3461096059.html",
+    "sourceTitle": "PHILIPS Blender Core 5000 Series - ProBlend Crush Technology, powerful, perfectly crushed ice, 2X faster - HR2221/01",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/4d3359afcdb6f056fd43c36111fd7314.jpg",
+    "sourceCapturedAt": "2026-11-02T13:26:23.997Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "3461096059",
+    "referenceSha256": "3432efc3b6157abc78f29346fa80dd70463f6f872a216a75328ae1f8317291b1",
+    "artSha256": "bb5accee090c37d473fa610f39f2f54faa32f0be32332d627326f8f9e3f4f8f5"
+  },
+  {
+    "productId": "philips-hr2222-01",
+    "name": "飞利浦 HR2222/01 搅拌机",
+    "catalogSpecs": "HR2222/01 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-blender-core-5000-series-problend-crush-technology-powerful-perfectly-crushed-ice-2x-faster-hr222201-i968358135-s3461100240.html",
+    "sourceTitle": "PHILIPS Blender Core 5000 Series - ProBlend Crush Technology, powerful, perfectly crushed ice, 2X faster - HR2222/01",
+    "imageUrl": "https://filebroker-cdn.lazada.sg/kf/Saca1f26ff6344d089e30a3f587e9a1efT.jpg",
+    "sourceCapturedAt": "2026-11-02T13:26:22.414Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "3461100240",
+    "referenceSha256": "d09ae9f28a19f744a1c61e7818c3f402a8e0ccc3801ceb26c0630e23a598d5dc",
+    "artSha256": "1fd36040abf4f2fa0b497dc9b75addd98198dfd407947c6686002eaade2d1b5a"
+  },
+  {
+    "productId": "philips-hr2684-00",
+    "name": "飞利浦 HR2684/00 手持搅拌机",
+    "catalogSpecs": "HR2684/00 · 1200W · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-high-power-hand-blender-5000-series-hr268400-1200w-multi-accessories-xl-chopper-whisk-spiralizer-i3042714692-s20760936130.html",
+    "sourceTitle": "(NEW) PHILIPS High Power Hand Blender 5000 Series - HR2684/00, 1200W, Multi Accessories, XL Chopper, Whisk, Spiralizer",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/8cafdef6faaf81edd02e28d2cc213e59.jpg",
+    "sourceCapturedAt": "2026-11-02T13:48:48.633Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "20760936130",
+    "referenceSha256": "5272a414748c943f1c2b58b956b1c80d328cb40b7483d026c168b9dfe261e2ef",
+    "artSha256": "bd3cf450c0dff7da26e3ae6d754b57243a72f583d71e6eda6c5f9d7af8657dba"
+  },
+  {
+    "productId": "philips-hr3705-11",
+    "name": "飞利浦 HR3705/11 手持打蛋器",
+    "catalogSpecs": "HR3705/11 · 300W · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/philips-daily-collection-mixer-hr370511-300w-5-speeds-turbo-lightweight-handheld-strip-beaters-dough-hook-i968310700-s3460994770.html",
+    "sourceTitle": "PHILIPS Daily Collection Mixer - HR3705/11, 300W, 5 Speeds + Turbo, Lightweight Handheld, Strip beaters & dough hook",
+    "imageUrl": "https://filebroker-cdn.lazada.sg/kf/S81364298c33d4e008664127f500c97dfq.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:03.670Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "3460994770",
+    "referenceSha256": "d8717db3e2be2685a2b3099c67ddc2a86682ef23ca7b98545e7d7586eb856460",
+    "artSha256": "9c5cdaae60c862510247597cdf339b33ef40fa66738fb2c7696ef7ff828a132b"
+  },
+  {
+    "productId": "philips-na120-09",
+    "name": "飞利浦 NA120/09 空气炸锅 4.2L",
+    "catalogSpecs": "NA120/09 · 4.2L · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/philips-na12009-12-in-1-airfryer-42l-capacity-rapidair-tech-deliciously-crisp-12-cooking-modes-fry-grill-bake-up-to-90-less-fat-cooks-50-faster-vs-ovens-dishwasher-safe-even-cooking-no-flipping-required-official-store-i3053959747-s20837552653.html",
+    "sourceTitle": "Philips NA120/09 | 12-in-1 Airfryer | 4.2L Capacity | RapidAir Tech - Deliciously Crisp | 12 Cooking Modes: Fry, Grill, Bake... ++ | Up to 90% Less Fat | Cooks 50% Faster vs Ovens | Dishwasher Safe | Even Cooking, No Flipping Required | Official Store",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/fc73d3de1c8087bfdf80f4216c78982c.jpg",
+    "sourceCapturedAt": "2026-11-02T13:26:30.437Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "20837552653",
+    "referenceSha256": "7137eb82ead557e77fb29dfeb6b1835fb4c239cbf4181e2c752a2b92a7a9274c",
+    "artSha256": "37b413eb6add70d9fd990d631be06efa237243bd421df82244be23fc4a4e4a63"
+  },
+  {
+    "productId": "philips-na221-09",
+    "name": "飞利浦 NA221/09 空气炸锅",
+    "catalogSpecs": "NA221/09 · 4.2L",
+    "sourcePage": "https://www.lazada.sg/products/philips-na22109-13-in-1-airfryer-42l-capacity-rapidair-tech-deliciously-crisp-13-cooking-modes-frill-grill-bake-see-thru-window-up-to-90-less-fat-touch-screen-even-cooking-no-flipping-required-official-store-i3106784455-s21143847339.html",
+    "sourceTitle": "Philips NA221/09 | 13-in-1 Airfryer | 4.2L Capacity | RapidAir Tech - Deliciously Crisp | 13 Cooking Modes: Frill, Grill, Bake... ++ | See-Thru Window | Up to 90% Less Fat | Touch Screen | Even Cooking, No Flipping Required | Official Store",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/c3ae4ef170b8e5a06593f44caa4c1be2.jpg",
+    "sourceCapturedAt": "2026-11-02T13:47:57.497Z",
+    "selectedVariant": [],
+    "skuId": "21143847339",
+    "referenceSha256": "3537d1c9bd2051c56f27ec2686f346a380bc10107f10f3b998d493595f644088",
+    "artSha256": "9eab656329dbb5f70c093c89490eeff70151ad9ce638bd76d21e5fd56a969254"
+  },
+  {
+    "productId": "philips-na342-09",
+    "name": "飞利浦 NA342/09 空气炸锅",
+    "catalogSpecs": "NA342/09 · 7.2L",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-na34209-16-in-1-digital-airfryer-72l-capacity-rapidair-plus-tech-deliciously-crisp-16-cooking-modes-fry-grill-bake-superior-heat-circulation-family-friendly-size-see-thru-window-12-presets-official-store-i3259651400-s21955157957.html",
+    "sourceTitle": "(NEW) Philips NA342/09 | 16-in-1 Digital Airfryer | 7.2L Capacity | RapidAir PLUS Tech - Deliciously Crisp | 16 Cooking Modes: Fry, Grill, Bake... ++ | Superior Heat Circulation | Family-Friendly Size | See-Thru Window | 12 Presets |  Official Store",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/ebcaee70507105835f8ca30ff0933180.jpg",
+    "sourceCapturedAt": "2026-11-02T13:47:17.121Z",
+    "selectedVariant": [],
+    "skuId": "21955157957",
+    "referenceSha256": "1200695824d7dbcaa4cceb8008b370c9874454eb8d9c74c5433628686af77791",
+    "artSha256": "e2c38ed53002266bf16b79c5725798016ef211b2e000353fdb272590bd4b2b7d"
+  },
+  {
+    "productId": "philips-na462-79",
+    "name": "飞利浦 NA462/79 双层空气炸锅",
+    "catalogSpecs": "NA462/79 · 5L + 5L",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-dual-stack-airfryer-4000s-na46279-vertical-rapidair-cooking-windows-55l-i3625976326-s23972026859.html",
+    "sourceTitle": "[NEW] Philips Dual Stack Airfryer 4000s NA462/79 | Vertical RapidAir | Cooking Windows | 5+5L",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/1d16fe08b337fb437fd81c4eda50f8dd.jpg",
+    "sourceCapturedAt": "2026-11-02T13:49:05.649Z",
+    "selectedVariant": [],
+    "skuId": "23972026859",
+    "referenceSha256": "40113d46bab3d50ef8c16977da0976605f6a6d228860842705c6acdfb2f3a20c",
+    "artSha256": "f9d59a4819ad853621d77eb3d66cbcc2627d7ddff12c2b130bac6d3995c11a77"
+  },
+  {
+    "productId": "philips-na543-00",
+    "name": "飞利浦 NA543/00 蒸汽空气炸锅",
+    "catalogSpecs": "NA543/00 · 7.2L",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-3in1-airfryer-with-steam-5000s-na54300-airfry-steam-steamfry-auto-steam-clean-72l-i3626196414-s23973002831.html",
+    "sourceTitle": "[NEW] Philips 3in1 Airfryer with Steam 5000s NA543/00 | Airfry, Steam, SteamFry | Auto Steam Clean | 7.2L",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/37dd14170cfc202e9364e32b8554a2f2.jpg",
+    "sourceCapturedAt": "2026-11-02T13:47:24.304Z",
+    "selectedVariant": [],
+    "skuId": "23973002831",
+    "referenceSha256": "42b35aa170be7b0d0d7cd9d856e01130bff8add47792eadadb28142b92300a87",
+    "artSha256": "62e5916a059fa02832b22ad40d226217813dcaf2829bef34417982de84abf1fe"
+  },
+  {
+    "productId": "philips-ste3170-80",
+    "name": "飞利浦 STE3170/80 立式挂烫机",
+    "catalogSpecs": "STE3170/80 · 2000W · 灰色",
+    "sourcePage": "https://www.lazada.sg/products/philips-stand-garment-steamer-3000-series-myessence-fragrance-infuser-ste317080-2000w-tilting-styleboard-i2481419979-s14810190733.html",
+    "sourceTitle": "PHILIPS Stand Garment Steamer 3000 Series (MyEssence Fragrance Infuser) - STE3170/80, 2000W, Tilting StyleBoard",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/523912182a466f20a38aba69314056dd.jpg",
+    "sourceCapturedAt": "2026-11-02T13:47:57.075Z",
+    "selectedVariant": [
+      "Grey"
+    ],
+    "skuId": "14810190733",
+    "referenceSha256": "58bf5932d846715ad44806b7dad983b6406120e3a6720f6046b6d2033527240a",
+    "artSha256": "30c65c8c054791a8c606fcff3a9f6076b1424fcc7d3a810a8749ce9424f6f7b2"
+  },
+  {
+    "productId": "philips-sth1000-16",
+    "name": "飞利浦 STH1000/16 手持挂烫机",
+    "catalogSpecs": "STH1000/16 · 900W · 85ml 水箱 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-handheld-garment-steamer-1000-series-sth100016-portable-compact-no-burns-guaranteed-900w-85ml-watertank-i2419886425-s14272340200.html",
+    "sourceTitle": "PHILIPS Handheld Garment Steamer 1000 Series - STH1000/16, Portable & Compact, No Burns Guaranteed, 900W, 85ml watertank",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/24167b259c91b93e3da0f7218c109e80.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:51.018Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "14272340200",
+    "referenceSha256": "cdf910bfdc44bf6e2baca3e064de9f88e78f765f954eee6128971d73a2f34890",
+    "artSha256": "7dc36ef1e18b56b27e7533961c8360cffb248e3037dc301fe1232ecc5b3eaa04"
+  },
+  {
+    "productId": "philips-xb2023-61",
+    "name": "飞利浦 XB2023/61 无尘袋吸尘器",
+    "catalogSpecs": "XB2023/61 · 2000 系列 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-2000-series-bagless-vacuum-cleaner-xb202361-i2008405027-s10921944906.html",
+    "sourceTitle": "PHILIPS 2000 Series Bagless vacuum cleaner - XB2023/61",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/c4b0455d739724adc246d63f2264e509.png",
+    "sourceCapturedAt": "2026-11-02T13:49:20.412Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "10921944906",
+    "referenceSha256": "7823379185b51d122294b6be438c93cfa315314cf0a3c405a283c9f2bda7255e",
+    "artSha256": "96aecb35c2f7a28781a13c0b705b17d0e53b2c22d7cf76f67ad91a6856851a6c"
+  },
+  {
+    "productId": "philips-xv5113-01",
+    "name": "飞利浦 XV5113/01 OneUp 电动拖把",
+    "catalogSpecs": "XV5113/01 · 5000 系列",
+    "sourcePage": "https://www.lazada.sg/products/philips-oneup-electric-mop-5000s-xv511301-70min-runtime-cordless-lightweight-2-wetness-settings-i3599566795-s23749520286.html",
+    "sourceTitle": "Philips OneUp Electric Mop 5000s XV5113/01 | 70min runtime | Cordless Lightweight | 2 wetness settings",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/5096dabc66a0900cad3b83f44ba2f40c.jpg",
+    "sourceCapturedAt": "2026-11-02T13:51:19.415Z",
+    "selectedVariant": [],
+    "skuId": "23749520286",
+    "referenceSha256": "3e11a09206183f5cd49596cc432a2598824ae1cecde4025e047513e9ed80ff07",
+    "artSha256": "5112233f383b6fa86f78dba543d587df695e65bec82fdbf543d17e53797f3afd"
+  },
+  {
+    "productId": "skii-facial-essence-230",
+    "name": "SK-II 护肤精华露 230ml",
+    "catalogSpecs": "230ml · 保湿修护",
+    "sourcePage": "https://www.lazada.sg/products/skii-facial-treatment-essence-antiaging-brightening-smoothing-facial-essence-230ml-250ml-330ml-i1646021234-s7733951773.html",
+    "sourceTitle": "SK‑II Facial Treatment Essence Anti‑Aging Brightening Smoothing Facial Essence (230ml / 250ml / 330ml)",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/24abf76c6ca4ce3964c21a54d5842ffb.jpg",
+    "sourceCapturedAt": "2026-11-02T11:38:54.099Z",
+    "selectedVariant": [
+      "230ml"
+    ],
+    "skuId": "7733951773",
+    "referenceSha256": "1ce80414143d4d3e928e80e1c5caf09d10285381c7f1db01e8168addfcb2b0a6",
+    "artSha256": "67b48407b04741ef4d5aecf7d0e8c7c06e2ddeb602e01d4f368a0ed4afc27aa0"
+  },
+  {
+    "productId": "sony-wh-ch720n",
+    "name": "Sony WH-CH720N 无线降噪耳机",
+    "catalogSpecs": "黑色 · 双噪声传感器降噪",
+    "sourcePage": "https://www.lazada.sg/products/sony-wh-ch720n-wireless-noise-cancelling-headphones-i2668979570-s17386201916.html",
+    "sourceTitle": "Sony WH-CH720N Wireless Noise Cancelling Headphones",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/04169ace45a57f65d18818e9155dc3e4.jpg",
+    "sourceCapturedAt": "2026-11-02T11:43:21.855Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "17386201916",
+    "referenceSha256": "696487d8c4f81af9a70fd056e42840864738be422c28d6cc7be597d33c506521",
+    "artSha256": "d3a117136abd9f7650dc9760afe6a601248e71a6243fe194fca9049a31c6fe2c"
+  },
+  {
+    "productId": "sony-wh1000xm5",
+    "name": "Sony WH-1000XM5 无线降噪耳机",
+    "catalogSpecs": "午夜黑 · 双设备连接",
+    "sourcePage": "https://www.lazada.sg/products/sony-wh-1000xm5-wh1000xm5-1000xm5-wireless-noise-cancelling-headphones-i2322132553-s13495652784.html",
+    "sourceTitle": "Sony WH-1000XM5 | WH1000XM5 | 1000XM5 Wireless Noise Cancelling Headphones",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/59b9b0db283e71ced72c9fda53b62af5.jpg",
+    "sourceCapturedAt": null,
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "13495652784",
+    "referenceSha256": "ece576ea770beed3e479715f6646a45a495235175a8472d16794cd9f8fe96117",
+    "artSha256": "655ed85cbb168aa483675308c4406979376ded89c2a6d33722cd14bf379a907c"
+  },
+  {
+    "productId": "soundcore-liberty-4-nc",
+    "name": "Soundcore Liberty 4 NC 降噪豆",
+    "catalogSpecs": "白色 · LDAC",
+    "sourcePage": "https://www.lazada.sg/products/anker-soundcore-by-anker-liberty-4-nc-wireless-earbuds-985-noise-reduction-adaptive-noise-cancelling-to-environment-hi-res-sound-50h-battery-wireless-charging-bluetooth-53-white-option-select-i13885411788-s124895632838.html",
+    "sourceTitle": "Anker Soundcore by Anker Liberty 4 NC Wireless Earbuds 98.5% Noise Reduction, Adaptive Noise Cancelling to Environment, Hi-Res Sound, 50H Battery, Wireless Charging, Bluetooth 5.3, White (Option Select)",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/47b29c2fc113e29e6eff5a13cf05b0aa.jpg",
+    "sourceCapturedAt": "2026-11-02T11:48:14.216Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "124895632838",
+    "referenceSha256": "fe7f85a846c8a93c8292fab7496bbafa1202d026b67ef83bec66ae1512d8ec92",
+    "artSha256": "eecff30635021e4eec73ece527130000d2d526939798c70e151e916976127e95"
+  },
+  {
+    "productId": "the-ordinary-niacinamide",
+    "name": "The Ordinary 烟酰胺 10% + 锌 30ml",
+    "catalogSpecs": "30ml · 高浓度",
+    "sourcePage": "https://www.lazada.sg/products/the-ordinary-niacinamide-10-zinc-1-30ml-60ml-i2240609229-s12890984912.html",
+    "sourceTitle": "The Ordinary Niacinamide 10% + Zinc 1% 30ml / 60ml",
+    "imageUrl": "https://my-test-11.slatic.net/p/42650f885b5a3b87ad39e15d79555777.jpg",
+    "sourceCapturedAt": "2026-11-02T11:43:21.856Z",
+    "selectedVariant": [
+      "30"
+    ],
+    "skuId": "12890984912",
+    "referenceSha256": "3886b84028a097f474b4156b75368a174dc55231190582898439536d3a44d901",
+    "artSha256": "090a971ddc14a19f51bd89217f8dca400dbea88d75684c0981f1029335836e5e"
+  },
+  {
+    "productId": "xiaomi-14t-pro",
+    "name": "Xiaomi 14T Pro 512GB",
+    "catalogSpecs": "512GB · 黑色",
+    "sourcePage": "https://www.mi.com/sg/product/xiaomi-14t-pro/",
+    "sourceTitle": "Xiaomi 14T Pro 512GB",
+    "imageUrl": "https://i02.appmifile.com/mi-com-product/fly-birds/xiaomi-14t-pro/PC/new_slide1_bg3.jpg?f=webp",
+    "sourceCapturedAt": "2026-11-03",
+    "selectedVariant": "512GB · 黑色",
+    "skuId": null,
+    "referenceSha256": "a7580636a95aa8aa5a090cadac46d00fe539268b6625a200a8451c4fd5a31070",
+    "artSha256": "d3f82363d0149af8864e0c49632ef1c243d112156caa1ba22fcb88b07791b263"
+  },
+  {
+    "productId": "xiaomi-air-fryer-6l",
+    "name": "小米空气炸锅 6L",
+    "catalogSpecs": "6L · 智能控制规格待核实",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-smart-air-fryer-6l-65l-360-heating-degrease-feature-food-warming-mode-lcd-smart-display-time-schedule-i3298743420-s23066317716.html",
+    "sourceTitle": "Xiaomi Smart Air Fryer 6L / 6.5L | 360° Heating | Degrease Feature | Food Warming Mode | LCD Smart Display |  Time Schedule",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/07f75651481910a7eb227b0a9f0690bc.png",
+    "sourceCapturedAt": null,
+    "selectedVariant": [
+      "Air Fryer(6L)"
+    ],
+    "skuId": "23066317716",
+    "referenceSha256": "f4e23fd6a6d62faa179d2bdf44817022512fcaa262f552ca7ef572ded0e00df8",
+    "artSha256": "9ea9e20b06f68c7e6161ecf1feea7c551d6916438efd4f4f37065a4ac2ce10f5"
+  },
+  {
+    "productId": "xiaomi-air-purifier-4-lite",
+    "name": "小米 Smart Air Purifier 4 Lite 空气净化器",
+    "catalogSpecs": "4 Lite · AC-M17-SC",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-smart-air-purifier-4-lite-dust-pollen-filtration-smart-control-oled-display-i3264306725-s22022377087.html",
+    "sourceTitle": "Xiaomi Smart Air Purifier 4 Lite | Dust & Pollen Filtration | Smart Control | OLED Display",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/358042854196dffa1fa80dddb85e0cbf.jpg",
+    "sourceCapturedAt": "2026-11-02T13:24:03.562Z",
+    "selectedVariant": [],
+    "skuId": "22022377087",
+    "referenceSha256": "80b1dd46abe20b0c8887d106a1b36d671e721ccf2770b2722ed42963ff41158b",
+    "artSha256": "20272ed38cc3d30691e018290e6c5c00c6606504bead35e05cbbbd95deeec279"
+  },
+  {
+    "productId": "xiaomi-vacuum-g20",
+    "name": "小米 G20 无线吸尘器",
+    "catalogSpecs": "G20 · D205",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-vacuum-cleaner-g20-anti-tangle-roller-brush-25000pa-suction-long-lasting-battery-life-i3278823455-s22055573967.html",
+    "sourceTitle": "Xiaomi Vacuum Cleaner G20 | Anti-Tangle Roller Brush | 25000Pa Suction | Long Lasting Battery Life",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/f7990024a4df9e38aa65a9bd924d7959.jpg",
+    "sourceCapturedAt": "2026-11-02T13:26:00.306Z",
+    "selectedVariant": [],
+    "skuId": "22055573967",
+    "referenceSha256": "eb5a937bf4ca60706e207451a407000a9f88dfa8b95a4aa5123154ec8827080d",
+    "artSha256": "10bcdd42214d3f6ee919167d2b9ad451541ee7fabc39b2f974ba52af0c2bbb55"
+  },
+  {
+    "productId": "xiaomi-vacuum-g20-max",
+    "name": "小米 G20 Max 无线吸尘器",
+    "catalogSpecs": "G20 Max · 约 0.6L 集尘盒",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-vacuum-cleaner-g20-max-i3194806025-s21704380275.html",
+    "sourceTitle": "Xiaomi Vacuum Cleaner G20 Max",
+    "imageUrl": "https://laz-img-sg.alicdn.com/p/6ccad6cb1ade52d13c4466fb6ccf7489.jpg",
+    "sourceCapturedAt": "2026-11-02T13:26:17.444Z",
+    "selectedVariant": [],
+    "skuId": "21704380275",
+    "referenceSha256": "688010ed12898e5903754eb22b0a719ceff61bc8286fe2705a87e6f248358aae",
+    "artSha256": "39c6c219da9144a2f9ff5f8bf8758cf51166e6fb0d4326df40fd768ef963bdd5"
+  }
+]
