@@ -3,6 +3,7 @@ import type { CapyPose } from './capy-motion';
 import { CAPY_CLOTHING_FACE } from './capy-clothing';
 
 type Images = Partial<Record<CapyExpression, HTMLImageElement>>;
+export interface CapyFeet { leftX: number; leftY: number; rightX: number; rightY: number; grounded: number }
 export interface CapyWearable {
   image: HTMLImageElement;
   clothing?: boolean;
@@ -17,6 +18,8 @@ attribute vec2 aUV;
 uniform vec4 uPose;
 uniform vec4 uDetail;
 uniform vec4 uHands;
+uniform vec4 uFeet;
+uniform float uGrounded;
 varying vec2 vUV;
 vec2 turn(vec2 p, vec2 pivot, float angle) {
   float c = cos(angle), s = sin(angle);
@@ -50,6 +53,12 @@ void main() {
   p.y += uPose.y;
   p += uHands.xy * spot(aPosition, vec2(265.0, 426.0), vec2(95.0, 90.0));
   p += uHands.zw * spot(aPosition, vec2(380.0, 447.0), vec2(95.0, 90.0));
+  // Blend through the thigh, with full influence at the paw. A planted paw
+  // cancels torso lift/lean, so body weight moves above a stable ground contact.
+  float leg = smoothstep(610.0, 738.0, aPosition.y);
+  float rightLeg = smoothstep(375.0, 438.0, aPosition.x);
+  vec2 foot = mix(uFeet.xy, uFeet.zw, rightLeg);
+  p += vec2(foot.x, foot.y - (p.y - aPosition.y) * uGrounded) * leg;
   // Extra transparent space above/below the art accommodates hops and ears.
   gl_Position = vec4(p.x / 768.0 * 2.0 - 1.0, 1.0 - (p.y + 80.4) / 964.8 * 2.0, 0.0, 1.0);
   vUV = aUV;
@@ -107,7 +116,7 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    const uniforms = Object.fromEntries(['uPose', 'uDetail', 'uHands', 'uFrom', 'uTo', 'uEyes', 'uMix', 'uBlink'].map((name) => [name, gl.getUniformLocation(program, name)]));
+    const uniforms = Object.fromEntries(['uPose', 'uDetail', 'uHands', 'uFeet', 'uGrounded', 'uFrom', 'uTo', 'uEyes', 'uMix', 'uBlink'].map((name) => [name, gl.getUniformLocation(program, name)]));
     const position = gl.getAttribLocation(program, 'aPosition');
     const uv = gl.getAttribLocation(program, 'aUV');
 
@@ -188,13 +197,15 @@ export function createCapyRenderer(canvas: HTMLCanvasElement, images: Images, wo
     }
     return {
       dispose,
-      draw(pose: CapyPose, from: CapyExpression, to: CapyExpression, mix: number) {
+      draw(pose: CapyPose, from: CapyExpression, to: CapyExpression, mix: number, feet?: CapyFeet) {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniform4f(uniforms.uPose, pose.head, pose.lift, pose.stretch, pose.lean);
         gl.uniform4f(uniforms.uDetail, pose.ears, pose.chew, pose.bag, pose.breath);
         gl.uniform4f(uniforms.uHands, pose.handLX, pose.handLY, pose.handRX, pose.handRY);
+        gl.uniform4f(uniforms.uFeet, feet?.leftX ?? 0, feet?.leftY ?? 0, feet?.rightX ?? 0, feet?.rightY ?? 0);
+        gl.uniform1f(uniforms.uGrounded, feet?.grounded ?? 0);
         gl.uniform1i(uniforms.uFrom, 0);
         gl.uniform1i(uniforms.uTo, 1);
         gl.uniform1i(uniforms.uEyes, 2);

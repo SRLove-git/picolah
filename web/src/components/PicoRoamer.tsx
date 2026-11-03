@@ -1,183 +1,195 @@
 import { useEffect, useRef } from 'react';
-import idleAtlas from '../assets/capy-frames-v1/shopping.webp';
-import walkAtlas from '../assets/capy-frames-v1/shopping-walk.webp';
-import waveAtlas from '../assets/capy-frames-v1/shopping-pet.webp';
-import hopAtlas from '../assets/capy-frames-v1/shopping-play.webp';
+import { createCapyRenderer, type CapyFeet } from '../lib/capy-renderer';
+import { blendCapyPose, capyPose, type CapyPose } from '../lib/capy-motion';
+import { CAPY_EXPRESSION_ART, type CapyExpression } from '../lib/capy-face';
+import { approach, PICO_GAIT, travelStep, walkingPose, type PicoPace } from '../lib/pico-locomotion';
 import poster from '../assets/picolah-capybara-v2.webp';
 import './pico-roamer.css';
 
-type Activity = 'idle' | 'walk' | 'run' | 'wave' | 'hop';
-type Clip = 'idle' | 'walk' | 'wave' | 'hop';
-// These four approved atlases share a 4 × 4 grid of 384 × 482 frames.
-const SOURCES: Record<Clip, string> = { idle: idleAtlas, walk: walkAtlas, wave: waveAtlas, hop: hopAtlas };
+type Activity = 'idle' | PicoPace | 'turn' | 'wave' | 'hop';
 const STROLL = [
-  { activity: 'walk', destination: .85 },
-  { activity: 'run', destination: -.85 },
-  { activity: 'walk', destination: -.15 },
-  { activity: 'run', destination: .7 },
-  { activity: 'walk', destination: -.7 },
-  { activity: 'walk', destination: 0 },
+  { activity: 'walk', destination: .85 }, { activity: 'run', destination: -.85 },
+  { activity: 'walk', destination: -.15 }, { activity: 'run', destination: .7 },
+  { activity: 'walk', destination: -.7 }, { activity: 'walk', destination: 0 },
 ] as const;
+const restingFeet: CapyFeet = { leftX: 0, leftY: 0, rightX: 0, rightY: 0, grounded: 0 };
+const TURN_DURATION = .36;
 
-/** A local, wordless mascot. Its motion never writes to the pet room or chat. */
+/** A wordless, articulated mascot. Travel and planted paws share one clock. */
 export function PicoRoamer() {
   const stage = useRef<HTMLDivElement>(null);
   const actor = useRef<HTMLButtonElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const shadow = useRef<HTMLSpanElement>(null);
   const interact = useRef<() => void>(() => {});
+  const syncMotion = useRef<() => void>(() => {});
   const hold = useRef(false);
   const focused = useRef(false);
 
   useEffect(() => {
-    const area = stage.current!, button = actor.current!, surface = canvas.current!;
-    const ctx = surface.getContext('2d');
-    if (!ctx) return;
+    const area = stage.current!, button = actor.current!, surface = canvas.current!, ground = shadow.current!;
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const images: Partial<Record<Clip, HTMLImageElement>> = {};
-    let disposed = false, visible = true, raf = 0, previous = 0;
-    let x = 0, limit = 0, direction = -1, step = 0, clicks = 0;
-    let activity: Activity = 'idle', elapsed = 0, idleFor = .9;
-    let drawn = '', reducedReactionTimer = 0;
+    const fallback = button.querySelector<HTMLImageElement>('.pc-pico-roamer-poster')!;
+    let renderer: ReturnType<typeof createCapyRenderer> = null;
+    let images: Partial<Record<CapyExpression, HTMLImageElement>> = {};
+    let disposed = false, visible = true, lost = false, raf = 0, previous = 0;
+    let x = 0, speed = 0, limit = 0, artScale = 176 / 768, direction = -1, nextDirection = -1;
+    let step = 0, clicks = 0, clock = 0, gait = 0, weight = 0;
+    let activity: Activity = 'idle', pace: PicoPace = 'walk', elapsed = 0, idleFor = 1.3;
+    let pose: CapyPose = capyPose('idle', 0, 0), priorPose = pose, blendAt = -1;
+    let feet = restingFeet, priorFeet = feet, reactionTimer = 0;
+    let face: CapyExpression = 'idle', fromFace: CapyExpression = 'idle', faceAt = -1;
 
     const reacting = () => activity === 'wave' || activity === 'hop';
-    const canAnimate = () => !disposed && visible && !document.hidden && !media.matches;
-    function position() {
-      button.style.transform = `translate3d(${x}px, 0, 0)`;
-      // The original three-quarter artwork faces left.
-      surface.style.transform = `scaleX(${-direction})`;
-    }
+    const still = () => media.matches || focused.current;
+    const staticMode = () => still() || !renderer || lost;
+    const canAnimate = () => !disposed && !lost && Boolean(renderer) && visible && !document.hidden && !still();
     function setActivity(next: Activity) {
-      activity = next;
-      elapsed = 0;
-      area.dataset.activity = next;
+      priorPose = pose; priorFeet = feet; blendAt = clock;
+      activity = next; elapsed = 0; area.dataset.activity = next;
+      const expression = next === 'wave' ? 'happy' : next === 'hop' ? 'playful' : 'idle';
+      if (expression !== face) { fromFace = face; face = expression; faceAt = clock; }
     }
     function paint() {
-      const clip: Clip = activity === 'run' ? 'walk' : activity;
-      const image = images[clip] ?? images.idle;
-      if (!image) return;
-      let phase = 0;
-      if (media.matches || focused.current) phase = reacting() ? .35 : 0;
-      else if (reacting()) phase = Math.min(.999, elapsed / 1.8);
-      else if (activity === 'idle' || hold.current) {
-        phase = elapsed / 4.2 % 2;
-        if (phase > 1) phase = 2 - phase;
-      } else phase = elapsed / (activity === 'run' ? .42 : .8) % 1;
-      const index = Math.min(15, Math.floor(phase * 16));
-      const key = `${image.src}:${index}`;
-      if (drawn === key) return;
-      ctx!.clearRect(0, 0, 384, 482);
-      ctx!.drawImage(image, index % 4 * 384, Math.floor(index / 4) * 482, 384, 482, 0, 0, 384, 482);
-      drawn = key;
-      surface.dataset.frame = String(index);
-      surface.dataset.clip = clip;
-      area.dataset.ready = 'true';
+      const moving = activity === 'walk' || activity === 'run';
+      const active = reacting();
+      const action = activity === 'wave' ? 'pet' : activity === 'hop' ? 'play' : 'idle';
+      const time = staticMode() ? (active ? .7 : 0) : elapsed;
+      let next = capyPose(action, time, staticMode() ? 0 : clock);
+      let nextFeet = restingFeet;
+      const walk = walkingPose(gait, staticMode() || active ? 0 : weight, pace);
+      if (!active && !staticMode()) {
+        next.lift += walk.lift; next.lean += walk.lean; next.head += walk.head;
+        next.bag += walk.bag; next.ears += walk.ears;
+        // The bag follows the chest rather than the feet, with a small delay.
+        next.handLY += Math.sin(gait - .6) * 5 * weight;
+        next.handRY += Math.sin(gait - .8) * 5 * weight;
+        nextFeet = walk.feet;
+        if (activity === 'turn') {
+          const pivot = Math.sin(Math.min(1, elapsed / TURN_DURATION) * Math.PI);
+          next.stretch -= .025 * pivot; next.head += .055 * pivot;
+          next.bag += Math.sin(elapsed / TURN_DURATION * Math.PI * 2) * 6;
+          nextFeet = { ...restingFeet, leftY: -18 * pivot, grounded: 1 };
+        }
+      }
+      const blend = staticMode() ? 1 : Math.min(1, (clock - blendAt) / .18);
+      pose = blendCapyPose(priorPose, next, blend);
+      feet = Object.fromEntries(Object.keys(nextFeet).map(key => {
+        const k = key as keyof CapyFeet;
+        return [key, priorFeet[k] + (nextFeet[k] - priorFeet[k]) * blend];
+      })) as unknown as CapyFeet;
+      button.style.transform = `translate3d(${x}px, 0, 0)`;
+      // Turn only after braking, with a short planted pivot instead of flipping
+      // during lateral travel. Never rotate a flat image through an edge-on pose.
+      const pivotScale = activity === 'turn' && !staticMode() ? 1 - .06 * Math.sin(elapsed / TURN_DURATION * Math.PI) : 1;
+      surface.style.transform = `scale(${-direction * pivotScale}, 1)`;
+      const height = Math.max(0, active ? -pose.lift : walk.flight);
+      ground.style.transform = `translateX(-50%) scale(${1 - Math.min(.22, height / 230)}, ${1 - Math.min(.25, height / 180)})`;
+      ground.style.opacity = String(.22 - Math.min(.1, height / 550));
+      if (!lost) renderer?.draw(pose, fromFace, face, still() ? 1 : Math.min(1, (clock - faceAt) / .18), feet);
+      const fallbackSrc = images[face]?.src ?? poster;
+      if (fallback.getAttribute('src') !== fallbackSrc) fallback.src = fallbackSrc;
+      area.dataset.ready = String(Boolean(renderer) && !lost);
+      area.dataset.gait = String(Math.round(gait * 100) / 100);
+      area.dataset.speed = String(Math.round(speed * 10) / 10);
+      area.dataset.phase = active ? 'reaction' : activity === 'turn' ? 'pivot' : moving ? 'stride' : 'settle';
     }
     function tick(now: number) {
       raf = 0;
       if (!canAnimate()) return;
       const dt = previous ? Math.min((now - previous) / 1000, .05) : 0;
-      previous = now;
-      // Hold the hit target still under a mouse/finger or keyboard focus.
-      if ((!hold.current && !focused.current) || reacting()) {
+      previous = now; clock += dt;
+      const held = hold.current || focused.current;
+      if (reacting()) {
         elapsed += dt;
-        if (reacting()) {
-          if (elapsed >= 1.8) { setActivity('idle'); idleFor = .8; }
-        } else if (activity === 'idle') {
-          if (elapsed >= idleFor && images.walk) {
-            const next = STROLL[step];
-            direction = next.destination * limit < x ? -1 : 1;
-            setActivity(next.activity);
-          }
-        } else {
-          const target = STROLL[step].destination * limit;
-          const distance = target - x;
-          const travel = (activity === 'run' ? 92 : 32) * dt;
-          if (Math.abs(distance) <= travel) {
-            x = target;
+        if (elapsed >= 4.1) { setActivity('idle'); idleFor = 1; }
+      } else if (!held) {
+        elapsed += dt;
+        if (activity === 'idle' && elapsed >= idleFor && limit > 1) {
+          pace = STROLL[step].activity;
+          nextDirection = STROLL[step].destination * limit < x ? -1 : 1;
+          setActivity(nextDirection === direction ? pace : 'turn');
+        } else if (activity === 'turn') {
+          if (elapsed >= TURN_DURATION / 2) direction = nextDirection;
+          if (elapsed >= TURN_DURATION) setActivity(pace);
+        } else if (activity === 'walk' || activity === 'run') {
+          const next = travelStep(x, speed, STROLL[step].destination * limit, dt, artScale, pace);
+          x = next.x; speed = next.speed; gait += next.phase;
+          if (next.arrived) {
             step = (step + 1) % STROLL.length;
-            setActivity('idle');
-            idleFor = step % 2 ? 1.1 : 1.7;
-          } else x += Math.sign(distance) * travel;
+            setActivity('idle'); idleFor = step % 2 ? 1.1 : 1.7;
+          }
         }
-      }
-      position();
-      paint();
-      raf = requestAnimationFrame(tick);
+      } else speed = 0; // A pointer/finger always gets a stable hit target.
+      const desiredWeight = !held && !reacting() ? Math.min(1, Math.abs(speed) / (PICO_GAIT[pace].speed * artScale * .4)) : 0;
+      weight = approach(weight, desiredWeight, dt * 5);
+      paint(); raf = requestAnimationFrame(tick);
+    }
+    function settleStillReaction() {
+      if (!staticMode() || !reacting() || reactionTimer) return;
+      reactionTimer = window.setTimeout(() => {
+        reactionTimer = 0; setActivity('idle'); idleFor = 1; paint();
+      }, 1200);
     }
     function sync() {
-      cancelAnimationFrame(raf);
-      raf = 0;
-      previous = 0;
+      cancelAnimationFrame(raf); raf = 0; previous = 0;
+      if (still()) { speed = 0; weight = 0; }
       area.dataset.running = String(canAnimate());
-      // Changing the system preference during a response must still let it settle.
-      if (media.matches && reacting() && !reducedReactionTimer) {
-        reducedReactionTimer = window.setTimeout(() => {
-          reducedReactionTimer = 0;
-          setActivity('idle');
-          paint();
-        }, 1800);
-      }
-      paint();
+      settleStillReaction(); paint();
       if (canAnimate()) raf = requestAnimationFrame(tick);
     }
     function resize() {
-      limit = Math.max(0, (area.clientWidth - button.offsetWidth) / 2 - 6);
+      artScale = button.offsetWidth / 768;
+      limit = Math.max(0, (area.clientWidth - button.offsetWidth) / 2 - 12);
       x = Math.max(-limit, Math.min(limit, x));
-      position();
+      speed = 0; paint();
     }
     interact.current = () => {
-      // Let the current response finish on rapid taps, keeping its pose continuous.
       if (reacting()) return;
+      speed = 0; weight = 0;
       setActivity(clicks++ % 2 ? 'hop' : 'wave');
-      area.dataset.reaction = String(clicks);
-      paint();
-      if (media.matches || focused.current) {
-        window.clearTimeout(reducedReactionTimer);
-        reducedReactionTimer = window.setTimeout(() => {
-          reducedReactionTimer = 0;
-          setActivity('idle');
-          paint();
-        }, 1800);
-      }
-      sync();
+      area.dataset.reaction = String(clicks); sync();
     };
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(area);
-    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); });
-    observer.observe(area);
-    document.addEventListener('visibilitychange', sync);
-    media.addEventListener('change', sync);
-    resize();
-    // Loading is independent: a failed sequence leaves the original mascot visible.
-    for (const [name, src] of Object.entries(SOURCES)) {
-      const image = new Image();
-      image.onload = () => { if (!disposed) { images[name as Clip] = image; paint(); sync(); } };
-      image.src = src;
+    syncMotion.current = sync;
+    function createRenderer() {
+      renderer?.dispose(); renderer = createCapyRenderer(surface, images, []); sync();
     }
-    sync();
+    const contextLost = (event: Event) => { event.preventDefault(); lost = true; sync(); };
+    const contextRestored = () => { lost = false; createRenderer(); };
+    surface.addEventListener('webglcontextlost', contextLost);
+    surface.addEventListener('webglcontextrestored', contextRestored);
+    const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(area);
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }); observer.observe(area);
+    document.addEventListener('visibilitychange', sync); media.addEventListener('change', sync);
+    resize();
+    void Promise.allSettled((['idle', 'happy', 'playful', 'sleepy'] as const).map(name => new Promise<[CapyExpression, HTMLImageElement]>((resolve, reject) => {
+      const image = new Image(); image.onload = () => resolve([name, image]); image.onerror = reject; image.src = CAPY_EXPRESSION_ART[name];
+    }))).then(results => {
+      if (disposed) return;
+      images = Object.fromEntries(results.flatMap(result => result.status === 'fulfilled' ? [result.value] : []));
+      if (!lost) createRenderer();
+    });
     return () => {
-      disposed = true;
-      cancelAnimationFrame(raf);
-      window.clearTimeout(reducedReactionTimer);
-      resizeObserver.disconnect();
-      observer.disconnect();
-      document.removeEventListener('visibilitychange', sync);
-      media.removeEventListener('change', sync);
-      interact.current = () => {};
+      disposed = true; cancelAnimationFrame(raf); window.clearTimeout(reactionTimer); renderer?.dispose();
+      resizeObserver.disconnect(); observer.disconnect();
+      document.removeEventListener('visibilitychange', sync); media.removeEventListener('change', sync);
+      surface.removeEventListener('webglcontextlost', contextLost); surface.removeEventListener('webglcontextrestored', contextRestored);
+      interact.current = () => {}; syncMotion.current = () => {};
     };
   }, []);
 
   return <div className="pc-pico-roamer" ref={stage} data-activity="idle">
     <button className="pc-pico-roamer-touch" ref={actor} type="button" aria-label="Pico"
-      onPointerEnter={event => { if (event.pointerType === 'mouse') hold.current = true; }}
+      onPointerEnter={event => { if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover) and (pointer: fine)').matches) hold.current = true; }}
       onPointerLeave={() => { hold.current = false; }}
       onPointerDown={() => { hold.current = true; }}
       onPointerUp={event => { if (event.pointerType !== 'mouse') hold.current = false; }}
       onPointerCancel={() => { hold.current = false; }}
-      onFocus={event => { focused.current = event.currentTarget.matches(':focus-visible'); }}
-      onBlur={() => { focused.current = false; }}
-      onKeyDown={() => { focused.current = true; }}
+      onFocus={event => { focused.current = event.currentTarget.matches(':focus-visible'); syncMotion.current(); }}
+      onBlur={() => { focused.current = false; syncMotion.current(); }}
+      onKeyDown={() => { focused.current = true; syncMotion.current(); }}
       onClick={() => interact.current()}>
+      <span className="pc-pico-roamer-shadow" ref={shadow} aria-hidden="true" />
       <img className="pc-pico-roamer-poster" src={poster} alt="" draggable={false} />
       <canvas ref={canvas} width={384} height={482} aria-hidden="true" />
     </button>
