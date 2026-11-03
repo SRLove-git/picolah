@@ -128,7 +128,6 @@ export function AccountSettings({ market, priceMode, onMarketChange, onPriceMode
           <>
             <div className="pc-account-rows">
               <span><small>{t('account.username')}</small><strong>{user.displayName || user.email}</strong></span>
-              <span><small>{t('account.loginMethod')}</small><strong>{t('account.emailPassword')}</strong></span>
               <span><small>{t('account.email')}</small><strong>{user.email}</strong></span>
             </div>
             <div className="pc-profile-card-actions">
