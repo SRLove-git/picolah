@@ -165,3 +165,13 @@ test('formats local currencies without losing the market signal', async () => {
   assert.equal(formatMoney(1204.9, 'MY'), 'RM 1,204.90');
   assert.equal(formatMoney(12575000, 'ID'), 'Rp 12.575.000');
 });
+
+
+test('model editions stay distinct while explicit comparisons can include both editions', async () => {
+  const base = { brand: 'Xiaomi', category: '家电', tagline: '', visual: 'airfryer' as const };
+  const ordinary = { ...base, id: 'g20', name: 'Xiaomi G20', specs: 'G20', aliases: ['Xiaomi G20', 'G20'] };
+  const max = { ...base, id: 'g20-max', name: 'Xiaomi G20 Max', specs: 'G20 Max', aliases: ['Xiaomi G20 Max', 'G20 Max'] };
+  assert.deepEqual((await findProducts('Xiaomi G20 Max', [ordinary, max])).map(item => item.product?.id), ['g20-max']);
+  assert.deepEqual(await findProducts('Xiaomi G20 Ultra', [ordinary, max]), []);
+  assert.deepEqual(new Set((await findProducts('Xiaomi G20 和 Xiaomi G20 Max', [ordinary, max])).map(item => item.product?.id)), new Set(['g20', 'g20-max']));
+});

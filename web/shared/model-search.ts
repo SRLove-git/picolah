@@ -8,7 +8,7 @@ const nonModelPrefixes = new Set([
 /** A complete alphanumeric model, not a platform, budget, or vague family name. */
 export function explicitModelCodes(text: string): string[] {
   const matches = text.normalize('NFKC').matchAll(
-    /(?<![a-z0-9])(wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?![a-z0-9])/gi,
+    /(?<![a-z0-9])((?:wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
   );
   return [...new Set([...matches].map((match) => compactModel(match[1]))
     .filter((model) => !nonModelPrefixes.has(model.match(/^[A-Z]+/)?.[0] ?? ''))

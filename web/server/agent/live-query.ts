@@ -21,14 +21,16 @@ export async function visualSearchQuery(image: string, caption: string): Promise
 }
 
 /** Normalize a shopping request without consulting a product catalog. */
-export function liveSearchQuery(message: string, previous?: Comparison | null): { query: string; model?: string; maxPrice?: number } | null {
+export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live'): { query: string; model?: string; maxPrice?: number } | null {
   message = message.normalize('NFKC');
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;
   const budget = maxPrice === undefined ? {} : { maxPrice };
   message = message.replace(budgetPattern, '').trim();
-  const model = extractSearchModel(message);
+  // Catalog matching needs the whole product identity. A generic model-code
+  // extractor can mistake "Pro 256GB" or "Balance 530" for that identity.
+  const model = mode === 'catalog' ? null : extractSearchModel(message);
   const variants = (text: string) => {
     const translated = text.replace(/黑色/g, ' Black ').replace(/白色/g, ' White ').replace(/银色/g, ' Silver ')
       .replace(/蓝色/g, ' Blue ').replace(/粉色/g, ' Pink ');

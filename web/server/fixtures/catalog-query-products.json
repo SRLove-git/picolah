@@ -1,0 +1,1124 @@
+[
+  {
+    "product": {
+      "id": "adidas-samba-og",
+      "name": "Adidas Samba OG 复古德训鞋",
+      "brand": "Adidas",
+      "category": "鞋履",
+      "tagline": "T 头设计 · 麂皮拼接",
+      "visual": "sneaker",
+      "specs": "白黑 · US 5–12",
+      "aliases": [
+        "adidas samba",
+        "samba og",
+        "samba",
+        "阿迪达斯",
+        "德训鞋",
+        "adidas"
+      ]
+    },
+    "query": "帮我查一下Adidas Samba OG，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "airpods-pro-2",
+      "name": "AirPods Pro 2 (USB-C)",
+      "brand": "Apple",
+      "category": "耳机",
+      "tagline": "自适应降噪 · 通透模式",
+      "visual": "earbuds",
+      "specs": "USB-C 充电盒 · 白色",
+      "aliases": [
+        "airpods pro",
+        "airpods pro 2",
+        "airpods",
+        "苹果耳机",
+        "降噪豆",
+        "无线耳机"
+      ]
+    },
+    "query": "帮我查一下AirPods Pro 2 USB-C，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "apple-watch-se-2",
+      "name": "Apple Watch SE (第 2 代) 44mm",
+      "brand": "Apple",
+      "category": "穿戴",
+      "tagline": "健康监测 · 家庭共享",
+      "visual": "watch",
+      "specs": "44mm · GPS · 午夜色",
+      "aliases": [
+        "apple watch se",
+        "watch se",
+        "apple watch",
+        "苹果手表",
+        "智能手表",
+        "手表"
+      ]
+    },
+    "query": "帮我查一下Apple Watch SE 第二代 44mm，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "asics-gel-kayano-14",
+      "name": "ASICS GEL-KAYANO 14 跑鞋",
+      "brand": "ASICS",
+      "category": "鞋履",
+      "tagline": "Y2K 复古 · GEL 缓震",
+      "visual": "sneaker",
+      "specs": "银白 · US 5–13",
+      "aliases": [
+        "asics gel-kayano 14",
+        "kayano 14",
+        "gel kayano",
+        "亚瑟士",
+        "asics",
+        "kayano"
+      ]
+    },
+    "query": "帮我查一下ASICS GEL-KAYANO 14，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "bose-qc-ultra",
+      "name": "Bose QuietComfort Ultra 头戴式耳机",
+      "brand": "Bose",
+      "category": "耳机",
+      "tagline": "沉浸空间音频 · 消噪标杆",
+      "visual": "headphones",
+      "specs": "黑色 · 蓝牙 5.3",
+      "aliases": [
+        "bose qc ultra",
+        "qc ultra",
+        "bose quietcomfort",
+        "bose 耳机",
+        "bose",
+        "qc45"
+      ]
+    },
+    "query": "帮我查一下Bose QuietComfort Ultra 头戴式耳机，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "delonghi-dedica-ec685",
+      "name": "De’Longhi Dedica 意式半自动咖啡机",
+      "brand": "De'Longhi",
+      "category": "家电",
+      "tagline": "15 bar · 35 秒预热",
+      "visual": "coffee",
+      "specs": "EC685 · 银色",
+      "aliases": [
+        "delonghi dedica",
+        "dedica ec685",
+        "ec685",
+        "德龙咖啡机",
+        "德龙",
+        "delonghi",
+        "半自动咖啡机"
+      ]
+    },
+    "query": "帮我查一下DeLonghi EC685，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "dyson-v12-detect",
+      "name": "Dyson V12 Detect Slim 无线吸尘器",
+      "brand": "Dyson",
+      "category": "家电",
+      "tagline": "激光探测 · 轻量 2.2kg",
+      "visual": "airfryer",
+      "specs": "V12 · 60 分钟续航",
+      "aliases": [
+        "dyson v12",
+        "v12 detect",
+        "戴森 v12",
+        "戴森吸尘器",
+        "dyson",
+        "无线吸尘器"
+      ]
+    },
+    "query": "帮我查一下Dyson V12 Detect Slim，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "garmin-forerunner-265",
+      "name": "Garmin Forerunner 265 运动手表",
+      "brand": "Garmin",
+      "category": "穿戴",
+      "tagline": "AMOLED · 多频 GPS",
+      "visual": "watch",
+      "specs": "46mm · 黑色",
+      "aliases": [
+        "garmin forerunner 265",
+        "forerunner 265",
+        "fr265",
+        "佳明 265",
+        "佳明",
+        "garmin"
+      ]
+    },
+    "query": "帮我查一下Garmin Forerunner 265，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "huawei-watch-gt5",
+      "name": "HUAWEI WATCH GT 5 46mm",
+      "brand": "Huawei",
+      "category": "穿戴",
+      "tagline": "14 天续航 · 玄玑感知",
+      "visual": "watch",
+      "specs": "46mm · 黑色氟橡胶",
+      "aliases": [
+        "huawei watch gt5",
+        "watch gt 5",
+        "gt5",
+        "华为手表",
+        "华为 gt5",
+        "huawei watch"
+      ]
+    },
+    "query": "帮我查一下华为 WATCH GT 5 46mm，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "iphone-15-128",
+      "name": "iPhone 15 128GB",
+      "brand": "Apple",
+      "category": "手机",
+      "tagline": "灵动岛 · USB-C",
+      "visual": "phone",
+      "specs": "128GB · 蓝色",
+      "aliases": [
+        "iphone 15",
+        "iphone15",
+        "苹果 15",
+        "苹果手机",
+        "iphone",
+        "苹果",
+        "手机"
+      ]
+    },
+    "query": "帮我查一下iPhone 15 128GB，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "iphone-16-pro-256",
+      "name": "iPhone 16 Pro 256GB",
+      "brand": "Apple",
+      "category": "手机",
+      "tagline": "A18 Pro · 5 倍长焦",
+      "visual": "phone",
+      "specs": "256GB · 原色钛金属",
+      "aliases": [
+        "iphone 16 pro",
+        "iphone16 pro",
+        "16 pro",
+        "苹果 16 pro",
+        "iphone 16"
+      ]
+    },
+    "query": "帮我查一下iPhone 16 Pro 256GB，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "jbl-charge-5",
+      "name": "JBL Charge 5 便携蓝牙音箱",
+      "brand": "JBL",
+      "category": "音频",
+      "tagline": "IP67 防水 · 20 小时续航",
+      "visual": "speaker",
+      "specs": "黑色 · 蓝牙 5.1",
+      "aliases": [
+        "jbl charge 5",
+        "jbl charge5",
+        "charge 5",
+        "jbl",
+        "蓝牙音箱",
+        "便携音箱",
+        "音箱",
+        "speaker"
+      ]
+    },
+    "query": "帮我查一下JBL Charge 5，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "marshall-emberton-iii",
+      "name": "Marshall Emberton III 便携音箱",
+      "brand": "Marshall",
+      "category": "音频",
+      "tagline": "360° 环绕 · 32 小时续航",
+      "visual": "speaker",
+      "specs": "黑金 · IP67",
+      "aliases": [
+        "marshall emberton",
+        "emberton iii",
+        "emberton 3",
+        "马歇尔",
+        "marshall",
+        "便携音箱"
+      ]
+    },
+    "query": "帮我查一下Marshall Emberton III，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "nespresso-vertuo-pop",
+      "name": "Nespresso Vertuo Pop 咖啡机",
+      "brand": "Nespresso",
+      "category": "家电",
+      "tagline": "一键萃取 · 紧凑机身",
+      "visual": "coffee",
+      "specs": "薄荷绿 · Centrifusion 旋转萃取",
+      "aliases": [
+        "nespresso",
+        "vertuo pop",
+        "咖啡机",
+        "胶囊咖啡机",
+        "coffee machine"
+      ]
+    },
+    "query": "帮我查一下Nespresso Vertuo Pop，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "new-balance-530",
+      "name": "New Balance 530 复古跑鞋",
+      "brand": "New Balance",
+      "category": "鞋履",
+      "tagline": "复古跑鞋 · 轻量缓震",
+      "visual": "sneaker",
+      "specs": "男女同款 · US 8–11",
+      "aliases": [
+        "new balance 530",
+        "nb530",
+        "nb 530",
+        "new balance",
+        "纽巴伦",
+        "复古跑鞋",
+        "跑鞋",
+        "运动鞋",
+        "球鞋"
+      ]
+    },
+    "query": "帮我查一下New Balance 530，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "nike-air-force-1",
+      "name": "Nike Air Force 1 ’07 板鞋",
+      "brand": "Nike",
+      "category": "鞋履",
+      "tagline": "经典白鞋 · 全粒面皮革",
+      "visual": "sneaker",
+      "specs": "白色 · US 6–12",
+      "aliases": [
+        "nike air force 1",
+        "air force 1",
+        "af1",
+        "nike af1",
+        "耐克",
+        "空军一号",
+        "板鞋"
+      ]
+    },
+    "query": "帮我查一下Nike Air Force 1 07，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "galaxy-buds3-pro",
+      "name": "Samsung Galaxy Buds3 Pro",
+      "brand": "Samsung",
+      "category": "耳机",
+      "tagline": "双单元 · 自适应 ANC",
+      "visual": "earbuds",
+      "specs": "月光白 · IP57",
+      "aliases": [
+        "galaxy buds3 pro",
+        "buds3 pro",
+        "buds 3 pro",
+        "三星耳机",
+        "galaxy buds",
+        "三星 buds"
+      ]
+    },
+    "query": "帮我查一下三星 Galaxy Buds3 Pro，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "galaxy-s24-ultra",
+      "name": "Samsung Galaxy S24 Ultra 256GB",
+      "brand": "Samsung",
+      "category": "手机",
+      "tagline": "2 亿像素 · S Pen",
+      "visual": "phone",
+      "specs": "256GB · 钛灰",
+      "aliases": [
+        "galaxy s24 ultra",
+        "s24 ultra",
+        "s24u",
+        "三星 s24",
+        "galaxy s24"
+      ]
+    },
+    "query": "帮我查一下三星 Galaxy S24 Ultra 256GB，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "skii-facial-essence-230",
+      "name": "SK-II 护肤精华露 230ml",
+      "brand": "SK-II",
+      "category": "护肤",
+      "tagline": "PITERA™ · 经典神仙水",
+      "visual": "serum",
+      "specs": "230ml · 保湿修护",
+      "aliases": [
+        "sk-ii",
+        "skii",
+        "sk2",
+        "神仙水",
+        "护肤精华露",
+        "精华水",
+        "skii 神仙水"
+      ]
+    },
+    "query": "帮我查一下SK-II 神仙水 230ml，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "sony-wh1000xm5",
+      "name": "Sony WH-1000XM5 无线降噪耳机",
+      "brand": "Sony",
+      "category": "耳机",
+      "tagline": "旗舰降噪 · 30 小时续航",
+      "visual": "headphones",
+      "specs": "午夜黑 · 双设备连接",
+      "aliases": [
+        "sony wh-1000xm5",
+        "wh-1000xm5",
+        "wh1000xm5",
+        "xm5",
+        "sony xm5",
+        "索尼 xm5",
+        "索尼耳机",
+        "sony headphones",
+        "降噪耳机",
+        "头戴式耳机",
+        "headphones"
+      ]
+    },
+    "query": "帮我查一下Sony WH-1000XM5，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "sony-wh-ch720n",
+      "name": "Sony WH-CH720N 无线降噪耳机",
+      "brand": "Sony",
+      "category": "耳机",
+      "tagline": "轻量 192g · 35 小时续航",
+      "visual": "headphones",
+      "specs": "黑色 · 双噪声传感器降噪",
+      "aliases": [
+        "sony wh-ch720n",
+        "wh-ch720n",
+        "ch720n",
+        "索尼 ch720n",
+        "入门降噪耳机"
+      ]
+    },
+    "query": "帮我查一下Sony WH-CH720N，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "soundcore-liberty-4-nc",
+      "name": "Soundcore Liberty 4 NC 降噪豆",
+      "brand": "Soundcore",
+      "category": "耳机",
+      "tagline": "自适应降噪 · 最高 50 小时总续航（关闭降噪）",
+      "visual": "earbuds",
+      "specs": "白色 · LDAC",
+      "aliases": [
+        "soundcore liberty 4 nc",
+        "liberty 4 nc",
+        "soundcore",
+        "声阔",
+        "平价降噪豆"
+      ]
+    },
+    "query": "帮我查一下Soundcore Liberty 4 NC，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "the-ordinary-niacinamide",
+      "name": "The Ordinary 烟酰胺 10% + 锌 30ml",
+      "brand": "The Ordinary",
+      "category": "护肤",
+      "tagline": "控油 · 收毛孔",
+      "visual": "serum",
+      "specs": "30ml · 高浓度",
+      "aliases": [
+        "the ordinary",
+        "ordinary",
+        "烟酰胺",
+        "niacinamide",
+        "the ordinary 烟酰胺"
+      ]
+    },
+    "query": "帮我查一下The Ordinary 烟酰胺 10% 30ml，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "xiaomi-14t-pro",
+      "name": "Xiaomi 14T Pro 512GB",
+      "brand": "Xiaomi",
+      "category": "手机",
+      "tagline": "徕卡三摄 · 120W 快充",
+      "visual": "phone",
+      "specs": "512GB · 黑色",
+      "aliases": [
+        "xiaomi 14t pro",
+        "14t pro",
+        "小米 14t",
+        "小米手机",
+        "xiaomi 14t"
+      ]
+    },
+    "query": "帮我查一下小米 14T Pro 512GB，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "xiaomi-vacuum-g20-max",
+      "name": "小米 G20 Max 无线吸尘器",
+      "brand": "Xiaomi",
+      "category": "家电",
+      "tagline": "无线吸尘器",
+      "visual": "airfryer",
+      "specs": "G20 Max · 约 0.6L 集尘盒",
+      "aliases": [
+        "Xiaomi Vacuum Cleaner G20 Max",
+        "Xiaomi G20 Max",
+        "小米 G20 Max",
+        "G20 Max"
+      ]
+    },
+    "query": "帮我查一下小米 G20 Max 吸尘器，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "xiaomi-vacuum-g20",
+      "name": "小米 G20 无线吸尘器",
+      "brand": "Xiaomi",
+      "category": "家电",
+      "tagline": "无线吸尘器",
+      "visual": "airfryer",
+      "specs": "G20 · D205",
+      "aliases": [
+        "Xiaomi Vacuum Cleaner G20",
+        "Xiaomi G20",
+        "小米 G20",
+        "G20"
+      ]
+    },
+    "query": "帮我查一下小米 G20 吸尘器，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "xiaomi-air-purifier-4-lite",
+      "name": "小米 Smart Air Purifier 4 Lite 空气净化器",
+      "brand": "Xiaomi",
+      "category": "家电",
+      "tagline": "智能空气净化器",
+      "visual": "airfryer",
+      "specs": "4 Lite · AC-M17-SC",
+      "aliases": [
+        "Xiaomi Smart Air Purifier 4 Lite",
+        "小米空气净化器4 Lite",
+        "AC-M17-SC",
+        "空气净化器"
+      ]
+    },
+    "query": "帮我查一下小米空气净化器 4 Lite，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "xiaomi-air-fryer-6l",
+      "name": "小米空气炸锅 6L",
+      "brand": "Xiaomi",
+      "category": "家电",
+      "tagline": "6L · 完整型号待核实",
+      "visual": "airfryer",
+      "specs": "6L · 智能控制规格待核实",
+      "aliases": [
+        "xiaomi air fryer",
+        "小米空气炸锅",
+        "空气炸锅",
+        "air fryer",
+        "米家空气炸锅"
+      ]
+    },
+    "query": "帮我查一下小米空气炸锅 6L，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "la-roche-posay-mela-b3",
+      "name": "理肤泉 Mela B3 淡斑精华 30ml",
+      "brand": "La Roche-Posay",
+      "category": "护肤",
+      "tagline": "烟酰胺 · 淡斑提亮",
+      "visual": "serum",
+      "specs": "30ml · 敏感肌适用",
+      "aliases": [
+        "la roche-posay",
+        "理肤泉",
+        "mela b3",
+        "淡斑精华",
+        "烟酰胺精华",
+        "精华"
+      ]
+    },
+    "query": "帮我查一下理肤泉 Mela B3 30ml，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "estee-lauder-anr-50",
+      "name": "雅诗兰黛小棕瓶精华 50ml",
+      "brand": "Estée Lauder",
+      "category": "护肤",
+      "tagline": "夜间修护 · 第七代",
+      "visual": "serum",
+      "specs": "50ml · 特润修护",
+      "aliases": [
+        "estee lauder",
+        "雅诗兰黛",
+        "小棕瓶",
+        "advanced night repair",
+        "anr",
+        "特润修护"
+      ]
+    },
+    "query": "帮我查一下雅诗兰黛小棕瓶 50ml，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-ac3420-10",
+      "name": "飞利浦 AC3420/10 空气净化加湿一体机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "空气净化加湿一体机",
+      "visual": "airfryer",
+      "specs": "AC3420/10 · 3.2L 水箱",
+      "aliases": [
+        "Philips AC3420/10",
+        "AC3420/10",
+        "AC3420",
+        "AC3420/10 air purifier humidifier",
+        "飞利浦空气净化加湿一体机"
+      ]
+    },
+    "query": "帮我查一下Philips AC3420/10，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-ais6010-10",
+      "name": "飞利浦 AIS6010/10 一体式熨烫机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "一体式熨烫机",
+      "visual": "airfryer",
+      "specs": "AIS6010/10 · 1.2L 水箱",
+      "aliases": [
+        "Philips AIS6010/10",
+        "AIS6010/10",
+        "AIS6010",
+        "AIS6010/10 ironing solution",
+        "飞利浦一体式熨烫机"
+      ]
+    },
+    "query": "帮我查一下Philips AIS6010/10，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-bar300-60",
+      "name": "飞利浦 BAR300/60 意式咖啡机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "意式咖啡机",
+      "visual": "coffee",
+      "specs": "BAR300/60 · 黑色",
+      "aliases": [
+        "Philips BAR300/60",
+        "BAR300/60",
+        "BAR300",
+        "BAR300/60 espresso machine",
+        "飞利浦意式咖啡机"
+      ]
+    },
+    "query": "帮我查一下Philips BAR300/60，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-cx7550-01",
+      "name": "飞利浦 CX7550/01 智能塔扇",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "智能塔扇",
+      "visual": "airfryer",
+      "specs": "CX7550/01",
+      "aliases": [
+        "Philips CX7550/01",
+        "CX7550/01",
+        "CX7550",
+        "CX7550/01 tower fan",
+        "飞利浦智能塔扇"
+      ]
+    },
+    "query": "帮我查一下Philips CX7550/01，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-dst1020-30",
+      "name": "飞利浦 DST1020/30 蒸汽熨斗",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "1000 系列 · 250ml 水箱",
+      "visual": "airfryer",
+      "specs": "DST1020/30 · 1800W · 紫色",
+      "aliases": [
+        "Philips DST1020/30",
+        "DST1020",
+        "飞利浦熨斗",
+        "steam iron"
+      ]
+    },
+    "query": "帮我查一下Philips DST1020/30，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-dst3040-76",
+      "name": "飞利浦 DST3040/76 蒸汽熨斗",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "蒸汽熨斗",
+      "visual": "airfryer",
+      "specs": "DST3040/76 · 3000 系列 · 蓝色",
+      "aliases": [
+        "Philips DST3040/76",
+        "DST3040/76",
+        "DST3040",
+        "DST3040/76 steam iron",
+        "飞利浦蒸汽熨斗"
+      ]
+    },
+    "query": "帮我查一下Philips DST3040/76，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-dst8020-26",
+      "name": "飞利浦 DST8020/26 Azur 蒸汽熨斗",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "Azur 蒸汽熨斗",
+      "visual": "airfryer",
+      "specs": "DST8020/26 · 8000 系列 · 蓝色",
+      "aliases": [
+        "Philips DST8020/26",
+        "DST8020/26",
+        "DST8020",
+        "DST8020/26 steam iron",
+        "飞利浦Azur 蒸汽熨斗"
+      ]
+    },
+    "query": "帮我查一下Philips DST8020/26，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-fc9352-61",
+      "name": "飞利浦 FC9352/61 PowerPro Compact 无尘袋吸尘器",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "PowerPro Compact 无尘袋吸尘器",
+      "visual": "airfryer",
+      "specs": "FC9352/61 · 蓝色",
+      "aliases": [
+        "Philips FC9352/61",
+        "FC9352/61",
+        "FC9352",
+        "FC9352/61 bagless vacuum cleaner",
+        "飞利浦PowerPro Compact 无尘袋吸尘器"
+      ]
+    },
+    "query": "帮我查一下Philips FC9352/61，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd2582-01",
+      "name": "飞利浦 HD2582/01 烤面包机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "烤面包机",
+      "visual": "airfryer",
+      "specs": "HD2582/01 · 白色",
+      "aliases": [
+        "Philips HD2582/01",
+        "HD2582/01",
+        "HD2582",
+        "HD2582/01 toaster",
+        "飞利浦烤面包机"
+      ]
+    },
+    "query": "帮我查一下Philips HD2582/01，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd3170-62",
+      "name": "飞利浦 HD3170/62 迷你电饭煲",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "8 种菜单",
+      "visual": "airfryer",
+      "specs": "HD3170/62 · 0.85L · 白色",
+      "aliases": [
+        "Philips HD3170/62",
+        "HD3170",
+        "飞利浦电饭煲",
+        "mini rice cooker"
+      ]
+    },
+    "query": "帮我查一下Philips HD3170/62，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd3300-20",
+      "name": "飞利浦 HD3300/20 蒸煮一体电火锅",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "蒸煮一体电火锅",
+      "visual": "airfryer",
+      "specs": "HD3300/20 · 2.6L 火锅 · 2 层 3L 蒸笼",
+      "aliases": [
+        "Philips HD3300/20",
+        "HD3300/20",
+        "HD3300",
+        "HD3300/20 steamer hot pot",
+        "飞利浦蒸煮一体电火锅"
+      ]
+    },
+    "query": "帮我查一下Philips HD3300/20，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd9137-91",
+      "name": "飞利浦 HD9137/91 煮蛋器",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "3000 系列 · 可放 6 枚鸡蛋",
+      "visual": "airfryer",
+      "specs": "HD9137/91 · 400W · 黑色",
+      "aliases": [
+        "Philips HD9137/91",
+        "HD9137",
+        "飞利浦煮蛋器",
+        "egg cooker"
+      ]
+    },
+    "query": "帮我查一下Philips HD9137/91，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd9316-03",
+      "name": "飞利浦 HD9316/03 电热水壶",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "电热水壶",
+      "visual": "coffee",
+      "specs": "HD9316/03 · 1.7L · 银色",
+      "aliases": [
+        "Philips HD9316/03",
+        "HD9316/03",
+        "HD9316",
+        "HD9316/03 kettle",
+        "飞利浦电热水壶"
+      ]
+    },
+    "query": "帮我查一下Philips HD9316/03，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hd9395-90",
+      "name": "飞利浦 HD9395/90 双层电热水壶 1.7L",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "5000 系列双层电热水壶",
+      "visual": "coffee",
+      "specs": "HD9395/90 · 1.7L · 不锈钢",
+      "aliases": [
+        "Philips HD9395/90",
+        "HD9395",
+        "飞利浦电热水壶",
+        "electric kettle"
+      ]
+    },
+    "query": "帮我查一下Philips HD9395/90，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hr2221-01",
+      "name": "飞利浦 HR2221/01 搅拌机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "5000 系列搅拌机",
+      "visual": "airfryer",
+      "specs": "HR2221/01 · 白色",
+      "aliases": [
+        "Philips HR2221/01",
+        "HR2221",
+        "飞利浦搅拌机"
+      ]
+    },
+    "query": "帮我查一下Philips HR2221/01，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hr2222-01",
+      "name": "飞利浦 HR2222/01 搅拌机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "5000 系列搅拌机",
+      "visual": "airfryer",
+      "specs": "HR2222/01 · 白色",
+      "aliases": [
+        "Philips HR2222/01",
+        "HR2222",
+        "飞利浦搅拌机"
+      ]
+    },
+    "query": "帮我查一下Philips HR2222/01，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hr2684-00",
+      "name": "飞利浦 HR2684/00 手持搅拌机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "手持搅拌机",
+      "visual": "airfryer",
+      "specs": "HR2684/00 · 1200W · 黑色",
+      "aliases": [
+        "Philips HR2684/00",
+        "HR2684/00",
+        "HR2684",
+        "HR2684/00 hand blender",
+        "飞利浦手持搅拌机"
+      ]
+    },
+    "query": "帮我查一下Philips HR2684/00，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-hr3705-11",
+      "name": "飞利浦 HR3705/11 手持打蛋器",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "手持打蛋器",
+      "visual": "airfryer",
+      "specs": "HR3705/11 · 300W · 黑色",
+      "aliases": [
+        "Philips HR3705/11",
+        "HR3705/11",
+        "HR3705",
+        "HR3705/11 hand mixer",
+        "飞利浦手持打蛋器"
+      ]
+    },
+    "query": "帮我查一下Philips HR3705/11，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-na120-09",
+      "name": "飞利浦 NA120/09 空气炸锅 4.2L",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "1000 系列空气炸锅",
+      "visual": "airfryer",
+      "specs": "NA120/09 · 4.2L · 黑色",
+      "aliases": [
+        "Philips NA120/09",
+        "NA120",
+        "飞利浦空气炸锅"
+      ]
+    },
+    "query": "帮我查一下Philips NA120/09，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-na221-09",
+      "name": "飞利浦 NA221/09 空气炸锅",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "空气炸锅",
+      "visual": "airfryer",
+      "specs": "NA221/09 · 4.2L",
+      "aliases": [
+        "Philips NA221/09",
+        "NA221/09",
+        "NA221",
+        "NA221/09 airfryer",
+        "飞利浦空气炸锅"
+      ]
+    },
+    "query": "帮我查一下Philips NA221/09，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-na342-09",
+      "name": "飞利浦 NA342/09 空气炸锅",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "空气炸锅",
+      "visual": "airfryer",
+      "specs": "NA342/09 · 7.2L",
+      "aliases": [
+        "Philips NA342/09",
+        "NA342/09",
+        "NA342",
+        "NA342/09 airfryer",
+        "飞利浦空气炸锅"
+      ]
+    },
+    "query": "帮我查一下Philips NA342/09，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-na462-79",
+      "name": "飞利浦 NA462/79 双层空气炸锅",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "双层空气炸锅",
+      "visual": "airfryer",
+      "specs": "NA462/79 · 5L + 5L",
+      "aliases": [
+        "Philips NA462/79",
+        "NA462/79",
+        "NA462",
+        "NA462/79 dual stack airfryer",
+        "飞利浦双层空气炸锅"
+      ]
+    },
+    "query": "帮我查一下Philips NA462/79，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-na543-00",
+      "name": "飞利浦 NA543/00 蒸汽空气炸锅",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "蒸汽空气炸锅",
+      "visual": "airfryer",
+      "specs": "NA543/00 · 7.2L",
+      "aliases": [
+        "Philips NA543/00",
+        "NA543/00",
+        "NA543",
+        "NA543/00 steam airfryer",
+        "飞利浦蒸汽空气炸锅"
+      ]
+    },
+    "query": "帮我查一下Philips NA543/00，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-ste3170-80",
+      "name": "飞利浦 STE3170/80 立式挂烫机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "立式挂烫机",
+      "visual": "airfryer",
+      "specs": "STE3170/80 · 2000W · 灰色",
+      "aliases": [
+        "Philips STE3170/80",
+        "STE3170/80",
+        "STE3170",
+        "STE3170/80 stand garment steamer",
+        "飞利浦立式挂烫机"
+      ]
+    },
+    "query": "帮我查一下Philips STE3170/80，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-sth1000-16",
+      "name": "飞利浦 STH1000/16 手持挂烫机",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "手持挂烫机",
+      "visual": "airfryer",
+      "specs": "STH1000/16 · 900W · 85ml 水箱 · 白色",
+      "aliases": [
+        "Philips STH1000/16",
+        "STH1000/16",
+        "STH1000",
+        "STH1000/16 handheld garment steamer",
+        "飞利浦手持挂烫机"
+      ]
+    },
+    "query": "帮我查一下Philips STH1000/16，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-xb2023-61",
+      "name": "飞利浦 XB2023/61 无尘袋吸尘器",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "无尘袋吸尘器",
+      "visual": "airfryer",
+      "specs": "XB2023/61 · 2000 系列 · 白色",
+      "aliases": [
+        "Philips XB2023/61",
+        "XB2023/61",
+        "XB2023",
+        "XB2023/61 bagless vacuum cleaner",
+        "飞利浦无尘袋吸尘器"
+      ]
+    },
+    "query": "帮我查一下Philips XB2023/61，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-xv5113-01",
+      "name": "飞利浦 XV5113/01 OneUp 电动拖把",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "OneUp 电动拖把",
+      "visual": "airfryer",
+      "specs": "XV5113/01 · 5000 系列",
+      "aliases": [
+        "Philips XV5113/01",
+        "XV5113/01",
+        "XV5113",
+        "XV5113/01 electric mop",
+        "飞利浦OneUp 电动拖把"
+      ]
+    },
+    "query": "帮我查一下Philips XV5113/01，新加坡有报价吗？"
+  },
+  {
+    "product": {
+      "id": "philips-airfryer-xxl",
+      "name": "飞利浦 XXL 空气炸锅 7.2L",
+      "brand": "Philips",
+      "category": "家电",
+      "tagline": "7.2L 大容量 · Rapid Air",
+      "visual": "airfryer",
+      "specs": "7.2L · 家用大容量",
+      "aliases": [
+        "philips airfryer",
+        "飞利浦空气炸锅",
+        "philips xxl",
+        "飞利浦",
+        "airfryer xxl"
+      ]
+    },
+    "query": "帮我查一下飞利浦 XXL 空气炸锅 7.2L，新加坡有报价吗？"
+  }
+]

@@ -105,17 +105,18 @@ chatRouter.post('/', async (req, res) => {
     for (const entry of priorMessages) {
       if (entry.role !== 'assistant' || !entry.comparison) continue;
       const saved = entry.comparison;
-      const queryTarget = liveSearchQuery(saved.query, queryContext);
+      const queryTarget = liveSearchQuery(saved.query, queryContext, 'catalog');
       queryContext = queryTarget
         ? { ...saved, search: { ...queryTarget, model: queryTarget.model || queryTarget.query, platforms: [], status: 'matched' } }
         : saved;
     }
     context = queryContext ?? previous;
   }
-  let target = liveSearchQuery(rawMessage, context);
+  const queryMode = catalogMode ? 'catalog' : 'live';
+  let target = liveSearchQuery(rawMessage, context, queryMode);
   if (image) {
     const recognized = await visualSearchQuery(image, rawMessage);
-    if (recognized) target = liveSearchQuery(recognized, null);
+    if (recognized) target = liveSearchQuery(recognized, null, queryMode);
   }
   let comparison = emptyLiveComparison(message, market, target?.query || '', platforms, unsupported);
   comparison.search!.scope = scope;

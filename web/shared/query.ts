@@ -98,12 +98,23 @@ function variants(text: string): string[] {
 }
 
 function hasVariantConflict(query: string, product: Product): boolean {
-  const queryVariants = variants(normalize(query));
-  if (!queryVariants.length) return false;
-  const productText = compact(
-    [product.name, product.specs, ...product.aliases].join(' '),
+  const queryVariants = variants(query.normalize('NFKC'));
+  const productText = [product.name, product.specs, ...product.aliases].join(' ').normalize('NFKC');
+  const productVariants = new Set(variants(productText));
+  if (queryVariants.some((variant) => !productVariants.has(variant))) return true;
+
+  // A named edition belongs to its model family, not every product in a
+  // multi-product question. "G20 Max" must not resolve to the ordinary G20.
+  const editionPattern = /\b([a-z]+\s*\d+)\s*((?:(?:pro|max|plus|ultra|mini|lite|fe)\s*)+)\b/gi;
+  const editions = [...normalize(query).matchAll(editionPattern)];
+  const unqualified = new Set(
+    [...normalize(query).replace(editionPattern, ' ').matchAll(/\b[a-z]+\s*\d+\b/g)].map((match) => compact(match[0])),
   );
-  return queryVariants.some((variant) => !productText.includes(variant));
+  const identity = compact(productText);
+  return editions.some((match) => {
+    const family = compact(match[1]);
+    return !unqualified.has(family) && identity.includes(family) && !identity.includes(compact(match[0]));
+  });
 }
 
 export interface ProductMatch {
@@ -151,8 +162,8 @@ function matchProduct(text: string, product: Product): ProductMatch {
   const compactText = compact(text);
   if (hasVariantConflict(text, product)) return { product: null, score: 0, matchedOn: '' };
   const requestedModels = explicitModelCodes(text).map(compactModel);
-  const productModels = [product.name, ...product.aliases].flatMap(explicitModelCodes).map(compactModel);
-  if (requestedModels.length && productModels.length && !requestedModels.some((model) => productModels.includes(model))) {
+  const productModels = [product.name, product.specs, ...product.aliases].flatMap(explicitModelCodes).map(compactModel);
+  if (requestedModels.length && !requestedModels.some((model) => productModels.includes(model))) {
     return { product: null, score: 0, matchedOn: '' };
   }
 
@@ -165,10 +176,17 @@ function matchProduct(text: string, product: Product): ProductMatch {
 
   let score = 0;
   let matchedOn = '';
+  // A generic alias such as "iPhone" must not admit another generation when
+  // the shopper already supplied a model number. Capacities aren't models.
+  const productNumbers = new Set([product.name, ...product.aliases].join(' ').replace(VARIANT_PATTERN, '').match(/\d+/g) ?? []);
+  const queryWithoutCapacities = compact(text.replace(VARIANT_PATTERN, ''));
   for (const entry of candidates) {
     const candidate = normalize(entry.value);
     if (!candidate || candidate.length < 2) continue;
     const compactCandidate = compact(candidate);
+    const familyPattern = new RegExp(compactCandidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\d+)', 'g');
+    const requestedGenerations = [...queryWithoutCapacities.matchAll(familyPattern)].map((match) => match[1]);
+    if (requestedGenerations.length && !requestedGenerations.some((number) => productNumbers.has(number))) continue;
     const exact = normalized.includes(candidate) || compactText.includes(compactCandidate);
     const fuzzy = entry.kind === 'alias' && fuzzyAliasMatch(text, candidate);
     if (!exact && !fuzzy) continue;

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
 import { after, beforeEach, test } from 'node:test';
-import type { Comparison } from '../shared/types.ts';
+import { readFileSync } from 'node:fs';
+import type { Comparison, Product } from '../shared/types.ts';
 
 let crawlerCalls = 0;
 async function listen(server: Server): Promise<string> {
@@ -25,6 +26,19 @@ const { db } = await import('./db.ts');
 const { config } = await import('./config.ts');
 const server = createServer(app);
 const baseUrl = await listen(server);
+// Snapshot of the 58 public catalog identities and natural queries that were
+// exercised against production. Prices deliberately aren't test fixtures.
+const catalogQueries: Array<{ product: Product; query: string }> = JSON.parse(
+  readFileSync(new URL('./fixtures/catalog-query-products.json', import.meta.url), 'utf8'),
+);
+for (const { product } of catalogQueries) {
+  await db.run(
+    `INSERT INTO products (id, name, brand, category, tagline, visual, specs, aliases, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+    [product.id, product.name, product.brand, product.category, product.tagline, product.visual,
+      product.specs, JSON.stringify(product.aliases), new Date().toISOString(), new Date().toISOString()],
+  );
+}
 beforeEach(async () => {
   crawlerCalls = 0;
   config.productSearchSource = 'catalog';
@@ -165,4 +179,55 @@ test('repeated catalog follow-ups preserve category and budget constraints', asy
     assert.ok(result.comparison.alternatives.length > 1);
     assert.ok(result.comparison.alternatives.every((item) => item.offer === null));
   }
+});
+
+test('all 58 catalog products resolve by full name and everyday request', async (t) => {
+  assert.equal(catalogQueries.length, 58);
+  for (const { product, query } of catalogQueries) {
+    await t.test(product.id, async () => {
+      for (const message of [product.name, query]) {
+        const result = await ask(message);
+        assert.equal(result.comparison.product?.id, product.id, message);
+        assert.deepEqual(result.comparison.alternatives, [], message);
+      }
+    });
+  }
+});
+
+test('catalog questions keep complete identities in English and compact spellings', async () => {
+  for (const [message, id] of [
+    ['Where is iPhone 16 Pro 256GB cheapest in Singapore?', 'iphone-16-pro-256'],
+    ['找一下iPhone16pro', 'iphone-16-pro-256'],
+    ['Find New Balance 530 in Singapore', 'new-balance-530'],
+    ['Find Philips NA221/09 in Singapore', 'philips-na221-09'],
+    ['帮我查一下小米 G20 Max 吸尘器', 'xiaomi-vacuum-g20-max'],
+    ['帮我查一下小米 G20 吸尘器', 'xiaomi-vacuum-g20'],
+  ]) {
+    const result = await ask(message);
+    assert.equal(result.comparison.product?.id, id, message);
+    assert.deepEqual(result.comparison.alternatives, [], message);
+  }
+});
+
+test('absent model suffixes, generations, editions and capacities never substitute nearby products', async () => {
+  for (const message of [
+    'Philips NA221/08', '帮我查一下飞利浦 HD3170/61', 'Philips NA221/090',
+    '小米 G20 Ultra', 'iPhone 17 Pro 256GB', 'iPhone 16 Pro 512GB',
+    'iPhone 15 512GB', 'Sony WF-1000XM6', 'Philips NA221/09 4.3L',
+  ]) {
+    const result = await ask(message);
+    assert.equal(result.comparison.product, null, message);
+    assert.deepEqual(result.comparison.alternatives, [], message);
+    assert.deepEqual(result.comparison.offers, [], message);
+  }
+});
+
+test('catalog follow-ups retain the repaired identity and apply capacity and price filters', async () => {
+  const first = await ask('帮我查一下iPhone 16 Pro 256GB，新加坡有报价吗？');
+  const second = await ask('只看 Lazada', first.conversationId);
+  const third = await ask('预算400以内', first.conversationId);
+  for (const result of [first, second, third]) assert.equal(result.comparison.product?.id, 'iphone-16-pro-256');
+  const changed = await ask('换成512GB', first.conversationId);
+  assert.equal(changed.comparison.product, null);
+  assert.deepEqual(changed.comparison.alternatives, []);
 });
