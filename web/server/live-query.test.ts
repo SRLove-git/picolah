@@ -11,6 +11,15 @@ function previous(query: string): Comparison {
   };
 }
 
+test('English price questions remove the request phrase while preserving product words and capacity', () => {
+  assert.deepEqual(liveSearchQuery('What is the price of SK-II Facial Treatment Essence 230ml in Singapore?', null, 'catalog'),
+    { query: 'SK-II Facial Treatment Essence 230ml' });
+  assert.deepEqual(liveSearchQuery("What's the current price for The History of Whoo serum 30ml?", null, 'catalog'),
+    { query: 'History of Whoo serum 30ml' });
+  assert.deepEqual(liveSearchQuery('How much is Philips HD3170/62 under 100 SGD?', null, 'catalog'),
+    { query: 'Philips HD3170/62', maxPrice: 100 });
+});
+
 test('query cleaning preserves a known product and its requested capacity without catalog matching', () => {
   assert.deepEqual(liveSearchQuery('帮我找一下 iPhone 15 128GB'), { query: 'iPhone 15 128GB' });
   assert.deepEqual(liveSearchQuery('只看 Lazada 的 iPhone 15 256GB'), { query: 'iPhone 15 256GB' });

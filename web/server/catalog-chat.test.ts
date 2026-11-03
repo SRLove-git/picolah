@@ -200,6 +200,9 @@ test('catalog questions keep complete identities in English and compact spelling
     ['找一下iPhone16pro', 'iphone-16-pro-256'],
     ['Find New Balance 530 in Singapore', 'new-balance-530'],
     ['Find Philips NA221/09 in Singapore', 'philips-na221-09'],
+    ['What is the price of SK-II Facial Treatment Essence 230ml in Singapore?', 'skii-facial-essence-230'],
+    ["What's the current price for Sony WH-1000XM5 in Singapore?", 'sony-wh1000xm5'],
+    ['How much is Philips HD3170/62 in Singapore?', 'philips-hd3170-62'],
     ['帮我查一下小米 G20 Max 吸尘器', 'xiaomi-vacuum-g20-max'],
     ['帮我查一下小米 G20 吸尘器', 'xiaomi-vacuum-g20'],
   ]) {
@@ -214,6 +217,7 @@ test('absent model suffixes, generations, editions and capacities never substitu
     'Philips NA221/08', '帮我查一下飞利浦 HD3170/61', 'Philips NA221/090',
     '小米 G20 Ultra', 'iPhone 17 Pro 256GB', 'iPhone 16 Pro 512GB',
     'iPhone 15 512GB', 'Sony WF-1000XM6', 'Philips NA221/09 4.3L',
+    'What is the price of SK-II Facial Treatment Essence 250ml in Singapore?',
   ]) {
     const result = await ask(message);
     assert.equal(result.comparison.product, null, message);

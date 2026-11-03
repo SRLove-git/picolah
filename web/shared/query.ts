@@ -161,8 +161,9 @@ function matchProduct(text: string, product: Product): ProductMatch {
   const normalized = normalize(text);
   const compactText = compact(text);
   if (hasVariantConflict(text, product)) return { product: null, score: 0, matchedOn: '' };
-  const requestedModels = explicitModelCodes(text).map(compactModel);
-  const productModels = [product.name, product.specs, ...product.aliases].flatMap(explicitModelCodes).map(compactModel);
+  const modelCodes = (value: string) => explicitModelCodes(value.replace(VARIANT_PATTERN, ' ')).map(compactModel);
+  const requestedModels = modelCodes(text);
+  const productModels = [product.name, product.specs, ...product.aliases].flatMap(modelCodes);
   if (requestedModels.length && !requestedModels.some((model) => productModels.includes(model))) {
     return { product: null, score: 0, matchedOn: '' };
   }

@@ -76,6 +76,9 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
       .replace(new RegExp(`\\b${market.code}\\b`, 'g'), ' ');
   }
   query = query
+    // Strip the request as a phrase; removing individual words leaves "what is
+    // of" in a price question and can also damage real product names with "of".
+    .replace(/^\s*(?:what(?:['’]s|\s+(?:is|are))\s+(?:the\s+)?(?:current\s+)?prices?\s+(?:of|for)|how\s+much\s+(?:is|are))\s+/i, '')
     .replace(/(?:帮我|请|我想|我要|想要)?(?:找一下|找一找|查一下|搜一下|看看|找找|找|查找|搜索|查|搜|买|购买|推荐一下|推荐)/g, ' ')
     // "我想买个 iPhone" / "买一个 iPhone" leaves a dangling measure word behind.
     // "个" never starts a product noun, so it is safe to drop unconditionally.
