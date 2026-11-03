@@ -1,0 +1,14 @@
+.pc-capy.pc-capy-face {
+  overflow: visible;
+  border-radius: 0;
+}
+
+.pc-capy.pc-capy-face img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.assistant-avatar .pc-capy-face {
+  animation: none;
+  will-change: auto;
+}
