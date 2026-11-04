@@ -211,6 +211,20 @@ pnpm crawler:tool  # 另一个终端
 - `POST /api/chat` 额外接受可选 `image`（`data:image/...;base64,...`）。前端会先把图片压到最长边 1280px、体积不超过 3MB，支持 JPG / PNG / WebP；手机浏览器可直接调用相机拍照。
 - 图片会发送给视觉模型，并以压缩后的 data URL 保存在数据库的消息元数据里，刷新后仍能看到。生产环境建议换成对象存储 + 签名 URL，并增加保留策略。
 
+## AI 试穿（水豚）
+
+把搜索到的真实商品“穿”到水豚身上：发现页商品卡、比价结果和账号的水豚房间都可以生成一张试穿图。图片由外部图像模型生成，不参与价格计算，也不会替换商品原图。
+
+- 任意一个 Key 即可启用（自动选择，也可用 `IMAGE_PROVIDER=gemini|openai|dashscope` 指定）：
+  - `GEMINI_API_KEY`，默认模型 `gemini-2.5-flash-image`
+  - `OPENAI_API_KEY`，默认模型 `gpt-image-1`
+  - `DASHSCOPE_API_KEY`（阿里云百炼），默认模型 `qwen-image-edit`
+- `IMAGE_GEN=off` 可整体关闭；未配置时接口返回 `IMAGE_GEN_NOT_CONFIGURED`，前端不显示入口。
+- 每个访客每小时最多 `IMAGE_RATE_PER_HOUR`（默认 6）张；同一商品/图/模型会复用缓存，不重复扣次数。
+- 生成文件默认存到 `<数据库目录>/media/tryon`，也可用 `PICOLAH_MEDIA_DIR` 指定；通过 `GET /media/tryon/<file>` 访问（长缓存、不可变）。
+- 接口：`GET /api/capybara/tryon/config`、`POST /api/capybara/tryon`（异步任务，`202`；缓存命中 `200`）、`GET /api/capybara/tryon/:id`（前端轮询）、`GET /api/capybara/tryon/recent`。
+- 生产使用 PostgreSQL 时，请把 `PICOLAH_MEDIA_DIR` 指向持久卷，否则重建容器会丢图片。
+
 ## 数据接入
 
 完整字段和错误码见 [../docs/ingest-api.md](../docs/ingest-api.md)（跨项目契约，爬虫侧也以此为准）。

@@ -1,5 +1,5 @@
 import { uiText } from '../lib/ui-copy';
-import { Heart, NotebookPen, Shirt, ShoppingBag, Sprout, Trash2, X } from 'lucide-react';
+import { Heart, NotebookPen, Shirt, ShoppingBag, Sparkles, Sprout, Trash2, X } from 'lucide-react';
 import { Dialog } from '@base-ui/react/dialog';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
@@ -9,6 +9,8 @@ import { CapyPlayRoom } from './CapyPlayRoom';
 import type { CapyRoomPanel, OpenCapyPanel } from './CapyHabitat';
 import { CapyJournal, type JournalProtection } from './CapyJournal';
 import { CapyWardrobe } from './CapyWardrobe';
+import { CapyTryOnGallery } from './CapyTryOnGallery';
+import { useTryOnConfig } from '../lib/tryon';
 import { PageHeader } from './PageHeader';
 import { ProductArt } from './ProductArt';
 import './capybara.css';
@@ -34,15 +36,17 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
   const [journalProtection, setJournalProtection] = useState<JournalProtection>({ dirty: false, busy: false });
   const [confirmClose, setConfirmClose] = useState(false);
   const [journalVersion, setJournalVersion] = useState(0);
+  const tryonEnabled = useTryOnConfig();
   useEffect(() => { if (!journalProtection.dirty) setConfirmClose(false); }, [journalProtection.dirty]);
   const returnFocus = useRef<HTMLButtonElement>(null);
   const tabRefs = useRef<Partial<Record<CapyRoomPanel, HTMLButtonElement | null>>>({});
   const panels = [
     { id: 'wardrobe' as const, label: english ? uiText('Wardrobe') : '衣橱', Icon: Shirt },
+    { id: 'tryon' as const, label: english ? uiText('Try-on') : '试穿', Icon: Sparkles },
     { id: 'growth' as const, label: english ? uiText('Growing up') : '成长', Icon: Sprout },
     { id: 'journal' as const, label: english ? uiText('Diary') : '日记', Icon: NotebookPen },
     { id: 'purchases' as const, label: english ? uiText('Keepsakes') : '购物记', Icon: ShoppingBag },
-  ];
+  ].filter((entry) => entry.id !== 'tryon' || tryonEnabled);
   const openPanel: OpenCapyPanel = (next, trigger, keyboard) => {
     returnFocus.current = trigger;
     setPanel(next);
@@ -147,6 +151,10 @@ export function CapybaraView({ onOpenSidebar, notify }: CapybaraViewProps) {
                 </section>
                 <section className="pc-panel pc-capy-wardrobe pc-room-panel" id="capy-panel-wardrobe" role="tabpanel" aria-labelledby="capy-tab-wardrobe" hidden={panel !== 'wardrobe'} tabIndex={0}>
                   <CapyWardrobe view={view} syncing={syncing} available={available} onToggle={handleToggle} />
+                </section>
+
+                <section className="pc-panel pc-capy-tryon pc-room-panel" id="capy-panel-tryon" role="tabpanel" aria-labelledby="capy-tab-tryon" hidden={panel !== 'tryon'} tabIndex={0}>
+                  <CapyTryOnGallery />
                 </section>
 
                 <section className="pc-panel pc-capy-purchases pc-room-panel" id="capy-panel-purchases" role="tabpanel" aria-labelledby="capy-tab-purchases" hidden={panel !== 'purchases'} tabIndex={0}>

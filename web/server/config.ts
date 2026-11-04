@@ -59,6 +59,27 @@ export const config = {
     visionModel: process.env.LLM_VISION_MODEL || 'deepseek-flash',
     provider: process.env.LLM_PROVIDER || 'DeepSeek',
   },
+  /**
+   * AI try-on: compose real marketplace product photos onto the capybara.
+   * Every provider is optional; without a key the feature stays off and the
+   * UI falls back to the existing artwork.
+   */
+  imagegen: {
+    enabled: process.env.IMAGE_GEN !== 'off',
+    provider: (process.env.IMAGE_PROVIDER || '').toLowerCase(),
+    geminiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
+    geminiBaseUrl: (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com').replace(/\/$/, ''),
+    geminiModel: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+    openaiKey: process.env.OPENAI_API_KEY || '',
+    openaiBaseUrl: (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, ''),
+    openaiModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1',
+    dashscopeKey: process.env.DASHSCOPE_API_KEY || '',
+    dashscopeBaseUrl: (process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com').replace(/\/$/, ''),
+    dashscopeModel: process.env.DASHSCOPE_IMAGE_MODEL || 'qwen-image-edit',
+    timeoutMs: Math.max(15_000, num(process.env.IMAGE_TIMEOUT_MS, 120_000)),
+    /** Per-visitor hourly generation budget; cached results do not count. */
+    perHour: Math.max(1, num(process.env.IMAGE_RATE_PER_HOUR, 6)),
+  },
   crawlerTool: {
     searchScope: (process.env.CRAWLER_SEARCH_SCOPE === 'web' ? 'web' : 'platforms') as 'web' | 'platforms',
     url: (process.env.CRAWLER_TOOL_URL || '').replace(/\/+$/, ''),

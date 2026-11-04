@@ -1,5 +1,5 @@
 import { marketName } from '../lib/market-language';
-import { ArrowUpRight, BadgeCheck, BellPlus, Clock3, PackageSearch } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, BellPlus, Clock3, PackageSearch, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
@@ -17,6 +17,8 @@ import { PlatformBadge } from './PlatformBadge';
 import { Sparkline } from './Sparkline';
 import { Capybara } from './PicolahMark';
 import { MarkPurchasedButton } from './MarkPurchasedButton';
+import { TryOnStudio } from './TryOnStudio';
+import { useTryOnConfig } from '../lib/tryon';
 
 interface ComparisonPanelProps {
   comparison: import('../../shared/types').Comparison;
@@ -139,6 +141,8 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
   const { t, i18n } = useTranslation();
   const { user, required, promptLogin } = useSession();
   const [watched, setWatched] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
+  const tryonEnabled = useTryOnConfig();
   const { product, market } = comparison;
   if (!product) return null;
 
@@ -193,6 +197,11 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
         {best && (
           <div className="headline-price">
             <strong>{formatMoney(offerValue(best, displayMode), market)}</strong>
+            {tryonEnabled && (
+              <button type="button" className="pc-tryon-trigger" onClick={() => setStudioOpen(true)}>
+                <Sparkles size={14} aria-hidden="true" />{t('tryon.action')}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -280,6 +289,19 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
             <p>{t('comparison.unavailableHint')}</p>
           </div>
         </div>
+      )}
+      {tryonEnabled && (
+        <TryOnStudio
+          open={studioOpen}
+          request={{
+            productId: product.id,
+            name: product.name,
+            brand: product.brand,
+            category: product.category,
+            imageUrl: best?.imageUrl,
+          }}
+          onClose={() => setStudioOpen(false)}
+        />
       )}
     </div>
   );

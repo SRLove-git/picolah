@@ -292,6 +292,22 @@ const SQLITE_SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS idx_capybara_journal_owner ON capybara_journal(owner_id, entry_date DESC, created_at DESC, id DESC);
 
+  CREATE TABLE IF NOT EXISTS capy_tryon (
+    id TEXT PRIMARY KEY,
+    product_key TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    image_url TEXT NOT NULL DEFAULT '',
+    provider TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    file TEXT,
+    mime TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_capy_tryon_status ON capy_tryon(status, updated_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_capy_tryon_key ON capy_tryon(product_key);
+
   CREATE INDEX IF NOT EXISTS idx_offers_product_country ON offers(product_id, country);
   CREATE INDEX IF NOT EXISTS idx_offers_country ON offers(country);
   CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
