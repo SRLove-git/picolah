@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronDown, Search, X } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Search, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { searchCatalog, type CatalogProduct, type CatalogSort } from '../lib/api';
@@ -7,6 +7,8 @@ import { marketName } from '../lib/market-language';
 import { CountryFlag } from './CountryFlag';
 import { PageHeader } from './PageHeader';
 import { DiscoverProductArt } from './DiscoverProductArt';
+import { TryOnStudio } from './TryOnStudio';
+import { useTryOnConfig } from '../lib/tryon';
 import './discover.css';
 
 interface SearchViewProps {
@@ -22,6 +24,7 @@ const CATEGORY_KEYS: Record<string, string> = {
 
 export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   const { t, i18n } = useTranslation();
+  const tryonEnabled = useTryOnConfig();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -34,6 +37,7 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [studioProduct, setStudioProduct] = useState<CatalogProduct | null>(null);
   const categoryLabel = (value: string) => CATEGORY_KEYS[value] ? t(`search.categoryNames.${CATEGORY_KEYS[value]}`) : value;
 
   useEffect(() => {
@@ -174,10 +178,28 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
                   <span className="discover-product-bottom"><span>{categoryLabel(product.category)}</span><strong>{t('search.compare')}<ArrowUpRight size={14} aria-hidden="true" /></strong></span>
                 </div>
               </button>
+              {tryonEnabled && (
+                <button type="button" className="discover-ai-tryon" onClick={() => setStudioProduct(product)}
+                  aria-label={`${t('tryon.action')}: ${product.name}`}>
+                  <Sparkles size={13} aria-hidden="true" />{t('tryon.action')}
+                </button>
+              )}
             </li>)}
           </ul>}
         </section>
       </div>
+      {tryonEnabled && (
+        <TryOnStudio
+          open={Boolean(studioProduct)}
+          request={studioProduct ? {
+            productId: studioProduct.id,
+            name: studioProduct.name,
+            brand: studioProduct.brand,
+            category: studioProduct.category,
+          } : null}
+          onClose={() => setStudioProduct(null)}
+        />
+      )}
     </section>
   );
 }

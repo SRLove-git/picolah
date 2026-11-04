@@ -8102,3 +8102,194 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .pc-guest-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 30px -12px rgba(239, 79, 126, 0.7); }
+
+/* ---- AI try-on studio ---- */
+.pc-tryon-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(239, 79, 126, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 122, 162, 0.08);
+  color: #d6406a;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.pc-tryon-trigger:hover { background: rgba(255, 122, 162, 0.16); }
+
+.discover-product { position: relative; }
+.discover-ai-tryon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid rgba(239, 79, 126, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #d6406a;
+  font-size: 11px;
+  font-weight: 650;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 16px -10px rgba(239, 79, 126, 0.6);
+}
+.discover-ai-tryon:hover { background: #fff; }
+
+.pc-tryon-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 16, 24, 0.54);
+  backdrop-filter: blur(3px);
+  animation: pc-fade-in 160ms ease both;
+}
+.pc-tryon-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: hidden auto;
+  background: var(--pc-paper, #fff);
+  border-radius: 26px;
+  box-shadow: 0 30px 80px -24px rgba(15, 10, 20, 0.45);
+  animation: pc-tryon-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes pc-tryon-rise { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+.pc-tryon-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 12px;
+}
+.pc-tryon-badge {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffd6e2, #ffb3c8);
+  color: #c7315c;
+}
+.pc-tryon-head div { display: grid; gap: 3px; min-width: 0; }
+.pc-tryon-head strong { color: var(--pc-ink, #171717); font-size: 16px; }
+.pc-tryon-head span:not(.pc-tryon-badge) { color: var(--pc-muted, #737373); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-tryon-close {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+}
+.pc-tryon-stage {
+  display: grid;
+  place-items: center;
+  margin: 4px 20px 0;
+  min-height: 300px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff2f6, #fbf5ff);
+  overflow: hidden;
+}
+.pc-tryon-stage img { display: block; width: 100%; max-height: 460px; object-fit: contain; }
+.pc-tryon-pending {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 20px;
+  text-align: center;
+}
+.pc-tryon-capy {
+  width: 132px;
+  height: 132px;
+  background: url('./assets/picolah-capybara-v2.webp') center/contain no-repeat;
+  animation: pc-tryon-bob 1.8s ease-in-out infinite;
+}
+@keyframes pc-tryon-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.pc-tryon-pending p { max-width: 320px; color: #7a5562; font-size: 13px; line-height: 1.7; }
+.pc-tryon-dots { display: inline-flex; gap: 6px; }
+.pc-tryon-dots i { width: 6px; height: 6px; border-radius: 50%; background: #ef4f7e; opacity: 0.35; animation: pc-tryon-dot 1.2s infinite; }
+.pc-tryon-dots i:nth-child(2) { animation-delay: 0.15s; }
+.pc-tryon-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pc-tryon-dot { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+.pc-tryon-retry {
+  margin-top: 4px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #171717;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 650;
+}
+.pc-tryon-foot { padding: 14px 20px 18px; }
+.pc-tryon-foot p { margin: 0 0 10px; color: var(--pc-muted, #737373); font-size: 11px; line-height: 1.6; }
+.pc-tryon-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pc-tryon-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.pc-tryon-action:hover { border-color: rgba(239, 79, 126, 0.4); color: #d6406a; }
+
+/* ---- Try-on album inside the capybara room ---- */
+.pc-tryon-gallery { display: grid; gap: 14px; }
+.pc-tryon-gallery-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.pc-tryon-gallery-head h2 { margin: 0 0 4px; font-size: 17px; }
+.pc-tryon-gallery-head p { margin: 0; color: var(--pc-muted, #737373); font-size: 12px; }
+.pc-tryon-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  background: #fff;
+  color: #444;
+  font-size: 12px;
+}
+.pc-tryon-refresh .is-spinning { animation: pc-spin 1s linear infinite; }
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+.pc-tryon-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-tryon-gallery-item {
+  display: grid;
+  gap: 6px;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.pc-tryon-gallery-item img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.pc-tryon-gallery-item span { padding: 0 10px 10px; color: #555; font-size: 11px; line-height: 1.4; }
+.pc-tryon-skeleton { display: block; aspect-ratio: 1; border-radius: 16px; background: linear-gradient(90deg, #f4f0f2 25%, #fbf7f9 50%, #f4f0f2 75%); background-size: 200% 100%; animation: pc-shimmer 1.4s infinite; }
+@keyframes pc-shimmer { to { background-position: -200% 0; } }
+.pc-tryon-gallery-empty { display: grid; justify-items: center; gap: 10px; padding: 38px 16px; border-radius: 18px; background: #fff; color: var(--pc-muted, #737373); text-align: center; }
+.pc-tryon-gallery-empty p { margin: 0; font-size: 12px; line-height: 1.7; }
+.pc-tryon-gallery-empty button { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(0, 0, 0, 0.1); background: #fff; font-size: 12px; }

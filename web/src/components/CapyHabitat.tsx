@@ -7,7 +7,7 @@ import type { CapyAction } from '../lib/capy-motion';
 import roomDay from '../assets/capy-room-v1/room-day.webp';
 import roomMobile from '../assets/capy-room-v1/room-mobile.webp';
 
-export type CapyRoomPanel = 'wardrobe' | 'growth' | 'journal' | 'purchases';
+export type CapyRoomPanel = 'wardrobe' | 'tryon' | 'growth' | 'journal' | 'purchases';
 export type OpenCapyPanel = (panel: CapyRoomPanel, trigger: HTMLButtonElement, keyboard: boolean) => void;
 
 /** Furniture is actionable; the generated room is only the decorative plate. */

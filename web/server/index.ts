@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import cors from 'cors';
 import express from 'express';
@@ -18,6 +19,8 @@ import { accountRouter } from './routes/account.ts';
 import { capybaraRouter } from './routes/capybara.ts';
 import { capyJournalRouter } from './routes/capy-journal.ts';
 import { socialRouter } from './routes/social.ts';
+import { tryOnRouter } from './routes/tryon.ts';
+import { tryOnFilePath } from './tryon.ts';
 import { attachUser, requireAccount, requireAuth } from './auth.ts';
 import { metricsMiddleware, renderMetrics } from './metrics.ts';
 
@@ -125,6 +128,7 @@ app.use('/api/conversations', conversationsRouter);
 app.use('/api/catalog', catalogRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/capybara/journal', capyJournalRouter);
+app.use('/api/capybara/tryon', tryOnRouter);
 app.use('/api/capybara', capybaraRouter);
 app.use('/api/reels', reelsRouter);
 app.use('/api/watchlist', requireAuth, watchlistRouter);
@@ -136,6 +140,21 @@ app.use('/go', attachUser, outRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'NOT_FOUND', message: 'API 路由不存在' });
+});
+
+// Generated try-on pictures live on the data volume and are content-addressed
+// by job id, so they can be cached hard.
+app.get('/media/tryon/:file', async (req, res) => {
+  const path = tryOnFilePath(String(req.params.file || ''));
+  if (!path) return res.status(404).type('text').send('Not found');
+  try {
+    const bytes = await readFile(path);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.type(path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'jpg' : path.endsWith('.webp') ? 'webp' : 'png');
+    return res.send(bytes);
+  } catch {
+    return res.status(404).type('text').send('Not found');
+  }
 });
 
 const root = join(import.meta.dirname, '..');

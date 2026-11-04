@@ -1,5 +1,5 @@
 /* Picolah service worker: cache hashed Vite assets, never cache API responses. */
-const CACHE = 'picolah-assets-v1';
+const CACHE = 'picolah-assets-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -30,7 +30,8 @@ self.addEventListener('fetch', (event) => {
         const hit = await cache.match(request);
         if (hit) return hit;
         const response = await fetch(request);
-        if (response.ok) await cache.put(request, response.clone());
+        // Respond first, then persist: a slow cache write must never stall the page.
+        if (response.ok) event.waitUntil(cache.put(request, response.clone()));
         return response;
       })(),
     );

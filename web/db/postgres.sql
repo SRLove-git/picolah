@@ -282,3 +282,19 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_watchlist_owner ON watchlist(owner_id, market);
 CREATE INDEX IF NOT EXISTS idx_price_alerts_owner ON price_alerts(owner_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_capybara_purchases_owner ON capybara_purchases(owner_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS capy_tryon (
+  id TEXT PRIMARY KEY,
+  product_key TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  image_url TEXT NOT NULL DEFAULT '',
+  provider TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  file TEXT,
+  mime TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_capy_tryon_status ON capy_tryon(status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_capy_tryon_key ON capy_tryon(product_key);
