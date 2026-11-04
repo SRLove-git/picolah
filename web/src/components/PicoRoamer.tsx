@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { createCapyRenderer, type CapyFeet } from '../lib/capy-renderer';
+import { createCapyRenderer, type CapyFeet, type CapyWearable } from '../lib/capy-renderer';
+import { useCapybara } from '../lib/capybara';
+import { AccessoryLayer, wornArtwork } from './CapyAccessoryArt';
 import { blendCapyPose, capyPose, type CapyPose } from '../lib/capy-motion';
 import { CAPY_EXPRESSION_ART, type CapyExpression } from '../lib/capy-face';
 import { approach, PICO_GAIT, travelStep, walkingPose, type PicoPace } from '../lib/pico-locomotion';
@@ -17,6 +19,12 @@ const TURN_DURATION = .36;
 
 /** A wordless, articulated mascot. Travel and planted paws share one clock. */
 export function PicoRoamer() {
+  const { view } = useCapybara();
+  const worn = view.worn;
+  // Share the server-backed wardrobe, including accessory placement order.
+  const wornKey = worn.map(({ id }) => id).join(',');
+  const artwork = wornArtwork(worn);
+  const clothing = artwork.find(item => item.clothing);
   const stage = useRef<HTMLDivElement>(null);
   const actor = useRef<HTMLButtonElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -30,7 +38,11 @@ export function PicoRoamer() {
     const area = stage.current!, button = actor.current!, surface = canvas.current!, ground = shadow.current!;
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const fallback = button.querySelector<HTMLImageElement>('.pc-pico-roamer-poster')!;
+    const fallbackArt = button.querySelector<HTMLElement>('.pc-pico-roamer-fallback')!;
+    const outfit = wornArtwork(worn);
+    const outfitPoster = outfit.find(item => item.clothing)?.src;
     let renderer: ReturnType<typeof createCapyRenderer> = null;
+    let wearables: CapyWearable[] = [], artworkReady = false;
     let images: Partial<Record<CapyExpression, HTMLImageElement>> = {};
     let disposed = false, visible = true, lost = false, raf = 0, previous = 0;
     let x = 0, speed = 0, limit = 0, artScale = 176 / 768, direction = -1, nextDirection = -1;
@@ -83,11 +95,12 @@ export function PicoRoamer() {
       // during lateral travel. Never rotate a flat image through an edge-on pose.
       const pivotScale = activity === 'turn' && !staticMode() ? 1 - .06 * Math.sin(elapsed / TURN_DURATION * Math.PI) : 1;
       surface.style.transform = `scale(${-direction * pivotScale}, 1)`;
+      fallbackArt.style.transform = surface.style.transform;
       const height = Math.max(0, active ? -pose.lift : walk.flight);
       ground.style.transform = `translateX(-50%) scale(${1 - Math.min(.22, height / 230)}, ${1 - Math.min(.25, height / 180)})`;
       ground.style.opacity = String(.22 - Math.min(.1, height / 550));
       if (!lost) renderer?.draw(pose, fromFace, face, still() ? 1 : Math.min(1, (clock - faceAt) / .18), feet);
-      const fallbackSrc = images[face]?.src ?? poster;
+      const fallbackSrc = outfitPoster ?? images[face]?.src ?? poster;
       if (fallback.getAttribute('src') !== fallbackSrc) fallback.src = fallbackSrc;
       area.dataset.ready = String(Boolean(renderer) && !lost);
       area.dataset.gait = String(Math.round(gait * 100) / 100);
@@ -152,7 +165,7 @@ export function PicoRoamer() {
     };
     syncMotion.current = sync;
     function createRenderer() {
-      renderer?.dispose(); renderer = createCapyRenderer(surface, images, []); sync();
+      renderer?.dispose(); renderer = artworkReady ? createCapyRenderer(surface, images, wearables) : null; sync();
     }
     const contextLost = (event: Event) => { event.preventDefault(); lost = true; sync(); };
     const contextRestored = () => { lost = false; createRenderer(); };
@@ -162,13 +175,18 @@ export function PicoRoamer() {
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }); observer.observe(area);
     document.addEventListener('visibilitychange', sync); media.addEventListener('change', sync);
     resize();
-    void Promise.allSettled((['idle', 'happy', 'playful', 'sleepy'] as const).map(name => new Promise<[CapyExpression, HTMLImageElement]>((resolve, reject) => {
-      const image = new Image(); image.onload = () => resolve([name, image]); image.onerror = reject; image.src = CAPY_EXPRESSION_ART[name];
-    }))).then(results => {
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src;
+    });
+    void Promise.all([
+      Promise.allSettled((['idle', 'happy', 'playful', 'sleepy'] as const).map(async name => [name, await loadImage(CAPY_EXPRESSION_ART[name])] as const)),
+      Promise.all(outfit.map(async ({ src, layout, clothing }) => ({ image: await loadImage(src), layout, clothing }))),
+    ]).then(([results, loadedWearables]) => {
       if (disposed) return;
       images = Object.fromEntries(results.flatMap(result => result.status === 'fulfilled' ? [result.value] : []));
+      wearables = loadedWearables; artworkReady = true;
       if (!lost) createRenderer();
-    });
+    }).catch(() => { /* Keep the selected outfit visible if animation art cannot load. */ });
     return () => {
       disposed = true; cancelAnimationFrame(raf); window.clearTimeout(reactionTimer); renderer?.dispose();
       resizeObserver.disconnect(); observer.disconnect();
@@ -176,9 +194,9 @@ export function PicoRoamer() {
       surface.removeEventListener('webglcontextlost', contextLost); surface.removeEventListener('webglcontextrestored', contextRestored);
       interact.current = () => {}; syncMotion.current = () => {};
     };
-  }, []);
+  }, [wornKey]);
 
-  return <div className="pc-pico-roamer" ref={stage} data-activity="idle">
+  return <div className="pc-pico-roamer" ref={stage} data-activity="idle" data-clothing={clothing?.id ?? 'none'} data-worn={wornKey}>
     <button className="pc-pico-roamer-touch" ref={actor} type="button" aria-label="Pico"
       onPointerEnter={event => { if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover) and (pointer: fine)').matches) hold.current = true; }}
       onPointerLeave={() => { hold.current = false; }}
@@ -190,7 +208,10 @@ export function PicoRoamer() {
       onKeyDown={() => { focused.current = true; syncMotion.current(); }}
       onClick={() => interact.current()}>
       <span className="pc-pico-roamer-shadow" ref={shadow} aria-hidden="true" />
-      <img className="pc-pico-roamer-poster" src={poster} alt="" draggable={false} />
+      <span className="pc-pico-roamer-fallback" aria-hidden="true">
+        <img className="pc-pico-roamer-poster" src={clothing?.src ?? poster} alt="" draggable={false} />
+        <svg className="pc-pico-roamer-accessories" viewBox="0 0 768 804"><AccessoryLayer worn={worn} /></svg>
+      </span>
       <canvas ref={canvas} width={384} height={482} aria-hidden="true" />
     </button>
   </div>;

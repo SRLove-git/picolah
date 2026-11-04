@@ -49,7 +49,15 @@
   pointer-events: none;
 }
 
-.pc-pico-roamer-poster {
+.pc-pico-roamer-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pc-pico-roamer-poster,
+.pc-pico-roamer-accessories {
   position: absolute;
   z-index: 1;
   inset: 10% 0;
@@ -60,7 +68,7 @@
 }
 
 .pc-pico-roamer[data-ready='true'] canvas { opacity: 1; }
-.pc-pico-roamer[data-ready='true'] .pc-pico-roamer-poster { visibility: hidden; }
+.pc-pico-roamer[data-ready='true'] .pc-pico-roamer-fallback { visibility: hidden; }
 
 @media (max-width: 620px) {
   .pc-pico-roamer { height: 184px; }
