@@ -18,9 +18,13 @@ import { db, type DbExecutor } from './db.ts';
 
 type Row = Record<string, any>;
 
-function freshnessCutoff(): string | null {
-  if (config.offerFreshnessHours <= 0) return null;
-  return new Date(Date.now() - config.offerFreshnessHours * 3_600_000).toISOString();
+function offerVisibility(): { clause: string; params: string[] } {
+  if (config.productSearchSource === 'catalog') {
+    return { clause: "AND source NOT IN ('seed', 'picolah-mock')", params: [] };
+  }
+  if (config.offerFreshnessHours <= 0) return { clause: '', params: [] };
+  const cutoff = new Date(Date.now() - config.offerFreshnessHours * 3_600_000).toISOString();
+  return { clause: 'AND last_seen >= ?', params: [cutoff] };
 }
 
 function parseJson<T>(value: unknown, fallback: T): T {
@@ -113,21 +117,14 @@ export async function getOffers(
   includeOutOfStock = false,
   executor: DbExecutor = db,
 ): Promise<Offer[]> {
-  const cutoff = freshnessCutoff();
-  const rows = cutoff
-    ? await executor.all<Row>(
-        `SELECT * FROM offers
-         WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
-           AND last_seen >= ?
-         ORDER BY final_price ASC`,
-        [productId, country, cutoff],
-      )
-    : await executor.all<Row>(
-        `SELECT * FROM offers
-         WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
-         ORDER BY final_price ASC`,
-        [productId, country],
-      );
+  const visibility = offerVisibility();
+  const rows = await executor.all<Row>(
+    `SELECT * FROM offers
+     WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
+       ${visibility.clause}
+     ORDER BY final_price ASC`,
+    [productId, country, ...visibility.params],
+  );
   const offers: Offer[] = [];
   for (const row of rows) {
     offers.push(mapOffer(row, await getPriceHistory(String(row.id), executor)));
@@ -139,14 +136,11 @@ export async function getRegionalOfferCount(
   productId?: string,
   executor: DbExecutor = db,
 ): Promise<number> {
-  const cutoff = freshnessCutoff();
-  const fresh = cutoff ? 'AND last_seen >= ?' : '';
-  const values: unknown[] = productId ? [productId] : [];
-  if (cutoff) values.push(cutoff);
+  const visibility = offerVisibility();
   const row = await executor.get<Row>(
     `SELECT COUNT(*) AS count FROM offers
-     WHERE in_stock = 1 ${productId ? 'AND product_id = ?' : ''} ${fresh}`,
-    values,
+     WHERE in_stock = 1 ${productId ? 'AND product_id = ?' : ''} ${visibility.clause}`,
+    [...(productId ? [productId] : []), ...visibility.params],
   );
   return Number(row?.count || 0);
 }

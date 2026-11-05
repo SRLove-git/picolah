@@ -24,6 +24,7 @@ process.env.CRAWLER_TOOL_TOKEN = 'catalog-test-crawler-must-not-run';
 const { app } = await import('./index.ts');
 const { db } = await import('./db.ts');
 const { config } = await import('./config.ts');
+const { getOffers, getRegionalOfferCount } = await import('./repo.ts');
 const server = createServer(app);
 const baseUrl = await listen(server);
 // Snapshot of the 58 public catalog identities and natural queries that were
@@ -120,16 +121,34 @@ test('missing imported fees and ratings retain unknown status', async () => {
   assert.ok(result.comparison.offers.length > 0);
   assert.ok(result.comparison.offers.every((offer) => offer.shippingKnown === false && offer.ratingKnown === false && offer.reviewsKnown === false));
 });
-test('fresh demo and expired real quotes are excluded without claiming stock absence', async () => {
+test('catalog retains the last in-stock quote and its original date across the freshness cutoff', async () => {
   const demo = await ask('Sony WH-1000XM5');
-  assert.equal(demo.comparison.product?.id, 'sony-wh1000xm5');
   assert.deepEqual(demo.comparison.offers, []);
+  const capturedAt = '2020-01-01T00:00:00.000Z';
   await realQuotes();
-  await db.run("UPDATE offers SET last_seen = '2020-01-01T00:00:00.000Z'");
-  const stale = await ask('Sony WH-1000XM5');
-  assert.deepEqual(stale.comparison.offers, []);
-  assert.match(stale.answer, /暂无有效报价/);
-  assert.doesNotMatch(stale.answer, /S\$|商品信息搜索暂时未完成/);
+  await db.run("UPDATE offers SET last_seen = ? WHERE product_id = 'sony-wh1000xm5'", [capturedAt]);
+  const stored = await ask('Sony WH-1000XM5');
+  assert.equal(stored.comparison.offers.length, 4);
+  assert.equal(stored.comparison.updatedAt, capturedAt);
+  assert.ok(stored.comparison.offers.every(offer => offer.lastSeen === capturedAt && offer.finalPrice === 404));
+  const id = stored.comparison.offers[0].id;
+  try {
+    await db.run('UPDATE offers SET in_stock = 0 WHERE id = ?', [id]);
+    const result = await ask('Sony WH-1000XM5');
+    assert.equal(result.comparison.offers.length, 3);
+    assert.ok(result.comparison.offers.every(offer => offer.inStock && offer.id !== id));
+  } finally {
+    await db.run('UPDATE offers SET in_stock = 1 WHERE id = ?', [id]);
+  }
+});
+test('regional counts follow the catalog or live offer policy', async () => {
+  assert.equal(await getRegionalOfferCount('sony-wh1000xm5'), 0);
+  await realQuotes();
+  await db.run("UPDATE offers SET last_seen = '2020-01-01T00:00:00.000Z' WHERE product_id = 'sony-wh1000xm5'");
+  assert.ok(await getRegionalOfferCount('sony-wh1000xm5') > 0);
+  config.productSearchSource = 'live';
+  assert.deepEqual(await getOffers('sony-wh1000xm5', 'SG'), []);
+  assert.equal(await getRegionalOfferCount('sony-wh1000xm5'), 0);
 });
 test('follow-up platform selection uses all catalog platforms, including TikTok', async () => {
   await realQuotes();

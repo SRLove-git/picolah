@@ -3,7 +3,6 @@ import { MARKETS } from '../../shared/types.ts';
 import { findProducts, resolvePlatformDirective } from '../../shared/query.ts';
 import { normalizeSearchLanguage } from '../../shared/search-language.ts';
 import { formatMoney } from '../format.ts';
-import { db } from '../db.ts';
 import { getOffers, listProducts } from '../repo.ts';
 
 type Target = { query: string; model?: string; maxPrice?: number };
@@ -36,15 +35,10 @@ export async function searchCatalog(options: {
   const titleKey = (text: string) => normalizeSearchLanguage(text).normalize('NFKC').toLowerCase().replace(/[\s\p{P}]/gu, '');
   const exactTitles = catalog.filter((product) => titleKey(product.name) === titleKey(message));
   const products = exactTitles.length ? exactTitles : target ? candidates(target, catalog) : [];
-  const eligibleRows = await db.all<{ id: string }>(
-    "SELECT id FROM offers WHERE country = ? AND source NOT IN ('seed', 'picolah-mock')",
-    [market],
-  );
-  const eligible = new Set(eligibleRows.map((row) => row.id));
   const entries = await Promise.all(products.map(async (product) => ({
     product,
     offers: unsupported.length ? [] : (await getOffers(product.id, market)).filter((offer) =>
-      eligible.has(offer.id) && allowed.includes(offer.platformId) &&
+      allowed.includes(offer.platformId) &&
       (!filters.length || filters.includes(offer.platformId)) &&
       offer.currency === MARKETS[market].currency && Number.isFinite(offer.finalPrice) && offer.finalPrice > 0 &&
       (target?.maxPrice === undefined || offer.finalPrice <= target.maxPrice)).map((offer) => ({
