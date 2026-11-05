@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS offers (
   external_id TEXT,
   source TEXT NOT NULL DEFAULT 'seed',
   product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  source_title TEXT NOT NULL DEFAULT '',
   platform_id TEXT NOT NULL,
   seller TEXT NOT NULL,
   country TEXT NOT NULL,
@@ -39,6 +40,8 @@ CREATE TABLE IF NOT EXISTS offers (
   updated_at TEXT NOT NULL,
   UNIQUE (source, external_id)
 );
+
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS source_title TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS price_points (
   offer_id TEXT NOT NULL REFERENCES offers(id) ON DELETE CASCADE,

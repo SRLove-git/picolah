@@ -47,6 +47,7 @@ const SQLITE_SCHEMA = `
     external_id TEXT,
     source TEXT NOT NULL DEFAULT 'seed',
     product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    source_title TEXT NOT NULL DEFAULT '',
     platform_id TEXT NOT NULL,
     seller TEXT NOT NULL,
     country TEXT NOT NULL,
@@ -325,6 +326,7 @@ const SQLITE_SCHEMA = `
 
 function applySqliteMigrations(handle: DatabaseSync): void {
   for (const [table, column, definition] of [
+    ['offers', 'source_title', "TEXT NOT NULL DEFAULT ''"],
     ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
     ['users', 'avatar', "TEXT NOT NULL DEFAULT ''"],
     ['conversations', 'owner_id', "TEXT NOT NULL DEFAULT ''"],

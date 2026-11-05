@@ -12,6 +12,7 @@ import type {
   Product,
   ProductVisual,
 } from '../shared/types.ts';
+import { catalogRetailer } from './catalog-retailers.ts';
 import { MARKETS, PLATFORMS } from '../shared/types.ts';
 import { config } from './config.ts';
 import { db, type DbExecutor } from './db.ts';
@@ -56,7 +57,8 @@ export function mapOffer(row: Row, history: PricePoint[] = []): Offer {
     id: String(row.id),
     productId: String(row.product_id),
     platformId: String(row.platform_id),
-    platform: PLATFORMS[String(row.platform_id)]?.name || String(row.platform_id),
+    platform: PLATFORMS[String(row.platform_id)]?.name || catalogRetailer(String(row.platform_id))?.name || String(row.platform_id),
+    ...(row.source_title ? { productTitle: String(row.source_title) } : {}),
     seller: String(row.seller),
     country: String(row.country) as CountryCode,
     currency: String(row.currency),

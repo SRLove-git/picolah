@@ -7,6 +7,7 @@ import {
   PRODUCT_VISUALS,
   type CountryCode,
 } from '../../shared/types.ts';
+import { catalogPlatforms, catalogRetailer, isRetailProductUrl } from '../catalog-retailers.ts';
 import { config } from '../config.ts';
 import { db } from '../db.ts';
 import { getProduct } from '../repo.ts';
@@ -36,7 +37,8 @@ const offerSchema = z
   .object({
     externalId: z.string().trim().min(1).max(200),
     productId: z.string().trim().min(1).max(80),
-    platformId: z.enum(PLATFORM_IDS),
+    sourceTitle: z.string().trim().min(1).max(1000).optional(),
+    platformId: z.union([z.enum(PLATFORM_IDS), z.string().refine((id) => Boolean(catalogRetailer(id)))]),
     seller: z.string().trim().min(1).max(120),
     currency: z.string().trim().length(3).optional(),
     itemPrice: z.number().finite().positive().max(1_000_000_000_000),
@@ -111,13 +113,17 @@ ingestRouter.post('/offers', async (req, res) => {
   const market = MARKETS[country as CountryCode];
   const errors: { externalId: string; message: string }[] = [];
 
-  const allowedPlatforms = new Set(market.platformIds);
+  const allowedPlatforms = new Set(catalogPlatforms(country));
   for (const offer of offers) {
     if (!allowedPlatforms.has(offer.platformId)) {
       errors.push({
         externalId: offer.externalId,
         message: `${market.nameZh} 不支持平台 ${offer.platformId}`,
       });
+    }
+    if (catalogRetailer(offer.platformId) &&
+        (source !== 'picolah-verified-product-page' || !offer.capturedAt || !isRetailProductUrl(offer.platformId, offer.url))) {
+      errors.push({ externalId: offer.externalId, message: '零售商报价需要核验时间及对应商家的商品详情链接。' });
     }
     if (offer.currency && offer.currency.toUpperCase() !== market.currency) {
       errors.push({
@@ -201,13 +207,14 @@ ingestRouter.post('/offers', async (req, res) => {
           offerId = existing.id;
           await tx.run(
             `UPDATE offers SET
-               product_id = ?, platform_id = ?, seller = ?, country = ?, currency = ?,
+               product_id = ?, source_title = COALESCE(?, source_title), platform_id = ?, seller = ?, country = ?, currency = ?,
                item_price = ?, shipping_fee = ?, discount = ?, final_price = ?,
                landed_price_confidence = ?, url = ?,
                rating = ?, reviews = ?, in_stock = ?, is_official = ?, last_seen = ?, updated_at = ?
              WHERE id = ?`,
             [
               offer.productId,
+              offer.sourceTitle ?? null,
               offer.platformId,
               offer.seller,
               country,
@@ -232,15 +239,16 @@ ingestRouter.post('/offers', async (req, res) => {
           offerId = randomUUID();
           await tx.run(
             `INSERT INTO offers (
-               id, external_id, source, product_id, platform_id, seller, country, currency,
+               id, external_id, source, product_id, source_title, platform_id, seller, country, currency,
                item_price, shipping_fee, discount, final_price, landed_price_confidence, url, rating, reviews,
                in_stock, is_official, last_seen, created_at, updated_at
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               offerId,
               offer.externalId,
               source,
               offer.productId,
+              offer.sourceTitle ?? '',
               offer.platformId,
               offer.seller,
               country,

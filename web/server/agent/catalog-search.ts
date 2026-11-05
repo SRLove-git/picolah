@@ -1,4 +1,5 @@
 import type { Comparison, CountryCode, Offer, Product } from '../../shared/types.ts';
+import { catalogPlatforms } from '../catalog-retailers.ts';
 import { MARKETS } from '../../shared/types.ts';
 import { findProducts, resolvePlatformDirective } from '../../shared/query.ts';
 import { normalizeSearchLanguage } from '../../shared/search-language.ts';
@@ -26,7 +27,7 @@ export async function searchCatalog(options: {
 }): Promise<Comparison> {
   const { message, market, target, previous } = options;
   const directive = resolvePlatformDirective(message, market, previous?.platformFilter ?? []);
-  const allowed = [...MARKETS[market].platformIds, 'official'];
+  const allowed = [...catalogPlatforms(market), 'official'];
   const filters = directive.platformIds;
   const unsupported = [...new Set([...directive.unsupported, ...filters.filter((id) => !allowed.includes(id))])];
   const catalog = target ? await listProducts() : [];
