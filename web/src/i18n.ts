@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { initialLanguage } from './lib/market-language';
-import { marketLocales } from './locales/market-locales';
 
 const resources = {
   zh: {
@@ -343,7 +342,7 @@ const resources = {
 } as const;
 
 void i18n.use(initReactI18next).init({
-  resources: { ...resources, ...marketLocales },
+  resources,
   lng: initialLanguage(),
   fallbackLng: 'en',
   interpolation: { escapeValue: false },

@@ -2,15 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { COUNTRY_LIST } from '../shared/types';
 
 test.use({ serviceWorkers: 'block' });
-const cases = [
-  { country: 'SG', language: 'en', home: 'Home', placeholder: 'What do you want to buy?', voice: 'en-SG' },
-  { country: 'MY', language: 'ms', home: 'Utama', placeholder: 'Apa yang anda mahu beli?', voice: 'ms-MY' },
-  { country: 'TH', language: 'th', home: 'หน้าหลัก', placeholder: 'อยากซื้ออะไร?', voice: 'th-TH' },
-  { country: 'ID', language: 'id', home: 'Beranda', placeholder: 'Apa yang ingin Anda beli?', voice: 'id-ID' },
-  { country: 'PH', language: 'en', home: 'Home', placeholder: 'What do you want to buy?', voice: 'en-PH' },
-  { country: 'VN', language: 'vi', home: 'Trang chủ', placeholder: 'Bạn muốn mua gì?', voice: 'vi-VN' },
-];
-
 test.beforeEach(async ({ page }) => {
   const payloads: Record<string, unknown> = {
     '/api/auth/me': { user: null, required: false },
@@ -40,32 +31,31 @@ async function openNavigation(page: Page) {
 }
 
 const languages = [
-  ...cases.filter(item => item.country !== 'PH'),
-  { language: 'zh', home: '首页', placeholder: '想买什么？', voice: 'zh-CN' },
+  { code: 'zh', short: '中文', home: '首页', placeholder: '想买什么？', voice: 'zh-CN' },
+  { code: 'en', short: 'EN', home: 'Home', placeholder: 'What do you want to buy?', voice: 'en-SG' },
 ];
 
-for (const width of [1440, 390]) test(`language and market are independent at ${width}px`, async ({ page }) => {
-  await page.setViewportSize({ width, height: 900 });
+for (const width of [1440, 390, 320]) test(`one click changes language independently of country at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: width === 320 ? 568 : 900 });
   await page.goto('/7hk9ho#home');
   const flag = page.locator('.pc-side-market .pc-picker-trigger');
-  const picker = page.locator('.pc-language-toggle select');
-  await openNavigation(page);
-  await picker.selectOption('zh');
-  for (const { country } of cases) {
-    await flag.click();
-    await page.locator(`.pc-market-menu [data-market="${country}"]`).click();
-    await expect(flag).toHaveText('');
-    await expect(flag).toHaveAttribute('data-market', country);
-    await expect(picker).toHaveValue('zh');
-    await expect(page.locator('.pc-nav-item').first()).toHaveText('首页');
-  }
+  const toggle = page.locator('.pc-language-toggle');
   for (const item of languages) {
     await openNavigation(page);
-    await picker.selectOption(item.language);
-    await expect(flag).toHaveAttribute('data-market', 'VN');
-    await expect(page.locator('.pc-nav-item').first()).toHaveText(item.home);
+    const marketBefore = await flag.getAttribute('data-market');
+    await toggle.click();
+    await expect(toggle).toHaveText(item.short);
+    await expect(flag).toHaveAttribute('data-market', marketBefore!);
+    for (const { code } of COUNTRY_LIST) {
+      await flag.click();
+      await page.locator(`.pc-market-menu [data-market="${code}"]`).click();
+      await expect(flag).toHaveText('');
+      await expect(flag).toHaveAttribute('data-market', code);
+      await expect(page.locator('html')).toHaveAttribute('lang', item.code);
+      await expect(page.locator('.pc-nav-item').first()).toHaveText(item.home);
+    }
     await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('lang', item.language);
+    await expect(page.locator('html')).toHaveAttribute('lang', item.code);
     await expect(page.locator('.pc-home textarea')).toHaveAttribute('placeholder', item.placeholder);
     await expect(flag).toHaveAttribute('data-market', 'VN');
     await page.locator('.pc-home .pc-mic').click();
@@ -75,20 +65,13 @@ for (const width of [1440, 390]) test(`language and market are independent at ${
   }
 });
 
-for (const item of cases.filter(item => item.language !== 'en')) test(`${item.country} localizes Discover, login and Growth`, async ({ page }) => {
-  await page.addInitScript(lang => {
-    localStorage.setItem('picolah.market', 'SG');
-    localStorage.setItem('picolah.language', lang);
-  }, item.language);
+test('a saved language takes priority over browser language and country', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('picolah.market', 'TH');
+    localStorage.setItem('picolah.language', 'zh');
+  });
   await page.goto('/7hk9ho#search');
-  await expect(page.locator('html')).toHaveAttribute('lang', item.language);
-  await expect(page.locator('.pc-search-page h1')).not.toHaveText('Discover');
-  await page.locator('.pc-account-card').click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.locator('.pc-auth-card h1')).not.toHaveText('Sign in');
-  expect(await page.getByRole('dialog').innerText()).not.toMatch(/[\u3400-\u9fff]/);
-  await page.keyboard.press('Escape');
-  await page.locator('.pc-nav-item').last().click();
-  await expect(page.locator('.pc-capy-home-page h1')).not.toHaveText("Capy's little home");
-  expect(await page.locator('.pc-capy-home-page').innerText()).not.toMatch(/[\u3400-\u9fff]/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh');
+  await expect(page.locator('.pc-search-page h1')).toHaveText('发现');
+  await expect(page.locator('.pc-side-market .pc-picker-trigger')).toHaveAttribute('data-market', 'TH');
 });

@@ -1,4 +1,4 @@
-import { marketName, uiLanguage } from '../lib/market-language';
+import { marketName } from '../lib/market-language';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -201,7 +201,7 @@ export function PromptComposer({
     }
     try {
       const recognition = new Ctor();
-      recognition.lang = uiLanguage(i18n.language).voice;
+      recognition.lang = i18n.language === 'zh' ? 'zh-CN' : 'en-SG';
       recognition.continuous = false;
       recognition.interimResults = true;
       baseTextRef.current = value.trim();
