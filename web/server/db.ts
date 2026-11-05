@@ -38,6 +38,7 @@ const SQLITE_SCHEMA = `
     visual TEXT NOT NULL DEFAULT 'phone',
     specs TEXT NOT NULL DEFAULT '',
     aliases TEXT NOT NULL DEFAULT '[]',
+    catalog_removed_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -326,6 +327,7 @@ const SQLITE_SCHEMA = `
 
 function applySqliteMigrations(handle: DatabaseSync): void {
   for (const [table, column, definition] of [
+    ['products', 'catalog_removed_at', 'TEXT'],
     ['offers', 'source_title', "TEXT NOT NULL DEFAULT ''"],
     ['offers', 'landed_price_confidence', "TEXT NOT NULL DEFAULT 'estimated'"],
     ['users', 'avatar', "TEXT NOT NULL DEFAULT ''"],

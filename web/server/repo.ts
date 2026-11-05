@@ -80,12 +80,18 @@ export function mapOffer(row: Row, history: PricePoint[] = []): Offer {
 }
 
 export async function listProducts(executor: DbExecutor = db): Promise<Product[]> {
-  const rows = await executor.all<Row>('SELECT * FROM products ORDER BY name');
+  const rows = await executor.all<Row>('SELECT * FROM products WHERE catalog_removed_at IS NULL ORDER BY name');
   return rows.map(mapProduct);
 }
 
-export async function getProduct(id: string, executor: DbExecutor = db): Promise<Product | null> {
-  const row = await executor.get<Row>('SELECT * FROM products WHERE id = ?', [id]);
+export async function getProduct(
+  id: string,
+  executor: DbExecutor = db,
+  { includeRemoved = false }: { includeRemoved?: boolean } = {},
+): Promise<Product | null> {
+  const row = await executor.get<Row>(
+    `SELECT * FROM products WHERE id = ? ${includeRemoved ? '' : 'AND catalog_removed_at IS NULL'}`, [id],
+  );
   return row ? mapProduct(row) : null;
 }
 
@@ -122,7 +128,8 @@ export async function getOffers(
   const visibility = offerVisibility();
   const rows = await executor.all<Row>(
     `SELECT * FROM offers
-     WHERE product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
+     WHERE EXISTS (SELECT 1 FROM products p WHERE p.id = offers.product_id AND p.catalog_removed_at IS NULL)
+       AND product_id = ? AND country = ? ${includeOutOfStock ? '' : 'AND in_stock = 1'}
        ${visibility.clause}
      ORDER BY final_price ASC`,
     [productId, country, ...visibility.params],
@@ -141,7 +148,8 @@ export async function getRegionalOfferCount(
   const visibility = offerVisibility();
   const row = await executor.get<Row>(
     `SELECT COUNT(*) AS count FROM offers
-     WHERE in_stock = 1 ${productId ? 'AND product_id = ?' : ''} ${visibility.clause}`,
+     WHERE EXISTS (SELECT 1 FROM products p WHERE p.id = offers.product_id AND p.catalog_removed_at IS NULL)
+       AND in_stock = 1 ${productId ? 'AND product_id = ?' : ''} ${visibility.clause}`,
     [...(productId ? [productId] : []), ...visibility.params],
   );
   return Number(row?.count || 0);
@@ -480,7 +488,7 @@ export async function getGatewayStats(executor: DbExecutor = db): Promise<Gatewa
     (await executor.get<Row>('SELECT COUNT(*) AS count FROM offers WHERE in_stock = 1'))?.count || 0,
   );
   const products = Number(
-    (await executor.get<Row>('SELECT COUNT(*) AS count FROM products'))?.count || 0,
+    (await executor.get<Row>('SELECT COUNT(*) AS count FROM products WHERE catalog_removed_at IS NULL'))?.count || 0,
   );
   const markets = Number(
     (await executor.get<Row>('SELECT COUNT(DISTINCT country) AS count FROM offers'))?.count || 0,

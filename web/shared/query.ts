@@ -161,7 +161,12 @@ function matchProduct(text: string, product: Product): ProductMatch {
   const normalized = normalize(text);
   const compactText = compact(text);
   if (hasVariantConflict(text, product)) return { product: null, score: 0, matchedOn: '' };
-  const modelCodes = (value: string) => explicitModelCodes(value.replace(VARIANT_PATTERN, ' ')).map(compactModel);
+  const modelCodes = (value: string) => {
+    const identity = value.normalize('NFKC').replace(VARIANT_PATTERN, ' ');
+    // Catalog models also include short codes such as G20 and V12.
+    const shortCodes = identity.match(/(?<![a-z0-9])[a-z]\d{1,3}(?![a-z0-9])/gi) ?? [];
+    return [...explicitModelCodes(identity), ...shortCodes].map(compactModel);
+  };
   const requestedModels = modelCodes(text);
   const productModels = [product.name, product.specs, ...product.aliases].flatMap(modelCodes);
   if (requestedModels.length && !requestedModels.some((model) => productModels.includes(model))) {

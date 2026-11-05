@@ -11,9 +11,12 @@ CREATE TABLE IF NOT EXISTS products (
   visual TEXT NOT NULL DEFAULT 'phone',
   specs TEXT NOT NULL DEFAULT '',
   aliases TEXT NOT NULL DEFAULT '[]',
+  catalog_removed_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS catalog_removed_at TEXT;
 
 CREATE TABLE IF NOT EXISTS offers (
   id TEXT PRIMARY KEY,

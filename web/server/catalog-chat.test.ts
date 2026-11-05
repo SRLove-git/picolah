@@ -254,3 +254,45 @@ test('catalog follow-ups retain the repaired identity and apply capacity and pri
   assert.equal(changed.comparison.product, null);
   assert.deepEqual(changed.comparison.alternatives, []);
 });
+
+test('removing a seeded catalog item survives startup and keeps its existing watch history', async () => {
+  const { seedDatabase } = await import('./seed.ts');
+  const { addWatchlist, listWatchlist } = await import('./watchlist.ts');
+  const id = 'sony-wh1000xm5';
+  const owner = 'anon-archived-watch';
+  await realQuotes();
+  const watch = await addWatchlist(owner, id, 'SG', null);
+  assert.ok(watch);
+  try {
+    await db.run('UPDATE products SET catalog_removed_at = ? WHERE id = ?', [new Date().toISOString(), id]);
+    await seedDatabase(false);
+    const catalog = await (await fetch(`${baseUrl}/api/catalog?q=WH-1000XM5`)).json();
+    assert.equal(catalog.total, 0);
+    const { comparison } = await ask('Sony WH-1000XM5');
+    assert.equal(comparison.product, null);
+    assert.deepEqual(comparison.alternatives, []);
+    assert.deepEqual(await getOffers(id, 'SG'), []);
+    assert.equal(await getRegionalOfferCount(id), 0);
+    assert.equal(await addWatchlist('another-owner', id, 'SG', null), null);
+    const [saved] = await listWatchlist(owner);
+    assert.equal(saved.id, watch.id);
+    assert.equal(saved.product.id, id);
+    assert.equal(saved.currentOffer, null);
+  } finally {
+    await db.run('UPDATE products SET catalog_removed_at = NULL WHERE id = ?', [id]);
+    await db.run('DELETE FROM watchlist WHERE id = ?', [watch.id]);
+  }
+});
+
+test('a removed short model cannot resolve to another vacuum via a category alias', async () => {
+  const id = 'xiaomi-vacuum-g20';
+  await db.run('UPDATE products SET catalog_removed_at = ? WHERE id = ?', [new Date().toISOString(), id]);
+  try {
+    const { comparison } = await ask('小米 G20 无线吸尘器');
+    assert.equal(comparison.product, null);
+    assert.deepEqual(comparison.alternatives, []);
+    assert.equal((await ask('小米 G20 Max 无线吸尘器')).comparison.product?.id, 'xiaomi-vacuum-g20-max');
+  } finally {
+    await db.run('UPDATE products SET catalog_removed_at = NULL WHERE id = ?', [id]);
+  }
+});

@@ -41,7 +41,7 @@ async function currentOffer(productId: string, market: CountryCode) {
 }
 
 async function mapWatch(row: WatchRow): Promise<WatchlistItem | null> {
-  const product = await getProduct(row.product_id);
+  const product = await getProduct(row.product_id, db, { includeRemoved: true });
   if (!product) return null;
   const offer = await currentOffer(product.id, row.market as CountryCode);
   return {

@@ -80,7 +80,7 @@ async function listPurchases(owner: string): Promise<CapyPurchase[]> {
   );
   const purchases: CapyPurchase[] = [];
   for (const row of rows) {
-    const product = await getProduct(row.product_id);
+    const product = await getProduct(row.product_id, db, { includeRemoved: true });
     if (!product) continue;
     purchases.push({
       id: row.id,
