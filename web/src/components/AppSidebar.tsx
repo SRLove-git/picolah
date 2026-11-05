@@ -1,6 +1,7 @@
-import { Fingerprint, Footprints, Home, Radar, Search, UserRound, UsersRound, X } from 'lucide-react';
+import { Fingerprint, Footprints, Home, Languages, Radar, Search, UserRound, UsersRound, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
+import { UI_LANGUAGES, uiLanguage } from '../lib/market-language';
 import { useSession } from '../lib/session';
 import { MarketPicker } from './Controls';
 import { BrandLockup } from './PicolahMark';
@@ -34,7 +35,8 @@ export function AppSidebar({
   onNavigate,
   onClose,
 }: AppSidebarProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = uiLanguage(i18n.language);
   const { user, promptLogin } = useSession();
   const activeKey = view === 'chat' ? 'messages' : view;
   const accountLabel = user ? t('nav.account') : t('auth.loginCta');
@@ -93,6 +95,14 @@ export function AppSidebar({
         <div className="pc-side-market">
           <MarketPicker market={market} onChange={onMarketChange} flagOnly direction="up" tone="ghost" />
         </div>
+        <label className="pc-language-toggle" title={language.label}>
+          <Languages size={24} strokeWidth={1.9} aria-hidden="true" />
+          <span aria-hidden="true">{language.name}</span>
+          <select aria-label={language.label} value={language.code}
+            onChange={event => void i18n.changeLanguage(event.currentTarget.value)}>
+            {UI_LANGUAGES.map(item => <option key={item.code} value={item.code} lang={item.code}>{item.name}</option>)}
+          </select>
+        </label>
         <button
           type="button"
           className={`pc-account-card ${view === 'account' ? 'is-active' : ''}`}

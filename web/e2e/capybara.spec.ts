@@ -72,7 +72,7 @@ test('petting, meals and a persistent nap animate without changing shopping prog
 
 for (const width of [1440, 390, 320]) test(`home and four physical toys work at ${width}px`, async ({ page }, info) => {
   test.slow(); // Four physical games and screenshots share this test's budget.
-  await page.setViewportSize({ width, height: width === 320 ? 568 : 900 }); await setup(page, width === 390 ? 'zh' : 'en');
+  await page.setViewportSize({ width, height: width === 320 ? 568 : 900 }); await setup(page);
   await page.goto('/7hk9ho#home'); const home = page.locator('.pc-pico-roamer');
   await home.getByRole('button', { name: 'Pico', exact: true }).click(); await expect(home).toHaveAttribute('data-activity', 'wave');
   const menu = page.locator('.pc-home .pc-mobile-menu');

@@ -17,3 +17,37 @@
   background: #3f9572;
   border-color: #fff;
 }
+
+.pc-language-toggle {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--pc-ink);
+}
+.pc-language-toggle:hover { background: var(--pc-paper); }
+.pc-language-toggle:has(:focus-visible) { outline: 2px solid currentColor; }
+.pc-language-toggle span { display: none; }
+.pc-language-toggle select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.pc-sidebar:is(:hover, :has(:focus-visible), .is-open) .pc-language-toggle {
+  justify-content: flex-start;
+  width: min(202px, 100%);
+  gap: 12px;
+  padding: 0 10px;
+}
+.pc-sidebar:is(:hover, :has(:focus-visible), .is-open) .pc-language-toggle span {
+  display: inline;
+  font-size: 14px;
+  font-weight: 500;
+}

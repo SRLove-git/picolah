@@ -22,7 +22,6 @@ test.beforeEach(async ({ page }) => {
   };
   await page.route('**/api/**', route => route.fulfill({ json: payloads[new URL(route.request().url()).pathname] ?? {} }));
   await page.addInitScript(() => {
-    localStorage.setItem('picolah.language', 'zh'); // Old preferences must not override the country.
     Object.assign(window, { SpeechRecognition: class {
       lang = '';
       start() { Object.assign(window, { spokenLocale: this.lang }); }
@@ -40,44 +39,47 @@ async function openNavigation(page: Page) {
   } else await page.locator('.pc-sidebar').hover();
 }
 
-for (const width of [1440, 390]) test(`country selects language, voice and persistent flag at ${width}px`, async ({ page }, info) => {
+const languages = [
+  ...cases.filter(item => item.country !== 'PH'),
+  { language: 'zh', home: '首页', placeholder: '想买什么？', voice: 'zh-CN' },
+];
+
+for (const width of [1440, 390]) test(`language and market are independent at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
   await page.goto('/7hk9ho#home');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  for (const item of cases) {
-    await openNavigation(page);
-    const flag = page.locator('.pc-side-market .pc-picker-trigger');
+  const flag = page.locator('.pc-side-market .pc-picker-trigger');
+  const picker = page.locator('.pc-language-toggle select');
+  await openNavigation(page);
+  await picker.selectOption('zh');
+  for (const { country } of cases) {
     await flag.click();
-    await page.locator(`.pc-market-menu [data-market="${item.country}"]`).click();
+    await page.locator(`.pc-market-menu [data-market="${country}"]`).click();
     await expect(flag).toHaveText('');
-    await expect(flag.locator('svg')).toHaveCount(1);
-    await expect(flag).toHaveAttribute('data-market', item.country);
-    await expect(page.locator('.pc-language-toggle')).toHaveCount(0);
-    await expect(page.locator('html')).toHaveAttribute('lang', item.language);
+    await expect(flag).toHaveAttribute('data-market', country);
+    await expect(picker).toHaveValue('zh');
+    await expect(page.locator('.pc-nav-item').first()).toHaveText('首页');
+  }
+  for (const item of languages) {
+    await openNavigation(page);
+    await picker.selectOption(item.language);
+    await expect(flag).toHaveAttribute('data-market', 'VN');
     await expect(page.locator('.pc-nav-item').first()).toHaveText(item.home);
-    expect(await page.evaluate(() => localStorage.getItem('picolah.market'))).toBe(item.country);
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('lang', item.language);
-    await expect(flag).toHaveAttribute('data-market', item.country);
-    const input = page.locator('.pc-home textarea');
-    await expect(input).toHaveAttribute('placeholder', item.placeholder);
-    expect(await page.evaluate(() => localStorage.getItem('picolah.language'))).toBeNull();
+    await expect(page.locator('.pc-home textarea')).toHaveAttribute('placeholder', item.placeholder);
+    await expect(flag).toHaveAttribute('data-market', 'VN');
     await page.locator('.pc-home .pc-mic').click();
     await expect.poll(() => page.evaluate(() => (window as unknown as {spokenLocale: string}).spokenLocale)).toBe(item.voice);
     await page.locator('.pc-home .pc-mic').click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    // Capture the settled entrance, not the first translucent animation frame.
-    await page.locator('.pc-home').evaluate(async element => {
-      await Promise.all(element.getAnimations({ subtree: true }).filter(animation =>
-        animation.effect?.getComputedTiming().iterations !== Infinity,
-      ).map(animation => animation.finished.catch(() => {})));
-    });
-    await page.screenshot({ path: info.outputPath(`${item.country}-${width}.png`) });
   }
 });
 
 for (const item of cases.filter(item => item.language !== 'en')) test(`${item.country} localizes Discover, login and Growth`, async ({ page }) => {
-  await page.addInitScript(country => localStorage.setItem('picolah.market', country), item.country);
+  await page.addInitScript(lang => {
+    localStorage.setItem('picolah.market', 'SG');
+    localStorage.setItem('picolah.language', lang);
+  }, item.language);
   await page.goto('/7hk9ho#search');
   await expect(page.locator('html')).toHaveAttribute('lang', item.language);
   await expect(page.locator('.pc-search-page h1')).not.toHaveText('Discover');

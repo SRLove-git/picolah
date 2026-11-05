@@ -11,7 +11,6 @@ import type {
 } from '../shared/types';
 import { COUNTRY_CODES } from '../shared/types';
 import { getConfig, getConversation, getConversations, streamChat } from './lib/api';
-import { languageForMarket } from './lib/market-language';
 import { uiText } from './lib/ui-copy';
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
@@ -84,7 +83,7 @@ export default function App() {
 }
 
 function AppWorkspace() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, required, promptLogin } = useSession();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -113,10 +112,6 @@ function AppWorkspace() {
   const nearBottomRef = useRef(true);
   const scrollFrameRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    void i18n.changeLanguage(languageForMarket(market));
-  }, [market, i18n]);
 
   useEffect(() => {
     activeIdRef.current = activeId;

@@ -1,4 +1,4 @@
-import { marketName } from '../lib/market-language';
+import { marketName, uiLanguage } from '../lib/market-language';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,7 +10,6 @@ import {
   X,
 } from 'lucide-react';
 import type { AppConfig, CountryCode, PriceMode } from '../../shared/types';
-import { MARKETS } from '../../shared/types';
 import { prepareImage } from '../lib/image';
 import { getComposerInputHeight, shouldSubmitComposerKey } from '../lib/composer-input';
 import { PriceModePicker } from './Controls';
@@ -105,7 +104,6 @@ export function PromptComposer({
   const baseTextRef = useRef('');
   const imagePendingRef = useRef(false);
   const errorId = useId();
-  const marketInfo = MARKETS[market];
 
   useLayoutEffect(() => {
     const element = inputRef.current;
@@ -133,12 +131,12 @@ export function PromptComposer({
   }, [value, inputRef, variant, i18n.language]);
 
   useEffect(() => {
-    if (!active) setListening(false);
+    setListening(false);
     return () => {
       disposeRecognition(recognitionRef.current);
       recognitionRef.current = null;
     };
-  }, [active]);
+  }, [active, i18n.language]);
 
   async function handleFile(file: File | null | undefined) {
     if (!file || busy || loadingConversation || imagePendingRef.current) return;
@@ -203,7 +201,7 @@ export function PromptComposer({
     }
     try {
       const recognition = new Ctor();
-      recognition.lang = marketInfo.locale;
+      recognition.lang = uiLanguage(i18n.language).voice;
       recognition.continuous = false;
       recognition.interimResults = true;
       baseTextRef.current = value.trim();

@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { initialMarketLanguage } from './lib/market-language';
+import { initialLanguage } from './lib/market-language';
 import { marketLocales } from './locales/market-locales';
 
 const resources = {
@@ -344,7 +344,7 @@ const resources = {
 
 void i18n.use(initReactI18next).init({
   resources: { ...resources, ...marketLocales },
-  lng: initialMarketLanguage(),
+  lng: initialLanguage(),
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
 });
@@ -352,13 +352,12 @@ void i18n.use(initReactI18next).init({
 i18n.on('languageChanged', (language) => {
   document.documentElement.lang = language;
   try {
-    localStorage.removeItem('picolah.language');
+    localStorage.setItem('picolah.language', language);
   } catch {
     // Keep language in memory when storage is unavailable.
   }
 });
 
 document.documentElement.lang = i18n.language;
-try { localStorage.removeItem('picolah.language'); } catch { /* Storage is optional. */ }
 
 export default i18n;
