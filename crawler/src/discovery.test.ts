@@ -149,40 +149,81 @@ test('plain search preserves brand, numeric generation, capacity and product var
   assert.equal(queryMatchesListing('iPhone 17 Pro', listing({ title: 'iPhone 17/16 Pro' }), 'SG', 'lazada'), false);
 });
 
-test('live search returns validated raw listings without any catalog or ingest dependency', async () => {
+test('Xiaomi merchant Mi spelling preserves generation and base-edition constraints',()=>{
+  for(const title of ['Xiaomi 14','Xiaomi Mi 14 12GB RAM 512GB','Xiaomi Mi14 5G'])
+    assert.ok(queryMatchesListing('Xiaomi 14',listing({title}),'SG','lazada'),title);
+  for(const title of ['Xiaomi Mi 14T','Xiaomi Mi 14 Pro','Xiaomi Mi 14 Ultra','Xiaomi Redmi 14','Xiaomi Mi 13','Xiaomi Mi 14 / Xiaomi Mi 13'])
+    assert.equal(queryMatchesListing('Xiaomi 14',listing({title}),'SG','lazada'),false,title);
+});
+
+function detailPage(url: string, price = 399, name = options.query): string {
+  // Amazon requires an active, ASIN-bound new buy box; generic JSON-LD is
+  // deliberately insufficient. Keep discovery fixtures aligned with that rule.
+  if (new URL(url).hostname === 'www.amazon.sg') {
+    const asin = new URL(url).pathname.split('/').at(-1);
+    const [whole, fraction] = price.toFixed(2).split('.');
+    return `<span id="productTitle">${name}</span><input name="currencyOfPreference" value="SGD">
+      <div id="corePriceDisplay_desktop_feature_div" data-csa-c-asin="${asin}">
+        <span class="priceToPay"><span class="a-price-symbol">S$</span><span class="a-price-whole">${whole}.</span><span class="a-price-fraction">${fraction}</span></span>
+      </div><div id="newAccordionRow_0" class="a-accordion-active"><input id="ASIN" value="${asin}">
+        <div id="availability">In Stock</div><button id="add-to-cart-button">Add to cart</button></div>`;
+  }
+  return `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name, url,
+    offers: { '@type': 'Offer', price, priceCurrency: 'SGD', availability: 'InStock', url } })}</script>`;
+}
+
+test('live search returns detail-page prices without any catalog or ingest dependency', async () => {
   const source = await readFile(new URL('./discovery.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /from ['"].*(?:catalog|ingest|pipeline)/);
   const originalFetch = globalThis.fetch;
   let networkCalls = 0;
   globalThis.fetch = async () => { networkCalls += 1; throw new Error('catalog/ingest network forbidden'); };
   try {
-    const candidates = [listing({ price: 410 }), listing({ itemId: '124', price: 399 })];
+    const candidates = [listing({ price: 10, seller: 'Search seller', shippingFee: 0, rating: 5 }),
+      listing({ itemId: '124', price: 999, url: 'https://www.lazada.sg/products/sony-i124.html' })];
     const result = await discoverProduct(options, { search: async (platform, market, query) => {
       assert.equal(platform, 'lazada'); assert.equal(market, 'SG'); assert.equal(query, options.query);
       return candidates;
-    } });
+    }, fetchPage: async (url) => detailPage(url, url.includes('124') ? 389 : 410),
+    maxCandidatesPerPlatform: 3 });
     assert.equal(networkCalls, 0);
     assert.equal('productId' in result, false);
-    assert.deepEqual(result.listings, [...candidates].sort((a, b) => a.price - b.price));
-    assert.deepEqual(result.summary, { requests: 1, matched: 2, skipped: 0, failed: 0 });
+    assert.deepEqual(result.listings.map((item) => item.price), [389, 410]);
+    for (const row of result.listings) {
+      assert.equal(row.verification?.source, 'product-page');
+      assert.equal(row.shippingFee, undefined); assert.equal(row.rating, undefined);
+      assert.notEqual(row.seller, 'Search seller');
+    }
+    assert.deepEqual(result.summary, { requests: 3, matched: 2, skipped: 0, failed: 0,
+      discovered: 2, pagesChecked: 2, pagesVerified: 2 });
   } finally { globalThis.fetch = originalFetch; }
 });
 
 test('live search bounds raw results to three unique listings per requested platform', async () => {
+  let active = 0; let peak = 0;
   const result = await discoverProduct({ ...options, platforms: ['lazada', 'amazon-sg'] }, { search: async (platform) =>
-    Array.from({ length: 10 }, (_, index) => listing({ platform, itemId: String(Math.floor(index / 2)), price: 399 + index, url: platform === 'amazon-sg' ? 'https://www.amazon.sg/dp/B012345678' : listing().url })) });
+    Array.from({ length: 10 }, (_, index) => listing({ platform, itemId: String(Math.floor(index / 2)), price: 399 + index,
+      url: platform === 'amazon-sg' ? `https://www.amazon.sg/dp/B01234567${Math.floor(index / 2)}`
+        : `https://www.lazada.sg/products/sony-i12${Math.floor(index / 2)}.html` })),
+    fetchPage: async (url) => {
+      peak = Math.max(peak, ++active);
+      await new Promise((resolve) => setTimeout(resolve, 5)); active--;
+      return detailPage(url);
+    }, maxCandidatesPerPlatform: 3 });
   assert.equal(result.listings.length, 6);
-  assert.equal(result.summary.requests, 2);
+  assert.equal(result.summary.requests, 8);
   assert.equal(result.summary.matched, 6);
+  assert.equal(peak, 3);
 });
 
 test('no-match and provider failure are completed statuses with no invented result', async () => {
   const empty = await discoverProduct(options, { search: async () => [listing({ title: 'Sony WH-1000XM5' })] });
   assert.deepEqual(empty.listings, []);
-  assert.deepEqual(empty.summary, { requests: 1, matched: 0, skipped: 1, failed: 0 });
+  assert.deepEqual(empty.summary, { requests: 1, matched: 0, skipped: 1, failed: 0, discovered: 0, pagesChecked: 0, pagesVerified: 0 });
   const failed = await discoverProduct(options, { search: async () => { throw new Error('provider down'); } });
   assert.deepEqual(failed.listings, []);
-  assert.deepEqual(failed.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'] });
+  assert.deepEqual(failed.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'],
+    failureCodes: ['SOURCE_SEARCH_FAILED'], discovered: 0, pagesChecked: 0, pagesVerified: 0 });
 });
 
 test('all three marketplaces start in parallel and partial failure does not discard other quotes', async () => {
@@ -195,11 +236,48 @@ test('all three marketplaces start in parallel and partial failure does not disc
       if (platform === 'shopee') throw Object.assign(new Error('login required'), { code: 'SHOPEE_LOGIN_REQUIRED' });
       return [listing({ platform, url: platform === 'amazon-sg' ? 'https://www.amazon.sg/dp/B012345678' : listing().url })];
     },
+    fetchPage: async (url) => detailPage(url),
   });
   assert.deepEqual(started, ['shopee', 'lazada', 'amazon-sg']);
   finish.reverse().forEach((resolve) => resolve());
   const result = await pending;
   assert.equal(result.scope, 'platforms');
   assert.deepEqual(result.listings.map((item) => item.platform), ['lazada', 'amazon-sg']);
-  assert.deepEqual(result.summary, { requests: 3, matched: 2, skipped: 0, failed: 1, failedPlatforms: ['shopee'] });
+  assert.deepEqual(result.summary, { requests: 5, matched: 2, skipped: 0, failed: 1, failedPlatforms: ['shopee'],
+    failureCodes: ['SOURCE_SEARCH_FAILED'], discovered: 2, pagesChecked: 2, pagesVerified: 2 });
+});
+
+test('budget and stock are checked on the page, never on the discovery snippet', async () => {
+  const search = async () => [listing({ price: 999, inStock: false })];
+  const affordable = await discoverProduct({ ...options, maxPrice: 400 }, { search,
+    fetchPage: async (url) => detailPage(url, 350) });
+  assert.equal(affordable.listings[0].price, 350);
+  const expensive = await discoverProduct({ ...options, maxPrice: 400 }, { search: async () => [listing({ price: 10 })],
+    fetchPage: async (url) => detailPage(url, 450) });
+  assert.equal(expensive.listings.length, 0); assert.equal(expensive.summary.skipped, 1);
+});
+
+test('failed, unreadable, wrong-model and unavailable pages never fall back to search prices', async () => {
+  for (const fetchPage of [
+    async () => { throw new Error('private-provider-secret'); },
+    async () => '<html>Please sign in</html>',
+    async (url: string) => detailPage(url, 299).replace('InStock', 'OutOfStock'),
+    async (url: string) => detailPage(url, 299, 'Sony WH-1000XM6'),
+    async (url: string) => detailPage(url).replace('"@type":"Product"', '"@type":"Product","model":"WH-1000XM6"'),
+  ]) {
+    const result = await discoverProduct(options, { search: async () => [listing()], fetchPage });
+    assert.equal(result.listings.length, 0);
+    assert.equal(result.summary.pagesChecked, 1);
+    assert.equal(result.summary.pagesVerified, 0);
+    assert.equal(JSON.stringify(result).includes('private-provider-secret'), false);
+  }
+});
+
+test('a page failure retains another verified quote and reports partial coverage', async () => {
+  const result = await discoverProduct(options, { search: async () => [listing(),
+    listing({ itemId: '124', url: 'https://www.lazada.sg/products/sony-i124.html' })],
+  fetchPage: async (url) => url.includes('124') ? detailPage(url) : '<html>captcha</html>',
+  maxCandidatesPerPlatform: 3 });
+  assert.equal(result.listings.length, 1); assert.equal(result.summary.failed, 1);
+  assert.deepEqual(result.summary.failureCodes, ['PRODUCT_PAGE_UNVERIFIED']);
 });

@@ -112,10 +112,12 @@ function assertExplicitlyEmpty(visible: string): void {
 export async function searchAmazonSg(
   market: MarketCode,
   query: string,
-  dependencies: { fetchHtml?: typeof fetchHtml } = {},
+  dependencies: { fetchHtml?: typeof fetchHtml; timeoutMs?: number } = {},
 ): Promise<RawListing[]> {
   if (market !== 'SG') throw new Error(`Amazon SG 不支持市场 ${market}`);
-  const html = await (dependencies.fetchHtml ?? fetchHtml)(amazonSearchUrl(query), { country: 'SG', timeoutMs: 90_000, retries: 0 });
+  const html = await (dependencies.fetchHtml ?? fetchHtml)(amazonSearchUrl(query), {
+    country: 'SG', timeoutMs: dependencies.timeoutMs ?? 90_000, retries: 0,
+  });
   const { markup, visible } = pageContent(html);
   assertNotBlocked(markup, visible);
   const listings = parseAmazonSearch(markup);
@@ -126,5 +128,5 @@ export async function searchAmazonSg(
 
 export const amazonSgAdapter: PlatformAdapter = {
   id: 'amazon-sg',
-  search: searchAmazonSg,
+  search: (market, query, options) => searchAmazonSg(market, query, options),
 };

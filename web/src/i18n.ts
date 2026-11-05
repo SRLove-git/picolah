@@ -36,7 +36,7 @@ const resources = {
         taglineBefore: '全网低价，', taglineWord: 'PICO', taglineAfter: '一下', question: '今天想找什么好东西？',
       },
       composer: {
-        homePlaceholder: '想买什么？', followupPlaceholder: '继续问{{market}}的价格，或上传商品图…',
+        homePlaceholder: '想买什么？', followupPlaceholder: '继续搜索商品价格，或上传商品图…',
         inputLabel: '输入比价问题', imageReady: '图片已就绪', removeImage: '移除图片',
         upload: '上传图片搜同款', image: '图片', listening: '正在听你说… 说完会自动停', cancel: '取消',
         voice: '语音输入', stopVoice: '停止语音输入', stop: '停止', send: 'PICO',
@@ -158,7 +158,7 @@ const resources = {
       },
       comparison: { item: '商品', shipping: '运费', freeShipping: '包邮', coupon: '券', updated: '更新于', seller: '在售平台 / 店铺', trend: '近 30 天', official: '官方', best: '最低', reviews: '评价', low: '30日低', visit: '去平台', affiliate: '部分购买链接为联盟链接，我们可能获得佣金，不影响你的价格和排序。', unavailable: '{{market}}暂时没有在售报价', unavailableHint: '价格库还没有覆盖这个市场，或者报价刚刚下架。可以切换市场，或看看下面的同类选择。', currentMarket: '当前市场', noOffer: '暂无报价', seeAlso: '也可以看看', askCheapest: '{{product}} 在{{market}}哪里买最便宜？', chartTitle: '报价一眼对比', chartHint: '柱长显示本组相对差异', priceMetric: '价格', ratingMetric: '评分', reviewMetric: '评论数', lowerBetter: '越低越好', higherBetter: '越高越好' },
       liveComparison: {
-        notProvided: '未提供', noHistory: '暂无历史价格', priceHistory: '历史价格',
+        notProvided: '未提供', noHistory: '暂无历史价格', priceHistory: '报价来源', pageVerified: '商品页已核验',
         currentPriceHint: '按已获取的{{mode}}对比',
       },
       controls: {
@@ -204,7 +204,7 @@ const resources = {
         taglineBefore: 'Price Lower, ', taglineWord: 'PiCO', taglineAfter: ' Checker.', question: 'What are you looking for today?',
       },
       composer: {
-        homePlaceholder: 'What do you want to buy?', followupPlaceholder: 'Ask about prices in {{market}}, or upload a product image…',
+        homePlaceholder: 'What do you want to buy?', followupPlaceholder: 'Search product prices, or upload a product image…',
         inputLabel: 'Enter a price comparison question', imageReady: 'Image ready', removeImage: 'Remove image',
         upload: 'Upload an image to find a match', image: 'Image', listening: 'Listening… it will stop automatically', cancel: 'Cancel',
         voice: 'Voice input', stopVoice: 'Stop voice input', stop: 'Stop', send: 'PICO',
@@ -326,7 +326,7 @@ const resources = {
       },
       comparison: { item: 'Item', shipping: 'Shipping', freeShipping: 'Free', coupon: 'Coupon', updated: 'Updated', seller: 'Platform / seller', trend: 'Last 30 days', official: 'Official', best: 'Best', reviews: 'reviews', low: '30-day low', visit: 'Visit store', affiliate: 'Some purchase links are affiliate links. We may earn a commission; your price and ranking are unaffected.', unavailable: 'No active offers in {{market}}', unavailableHint: 'This market is not covered yet, or its offers have just ended. Switch markets or try a similar product below.', currentMarket: 'Current market', noOffer: 'No offers', seeAlso: 'You may also like', askCheapest: 'Where is {{product}} cheapest in {{market}}?', chartTitle: 'Offers at a glance', chartHint: 'Bar lengths show relative differences in this group', priceMetric: 'Price', ratingMetric: 'Rating', reviewMetric: 'Reviews', lowerBetter: 'Lower is better', higherBetter: 'Higher is better' },
       liveComparison: {
-        notProvided: 'Not provided', noHistory: 'No price history yet', priceHistory: 'Price history',
+        notProvided: 'Not provided', noHistory: 'No price history yet', priceHistory: 'Price source', pageVerified: 'Product page verified',
         currentPriceHint: 'Comparing available {{mode}} quotes',
       },
       controls: {

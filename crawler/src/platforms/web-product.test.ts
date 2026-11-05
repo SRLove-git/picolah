@@ -113,3 +113,25 @@ test('no script execution, price snippets, commented scripts or hydration guesse
   assert.deepEqual(parseWebProduct(html(product), `${url}?token=secret`, 'SG'), []);
   assert.deepEqual(parseWebProduct(html(Array(20001).fill(null)), url, 'SG'), []);
 });
+
+test('expired prices and non-new condition in structured detail data are not current new-product quotes', () => {
+  for (const patch of [
+    { itemCondition: 'https://schema.org/UsedCondition' }, { itemCondition: 'RefurbishedCondition' },
+    { priceValidUntil: '2000-01-01' }, { priceValidUntil: 'unknown' },
+  ]) assert.deepEqual(parseWebProduct(html({ ...product, offers: { ...offer, ...patch } }), url, 'SG'), []);
+  assert.deepEqual(parseWebProduct(html({ ...product, itemCondition: 'UsedCondition' }), url, 'SG'), []);
+  assert.equal(parseWebProduct(html({ ...product, offers: { ...offer, itemCondition: 'NewCondition', priceValidUntil: '2099-12-31' } }), url, 'SG').length, 1);
+});
+
+test('product details are extracted from the same page with bounded plain description', () => {
+  const [row] = parseWebProduct(html({ ...product, brand: { name: 'Sony' }, model: 'WF-1000XM6',
+    description: '<p>Wireless noise cancelling earbuds.</p>' }), url, 'SG');
+  assert.deepEqual(row.productDetails, { brand: 'Sony', model: 'WF-1000XM6', description: 'Wireless noise cancelling earbuds.' });
+});
+
+test('a separately declared brand remains visible with a short numeric product name', () => {
+  const [row] = parseWebProduct(html({ ...product, name: '17', brand: { name: 'Xiaomi' } }), url, 'SG');
+  assert.equal(row.title, 'Xiaomi 17');
+  assert.equal(row.productDetails?.brand, 'Xiaomi');
+  assert.equal(parseWebProduct(html({ ...product, name: 'Xiaomi 17', brand: 'Xiaomi' }), url, 'SG')[0].title, 'Xiaomi 17');
+});

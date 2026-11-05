@@ -13,14 +13,19 @@ export interface AgentModelOptions {
   temperature?: number;
   maxTokens?: number;
   timeoutMs?: number;
+  disableThinking?: boolean;
 }
 
 function createModel(options: AgentModelOptions = {}) {
   if (!config.llm.apiKey) throw new Error('LLM_API_KEY is not configured');
+  const model = options.model || config.llm.model;
 
   return new ChatOpenAI({
     apiKey: config.llm.apiKey,
-    model: options.model || config.llm.model,
+    model,
+    // V4.1 Flash defaults to thinking mode. These short JSON/answer tasks need
+    // their bounded output budget for the answer, not hidden reasoning tokens.
+    ...(options.disableThinking || model === 'deepseek-flash' ? { modelKwargs: { thinking: { type: 'disabled' } } } : {}),
     temperature: options.temperature ?? 0,
     maxTokens: options.maxTokens,
     timeout: options.timeoutMs ?? 60_000,
@@ -46,12 +51,14 @@ export async function invokeStructuredAgent<T extends Record<string, unknown>>(o
   model?: string;
   maxTokens?: number;
   timeoutMs?: number;
+  disableThinking?: boolean;
 }): Promise<T> {
   const model = createModel({
     model: options.model,
     temperature: 0,
     maxTokens: options.maxTokens,
     timeoutMs: options.timeoutMs,
+    disableThinking: options.disableThinking,
   });
   const chain = model.withStructuredOutput(options.schema, {
     name: options.name,
@@ -80,6 +87,7 @@ export async function* streamAgentAnswer(options: {
   temperature: number;
   maxTokens: number;
   timeoutMs?: number;
+  disableThinking?: boolean;
 }): AsyncGenerator<string> {
   const model = createModel(options);
   const stream = await model.stream(toLangChainMessages(options.messages), {

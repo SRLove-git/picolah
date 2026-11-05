@@ -13,8 +13,8 @@ const TIMEOUT_MS = 45_000;
 const MAX_ORGANIC_RESULTS = 30;
 const MAX_CANDIDATES = 12;
 const MAX_PER_HOST = 2;
-const NON_PRODUCT_PATH = /\/(?:support|help|community|forums?|blogs?|news|press|reviews?|watch|videos?|privacy|terms|login|signin|cart|checkout)(?:\/|$)/i;
-const TRACKING_PARAMETER = /^(?:utm_.+|gclid|dclid|fbclid|msclkid|srsltid|spm|scm|aff_.+|affiliate_id)$/i;
+const NON_PRODUCT_PATH = /\/(?:support|help|community|forums?|blogs?|posts?|articles?|news|press|reviews?|watch|videos?|privacy|terms|login|signin|cart|checkout)(?:\/|$)/i;
+const TRACKING_PARAMETER = /^(?:utm_.+|pr_.+|gclid|dclid|fbclid|msclkid|srsltid|spm|scm|aff_.+|affiliate_id)$/i;
 
 function serpError(code: string, message: string, status?: number): BrightDataError {
   return new BrightDataError(message, { code, status });
@@ -25,14 +25,14 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 /** Request structured organic results, scoped to the selected market rather than one shop. */
-export function buildWebSearchUrl(query: string, market: MarketCode): string {
+export function buildWebSearchUrl(query: string, market: MarketCode, geography?: 'global'): string {
   const cleaned = query.trim().replace(/\s+/g, ' ');
   if (!cleaned || cleaned.length > 300 || !['SG', 'MY', 'TH', 'ID', 'PH', 'VN'].includes(market)) {
     throw serpError('SERP_INVALID_QUERY', '全网搜索参数无效');
   }
   const url = new URL('https://www.google.com/search');
   url.searchParams.set('q', cleaned);
-  url.searchParams.set('gl', market.toLowerCase());
+  if (geography !== 'global') url.searchParams.set('gl', market.toLowerCase());
   url.searchParams.set('hl', 'en');
   url.searchParams.set('brd_json', '1');
   return url.href;
@@ -40,6 +40,7 @@ export function buildWebSearchUrl(query: string, market: MarketCode): string {
 
 function excludedHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^www\./, '');
+  if (/^(?:bbs|forum|forums)\./.test(host) || /(?:^|\.)(?:lemon8-app\.com|blogspot\.[a-z.]+)$/.test(host)) return true;
   if (/^(?:[^.]+\.)*(?:google\.[a-z.]+|bing\.com|youtube\.com|youtu\.be|facebook\.com|instagram\.com|reddit\.com|pinterest\.[a-z.]+|x\.com|twitter\.com)$/.test(host)) return true;
   return /(?:^|\.)tiktok\.com$/.test(host) && host !== 'shop.tiktok.com';
 }
@@ -151,14 +152,14 @@ async function boundedResponseText(response: Response): Promise<string> {
 export async function searchWebCandidates(
   query: string,
   market: MarketCode,
-  options: { zone?: string; token?: string; fetchImpl?: typeof fetch } = {},
+  options: { zone?: string; token?: string; fetchImpl?: typeof fetch; geography?: 'global' } = {},
 ): Promise<WebSearchCandidate[]> {
   const zone = (options.zone ?? config.brightData.serpZone).trim();
   const token = (options.token ?? config.brightData.apiToken).trim();
   if (!zone || !token) {
     throw serpError('SERP_NOT_CONFIGURED', '请配置专用 BRIGHTDATA_SERP_ZONE 和 API token 后使用全网搜索');
   }
-  const url = buildWebSearchUrl(query, market);
+  const url = buildWebSearchUrl(query, market, options.geography);
   const signal = AbortSignal.timeout(TIMEOUT_MS);
   try {
     const response = await (options.fetchImpl ?? fetch)('https://api.brightdata.com/request', {

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
 import type { ComparisonAlternative, CountryCode, Offer, PriceMode } from '../../shared/types';
 import { MARKETS, PLATFORMS } from '../../shared/types';
+import { formatCurrency } from '../../shared/format';
 import {
   formatMoney,
   offerValue,
@@ -235,6 +236,7 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                   target="_blank"
                   rel="noreferrer noopener"
                   style={{ animationDelay: `${index * 55}ms` }}
+                  title={offer.productTitle}
                 >
                   <span className={`offer-rank ${index === 0 ? 'is-first' : ''}`}>
                     {String(index + 1).padStart(2, '0')}
@@ -254,6 +256,11 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                     </div>
                     <div className="offer-subline">
                       <Breakdown offer={offer} country={market} mode={displayMode} />
+                      {offer.verification && <span className="offer-page-check">
+                        {t('liveComparison.pageVerified')} · <time dateTime={offer.verification.checkedAt}>
+                          {new Date(offer.verification.checkedAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
+                        </time>
+                      </span>}
                       <span className="offer-rating">
                         <span aria-hidden="true">★</span> {offer.ratingKnown === false ? t('liveComparison.notProvided') : offer.rating.toFixed(1)}
                         <span className="review-count">
@@ -263,7 +270,10 @@ export function ComparisonPanel({ comparison, priceMode }: ComparisonPanelProps)
                     </div>
                   </div>
                   <div className="offer-trend">
-                    {(offer.source === 'live' || offer.source === 'catalog') ? <span>{t('liveComparison.noHistory')}</span> : <>
+                    {(offer.source === 'live' || offer.source === 'catalog') ? <span>{offer.verification ? <>
+                      {t('liveComparison.pageVerified')}<br />
+                      <time dateTime={offer.verification.checkedAt}>{new Date(offer.verification.checkedAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</time>
+                    </> : t('liveComparison.noHistory')}</span> : <>
                       <Sparkline values={offer.history} accent={index === 0 ? '#111827' : '#9ca3af'} />
                       <span>{t('comparison.low')} {formatMoney(offer.low30d, market)}</span>
                     </>}
@@ -313,12 +323,14 @@ export function AlternativeGrid({
   priceMode,
   onAsk,
   title,
+  global = false,
 }: {
   alternatives: ComparisonAlternative[];
   market: CountryCode;
   priceMode: PriceMode;
   onAsk: (query: string) => void;
   title?: string;
+  global?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   if (!alternatives.length) return null;
@@ -328,7 +340,7 @@ export function AlternativeGrid({
     <div className="alternatives">
       <div className="alternatives-head">
         <span>{title || t('comparison.seeAlso')}</span>
-        <small>{marketName(market, i18n.language)} · {t('comparison.currentMarket')}</small>
+        <small>{global ? (i18n.language.startsWith('zh') ? '全球 · 原币种报价' : 'Worldwide · original currencies') : `${marketName(market, i18n.language)} · ${t('comparison.currentMarket')}`}</small>
       </div>
       <div className="alternatives-grid">
         {alternatives.map((item) => {
@@ -345,7 +357,7 @@ export function AlternativeGrid({
                 <span className="alternative-meta">
                   {offer ? (
                     <>
-                      {platform?.name || offer.platform} · {formatMoney(offerValue(offer, mode), market)}
+                      {platform?.name || offer.platform} · {global ? formatCurrency(offer.itemPrice, offer.currency) : formatMoney(offerValue(offer, mode), market)}
                     </>
                   ) : (
                     t('comparison.noOffer')
@@ -357,7 +369,7 @@ export function AlternativeGrid({
               </span>
               {offer && (
                 <span className="alternative-mode">
-                  {t(`controls.${mode}.label`)}
+                  {global ? (i18n.language.startsWith('zh') ? '商品价' : 'Item price') : t(`controls.${mode}.label`)}
                 </span>
               )}
           </>;

@@ -76,6 +76,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
             <AlternativeGrid
               alternatives={comparison.alternatives}
               market={comparison.market}
+              global={comparison.search?.geography === 'global'}
               priceMode={priceMode}
               onAsk={onAsk}
               title={

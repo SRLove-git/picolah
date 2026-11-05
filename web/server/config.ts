@@ -13,6 +13,8 @@ export const config = {
   isProduction: production,
   /** Catalog mode never invokes the on-demand marketplace crawler. */
   productSearchSource: process.env.PRODUCT_SEARCH_SOURCE === 'catalog' ? 'catalog' : 'live',
+  /** Chat can search current web prices without changing Discover's catalog policy. */
+  chatPriceSearchSource: process.env.CHAT_PRICE_SEARCH_SOURCE === 'web' ? 'web' : 'default',
   /**
    * Guests can always browse, chat and compare. When true, account-owned data
    * (watchlist, price alerts, account settings) asks the visitor to sign in.
@@ -54,10 +56,17 @@ export const config = {
   llm: {
     apiKey: process.env.LLM_API_KEY || '',
     baseUrl: (process.env.LLM_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, ''),
-    model: process.env.LLM_MODEL || 'deepseek-chat',
-    intentModel: process.env.LLM_INTENT_MODEL || process.env.LLM_MODEL || 'deepseek-chat',
+    model: process.env.LLM_MODEL || 'deepseek-flash',
+    intentModel: process.env.LLM_INTENT_MODEL || process.env.LLM_MODEL || 'deepseek-flash',
     visionModel: process.env.LLM_VISION_MODEL || 'deepseek-flash',
     provider: process.env.LLM_PROVIDER || 'DeepSeek',
+  },
+  /** DeepSeek official search API; opt in separately from marketplace crawling. */
+  webSearch: {
+    enabled: /^(1|true|yes)$/i.test(process.env.WEB_SEARCH_ENABLED || ''),
+    apiKey: process.env.WEB_SEARCH_API_KEY ||
+      (/^https:\/\/api\.deepseek\.com(?:\/|$)/i.test(process.env.LLM_BASE_URL || 'https://api.deepseek.com') ? process.env.LLM_API_KEY || '' : ''),
+    timeoutMs: Math.max(1000, Math.min(30_000, num(process.env.WEB_SEARCH_TIMEOUT_MS, 20_000))),
   },
   /**
    * AI try-on: compose real marketplace product photos onto the capybara.

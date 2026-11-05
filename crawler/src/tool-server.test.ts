@@ -57,7 +57,7 @@ test('crawler live search accepts named products without a model code', async ()
 });
 
 test('crawler search accepts bounded cross-web scope and platform exclusions', async () => {
-  const input = { scope: 'web', market: 'SG', platforms: [], excludedPlatforms: ['lazada'], query: 'WF-1000XM6' };
+  const input = { scope: 'web', geography: 'global', market: 'SG', platforms: [], excludedPlatforms: ['lazada'], query: 'WF-1000XM6' };
   const response = await fetch(`${baseUrl}/search`, { method: 'POST', headers, body: JSON.stringify(input) });
   assert.equal(response.status, 200); assert.deepEqual(searched, input);
 });
@@ -66,7 +66,7 @@ test('crawler search rejects malformed cross-web scopes without running the craw
   for (const extra of [
     { scope: 'everywhere' }, { platforms: ['lazada'] }, { platforms: 'lazada' },
     { excludedPlatforms: 'lazada' }, { excludedPlatforms: ['unknown'] }, { excludedPlatforms: [null] },
-    { market: 'XX' },
+    { market: 'XX' }, { geography: 'unknown' },
   ]) {
     const response = await fetch(`${baseUrl}/search`, { method: 'POST', headers,
       body: JSON.stringify({ scope: 'web', market: 'SG', platforms: [], query: 'WF-1000XM6', ...extra }) });
@@ -238,6 +238,27 @@ test('bounded searches execute concurrently and queue only beyond the configured
   assert.deepEqual((await Promise.all([first, second, third])).map((response) => response.status), [200, 200, 200]);
   assert.deepEqual(calls, ['WF-1000XM6', 'WH-CH720N', 'iPhone 17 Pro']);
   assert.equal(peakActive, 2);
+});
+
+test('identical concurrent searches share one provider request', async (t) => {
+  const started = deferred();
+  const release = deferred();
+  t.after(release.resolve);
+  let calls = 0;
+  const url = await queueServer(t, { maxConcurrentSearches: 2, search: async (input) => {
+    calls += 1;
+    started.resolve();
+    await release.promise;
+    return discoveryResult(input);
+  } });
+  const first = postSearch(url, 'Xiaomi 14T');
+  const second = postSearch(url, 'Xiaomi 14T');
+  await started.promise;
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(calls, 1);
+  release.resolve();
+  assert.deepEqual((await Promise.all([first, second])).map((response) => response.status), [200, 200]);
+  assert.equal(calls, 1);
 });
 
 test('search and persisted crawl share one queue and preserve crawl write options', async (t) => {

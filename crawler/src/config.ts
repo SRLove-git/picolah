@@ -59,8 +59,21 @@ export const config = {
   toolToken: process.env.CRAWLER_TOOL_TOKEN?.trim() || '',
   /** Concurrent live searches. Persisted crawls remain exclusive. */
   toolSearchConcurrency: numberEnv('CRAWLER_TOOL_SEARCH_CONCURRENCY', 3, 1, 8),
+  /** Fast live-chat budgets; scheduled catalog crawls keep their longer adapter defaults. */
+  liveSearchTimeoutMs: numberEnv('CRAWLER_LIVE_SEARCH_TIMEOUT_MS', 20_000, 5_000, 60_000),
+  livePageTimeoutMs: numberEnv('CRAWLER_LIVE_PAGE_TIMEOUT_MS', 15_000, 5_000, 60_000),
+  liveCandidatesPerPlatform: numberEnv('CRAWLER_LIVE_CANDIDATES_PER_PLATFORM', 1, 1, 3),
   /** Set CRAWLER_LOCAL_PROXY=off to let local Chrome use the direct connection. */
   localProxyEnabled: !/^(off|0|false|no)$/i.test((process.env.CRAWLER_LOCAL_PROXY || '').trim()),
+  webSearch: {
+    provider: process.env.PRICE_SEARCH_PROVIDER || 'brightdata',
+    apiKey: process.env.WEB_SEARCH_API_KEY ||
+      (/^https:\/\/api\.deepseek\.com(?:\/|$)/i.test(process.env.LLM_BASE_URL || 'https://api.deepseek.com') ? process.env.LLM_API_KEY || '' : ''),
+  },
+  pageFetch: {
+    provider: (process.env.PRICE_FETCH_PROVIDER === 'deepseek' ? 'deepseek' : 'brightdata') as 'deepseek' | 'brightdata',
+    fallback: !/^(?:false|0|off)$/i.test(process.env.PRICE_FETCH_FALLBACK || 'true'),
+  },
   brightData,
 };
 

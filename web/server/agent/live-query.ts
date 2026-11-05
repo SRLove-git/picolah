@@ -1,10 +1,26 @@
 import type { Comparison } from '../../shared/types.ts';
 import { MARKETS } from '../../shared/types.ts';
-import { extractSearchModel } from '../../shared/model-search.ts';
+import { extractSearchModel, separateBrandAndModel } from '../../shared/model-search.ts';
 import { normalizeSearchLanguage } from '../../shared/search-language.ts';
 import { z } from 'zod';
 import { invokeStructuredAgent } from './langchain.ts';
 import { config } from '../config.ts';
+
+const BASE_EDITION = /标准版|普通版|基础版|基础款|普通款|\b(?:standard|base|regular|vanilla)(?:\s+(?:edition|version|model))?\b/gi;
+const NAMED_PHONE = /\b(?:xiaomi|iphone|pixel|oneplus)\s*\d{1,2}[a-z]?\b/i;
+const PHONE_EDITION = /\b(?:pro|max|plus|mini|ultra|lite|se|air|fe)\b/gi;
+
+/** Base phones usually omit "standard edition" from their merchant titles.
+ * Keep other named editions, negations and unrelated products unchanged. The
+ * crawler's base-model filter still rejects Pro/Ultra/etc. after normalization.
+ */
+function normalizeBasePhoneEdition(value: string): string {
+  const translated = normalizeSearchLanguage(value);
+  if (!NAMED_PHONE.test(translated) || !translated.match(BASE_EDITION)
+    || translated.match(PHONE_EDITION)
+    || /(?:不要|不是|非|不看|排除|\b(?:not|without|exclude)\b)\s*(?:标准|普通|基础|standard|base|regular|vanilla)/i.test(translated)) return value;
+  return translated.replace(BASE_EDITION, ' ').replace(/\s+/g, ' ').trim();
+}
 
 /** Vision reads the supplied image only; no catalog is loaded or matched. */
 export async function visualSearchQuery(image: string, caption: string): Promise<string | null> {
@@ -22,7 +38,7 @@ export async function visualSearchQuery(image: string, caption: string): Promise
 
 /** Normalize a shopping request without consulting a product catalog. */
 export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live'): { query: string; model?: string; maxPrice?: number } | null {
-  message = message.normalize('NFKC');
+  message = normalizeBasePhoneEdition(separateBrandAndModel(message));
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;
@@ -38,20 +54,22 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
       .map((match) => match[0].replace(/(\d)\s+(gb|tb|ml|mm)/i, '$1$2'));
   };
   if (model) {
-    const brand = normalizeSearchLanguage(message)
-      .match(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer)\b/i)?.[0] || '';
-    return { query: [brand, model, ...variants(message)].filter(Boolean).join(' '), model, ...budget };
+    const brand = normalizeSearchLanguage(message.replace(/飞利浦/g, 'Philips').replace(/戴森/g, 'Dyson')
+      .replace(/松下/g, 'Panasonic').replace(/东芝/g, 'Toshiba').replace(/美的/g, 'Midea'))
+      .match(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung)\b/i)?.[0] || '';
+    const normalizedBrand = /^(?:jbl|asus)$/i.test(brand) ? brand.toUpperCase() : brand.slice(0, 1).toUpperCase() + brand.slice(1).toLowerCase();
+    return { query: [normalizedBrand, model, ...variants(message)].filter(Boolean).join(' '), model, ...budget };
   }
   const ordinal = message.match(/第([一二三四1234])个/);
   if (ordinal && previous?.alternatives?.length) {
     const index = '一二三四'.includes(ordinal[1]) ? '一二三四'.indexOf(ordinal[1]) : Number(ordinal[1]) - 1;
     const name = previous.alternatives[index]?.product.name;
-    const query = name ? normalizeSearchLanguage(name) : '';
+    const query = name ? normalizeBasePhoneEdition(normalizeSearchLanguage(name)) : '';
     if (query && query.length <= 120) return { query, model: extractSearchModel(query) ?? undefined };
   }
   if (ordinal) return null;
   const previousText = previous?.search?.query || previous?.search?.model || previous?.product?.name;
-  const normalizedPrevious = previousText ? normalizeSearchLanguage(previousText) : '';
+  const normalizedPrevious = previousText ? normalizeBasePhoneEdition(normalizeSearchLanguage(previousText)) : '';
   const previousQuery = normalizedPrevious.length <= 120 ? normalizedPrevious : '';
   // Variant-only followups change constraints without losing the previous product.
   const requestedVariants = variants(message);
@@ -92,6 +110,14 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
     .replace(/^[\s的在呢吗一下那这款它]+|[\s的在呢吗]+$/g, '')
     .replace(/[，。！？、?!,;；:：]/g, ' ').replace(/\s+/g, ' ').trim()
     .replace(/^(?:(?:and|or|和|与|及|以及)|[&\s])+$/gi, '');
+  // "标准版价格呢" can explicitly return from a Pro/Ultra result to the
+  // previous phone's base edition, without reusing any historical quote.
+  if (query.match(BASE_EDITION) && !query.replace(BASE_EDITION, '').trim()) {
+    if (!NAMED_PHONE.test(previousQuery)) return null;
+    const base = previousQuery.replace(PHONE_EDITION, ' ').replace(/\s+/g, ' ').trim();
+    return { query: base, model: extractSearchModel(base) ?? undefined,
+      ...(previous?.search?.maxPrice ? { maxPrice: previous.search.maxPrice } : {}), ...budget };
+  }
   if (!query || /^(?:哪个|这个|那|它|它们|这些|再|重新|try again)$/i.test(query)) {
     if (previousQuery) return { query: previousQuery, model: extractSearchModel(previousQuery) ?? undefined,
       ...(previous?.search?.maxPrice ? { maxPrice: previous.search.maxPrice } : {}), ...budget };

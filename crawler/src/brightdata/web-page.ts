@@ -97,9 +97,11 @@ function parsedPage(raw: string, requestedUrl: URL): string {
 }
 
 export interface FetchWebProductPageOptions {
+  geography?: 'global';
   token?: string;
   zone?: string;
   fetchImpl?: typeof fetch;
+  timeoutMs?: number;
   /** Test seam for DNS validation; never used to rewrite the requested URL. */
   validateUrl?: (url: string) => Promise<unknown>;
 }
@@ -130,12 +132,12 @@ export async function fetchWebProductPage(
     throw failure('WEB_DNS_FAILED', '商品页面域名验证失败');
   }
 
-  const signal = AbortSignal.timeout(PAGE_TIMEOUT_MS);
+  const signal = AbortSignal.timeout(options.timeoutMs ?? PAGE_TIMEOUT_MS);
   try {
     const response = await withAbort((options.fetchImpl ?? fetch)(API_ENDPOINT, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zone, url: url.href, format: 'json', country: market.toLowerCase() }),
+      body: JSON.stringify({ zone, url: url.href, format: 'json', ...(options.geography === 'global' ? {} : { country: market.toLowerCase() }) }),
       redirect: 'error',
       signal,
     }).then((received) => {

@@ -84,6 +84,7 @@ test('LangChain agent converts messages and validates JSON-mode output', async (
   assert.deepEqual(result, { intent: 'compare' });
   assert.equal(requests[0].model, 'mock-model');
   assert.deepEqual(requests[0].response_format, { type: 'json_object' });
+  assert.equal(requests[0].thinking, undefined);
 });
 
 test('LangChain answer writer exposes provider stream chunks', async () => {
@@ -98,4 +99,28 @@ test('LangChain answer writer exposes provider stream chunks', async () => {
 
   assert.equal(answer, '最低价是 S$400');
   assert.equal(requests[1].stream, true);
+});
+
+test('V4.1 Flash JSON and streaming requests use the official model id with thinking disabled', async () => {
+  const start = requests.length;
+  await invokeStructuredAgent({
+    model: 'deepseek-flash', maxTokens: 300,
+    messages: [{ role: 'system', content: '只输出 JSON' }, { role: 'user', content: '只看 Lazada' }],
+    schema: z.object({ intent: z.enum(['compare', 'recommend']) }), name: 'FlashUnderstanding',
+  });
+  let answer = '';
+  for await (const delta of streamAgentAnswer({
+    model: 'deepseek-flash', temperature: 0.3, maxTokens: 80,
+    messages: [{ role: 'user', content: '哪里最便宜' }],
+  })) answer += delta;
+  assert.equal(answer, '最低价是 S$400');
+  const [structured, streamed] = requests.slice(start);
+  for (const request of [structured, streamed]) {
+    assert.equal(request.model, 'deepseek-flash');
+    assert.deepEqual(request.thinking, { type: 'disabled' });
+  }
+  assert.deepEqual(structured.response_format, { type: 'json_object' });
+  assert.equal(structured.max_tokens, 300);
+  assert.equal(streamed.stream, true);
+  assert.equal(streamed.max_tokens, 80);
 });

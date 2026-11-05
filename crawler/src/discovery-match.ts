@@ -1,6 +1,7 @@
 import { MARKETS, type MarketCode, type PlatformId } from './markets.ts';
 import type { DiscoveryListing } from './types.ts';
 import { safeWebUrl } from './safe-web-url.ts';
+import { currencyDigits } from './currencies.ts';
 
 export function normalizeSearchQuery(value: string): string {
   const query = value.normalize('NFKC').trim().replace(/ +/g, ' ');
@@ -25,12 +26,13 @@ export function normalizeDiscoveryModel(value: string): string {
 
 // Permit spaces inside established Sony families without treating an arbitrary
 // brand + model phrase ("Sony WF-1000XM6") as one identifier.
-const MODEL_CODE = '(?:WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|[A-Z]{2,}-?\\d{3,}(?:[A-Z]+\\d+)*[A-Z]*)';
+const MODEL_CODE = '(?:WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|[A-Z]{2,}-?\\d{3,}(?:[A-Z]+\\d+)*[A-Z]*(?:/\\d{2})?)';
 
 const NON_PRODUCT = /\b(?:case|cover|skin|sleeve|protector|cable|charger|adapter|stand|holder|mount|strap|ear\s?(?:tips?|pads?|cushions?)|replacement|compatible|sticker|decal|replica|counterfeit|imitation|fake|copy|clones?|used|refurbished|renewed|pre[-\s]?(?:owned|loved)|second[-\s]?hand|broken|repair|parts?|dummy|open[-\s]box|left\s+only|right\s+only)\b|保护套|保护壳|耳塞套|耳罩|替换|配件|仿制|高仿|二手|翻新|维修|故障|仅包装|空盒|单耳|单只|充电仓|充电盒/i;
 
 function nonProductTitle(rawTitle: string): boolean {
   let title = rawTitle.normalize('NFKC');
+  if (/\b(?:pre[-\s]?order|back[-\s]?order)\b|预售|预订|缺货待订/i.test(title)) return true;
   // A bundled charging/carrying case is a normal feature of headphones. Only
   // remove the explicit bundle phrase; a standalone case, replacement or pad
   // remains an accessory even if the title mentions headphones or their model.
@@ -53,7 +55,7 @@ function removeModelAliases(title: string, compact: string): string {
 }
 
 function exactTitle(model: string, rawTitle: string): boolean {
-  const title = rawTitle.normalize('NFKC').toUpperCase();
+  const title = rawTitle.normalize('NFKC').toUpperCase().replace(/\bSERIES\s+\d{3,4}\b/g, ' ');
   if (!title.trim() || nonProductTitle(title)) return false;
   const compact = model.replace(/[-\s]/g, '');
   const fullModel = compact.split('').join('[\\s-]*');
@@ -105,10 +107,10 @@ export function exactDiscoveryListing(
   return validSourceListing(listing, market, platform) && exactTitle(model, listing.title);
 }
 
-export function validSourceListing(listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web'): boolean {
+export function validSourceListing(listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web', geography?: 'global'): boolean {
   if (!(market in MARKETS) || listing.market !== market || listing.platform !== platform || listing.inStock !== true) return false;
   if (!Number.isFinite(listing.price) || listing.price <= 0 || listing.price > 1_000_000_000_000) return false;
-  if (listing.currency !== MARKETS[market].currency || !listing.itemId?.trim() || listing.itemId.length > 150) return false;
+  if ((geography === 'global' && platform === 'web' ? currencyDigits(listing.currency) === null : listing.currency !== MARKETS[market].currency) || !listing.itemId?.trim() || listing.itemId.length > 150) return false;
   if (!listing.title?.trim() || listing.title.length > 1000 || nonProductTitle(listing.title)) return false;
   const domain = platform === 'web' ? undefined : MARKETS[market].domains[platform]?.replace(/^www\./, '');
   try {
@@ -133,33 +135,55 @@ export function validSourceListing(listing: DiscoveryListing, market: MarketCode
 }
 
 function queryTokens(value: string): string[] {
-  return value.normalize('NFKC').toLowerCase().match(/[a-z]+|\d+|[\p{L}]+/gu) ?? [];
+  // Equivalent category spellings used by international retailers. Model and
+  // capacity tokens remain mandatory; these aliases never choose a product.
+  return value.normalize('NFKC').toLowerCase()
+    .replace(/小米/g, ' xiaomi ').replace(/索尼/g, ' sony ').replace(/三星/g, ' samsung ').replace(/华为/g, ' huawei ')
+    .replace(/九阳/g, ' joyoung ').replace(/豆浆机/g, ' soy milk maker ')
+    .replace(/\bsoy(?:a|bean)?[\s-]*milk\b/g, 'soy milk')
+    .replace(/\bsoy milk machine\b/g, 'soy milk maker')
+    .match(/[a-z]+|\d+|[\p{L}]+/gu) ?? [];
 }
 
-export function queryMatchesListing(query: string, listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web', model?: string): boolean {
-  if (!validSourceListing(listing, market, platform)) return false;
+export function queryMatchesListing(query: string, listing: DiscoveryListing, market: MarketCode, platform: PlatformId | 'web', model?: string, geography?: 'global'): boolean {
+  if (!validSourceListing(listing, market, platform, geography)) return false;
+  const identity = [listing.productDetails?.brand, listing.title, listing.productDetails?.model].filter(Boolean).join(' ');
+  return queryMatchesTitle(query, identity, model);
+}
+
+/** Discovery can filter titles without trusting search-card prices or stock. */
+export function queryMatchesTitle(query: string, title: string, model?: string): boolean {
+  if (!title?.trim() || title.length > 1000 || nonProductTitle(title)) return false;
+  // Short named phone families are identities too: Xiaomi 17 is neither 17T
+  // nor Redmi Note 17. A shared numeric token alone cannot establish a match.
+  const named = query.normalize('NFKC').replace(/小米/g, 'Xiaomi ').match(/\b(xiaomi|iphone|pixel|oneplus)\s*(\d{1,2}[a-z]?)\b/i);
+  if (named) {
+    const family = named[1].toLowerCase() === 'xiaomi' ? 'xiaomi(?:\\s+mi)?' : named[1];
+    const names = [...title.normalize('NFKC').replace(/小米/g, 'Xiaomi ').matchAll(new RegExp(`\\b${family}\\s*(\\d{1,2}[a-z]?)\\b`, 'gi'))];
+    if (!names.length || names.some((match) => match[1].toLowerCase() !== named[2].toLowerCase())) return false;
+  }
   // The optional hint must not be required for exact-code safety.
   model ??= query.normalize('NFKC').toUpperCase().match(new RegExp(`(?:^|[^A-Z0-9])(${MODEL_CODE})(?=$|[^A-Z0-9])`))?.[1];
-  if (model && !exactDiscoveryListing(model, listing, market, platform)) return false;
+  if (model && !exactTitle(model, title)) return false;
   const compactModel = model?.replace(/[-\s]/g, '').toUpperCase();
   // The exact guard has already matched the model character-by-character.
   // Token comparison must not re-reject WHCH720N versus WH-CH720N because one
   // spelling has "whch" and the other has separate "wh" / "ch" tokens.
   const requested = queryTokens(compactModel ? removeModelAliases(query.normalize('NFKC').toUpperCase(), compactModel) : query);
-  const titleTokens = new Set(queryTokens(compactModel ? removeModelAliases(listing.title.normalize('NFKC').toUpperCase(), compactModel) : listing.title));
+  const titleTokens = new Set(queryTokens(compactModel ? removeModelAliases(title.normalize('NFKC').toUpperCase(), compactModel) : title));
   if ((!requested.length && !model) || !requested.every((token) => titleTokens.has(token))) return false;
   if (queryTokens(query).some((token) => /^\d+$/.test(token))) {
     // The exact guard already verified aliases such as "XM6 | 1000XM6";
     // they are not a numeric/capacity choice like "128 / 256GB".
     const variantTitle = model
-      ? removeModelAliases(listing.title.normalize('NFKC').toUpperCase(), compactModel!)
-      : listing.title;
+      ? removeModelAliases(title.normalize('NFKC').toUpperCase(), compactModel!)
+      : title;
     if (/\d+\s*[/|]\s*\d+/.test(variantTitle)) return false;
-    const variants = ['pro', 'max', 'plus', 'mini', 'ultra', 'lite', 'se', 'air'];
+    const variants = ['pro', 'max', 'plus', 'mini', 'ultra', 'lite', 'se', ...(/air\s*fryer/i.test(title) ? [] : ['air'])];
     if (variants.some((variant) => titleTokens.has(variant) && !requested.includes(variant))) return false;
     const capacities = query.toLowerCase().match(/\d+\s*(?:gb|tb)\b/g)?.map((value) => value.replace(/\s/g, '')) ?? [];
     if (capacities.length) {
-      const titleCapacities = listing.title.toLowerCase().match(/\d+\s*(?:gb|tb)\b/g)?.map((value) => value.replace(/\s/g, '')) ?? [];
+      const titleCapacities = title.toLowerCase().match(/\d+\s*(?:gb|tb)\b/g)?.map((value) => value.replace(/\s/g, '')) ?? [];
       if (titleCapacities.some((capacity) => !capacities.includes(capacity))) return false;
     }
   }

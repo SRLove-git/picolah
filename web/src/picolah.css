@@ -8103,6 +8103,11 @@
 }
 .pc-guest-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 30px -12px rgba(239, 79, 126, 0.7); }
 
+.offer-page-check { display: none; }
+@media (max-width: 800px) {
+  .offer-page-check { display: inline-flex; gap: 4px; color: var(--text-muted); }
+}
+
 /* ---- AI try-on studio ---- */
 .pc-tryon-trigger {
   display: inline-flex;

@@ -139,6 +139,8 @@ export interface PricePoint {
 export interface Offer {
   productTitle?: string;
   source?: 'live' | 'catalog';
+  productDetails?: { brand?: string; model?: string; description?: string };
+  verification?: { source: 'product-page'; checkedAt: string };
   imageUrl?: string;
   shippingKnown?: boolean;
   discountKnown?: boolean;
@@ -188,6 +190,8 @@ export interface Comparison {
   /** Terminal outcome of an actual model search; pending is sent through SSE status. */
   search?: {
     scope?: 'web' | 'platforms';
+    geography?: 'global';
+    budgetCurrency?: string;
     excludedPlatforms?: string[];
     query?: string;
     maxPrice?: number;
@@ -195,7 +199,8 @@ export interface Comparison {
     platforms: string[];
     failedPlatforms?: number;
     failedSources?: string[];
-    errorCode?: 'SERP_NOT_CONFIGURED' | 'CRAWLER_QUEUE_FULL' | 'CRAWLER_QUEUE_TIMEOUT';
+    errorCode?: 'SERP_NOT_CONFIGURED' | 'CRAWLER_QUEUE_FULL' | 'CRAWLER_QUEUE_TIMEOUT' | 'PRODUCT_PAGE_UNVERIFIED';
+    pageVerification?: { discovered: number; checked: number; verified: number };
     status: 'matched' | 'not_found' | 'failed' | 'unavailable';
   };
 }

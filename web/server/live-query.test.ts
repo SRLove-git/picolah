@@ -3,6 +3,19 @@ import { test } from 'node:test';
 import type { Comparison } from '../shared/types.ts';
 import { liveSearchQuery } from './agent/live-query.ts';
 
+test('brand and model typed without spaces retain separate identities and constraints', () => {
+  for (const text of ['sonywhch720n', 'SONYWH-CH720N', 'ｓｏｎｙｗｈｃｈ７２０ｎ']) {
+    const target = liveSearchQuery(text);
+    assert.equal(target?.model, 'WH-CH720N');
+    assert.match(target?.query ?? '', /^sony WH-CH720N$/i);
+  }
+  const target = liveSearchQuery('全网搜索sonywh1000xm5黑色价格，预算400 SGD');
+  assert.equal(target?.model, 'WH-1000XM5');
+  assert.match(target?.query ?? '', /^sony WH-1000XM5 Black$/i);
+  assert.equal(target?.maxPrice, 400);
+  assert.deepEqual(liveSearchQuery('philipsna221/09价格'), { query: 'Philips NA-221/09', model: 'NA-221/09' });
+});
+
 function previous(query: string): Comparison {
   return {
     kind: 'empty', query, market: 'SG', product: null, offers: [], alternatives: [],
@@ -136,4 +149,39 @@ test('a measure word left over after the verb is dropped from the search query',
   assert.deepEqual(liveSearchQuery('买个耳机'), { query: 'headphones' });
   // Real words starting with a measure character keep their first character.
   assert.deepEqual(liveSearchQuery('买个台灯'), { query: '台灯' });
+});
+
+test('base edition phone price questions use the base identity instead of literal edition words', () => {
+  for (const message of ['小米17标准版价格', '全网搜索小米17普通版价格', '小米17基础版多少钱',
+    'Xiaomi 17 standard edition price', 'Xiaomi 17 base model price', 'Xiaomi 17 regular version price']) {
+    assert.deepEqual(liveSearchQuery(message), { query: 'Xiaomi 17' }, message);
+  }
+  assert.deepEqual(liveSearchQuery('小米17标准版256GB黑色价格，预算500 SGD'), {
+    query: 'Xiaomi 17 256GB Black', maxPrice: 500,
+  });
+  assert.deepEqual(liveSearchQuery('iPhone 17 standard 256GB price'), { query: 'iPhone 17 256GB' });
+  assert.deepEqual(liveSearchQuery('Pixel 10 标准版价格'), { query: 'Pixel 10' });
+});
+
+test('base-edition handling preserves other editions, accessories and unrelated standard products', () => {
+  assert.deepEqual(liveSearchQuery('小米17 Pro价格'), { query: 'Xiaomi 17 Pro' });
+  assert.deepEqual(liveSearchQuery('小米17 Ultra价格'), { query: 'Xiaomi 17 Ultra' });
+  assert.deepEqual(liveSearchQuery('小米17T价格'), { query: 'Xiaomi 17T' });
+  assert.match(liveSearchQuery('小米17标准版手机壳价格')?.query || '', /壳/);
+  assert.match(liveSearchQuery('Office 2024 标准版价格', null, 'catalog')?.query || '', /标准版/);
+  assert.match(liveSearchQuery('小米17不要标准版价格')?.query || '', /标准版/);
+  assert.match(liveSearchQuery('小米17 Pro 标准版价格')?.query || '', /Pro 标准版/);
+});
+
+test('base edition followups and retries normalize prior phone queries while retaining constraints', () => {
+  const context = previous('Xiaomi 17 Pro 512GB Black'); context.search!.maxPrice = 1200;
+  for (const message of ['标准版价格', '那普通版呢', 'base model price']) {
+    assert.deepEqual(liveSearchQuery(message, context), {
+      query: 'Xiaomi 17 512GB Black', model: undefined, maxPrice: 1200,
+    }, message);
+  }
+  assert.deepEqual(liveSearchQuery('重试', previous('Xiaomi 17标准版')), { query: 'Xiaomi 17', model: undefined });
+  assert.equal(liveSearchQuery('标准版价格'), null);
+  assert.equal(liveSearchQuery('标准版价格', previous('Sony WH-CH720N')), null);
+  assert.deepEqual(liveSearchQuery('小米17标准版价格', previous('iPhone 17 Pro 256GB')), { query: 'Xiaomi 17' });
 });

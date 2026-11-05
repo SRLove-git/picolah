@@ -6,6 +6,40 @@ import { catalogProducts } from '../shared/catalog.ts';
 import { createModelSearchTool, liveSearchInputSchema, ModelSearchError } from './agent/tools/model-search.ts';
 import { liveComparison } from './agent/live-comparison.ts';
 import { writeFallbackAnswer } from '../shared/copy.ts';
+import { buildLiveMessages } from './llm.ts';
+
+test('compact brand names are not mistaken for part of the requested model', () => {
+  assert.equal(extractSearchModel('sonywhch720n'), 'WH-CH720N');
+  assert.equal(extractSearchModel('sonywh1000xm5'), 'WH-1000XM5');
+  assert.equal(extractSearchModel('philipsna221/09'), 'NA-221/09');
+  assert.equal(extractSearchModel('sonywhch720n 和 sonywhch710n'), null);
+  assert.equal(extractSearchModel('sonywhch720n replacement pads'), null);
+  assert.equal(canonicalModelCode('sonywhch720n'), null, 'tool model arguments must contain only the model');
+  assert.deepEqual(explicitModelCodes('Sony500 budget400 SGD300'), []);
+});
+
+test('global search preserves foreign currencies and never feeds them into local cheapest-price ranking', async () => {
+  const input = { scope: 'web' as const, geography: 'global' as const, market: 'SG' as const, platforms: [], query: 'Sony WF-1000XM6', model: 'WF-1000XM6' };
+  const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test', fetchImpl: async () => Response.json({
+    ok: true, ...input, summary: { requests: 3, matched: 2, skipped: 0, failed: 0 },
+    listings: ['USD', 'CNY'].map((currency, n) => ({ platform: 'web', market: 'SG', sourceHost: n ? 'shop.cn' : 'amazon.com',
+      itemId: 'item-' + n, title: input.query, url: n ? 'https://shop.cn/product' : 'https://amazon.com/product',
+      price: n ? 999 : 199, currency, inStock: true, verification: { source: 'product-page', checkedAt: new Date().toISOString() } })),
+  }) });
+  const result = await search.invoke(input);
+  const comparison = liveComparison('全网搜索索尼耳机价格', input, result);
+  assert.equal(comparison.kind, 'recommendation');
+  assert.deepEqual(comparison.offers, []);
+  assert.deepEqual(comparison.alternatives.map((row) => row.offer?.currency), ['USD', 'CNY']);
+  const payload = JSON.parse(buildLiveMessages(comparison, input.query)[1].content as string);
+  assert.equal(payload.geography, 'global');
+  assert.match(payload.market, /全球/);
+  assert.match(payload.liveResults[0].itemPrice, /USD/);
+  assert.match(payload.liveResults[1].itemPrice, /CNY/);
+  const fallback = writeFallbackAnswer(comparison);
+  assert.match(fallback, /USD/); assert.match(fallback, /CNY/); assert.doesNotMatch(fallback, /S\$|新加坡|最低/);
+  assert.throws(() => liveSearchInputSchema.parse({ ...input, scope: 'platforms', platforms: ['lazada'] }));
+});
 
 test('extracts the exact requested full model, without shopping phrases', () => {
   assert.equal(extractSearchModel('帮我找一下wf1000xm6'), 'WF-1000XM6');
@@ -84,7 +118,7 @@ test('tool schema and title verification support canonical, compact and spaced C
       seen.push(input.model);
       return Response.json({ ...input, ok: true, summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
         listings: [{ platform: 'lazada', market: 'SG', itemId: 'ch720n', title,
-          url: 'https://www.lazada.sg/products/ch720n.html', price: 159, currency: 'SGD', inStock: true }] });
+          url: 'https://www.lazada.sg/products/ch720n.html', price: 159, currency: 'SGD', inStock: true, verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] });
     }) as typeof fetch });
   for (const model of ['WH-CH720N', 'whch720n', 'WH CH720N', 'WH CH 720 N']) {
     const input = { market: 'SG' as const, platforms: ['lazada' as const], query: model, model };
@@ -153,7 +187,7 @@ test('live search rejects a price outside the requested budget', async () => {
     fetchImpl: (async () => Response.json({ ...input, ok: true,
       summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
       listings: [{ platform: 'lazada', market: 'SG', itemId: 'test', title: '耳机',
-        url: 'https://www.lazada.sg/products/test.html', price: 101, currency: 'SGD', inStock: true }] })) as typeof fetch });
+        url: 'https://www.lazada.sg/products/test.html', price: 101, currency: 'SGD', inStock: true, verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] })) as typeof fetch });
   await assert.rejects(search.invoke(input), /无效报价/);
 });
 
@@ -165,7 +199,7 @@ test('live search rejects unsafe product image URLs', async () => {
       fetchImpl: (async () => Response.json({ ...input, ok: true,
         summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
         listings: [{ platform: 'lazada', market: 'SG', itemId: 'test', title: '耳机',
-          url: 'https://www.lazada.sg/products/test.html', imageUrl, price: 99, currency: 'SGD', inStock: true }] })) as typeof fetch });
+          url: 'https://www.lazada.sg/products/test.html', imageUrl, price: 99, currency: 'SGD', inStock: true, verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] })) as typeof fetch });
     await assert.rejects(search.invoke(input));
   }
 });
@@ -173,13 +207,47 @@ test('live search rejects unsafe product image URLs', async () => {
 const webInput = { market: 'SG' as const, scope: 'web' as const, platforms: [], query: 'WF-1000XM6', model: 'WF-1000XM6' };
 function webListing(host = 'retailer.sg') {
   return { platform: 'web' as const, sourceHost: host, market: 'SG' as const, itemId: 'product-123',
-    title: 'Sony WF-1000XM6', url: `https://www.${host}/sony-wf1000xm6`, price: 399, currency: 'SGD', inStock: true as const };
+    title: 'Sony WF-1000XM6', url: `https://www.${host}/sony-wf1000xm6`, price: 399, currency: 'SGD', inStock: true as const,
+    verification: { source: 'product-page' as const, checkedAt: new Date().toISOString() } };
 }
 function webTool(listings: Array<Record<string, unknown>>, overrides: Record<string, unknown> = {}) {
   return createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
     fetchImpl: (async () => Response.json({ ...webInput, ok: true, listings,
       summary: { requests: 3, matched: listings.length, skipped: 0, failed: 0 }, ...overrides })) as typeof fetch });
 }
+
+test('chat rejects unverified search-card prices and stale page evidence', async () => {
+  for (const verification of [undefined,
+    { source: 'product-page', checkedAt: '2000-01-01T00:00:00.000Z' },
+    { source: 'product-page', checkedAt: '2099-01-01T00:00:00.000Z' }]) {
+    await assert.rejects(webTool([{ ...webListing(), verification }]).invoke(webInput), /商品详情页核验/);
+  }
+});
+
+test('page title, details, source URL and checked time reach comparison and answer writer', async () => {
+  const row = { ...webListing(), productDetails: { brand: 'Sony', model: 'WF-1000XM6', description: 'Noise cancelling earbuds' } };
+  const result = await webTool([row], { summary: { requests: 2, matched: 1, skipped: 0, failed: 0,
+    discovered: 1, pagesChecked: 1, pagesVerified: 1 } }).invoke(webInput);
+  const comparison = liveComparison('查价格', webInput, result);
+  assert.equal(comparison.offers[0].lastSeen, row.verification.checkedAt);
+  assert.deepEqual(comparison.search?.pageVerification, { discovered: 1, checked: 1, verified: 1 });
+  const payload = JSON.parse(buildLiveMessages(comparison, '查价格')[1].content as string);
+  assert.equal(payload.liveResults[0].pageTitle, row.title);
+  assert.deepEqual(payload.liveResults[0].details, row.productDetails);
+  assert.equal(payload.liveResults[0].sourceUrl, row.url);
+  assert.equal(payload.liveResults[0].verifiedAt, row.verification.checkedAt);
+  assert.match(writeFallbackAnswer(comparison), /商品页已核验/);
+});
+
+test('failed detail verification reports candidate links without claiming the product is unavailable', async () => {
+  const result = await webTool([], { summary: { requests: 2, matched: 0, skipped: 0, failed: 1,
+    discovered: 1, pagesChecked: 1, pagesVerified: 0, failureCodes: ['PRODUCT_PAGE_UNVERIFIED'] } }).invoke(webInput);
+  const comparison = liveComparison('查价格', webInput, result);
+  assert.equal(comparison.search?.status, 'failed');
+  assert.match(writeFallbackAnswer(comparison), /候选链接.*详情页/);
+  assert.doesNotMatch(writeFallbackAnswer(comparison), /S\$/);
+  assert.match(writeFallbackAnswer(comparison), /这不代表没有在售商品/);
+});
 
 test('web searches accept multiple website sources, show hostnames and do not imply official stores', async () => {
   const result = await webTool([webListing(), { ...webListing('electronics.sg'), isOfficial: true }]).invoke(webInput);
@@ -226,4 +294,10 @@ test('unconfigured web discovery is explicit instead of pretending that no produ
   assert.equal(comparison.search?.status, 'failed');
   assert.match(writeFallbackAnswer(comparison), /全网搜索接口尚未配置/);
   assert.doesNotMatch(writeFallbackAnswer(comparison), /暂未找到/);
+});
+
+test('second global search may discover more candidates without raising the verified page cap', async () => {
+  const result = await webTool([webListing()], { summary: { requests: 14, matched: 1, skipped: 0, failed: 11, discovered: 18, pagesChecked: 12, pagesVerified: 1 } }).invoke(webInput);
+  assert.equal(result.summary.discovered, 18);
+  await assert.rejects(webTool([webListing()], { summary: { requests: 20, matched: 1, skipped: 0, failed: 18, discovered: 24, pagesChecked: 19, pagesVerified: 1 } }).invoke(webInput));
 });

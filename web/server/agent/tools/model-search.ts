@@ -3,12 +3,14 @@ import { z } from 'zod';
 import { COUNTRY_CODES, MARKETS } from '../../../shared/types.ts';
 import { canonicalModelCode, compactModel } from '../../../shared/model-search.ts';
 import { config } from '../../config.ts';
+import { isSupportedCurrency } from '../../../shared/format.ts';
 
 const platforms = ['lazada', 'shopee', 'amazon-sg'] as const;
 const excludedPlatforms = ['lazada', 'shopee', 'amazon-sg', 'tiktok', 'tokopedia', 'tiki'] as const;
 export const liveSearchInputSchema = z.object({
   market: z.enum(COUNTRY_CODES),
   scope: z.enum(['web', 'platforms']).optional(),
+  geography: z.literal('global').optional(),
   platforms: z.array(z.enum(platforms)).max(3),
   excludedPlatforms: z.array(z.enum(excludedPlatforms)).max(6).optional(),
   query: z.string().trim().min(2).max(120),
@@ -22,7 +24,8 @@ export const liveSearchInputSchema = z.object({
 }).refine((input) => input.scope === 'web' ? input.platforms.length === 0 : input.platforms.length > 0,
   { message: '全网搜索不能附带平台限制，指定平台搜索至少需要一个平台' })
   .refine((input) => input.scope === 'web' || !input.excludedPlatforms?.length,
-    { message: '指定平台搜索需直接传入已排除后的平台列表' });
+    { message: '指定平台搜索需直接传入已排除后的平台列表' })
+  .refine((input) => !input.geography || input.scope === 'web', { message: '全球范围仅支持全网搜索' });
 export type LiveSearchInput = z.infer<typeof liveSearchInputSchema>;
 const listingSchema = z.object({
   platform: z.enum([...platforms, 'web']), sourceHost: z.string().max(253).optional(), market: z.enum(COUNTRY_CODES),
@@ -35,16 +38,23 @@ const listingSchema = z.object({
   rating: z.number().finite().min(0).max(5).optional(),
   reviews: z.number().finite().min(0).max(1e8).optional(),
   seller: z.string().max(200).optional(), isOfficial: z.boolean().optional(),
+  verification: z.object({ source: z.literal('product-page'), checkedAt: z.string().datetime() }).optional(),
+  productDetails: z.object({ brand: z.string().max(120).optional(), model: z.string().max(120).optional(),
+    description: z.string().max(1000).optional() }).optional(),
 });
 export type LiveListing = z.infer<typeof listingSchema>;
 const resultSchema = z.object({
   ok: z.literal(true), query: z.string(), model: z.string().optional(),
+  geography: z.literal('global').optional(),
   market: z.enum(COUNTRY_CODES), scope: z.enum(['web', 'platforms']).optional(), platforms: z.array(z.enum(platforms)),
   summary: z.object({
     requests: z.number().int().nonnegative(), matched: z.number().int().nonnegative(),
     skipped: z.number().int().nonnegative(), failed: z.number().int().nonnegative(),
     failureCodes: z.array(z.string().max(80)).max(20).optional(),
     failedPlatforms: z.array(z.enum(excludedPlatforms)).max(6).optional(),
+    discovered: z.number().int().nonnegative().max(24).optional(),
+    pagesChecked: z.number().int().nonnegative().max(12).optional(),
+    pagesVerified: z.number().int().nonnegative().max(12).optional(),
   }),
   listings: z.array(listingSchema).max(12),
 });
@@ -86,6 +96,7 @@ export function createModelSearchTool(options: {
 }) {
   return tool(async (input: LiveSearchInput): Promise<LiveSearchResult> => {
     if (!options.url || !options.token) throw new Error('真实爬虫工具尚未配置');
+    const startedAt = Date.now();
     const response = await (options.fetchImpl ?? fetch)(`${options.url}/search`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${options.token}` },
@@ -104,11 +115,15 @@ export function createModelSearchTool(options: {
     if (result.summary.matched !== result.listings.length) throw new Error('商品搜索结果计数不一致');
     const web = input.scope === 'web';
     if ((result.scope ?? 'platforms') !== (input.scope ?? 'platforms') ||
-        result.model !== input.model || result.query !== input.query || result.market !== input.market ||
+        result.model !== input.model || result.query !== input.query || result.market !== input.market || result.geography !== input.geography ||
         (!web && result.platforms.some((platform) => !input.platforms.includes(platform)))) {
       throw new Error('商品搜索返回的查询或市场不一致');
     }
     for (const listing of result.listings) {
+      if (!listing.verification || Date.parse(listing.verification.checkedAt) > Date.now() + 60_000
+        || Date.parse(listing.verification.checkedAt) < startedAt - 60_000) {
+        throw new Error('商品搜索返回了未经本次商品详情页核验的报价');
+      }
       const url = new URL(listing.url);
       const imageUrl = listing.imageUrl ? new URL(listing.imageUrl) : null;
       const domain = domains[listing.platform]?.[input.market];
@@ -116,12 +131,13 @@ export function createModelSearchTool(options: {
       const validSource = listing.platform === 'web'
         ? web && listing.sourceHost === host && publicSourceHost(host)
         : Boolean(domain && withinDomain(url.hostname, domain) && (web || input.platforms.includes(listing.platform)));
-      const foreignKnownMarket = platforms.some((platform) => excludedDomains[platform].some((entry) => withinDomain(host, entry)) &&
+      const global = web && input.geography === 'global';
+      const foreignKnownMarket = !global && platforms.some((platform) => excludedDomains[platform].some((entry) => withinDomain(host, entry)) &&
         (!domains[platform]?.[input.market] || !withinDomain(host, domains[platform][input.market]!)));
       const excluded = (input.excludedPlatforms ?? []).some((platform) => excludedDomains[platform].some((domain) => withinDomain(host, domain)));
       if (listing.market !== input.market || !validSource || excluded || foreignKnownMarket ||
-          listing.currency !== MARKETS[input.market].currency ||
-          (input.maxPrice !== undefined && listing.price > input.maxPrice) ||
+          (global ? !isSupportedCurrency(listing.currency) : listing.currency !== MARKETS[input.market].currency) ||
+          (input.maxPrice !== undefined && (!global || listing.currency === MARKETS[input.market].currency) && listing.price > input.maxPrice) ||
           url.protocol !== 'https:' || url.username || url.password || url.port ||
           (imageUrl && (imageUrl.protocol !== 'https:' || imageUrl.username || imageUrl.password || imageUrl.port
             || !publicSourceHost(imageUrl.hostname.replace(/^www\./, '')))) ||
@@ -130,7 +146,8 @@ export function createModelSearchTool(options: {
       }
       if (input.model) {
         const full = compactModel(input.model).split('').join('[\\s-]*');
-        if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(listing.title.normalize('NFKC'))) {
+        const identity = [listing.title, listing.productDetails?.model].filter(Boolean).join(' ');
+        if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(identity.normalize('NFKC'))) {
           throw new Error('商品搜索返回的型号不一致');
         }
       }
@@ -138,7 +155,7 @@ export function createModelSearchTool(options: {
     return result;
   }, {
     name: 'search_marketplace_products',
-    description: '所有商品搜索及比价直接调用此工具。默认 scope=platforms，在当前市场并行搜索 Shopee、Lazada，以及新加坡的 Amazon SG；用户明确限定或排除平台时保留筛选。只有已配置跨网站搜索时才使用 scope=web、platforms=[]。不查询本地商品目录，不回退历史报价。',
+    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页核验型号、在售价格和库存。默认 scope=platforms，支持 Shopee、Lazada 及新加坡的 Amazon SG，保留用户平台筛选；配置了搜索引擎接口时可使用 scope=web、platforms=[]。只返回商品页已核验的报价与详情，不使用搜索摘要价或历史报价。',
     schema: liveSearchInputSchema,
   });
 }

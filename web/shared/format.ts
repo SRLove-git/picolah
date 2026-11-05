@@ -1,6 +1,15 @@
 import type { CountryCode } from './types.ts';
 import { MARKETS } from './types.ts';
 
+export function isSupportedCurrency(currency: string): boolean {
+  return Intl.supportedValuesOf('currency').includes(currency);
+}
+
+/** Original source currency, explicitly labeled; no exchange-rate conversion. */
+export function formatCurrency(value: number, currency: string): string {
+  return new Intl.NumberFormat('en', { style: 'currency', currency, currencyDisplay: 'code' }).format(value);
+}
+
 /**
  * Currency formatting shared by the server, the mock crawler and the browser.
  * Uses only Intl, so it is safe in every runtime.

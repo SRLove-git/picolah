@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Comparison } from '../shared/types.ts';
 import { buildChatMessages, buildLiveMessages } from './llm.ts';
+import { liveSearchCoverageNote } from '../shared/copy.ts';
 
 function searchComparison(status: 'matched' | 'not_found' | 'failed' | 'unavailable', failed = false): Comparison {
   return {
@@ -37,4 +38,11 @@ test('the chat payload has no price data and forbids inventing one', () => {
   assert.match(messages[0].content as string, /绝对不能编造/);
   assert.equal(messages[1].content, '用户问题：你好');
   assert.doesNotMatch(JSON.stringify(messages), /SGD|S\$|liveResults/);
+});
+
+test('coverage footer augments partial results but does not repeat a failed-search answer', () => {
+  assert.equal(liveSearchCoverageNote(searchComparison('failed', true)), '');
+  assert.equal(liveSearchCoverageNote(searchComparison('not_found', true)), '');
+  assert.equal(liveSearchCoverageNote(searchComparison('matched')), '');
+  assert.match(liveSearchCoverageNote(searchComparison('matched', true)), /另有 Shopee、Lazada/);
 });

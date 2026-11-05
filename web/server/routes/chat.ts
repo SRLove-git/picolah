@@ -17,6 +17,8 @@ import { emptyLiveComparison, liveComparison } from '../agent/live-comparison.ts
 import { catalogAnswer, catalogQuotes, searchCatalog } from '../agent/catalog-search.ts';
 import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
+import { webSearchReady, webSearchTools } from '../agent/web-search.ts';
+
 export const chatRouter = Router();
 const chatSchema = z.object({
   message: z.string().trim().max(1200).default(''),
@@ -63,13 +65,24 @@ chatRouter.post('/', async (req, res) => {
   const stored = conversationId ? await getConversation(conversationId, profileUserId) : null;
   if (conversationId && !stored) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND', message: '对话不存在' });
   const priorMessages: ChatMessage[] = stored?.messages ?? [];
-  const previous = previousComparison(priorMessages);
-  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${MARKETS[market].nameZh}`, market, profileUserId);
+  // A web answer can change the subject. Never attach a later ambiguous price
+  // request to a product from before that answer.
+  let previousTopicIndex = -1;
+  for (let index = priorMessages.length - 1; index >= 0; index--) {
+    const entry = priorMessages[index];
+    if (entry.role === 'assistant' && !entry.comparison) {
+      previousTopicIndex = index;
+      break;
+    }
+  }
+  const comparisonMessages = priorMessages.slice(previousTopicIndex + 1);
+  const previous = previousComparison(comparisonMessages);
   const directive = resolvePlatformDirective(message, market,
     previous?.search?.scope === 'web' ? [] : previous?.platformFilter ?? []);
   const platformRestriction = directive.mode === 'include' ||
     (directive.mode === 'none' && directive.platformIds.length > 0);
   const scope = platformRestriction ? 'platforms' : config.crawlerTool.searchScope;
+  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${scope === 'web' ? '全球' : MARKETS[market].nameZh}`, market, profileUserId);
   const exclusionIds = ['lazada', 'shopee', 'amazon-sg', 'tiktok', 'tokopedia', 'tiki'] as const;
   const exclusions = directive.mode === 'exclude'
     ? [...new Set([...(previous?.search?.excludedPlatforms ?? []), ...directive.mentioned])]
@@ -79,7 +92,7 @@ chatRouter.post('/', async (req, res) => {
   const platforms = platformRestriction
     ? supportedRealCrawlerPlatforms(MARKETS[market].platformIds, directive.platformIds, [])
     : scope === 'platforms'
-      ? supportedRealCrawlerPlatforms(MARKETS[market].platformIds, [], ['shopee', 'lazada', 'amazon-sg'])
+      ? supportedRealCrawlerPlatforms(MARKETS[market].platformIds, [], ['lazada', 'amazon-sg'])
         .filter((platform) => !excludedPlatforms.includes(platform)) : [];
   // An unsupported exclusion (e.g. "not official stores") must not silently be ignored.
   const unsupported = [...new Set([...directive.unsupported,
@@ -95,14 +108,44 @@ chatRouter.post('/', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
+  if (!image && webSearchReady()) {
+    sse(res, 'status', { label: '正在理解问题…' });
+    const query = await webSearchTools.plan(message, market, previous,
+      priorMessages.filter((entry) => entry.role === 'user').slice(-3).map((entry) => entry.content));
+    if (query) {
+      sse(res, 'status', { label: '正在联网搜索…' });
+      let answer: string;
+      let evidence;
+      let usedLlm = false;
+      try {
+        evidence = await webSearchTools.search(query);
+        if (res.destroyed) return;
+        sse(res, 'status', { label: '正在核对搜索来源…' });
+        answer = await webSearchTools.answer(message, evidence);
+        usedLlm = evidence.sources.length > 0;
+      } catch {
+        answer = '这次联网搜索或回答服务暂时连接失败，未能完成核实，请稍后重试。';
+      }
+      if (res.destroyed) return;
+      const assistantMessageId = await addAssistantReply(conversation.id, answer,
+        { usedLlm, source: 'web-search', webSearch: evidence });
+      if (!assistantMessageId) {
+        sse(res, 'error', { message: '对话已删除，请开始新的对话。' });
+        return res.end();
+      }
+      await streamLocal(res, answer);
+      sse(res, 'done', { messageId: assistantMessageId, conversationId: conversation.id });
+      return res.end();
+    }
+  }
   sse(res, 'status', { label: image ? '正在识别图片里的商品…' : '正在搜索商品信息' });
 
-  const catalogMode = config.productSearchSource === 'catalog';
+  const catalogMode = config.productSearchSource === 'catalog' && config.chatPriceSearchSource !== 'web';
   // Reconstruct query constraints, never historical prices, across catalog turns.
   let context = previous;
   if (catalogMode) {
     let queryContext: Comparison | null = null;
-    for (const entry of priorMessages) {
+    for (const entry of comparisonMessages) {
       if (entry.role !== 'assistant' || !entry.comparison) continue;
       const saved = entry.comparison;
       const queryTarget = liveSearchQuery(saved.query, queryContext, 'catalog');
@@ -120,6 +163,7 @@ chatRouter.post('/', async (req, res) => {
   }
   let comparison = emptyLiveComparison(message, market, target?.query || '', platforms, unsupported);
   comparison.search!.scope = scope;
+  if (scope === 'web') comparison.search!.geography = 'global';
   if (excludedPlatforms.length) comparison.search!.excludedPlatforms = excludedPlatforms;
   comparison.search!.model = target?.model || target?.query || '';
   if (target?.maxPrice !== undefined) comparison.search!.maxPrice = target.maxPrice;
@@ -135,9 +179,10 @@ chatRouter.post('/', async (req, res) => {
       ? '暂时无法确定图片里的具体商品，请补充品牌、型号或商品名称，我会直接搜索实时商品信息。'
       : '请告诉我商品名称或具体型号，我会直接搜索实时商品信息。';
   } else if (crawlerToolConfigured && (scope === 'web' || platforms.length) && !unsupported.length) {
-    sse(res, 'status', { label: '正在搜索商品信息' });
+    sse(res, 'status', { label: '正在搜索商品并核对商品页价格…' });
     try {
       const input: LiveSearchInput = { market, scope, platforms, ...target,
+        ...(scope === 'web' ? { geography: 'global' as const } : {}),
         ...(scope === 'web' && excludedPlatforms.length ? { excludedPlatforms } : {}) };
       const result = await modelSearchTool.invoke(input);
       comparison = liveComparison(message, input, result);

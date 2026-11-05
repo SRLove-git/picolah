@@ -7,6 +7,13 @@ const credentials = { token: 'test_secret_token', zone: 'test_web_unlocker' };
 const validated = { ...credentials, validateUrl: async () => {} };
 const body = '<html><h1>Sony WF-1000XM6</h1></html>';
 const wrapper = { status_code: 200, body, url };
+
+test('global page fetching does not force a Singapore exit country', async () => {
+  await fetchWebProductPage(url, 'SG', { ...validated, geography: 'global', fetchImpl: async (_url, init) => {
+    assert.equal(JSON.parse(String(init?.body)).country, undefined);
+    return Response.json(wrapper);
+  } });
+});
 const responseFetch = (data: unknown, options?: ResponseInit): typeof fetch => async () => new Response(JSON.stringify(data), options);
 const code = (expected: string) => (error: Error & { code?: string }) => {
   assert.equal(error.code, expected);

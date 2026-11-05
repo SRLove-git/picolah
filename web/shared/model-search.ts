@@ -5,9 +5,17 @@ const nonModelPrefixes = new Set([
   'SGD', 'MYR', 'THB', 'IDR', 'PHP', 'VND', 'USD', 'EUR', 'GBP',
 ]);
 
+/** Separate a known brand only when followed by a complete model-code shape. */
+export function separateBrandAndModel(text: string): string {
+  return text.normalize('NFKC').replace(
+    /(?<![a-z0-9])(sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung)(?=(?:wh[-\s]*ch[-\s]*\d{3,}|[a-z]{2,}[-\s]*\d{3,}))/gi,
+    '$1 ',
+  );
+}
+
 /** A complete alphanumeric model, not a platform, budget, or vague family name. */
 export function explicitModelCodes(text: string): string[] {
-  const matches = text.normalize('NFKC').matchAll(
+  const matches = separateBrandAndModel(text).matchAll(
     /(?<![a-z0-9])((?:wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
   );
   return [...new Set([...matches].map((match) => compactModel(match[1]))

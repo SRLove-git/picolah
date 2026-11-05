@@ -66,6 +66,8 @@ test('SERP excludes unsafe destinations, search engines, social pages and obviou
     'https://www.facebook.com/product/1', 'https://www.reddit.com/r/sony', 'https://www.tiktok.com/@user/video/1',
     'https://store.example.com/support/wf-1000xm6', 'https://store.example.com/blog/sony',
     'https://store.example.com/reviews/wf-1000xm6', 'https://store.example.com/cart',
+    'https://www.lemon8-app.com/post/sony', 'https://food.blogspot.com/2025/01/joyoung',
+    'https://bbs.sgcn.com/thread-123', 'https://review.example.com/post/joyoung',
   ];
   assert.deepEqual(parseSearchCandidates({ organic: rejected.map((url) => hit(url)) }), []);
   assert.equal(parseSearchCandidates({ organic: [hit('https://shop.tiktok.com/product/123')] }).length, 1);

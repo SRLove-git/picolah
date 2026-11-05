@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Picolah crawler — Bright Data powered marketplace collector.",
+  "description": "Picolah crawler \u2014 Bright Data powered marketplace collector.",
   "engines": {
     "node": ">=24.0.0"
   },
@@ -14,7 +14,7 @@
     "shopee:dataset-check": "tsx scripts/shopee-dataset-check.ts",
     "shopee:login": "tsx scripts/shopee-login.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/money.test.ts src/match.test.ts src/discovery.test.ts src/web-discovery.test.ts src/safe-web-url.test.ts src/tool-server.test.ts src/brightdata/errors.test.ts src/brightdata/csv.test.ts src/brightdata/serp.test.ts src/brightdata/web-page.test.ts src/brightdata/scraping-browser.test.ts src/platforms/lazada.test.ts src/platforms/lazada-structured.test.ts src/platforms/amazon-sg.test.ts src/platforms/shopee.test.ts src/platforms/shopee-dataset.test.ts src/platforms/web-product.test.ts"
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "dotenv": "^18.0.8",

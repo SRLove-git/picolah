@@ -97,6 +97,7 @@ function parseRequest(value: unknown): CrawlerToolRequest {
 function parseSearchRequest(value: unknown): DiscoveryOptions {
   const body = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   if (body.scope !== undefined && body.scope !== 'web' && body.scope !== 'platforms') throw new Error('scope 必须是 web 或 platforms');
+  if (body.geography !== undefined && (body.geography !== 'global' || body.scope !== 'web')) throw new Error('全球范围仅支持全网搜索');
   let scope: Pick<DiscoveryOptions, 'market' | 'platforms' | 'scope' | 'excludedPlatforms'>;
   if (body.scope === 'web') {
     const market = typeof body.market === 'string' ? body.market.toUpperCase() : '';
@@ -117,7 +118,7 @@ function parseSearchRequest(value: unknown): DiscoveryOptions {
   const query = normalizeSearchQuery(typeof body.query === 'string' ? body.query : '');
   const model = body.model === undefined ? undefined : normalizeDiscoveryModel(typeof body.model === 'string' ? body.model : '');
   if (body.maxPrice !== undefined && (typeof body.maxPrice !== 'number' || !Number.isFinite(body.maxPrice) || body.maxPrice <= 0 || body.maxPrice > 1e12)) throw new Error('maxPrice 必须是有效正数');
-  return { ...scope, query, ...(model ? { model } : {}), ...(typeof body.maxPrice === 'number' ? { maxPrice: body.maxPrice } : {}) };
+  return { ...scope, query, ...(body.geography === 'global' ? { geography: 'global' as const } : {}), ...(model ? { model } : {}), ...(typeof body.maxPrice === 'number' ? { maxPrice: body.maxPrice } : {}) };
 }
 
 export function createCrawlerToolServer(options: ToolServerOptions) {
@@ -147,6 +148,20 @@ export function createCrawlerToolServer(options: ToolServerOptions) {
   let activeSearches = 0;
   let crawlRunning = false;
   const queue: Job[] = [];
+  const inFlightSearches = new Map<string, Promise<DiscoveryResult>>();
+
+  function sharedSearch(input: DiscoveryOptions): Promise<DiscoveryResult> {
+    const key = JSON.stringify(input);
+    const existing = inFlightSearches.get(key);
+    if (existing) return existing;
+    const pending = Promise.resolve().then(() => search(input));
+    inFlightSearches.set(key, pending);
+    const release = () => {
+      if (inFlightSearches.get(key) === pending) inFlightSearches.delete(key);
+    };
+    void pending.then(release, release);
+    return pending;
+  }
 
   function cleanup(job: Job): void {
     if (job.timeout) clearTimeout(job.timeout);
@@ -246,7 +261,7 @@ export function createCrawlerToolServer(options: ToolServerOptions) {
     try {
       if (request.url === '/search') {
         const input = parseSearchRequest(await readBody(request));
-        enqueue({ kind: 'search', response, errorCode: 'search_failed', execute: () => search(input) });
+        enqueue({ kind: 'search', response, errorCode: 'search_failed', execute: () => sharedSearch(input) });
         return;
       }
       const input = parseRequest(await readBody(request));

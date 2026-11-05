@@ -30,6 +30,9 @@ export interface RawListing {
   location?: string;
   isOfficial?: boolean;
   inStock: boolean;
+  /** Present only after reading and validating the current product detail page. */
+  verification?: { source: 'product-page'; checkedAt: string };
+  productDetails?: { brand?: string; model?: string; description?: string };
 }
 
 /** Verified public product-page result, used only by live search, never ingestion. */

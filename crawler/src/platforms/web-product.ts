@@ -3,6 +3,9 @@ import { MARKETS, type MarketCode } from '../markets.ts';
 import { safeWebUrl } from '../safe-web-url.ts';
 import { extractImageUrl } from '../image-url.ts';
 import type { WebListing } from '../types.ts';
+import { currencyDigits } from '../currencies.ts';
+import { commercePageProduct } from '../product-page-state.ts';
+import { parseAmazonProduct } from './amazon-product.ts';
 
 type RecordValue = Record<string, unknown>;
 const record = (value: unknown): RecordValue | null => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as RecordValue : null;
@@ -52,24 +55,60 @@ function boundUrl(raw: unknown, page: URL): URL | null {
   } catch { return null; }
 }
 
-function parseProduct(product: RecordValue, page: URL, canonical: URL, market: MarketCode): WebListing | null {
+function parseProduct(product: RecordValue, page: URL, canonical: URL, market: MarketCode, geography?: 'global', state?: RecordValue | null): WebListing | null {
   if (types(product['@type']).includes('ProductGroup') || product.hasVariant !== undefined
     || product.priceRange !== undefined || Array.isArray(product.name) || Array.isArray(product.sku)) return null;
-  const title = text(product.name, 1000);
+  const name = text(product.name, 1000);
+  const brand = text(record(product.brand)?.name, 120) ?? text(product.brand, 120);
+  // Some stores publish name="17" and brand="Xiaomi" separately. Keep the
+  // explicit brand attached in the displayed identity as well as in matching.
+  const title = name && brand && !name.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${name}` : name;
   const offers = Array.isArray(product.offers) ? product.offers : [product.offers];
   if (!title || offers.length !== 1) return null;
   const offer = record(offers[0]);
   if (!offer || !types(offer['@type']).includes('Offer') || types(offer['@type']).includes('AggregateOffer')
     || offer.lowPrice !== undefined || offer.highPrice !== undefined || offer.priceRange !== undefined
     || offer.priceSpecification !== undefined) return null;
+  for (const condition of [product.itemCondition, offer.itemCondition]) {
+    if (condition !== undefined && (typeof condition !== 'string'
+      || condition.replace(/^https?:\/\/schema\.org\//i, '') !== 'NewCondition')) return null;
+  }
+  if (offer.priceValidUntil !== undefined) {
+    const expiry = offer.priceValidUntil;
+    const dateOnly = typeof expiry === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(expiry);
+    const dateTime = typeof expiry === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})?$/.test(expiry);
+    const zoned = dateTime && /(?:Z|[+-]\d{2}:\d{2})$/.test(expiry as string);
+    // For a timezone-less timestamp, use the earliest possible instant (UTC+14).
+    // This can reject a nearly-expired quote but cannot extend its validity.
+    const until = dateOnly ? Date.parse(`${expiry}T23:59:59.999Z`)
+      : dateTime ? Date.parse(zoned ? expiry as string : `${expiry}Z`) - (zoned ? 0 : 14 * 3600_000) : NaN;
+    if (!Number.isFinite(until) || until < Date.now()) return null;
+  }
   const price = number(offer.price);
   const currency = text(offer.priceCurrency, 3)?.toUpperCase();
-  const factor = 10 ** MARKETS[market].decimals;
-  if (price === undefined || price <= 0 || price >= 1e12 || currency !== MARKETS[market].currency
+  const digits = currency ? currencyDigits(currency) : null;
+  const factor = 10 ** (digits ?? 2);
+  if (price === undefined || price <= 0 || price >= 1e12 || !currency || digits === null || (geography !== 'global' && currency !== MARKETS[market].currency)
     || Math.abs(price * factor - Math.round(price * factor)) > 1e-6) return null;
-  if (!['InStock', 'LimitedAvailability'].includes(typeof offer.availability === 'string'
-    ? offer.availability.replace(/^https?:\/\/schema\.org\//i, '') : '')) return null;
-  if (!boundUrl(product.url, page) || !boundUrl(offer.url, page)) return null;
+  let availability = typeof offer.availability === 'string' ? offer.availability.replace(/^https?:\/\/schema\.org\//i, '') : '';
+  if (state) {
+    const statePrice = record(state.price);
+    const stock = record(state.stock);
+    // Both state and JSON-LD must identify the same SKU, URL and current price.
+    if (typeof product.sku !== 'string' || state.code !== product.sku || !boundUrl(state.url, page)
+      || statePrice?.currencyIso !== currency || number(statePrice?.value) !== price
+      || statePrice?.priceType !== 'BUY' || state.purchasable !== true
+      || state.notSellable === true || state.preOrder === true || stock?.stockLevelStatus !== 'inStock'
+      || (stock.stockLevel !== undefined && !(Number(stock.stockLevel) > 0))) return null;
+    if (!availability) availability = 'InStock';
+  }
+  if (!['InStock', 'LimitedAvailability'].includes(availability)) return null;
+  // Some merchant JSON-LD encodes an absent offer URL as {}. Accept it only
+  // when the product's explicit identity binds the single offer to this page.
+  const emptyOfferUrl = record(offer.url) && Object.keys(offer.url as RecordValue).length === 0;
+  const offerUrl = emptyOfferUrl && typeof product['@id'] === 'string' && boundUrl(product['@id'], page)
+    ? undefined : offer.url;
+  if (!boundUrl(product.url, page) || !boundUrl(offerUrl, page)) return null;
 
   const aggregate = record(product.aggregateRating);
   const rawRating = number(aggregate?.ratingValue);
@@ -81,18 +120,24 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
   const seller = text(record(offer.seller)?.name, 120) ?? text(offer.seller, 120) ?? host;
   const url = canonical.href;
   const imageUrl = extractImageUrl(product.image, page.href);
+  const model = text(product.model, 120);
+  const description = typeof product.description === 'string'
+    ? text(product.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1000), 1000) : undefined;
+  const productDetails = { ...(brand ? { brand } : {}), ...(model ? { model } : {}), ...(description ? { description } : {}) };
   return {
     platform: 'web', sourceHost: host, market, itemId: createHash('sha256').update(url).digest('hex'),
     title, url, price, currency, inStock: true, seller,
     ...(imageUrl ? { imageUrl } : {}),
     ...(rating !== undefined ? { rating } : {}), ...(reviews !== undefined ? { reviews } : {}),
+    ...(Object.keys(productDetails).length ? { productDetails } : {}),
   };
 }
 
 /** Extract only a single current product's explicit JSON-LD price; never search snippets. */
-export function parseWebProduct(html: string, pageUrl: string, market: MarketCode): WebListing[] {
+export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   const page = safeWebUrl(pageUrl);
   if (!page || !Object.hasOwn(MARKETS, market) || html.length > 8_000_000) return [];
+  if (/^(?:www\.)?amazon\.(?:com|sg)$/.test(page.hostname) && /\/(?:dp|gp\/product)\//.test(page.pathname)) return parseAmazonProduct(html, page, market, geography);
   const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, '');
   const head = cleanHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
   let canonical = page;
@@ -133,6 +178,7 @@ export function parseWebProduct(html: string, pageUrl: string, market: MarketCod
     }
   }
   let found: WebListing | undefined;
+  const state = commercePageProduct(cleanHtml, canonical.href);
   const identities = new Map<string, string>();
   for (const product of products) {
     // Multiple variants can have identical titles and prices. Do not merge them
@@ -144,7 +190,7 @@ export function parseWebProduct(html: string, pageUrl: string, market: MarketCod
       if (!identity || (identities.has(key) && identities.get(key) !== identity)) return [];
       identities.set(key, identity);
     }
-    const listing = parseProduct(product, page, canonical, market);
+    const listing = parseProduct(product, page, canonical, market, geography, state);
     if (!listing || (found && JSON.stringify(found) !== JSON.stringify(listing))) return [];
     found = listing;
   }

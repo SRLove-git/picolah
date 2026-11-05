@@ -1,6 +1,6 @@
 # Picolah Crawler
 
-独立爬虫进程：用 [Bright Data](https://brightdata.com) 为聊天实时并行搜索 Shopee、Lazada、Amazon SG 的商品报价，同时保留独立的目录商品批量采集、入库流程。Amazon 适配器目前仅支持新加坡市场，其余市场默认查询 Shopee 和 Lazada。
+独立爬虫进程：用 [Bright Data](https://brightdata.com) 为聊天先搜索 Shopee、Lazada、Amazon SG 的商品链接，再抓取商品详情页核验报价，同时保留独立的目录商品批量采集、入库流程。Amazon 适配器目前仅支持新加坡市场，其余市场默认查询 Shopee 和 Lazada。
 
 网站（`../web/`）不在 Web 进程里执行采集；Agent 通过带 Bearer 鉴权的内网工具服务执行实时 `POST /search`，不查商品/报价库、不将结果写库。只有独立的批量采集流程通过 `POST /api/v1/ingest/offers` 入库，契约见 [`../docs/ingest-api.md`](../docs/ingest-api.md)。
 
@@ -18,9 +18,9 @@
 
 ## 工作方式
 
-聊天搜索默认 `CRAWLER_SEARCH_SCOPE=platforms`：`POST /search` → 并行查询所选市场支持的 Shopee / Lazada / Amazon SG → 校验商品、型号、币种和来源报价 → 直接返回聊天。未指定平台时跨这些适配器搜索；明确指定平台时只查指定项。Amazon 目前仅支持 SG，不对其他市场返回新加坡报价。全程不访问商品目录或旧价格，也不入库。
+聊天搜索默认 `CRAWLER_SEARCH_SCOPE=platforms`：`POST /search` → 并行搜索所选市场支持的 Shopee / Lazada / Amazon SG → 去重商品链接 → 有界并发抓取详情页 → 校验型号、规格、币种、库存和当前售价 → 返回聊天。搜索卡片只提供候选标题和链接，其价格、评分、卖家、运费和库存不复制为最终报价；预算筛选与价格排序都在详情页核验后执行。未指定平台时跨这些适配器搜索；明确指定平台时只查指定项。Amazon 目前仅支持 SG，不对其他市场返回新加坡报价。全程不访问商品目录或旧价格，也不入库。
 
-需要不限平台的网站发现时，可另行配置 `scope: web` 的 SERP 扩展；它不是默认路径，尚需专用 zone 授权和真实验证，见下方「可选全网扩展」。
+需要不限平台的网站发现时，配置 `scope: web`；全网搜索与 Fetch 的供应商设置见下方「全网商品搜索与 DeepSeek Fetch」。
 
 以下是独立 CLI `/crawl` 的目录批量采集流程，不参与聊天搜索：
 
@@ -86,19 +86,19 @@ curl -H "Authorization: Bearer $CRAWLER_TOOL_TOKEN" \
 
 `/crawl` 保留原有目录商品批量采集和入库流程；对话使用独立的纯实时 `POST /search`，不读取商品目录、不查询已有报价、不创建商品或写入报价。它使用同样的 Bearer 鉴权，SG 跨平台搜索请求为 `{"scope":"platforms","market":"SG","platforms":["shopee","lazada","amazon-sg"],"query":"Sony WF-1000XM6","model":"WF-1000XM6"}`。服务端要求平台路径明确传入 `platforms`，Web Agent 会按默认范围和用户筛选生成该列表；只查 Lazada 时使用 `"platforms":["lazada"]`。`query` 为 2–120 字符商品搜索词（不能是网址），`model` 为可选的完整型号保护。普通商品名如 `iPhone 17 Pro 256GB` 可以省略 `model`。
 
-两个接口共用单进程忙碌保护，同一时间只跑一轮。平台搜索每次至多并行执行 3 个已实现的平台适配器；每个平台最多返回 3 条去重且校验过的原始来源报价，总计不超过 9 条。严格检查查询文字、数字与版本/容量；有完整型号时额外检查 WF/WH、代际等差异，并过滤配件、二手/翻新、无库存、错误币种和域名。没有可验证报价就不返回价格，不补库内商品、不推测品牌或价格；单个平台失败不能冒充已查完所有平台，未配置、抓取失败、解析失败与成功但无匹配结果分别报告，失败不等于商品不存在。单元测试通过注入搜索依赖运行，不使用真实凭据。
+两个接口共用有界队列；实时搜索允许配置并发，入库抓取保持独占。平台搜索每次至多并行执行 3 个已实现的平台适配器；每个平台最多取 3 个去重商品链接，总计最多 9 次详情页请求，详情页并发最多 3 个。详情页必须提供与商品绑定的明确售价、币种和在售状态；无法核验时不退回搜索卡片价格。返回的 `verification.source=product-page` 与 `verification.checkedAt` 表明核验依据和时间，`productDetails` 仅包含页面提供的品牌、型号和说明。`summary.discovered / pagesChecked / pagesVerified` 区分发现、抓取和成功核验数量；`requests` 是平台搜索任务加详情页请求的逻辑计数，平台适配器自身的重试/数据集轮询可能增加供应商请求数。严格检查查询文字、数字与版本/容量；有完整型号时额外检查 WF/WH、代际等差异，并过滤配件、二手/翻新、无库存、错误币种和域名。没有可验证报价就不返回价格，不补库内商品、不推测品牌或价格；单个平台失败不能冒充已查完所有平台，未配置、搜索失败、详情页抓取/核验失败与成功但无匹配结果分别报告，失败不等于商品不存在。单元测试通过注入搜索依赖运行，不使用真实凭据。
 
-### 可选全网扩展
+### 全网商品搜索与 DeepSeek Fetch
 
-此路径仅在选择 `scope: web` 时使用，目前不默认启用，也不会自动为账号开通付费服务。需用户另行授权开通专用 **SERP API zone**，再将其名称填入 `crawler/.env` 的 `BRIGHTDATA_SERP_ZONE`（默认空）。它与 `BRIGHTDATA_ZONE` 的 Web Unlocker 区是两个不同用途的 zone，不能互相替代；共用 API token。未开通并配置前不能完成真实多网站搜索验证，缺失时返回 `SERP_NOT_CONFIGURED`，不会悄悄退回 Lazada 并声称已搜索全网。
+`scope: web` 支持不限平台的候选发现。示例配置使用 `PRICE_SEARCH_PROVIDER=deepseek` 和 `PRICE_FETCH_PROVIDER=deepseek`，从 `WEB_SEARCH_API_KEY` 或官方 DeepSeek 地址对应的 `LLM_API_KEY` 读取凭据。`PRICE_FETCH_FALLBACK=true` 会调用 Bright Data Web Unlocker 核验 HTML；需配置其 token 和 zone。选择 Bright Data 搜索时另需 `BRIGHTDATA_SERP_ZONE`，它与 Web Unlocker zone 用途不同。
 
-- 先执行一次 SERP 请求，按所选市场搜索多个来源的公开链接；最多检查 30 条 organic 结果，保留最多 12 个候选，每个主机最多 2 条并优先覆盖不同来源。
-- 再通过 Web Unlocker 抓取最多 8 个商品页，并发最多 3 个。单轮最多 **1 次 SERP + 8 次商品页请求**；SERP 最多 45 秒、无自动重试，请求可能产生 Bright Data 费用。
-- 搜索摘要只用于发现链接，不能作为售价。商品页当前只接受可验证的 JSON-LD `Product` 与单一 `Offer`；校验币种、型号和来源链接，过滤多规格区间价、配件和不同型号，运费等缺失字段保持未知。
-- 「全网」表示搜索范围不限于单个平台，不保证覆盖所有网站或解析每个结果。没有结构化报价、需要登录或被拦截的页面可能无法提供报价；搜索/解析失败不能用来断言商品不存在。
-- 查询全程不查库、不写库。用户明确指定平台时仍走原有平台适配器，其重试规则和请求费用独立适用。
+- 搜索只提供候选标题和链接。优先准确型号的商品页，过滤评测、价格历史、翻新商品和无效模板链接；目录可以提供同站商品链接，其价格不作为报价。
+- 通常最多核验 8 页，必要时补充一次搜索、总计最多 12 页；并发最多 3，每个主机最多 2 页，同站链接仅跟进一跳。整次搜索共享最多 2 次 HTML 短重试，实际供应商请求数还包含 Fetch 和 HTML 核验。
+- Fetch 内容及 HTML 商品数据必须能确认型号、售价、币种和在售状态；多规格歧义、价格冲突和无法核验的页面不返回报价。开启 HTML 回退时，即使 Fetch 给出完整价格也会核对 HTML；HTML 失败不能恢复未经确认的 Fetch 报价。
+- `geography: global` 保留商品原币种，未知运费保持未知，不跨币种按数字大小宣称最便宜。用户指定平台时走相应平台适配器。
+- 全程不查询已有报价、不入库。搜索失败不代表没有在售商品，也不保证覆盖所有商家。
 
-接口格式依据 [Bright Data SERP API 官方文档](https://docs.brightdata.com/api-reference/rest-api/serp/serp-api)。真实验证需要账号已开通可用的 SERP zone；离线测试只证明解析、筛选和请求边界，不证明供应商授权或真实网站可抓取。
+配置及线上验证见 [Fetch 接入](../docs/deepseek-fetch-price-search.md)、[Fetch 修复](../docs/deepseek-fetch-repair-2026-11-05.md) 和 [小米 14 搜索修复](../docs/xiaomi14-search-fix-2026-11-05.md)。
 
 ### Lazada：页面解析与恢复
 
@@ -128,7 +128,7 @@ pnpm crawl --market SG --platform shopee --product sony-wh1000xm5 --dry-run
 ```
 
 适配器会调用 `POST /datasets/filter`（`title includes 型号` + `domain includes shopee.sg`），
-轮询快照完成后下载 CSV。聊天实时搜索直接返回校验过的原始报价，不入库；独立 CLI 才映射成 `Offer` 后按流程入库。不再使用进程生命周期内无限期的报价缓存，每次实时搜索会创建新快照并可能重新计费。
+轮询快照完成后下载 CSV。聊天实时搜索使用这些候选链接继续核验商品详情页，不入库；独立 CLI 才映射成 `Offer` 后按流程入库。不再使用进程生命周期内无限期的报价缓存，每次实时搜索会创建新快照并可能重新计费。
 
 > 注意：`/datasets/list` 里的目录 id 只是 Marketplace 目录，未开通时调用会返回 404；
 > 必须使用**开通后账号里的** dataset id。若返回 400 `This dataset does not support collection`，

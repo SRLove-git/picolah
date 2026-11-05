@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { normalizeSearchLanguage } from '../shared/search-language.ts';
 import { liveSearchQuery } from './agent/live-query.ts';
+
+test('Chinese appliance searches retain brand, category and supplied specifications', () => {
+  assert.deepEqual(liveSearchQuery('全网搜索九阳豆浆机价格'), { query: 'Joyoung soy milk maker' });
+  assert.deepEqual(liveSearchQuery('全网搜索九阳 DJ03E-A1soloE 300ml 豆浆机价格'), { query: 'Joyoung DJ03E-A1soloE 300ml soy milk maker' });
+});
 import { emptyLiveComparison } from './agent/live-comparison.ts';
 
 test('known Chinese shopping terms become marketplace search words, not catalog products', () => {

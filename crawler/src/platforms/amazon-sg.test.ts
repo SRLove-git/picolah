@@ -51,6 +51,15 @@ test('Amazon search makes one bounded request without transport retries', async 
   assert.deepEqual(calls, [{ url: amazonSearchUrl('Sony WH-1000XM5'), options: { country: 'SG', timeoutMs: 90_000, retries: 0 } }]);
 });
 
+test('Amazon live search forwards its shorter request deadline', async () => {
+  const calls: FetchHtmlOptions[] = [];
+  await searchAmazonSg('SG', 'Sony WH-1000XM5', {
+    timeoutMs: 20_000,
+    fetchHtml: async (_url, options) => { calls.push(options ?? {}); return pricedCard; },
+  });
+  assert.deepEqual(calls, [{ country: 'SG', timeoutMs: 20_000, retries: 0 }]);
+});
+
 test('Amazon challenges are source failures even when stale product markup or no-results text is present', async () => {
   for (const html of [
     '<html><title>Robot Check</title><p>Enter the characters you see below</p></html>',

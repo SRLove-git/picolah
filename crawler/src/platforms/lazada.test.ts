@@ -83,7 +83,8 @@ test('live discovery reports a blocked Lazada page as failed rather than not fou
     }),
   });
   assert.deepEqual(result.listings, []);
-  assert.deepEqual(result.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'] });
+  assert.deepEqual(result.summary, { requests: 1, matched: 0, skipped: 0, failed: 1, failedPlatforms: ['lazada'],
+    failureCodes: ['SOURCE_SEARCH_FAILED'], discovered: 0, pagesChecked: 0, pagesVerified: 0 });
 });
 
 test('captured current Lazada cards retain source-bound model, price and URL', () => {
@@ -108,6 +109,15 @@ test('partial HTML recovers with one rendered request and never compounds transp
     { transport: 'api', retries: 0, timeoutMs: 90_000 },
     { transport: 'api', retries: 0, timeoutMs: 90_000, render: true },
   ]);
+});
+
+test('live search can use a shorter deadline without a rendered retry', async () => {
+  const calls: unknown[] = [];
+  await assert.rejects(searchLazada('SG', 'WF-1000XM6', {
+    transport: 'api', timeoutMs: 20_000, renderRetry: false,
+    fetchHtml: async (_url, options) => { calls.push(options); return '<html><body>Loading</body></html>'; },
+  }), (error: BrightDataError) => error.code === 'SOURCE_PARSE_FAILED');
+  assert.deepEqual(calls, [{ transport: 'api', retries: 0, timeoutMs: 20_000 }]);
 });
 
 test('timeouts recover once, persistent parsing failure is bounded, auth and empty results do not retry', async () => {

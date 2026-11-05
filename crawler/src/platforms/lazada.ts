@@ -232,16 +232,27 @@ function verifyEmptySearchPage(html: string): void {
 export async function searchLazada(
   market: MarketCode,
   query: string,
-  dependencies: { fetchHtml?: typeof fetchHtml; transport?: 'api' | 'proxy' } = {},
+  dependencies: {
+    fetchHtml?: typeof fetchHtml;
+    transport?: 'api' | 'proxy';
+    timeoutMs?: number;
+    renderRetry?: boolean;
+  } = {},
 ): Promise<RawListing[]> {
   const url = lazadaSearchUrl(market, query);
   const transport = dependencies.transport ?? (config.brightData.apiToken && config.brightData.zone ? 'api' : config.brightData.transport);
   const request = dependencies.fetchHtml ?? fetchHtml;
   // A normal HTTP success can still be a partially rendered page. Retry just
   // once with documented browser rendering, without multiplying inner retries.
-  for (let attempt = 0; attempt < (transport === 'api' ? 2 : 1); attempt += 1) {
+  const attempts = transport === 'api' && dependencies.renderRetry !== false ? 2 : 1;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      const html = await request(url, { transport, retries: 0, timeoutMs: 90_000, ...(attempt ? { render: true } : {}) });
+      const html = await request(url, {
+        transport,
+        retries: 0,
+        timeoutMs: dependencies.timeoutMs ?? 90_000,
+        ...(attempt ? { render: true } : {}),
+      });
       const listings = parseLazadaSearch(html, market);
       if (!listings.length) {
         console.warn(`[crawler] lazada page unreadable-or-empty: chars=${html.length} rendered=${attempt > 0}`);
@@ -263,5 +274,5 @@ export async function searchLazada(
 
 export const lazadaAdapter: PlatformAdapter = {
   id: 'lazada',
-  search: searchLazada,
+  search: (market, query, options) => searchLazada(market, query, options),
 };

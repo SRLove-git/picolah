@@ -1,6 +1,6 @@
 import type { Comparison, Offer } from './types.ts';
 import { MARKETS, PLATFORMS } from './types.ts';
-import { formatMoney } from './format.ts';
+import { formatCurrency, formatMoney } from './format.ts';
 
 function sortByFinal(offers: Offer[]): Offer[] {
   return [...offers].sort((a, b) => a.finalPrice - b.finalPrice);
@@ -8,17 +8,17 @@ function sortByFinal(offers: Offer[]): Offer[] {
 
 /** Shared deterministic coverage notice also appended after streamed LLM answers. */
 export function liveSearchCoverageNote(comparison: Comparison): string {
-  if (!comparison.search?.failedPlatforms) return '';
+  if (comparison.search?.status !== 'matched' || !comparison.search.failedPlatforms) return '';
   const web = comparison.search.scope === 'web';
   const failedSources = comparison.search.failedSources?.length ? comparison.search.failedSources.join('、')
     : `${comparison.search.failedPlatforms} 个${web ? '来源' : '平台'}`;
-  return `\n\n另有 ${failedSources}暂未完成搜索，以上不是完整的${web ? '搜索结果' : '平台对比'}。`;
+  return `\n\n另有 ${failedSources}暂未完成${comparison.search.pageVerification ? '搜索或商品页核验' : '搜索'}，以上不是完整的${web ? '搜索结果' : '平台对比'}。`;
 }
 
 /** Deterministic answer used when the LLM is unavailable — and by the offline mock. */
 export function writeFallbackAnswer(comparison: Comparison): string {
   const { product, market } = comparison;
-  const marketName = MARKETS[market].nameZh;
+  const marketName = comparison.search?.geography === 'global' ? '全球' : MARKETS[market].nameZh;
 
   if (comparison.unsupportedPlatforms?.length) {
     const platforms = comparison.unsupportedPlatforms
@@ -30,6 +30,9 @@ export function writeFallbackAnswer(comparison: Comparison): string {
   if (comparison.search && comparison.search.status !== 'matched') {
     const { model, status } = comparison.search;
     const platforms = comparison.search.platforms.map((id) => PLATFORMS[id]?.name || id).join('、');
+    if (comparison.search.errorCode === 'PRODUCT_PAGE_UNVERIFIED') {
+      return `已找到 **${model}** 的候选链接，但商品详情页暂未能确认匹配规格、当前售价和库存，因此本次没有可比较的报价。请稍后重试或打开商品原页确认；这不代表没有在售商品。`;
+    }
     if (comparison.search.errorCode === 'SERP_NOT_CONFIGURED') {
       return `全网搜索接口尚未配置，暂时无法为 **${model}** 发起跨网站搜索；这不代表没有在售商品。请先配置 Bright Data SERP API，或明确指定已接入的平台。`;
     }
@@ -51,11 +54,17 @@ export function writeFallbackAnswer(comparison: Comparison): string {
   if (comparison.search?.status === 'matched') {
     const web = comparison.search.scope === 'web';
     const partialNote = liveSearchCoverageNote(comparison);
+    if (comparison.search.geography === 'global') {
+      const rows = comparison.product ? comparison.offers.map((offer) => ({ product: comparison.product!, offer })) : comparison.alternatives;
+      const choices = rows.filter((row) => row.offer).slice(0, 3).map(({ product, offer }) =>
+        `**${product.name}**（${offer!.platform}，商品价 **${formatCurrency(offer!.itemPrice, offer!.currency)}**）`).join('；');
+      return `本次全球跨网站搜索找到：${choices}。\n\n以上保留原币种和规格，未换汇或跨型号排名；运费、税费及配送范围尚未确认。` + partialNote;
+    }
     if (product && comparison.offers.length) {
       const feesUnknown = comparison.offers.some((offer) => offer.shippingKnown === false || offer.discountKnown === false);
       const sorted = [...comparison.offers].sort((a, b) => feesUnknown ? a.itemPrice - b.itemPrice : a.finalPrice - b.finalPrice);
       const best = sorted[0];
-      return `本次${web ? '全网' : '实时'}搜索找到 **${product.name}** 的 ${sorted.length} 条报价，来自 ${comparison.sourceCount} 个${web ? '网站' : '平台'}。当前返回结果中，**${best.platform}${best.seller ? ` · ${best.seller}` : ''}** 的${feesUnknown ? '商品价' : '到手价'}最低，为 **${formatMoney(feesUnknown ? best.itemPrice : best.finalPrice, market)}**。` +
+      return `本次${web ? '全网' : '实时'}搜索找到 **${product.name}** 的 ${sorted.length} 条${sorted.every((offer) => offer.verification) ? '商品页已核验' : ''}报价，来自 ${comparison.sourceCount} 个${web ? '网站' : '平台'}。当前返回结果中，**${best.platform}${best.seller ? ` · ${best.seller}` : ''}** 的${feesUnknown ? '商品价' : '到手价'}最低，为 **${formatMoney(feesUnknown ? best.itemPrice : best.finalPrice, market)}**。` +
         (feesUnknown ? '\n\n部分运费和优惠尚未确认，暂按商品价比较，最终应付金额以平台为准。' : '\n\n以上仅比较本次搜索结果，未使用历史价格。') + partialNote;
     }
     const choices = comparison.alternatives.slice(0, 3).map(({ product: item, offer }) =>
