@@ -1,4 +1,4 @@
-import type { Comparison, Offer } from './types.ts';
+import type { CountryCode, Comparison, Offer } from './types.ts';
 import { MARKETS, PLATFORMS } from './types.ts';
 import { formatCurrency, formatMoney } from './format.ts';
 
@@ -16,6 +16,13 @@ export function liveSearchCoverageNote(comparison: Comparison): string {
 }
 
 /** Deterministic answer used when the LLM is unavailable — and by the offline mock. */
+function quotePrice(offer: Offer, market: CountryCode, global: boolean): string {
+  const format = (n: number) => global ? formatCurrency(n, offer.currency) : formatMoney(n, market);
+  const low = format(offer.itemPrice);
+  return offer.priceQuote?.kind === 'range' ? `${low}–${format(offer.priceQuote.maxPrice!)}`
+    : offer.priceQuote?.kind === 'from' ? `${low} 起` : low;
+}
+
 export function writeFallbackAnswer(comparison: Comparison): string {
   const { product, market } = comparison;
   const marketName = comparison.search?.geography === 'global' ? '全球' : MARKETS[market].nameZh;
@@ -31,7 +38,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     const { model, status } = comparison.search;
     const platforms = comparison.search.platforms.map((id) => PLATFORMS[id]?.name || id).join('、');
     if (comparison.search.errorCode === 'PRODUCT_PAGE_UNVERIFIED') {
-      return `已找到 **${model}** 的候选链接，但商品详情页暂未能确认匹配规格、当前售价和库存，因此本次没有可比较的报价。请稍后重试或打开商品原页确认；这不代表没有在售商品。`;
+      return `已找到 **${model}** 的候选链接，但商品详情页暂未能确认匹配规格和页面价格，因此本次没有可比较的报价。请稍后重试或打开商品原页确认；这不代表没有在售商品。`;
     }
     if (comparison.search.errorCode === 'SERP_NOT_CONFIGURED') {
       return `全网搜索接口尚未配置，暂时无法为 **${model}** 发起跨网站搜索；这不代表没有在售商品。请先配置 Bright Data SERP API，或明确指定已接入的平台。`;
@@ -57,7 +64,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     if (comparison.search.geography === 'global') {
       const rows = comparison.product ? comparison.offers.map((offer) => ({ product: comparison.product!, offer })) : comparison.alternatives;
       const choices = rows.filter((row) => row.offer).slice(0, 3).map(({ product, offer }) =>
-        `**${product.name}**（${offer!.platform}，商品价 **${formatCurrency(offer!.itemPrice, offer!.currency)}**）`).join('；');
+        `**${product.name}**（${offer!.platform}，商品价 **${quotePrice(offer!, market, true)}**）`).join('；');
       return `本次全球跨网站搜索找到：${choices}。\n\n以上保留原币种和规格，未换汇或跨型号排名；运费、税费及配送范围尚未确认。` + partialNote;
     }
     if (product && comparison.offers.length) {
@@ -68,7 +75,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
         (feesUnknown ? '\n\n部分运费和优惠尚未确认，暂按商品价比较，最终应付金额以平台为准。' : '\n\n以上仅比较本次搜索结果，未使用历史价格。') + partialNote;
     }
     const choices = comparison.alternatives.slice(0, 3).map(({ product: item, offer }) =>
-      `**${item.name}**${offer ? `（${offer.platform}，商品价 ${formatMoney(offer.itemPrice, market)}）` : ''}`).join('；');
+      `**${item.name}**${offer ? `（${offer.platform}，商品价 ${quotePrice(offer, market, false)}）` : ''}`).join('；');
     return `本次实时搜索找到：${choices}。\n\n这些结果可能包含不同型号或规格，请确认具体版本后再比价；未使用本地价格库。` + partialNote;
   }
 

@@ -166,7 +166,7 @@ test('partial live results disclose failed platforms and do not invent missing f
   const result = { ...input, ok: true as const, summary: { requests: 2, matched: 1, skipped: 0, failed: 1 },
     listings: [{ platform: 'lazada' as const, market: 'SG' as const, itemId: 'test', title: 'Sony WF-1000XM6',
       url: 'https://www.lazada.sg/products/test.html', imageUrl: 'https://sg-live-01.slatic.net/p/wf1000xm6.jpg',
-      price: 390, currency: 'SGD', inStock: true as const }] };
+      price: 390, currency: 'SGD', verification:{source:'product-page' as const,checkedAt:new Date().toISOString()}, inStock: true as const }] };
   const comparison = liveComparison('帮我找一下wf1000xm6', input, result);
   assert.equal(comparison.search?.failedPlatforms, 1);
   assert.equal(comparison.offers[0].shippingKnown, false);
@@ -280,9 +280,9 @@ test('web tool refuses unsafe, mismatched and excluded website sources', async (
   await assert.rejects(webTool([webListing()]).invoke({ ...webInput, scope: 'platforms', platforms: ['lazada'] }));
 });
 
-test('web result limit allows up to twelve listings and rejects excess', async () => {
-  const listings = Array.from({ length: 12 }, (_, index) => ({ ...webListing(), itemId: String(index) }));
-  assert.equal((await webTool(listings).invoke(webInput)).listings.length, 12);
+test('web result limit allows up to forty listings and rejects excess', async () => {
+  const listings = Array.from({ length: 40 }, (_, index) => ({ ...webListing(), itemId: String(index) }));
+  assert.equal((await webTool(listings).invoke(webInput)).listings.length, 40);
   await assert.rejects(webTool([...listings, webListing()]).invoke(webInput));
 });
 
@@ -296,8 +296,22 @@ test('unconfigured web discovery is explicit instead of pretending that no produ
   assert.doesNotMatch(writeFallbackAnswer(comparison), /暂未找到/);
 });
 
-test('second global search may discover more candidates without raising the verified page cap', async () => {
+test('global search accepts expanded discovery and rejects counters above the response limit', async () => {
   const result = await webTool([webListing()], { summary: { requests: 14, matched: 1, skipped: 0, failed: 11, discovered: 18, pagesChecked: 12, pagesVerified: 1 } }).invoke(webInput);
   assert.equal(result.summary.discovered, 18);
-  await assert.rejects(webTool([webListing()], { summary: { requests: 20, matched: 1, skipped: 0, failed: 18, discovered: 24, pagesChecked: 19, pagesVerified: 1 } }).invoke(webInput));
+  await assert.rejects(webTool([webListing()], { summary: { requests: 20, matched: 1, skipped: 0, failed: 18, discovered: 101, pagesChecked: 101, pagesVerified: 1 } }).invoke(webInput));
+});
+
+test('capacity-bearing product names are not synthetic model codes', () => {
+ for (const text of ['SK-II Facial Treatment Essence 230ml', 'Essence230ml', 'Samsung SSD 512GB', 'Perfume 100ML']) {
+  assert.deepEqual(explicitModelCodes(text), [], text);
+  assert.equal(extractSearchModel(text), null, text);
+ }
+ assert.equal(extractSearchModel('Philips HX9911'), 'HX-9911');
+ assert.equal(extractSearchModel('Sony WF1000XM6'), 'WF-1000XM6');
+});
+
+test('brand set numbers, product descriptors and gram weights are not model hints',()=>{
+ for(const value of ['LEGO 10328','Pro 9465cc','New Balance 2002R','CeraVe Cream 454g','Essence 100g','Body Lotion 500ml'])assert.equal(extractSearchModel(value),null,value);
+ assert.equal(extractSearchModel('Philips AC1715/30'),'AC-1715/30');
 });

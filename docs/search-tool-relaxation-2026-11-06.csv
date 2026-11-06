@@ -1,0 +1,21 @@
+商品,页面标价,明确有货精确价,上一轮明确有货价,首次价格秒,缓存命中,失败码,页面数
+小米14,True,False,True,90.35,False,PAGE_PRICE,12
+Sony WH-CH720N,True,True,True,86.23,False,PAGE_PRICE,12
+小米17,True,True,True,81.03,False,PAGE_PRICE,12
+Sony WH-1000XM5,True,True,True,41.2,False,PAGE_PRICE,12
+iPhone 16 256GB,True,False,True,111.26,False,PAGE_PRICE,12
+AirPods Pro 2,True,True,False,67.69,False,PAGE_PRICE,12
+Samsung Galaxy S24 256GB,True,True,False,35.23,False,PAGE_PRICE,7
+JBL Flip 6,True,True,False,104.96,False,PAGE_PRICE,12
+Dyson V12 Detect Slim,True,True,True,78.09,False,PAGE_PRICE,12
+Logitech MX Master 3S,True,True,False,68.78,False,PAGE_PRICE,12
+Philips HD9252/91,False,False,True,,False,TypeError: terminated,0
+Logitech G502 HERO,True,False,False,108.55,False,PAGE_PRICE,12
+Joyoung DJ13E-Q7,False,False,False,,False,PRODUCT_PAGE_UNVERIFIED,16
+Samsung 990 PRO 1TB,False,False,False,,False,TypeError: terminated,0
+Tefal RK818A,False,False,False,,False,TypeError: terminated,0
+Canon EOS R50,False,False,True,,False,TypeError: terminated,0
+Nintendo Switch OLED,False,False,True,,False,TypeError: terminated,0
+Sony PlayStation 5 Slim,True,True,True,68.4,False,PAGE_PRICE,12
+Apple Watch Series 10,True,False,False,91.06,False,PAGE_PRICE,12
+Garmin Forerunner 265,True,True,False,82.01,False,PAGE_PRICE,12

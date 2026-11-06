@@ -11,13 +11,27 @@ export function emptyLiveComparison(message: string, market: CountryCode, query:
 function product(id: string, name: string): Product {
   return { id, name, brand: '', category: '', tagline: '', specs: '', visual: 'headphones', aliases: [] };
 }
+function displayTitle(listing: LiveListing): string {
+  const q = listing.priceQuote;
+  if (!q) return listing.title;
+  const labels: string[] = [];
+  if (q.kind === 'range') labels.push(`价格区间 ${listing.currency} ${listing.price}–${q.maxPrice}`);
+  else if (q.kind === 'from') labels.push(`${listing.currency} ${listing.price} 起`);
+  const stock = { 'in-stock':'', 'unknown':'库存未明确', 'out-of-stock':'缺货，页面标价', 'preorder':'预售或待补货' };
+  if (stock[q.availability]) labels.push(stock[q.availability]);
+  if (q.condition === 'used') labels.push('二手');
+  if (q.condition === 'refurbished') labels.push('翻新');
+  if (q.note) labels.push(q.note);
+  return listing.title + (labels.length ? `（${labels.join('；')}）` : '');
+}
 function offer(listing: LiveListing, productId: string, stamp: string): Offer {
   const finalPrice = listing.price + (listing.shippingFee ?? 0) - (listing.discount ?? 0);
   const source = listing.platform === 'web' ? listing.sourceHost! : listing.platform;
   return {
     id: `live-${listing.market}-${source}-${listing.itemId}`, productId,
     source: 'live', platformId: listing.platform === 'web' ? `web:${source}` : source,
-    productTitle: listing.title,
+    productTitle: displayTitle(listing),
+    ...(listing.priceQuote ? { priceQuote: listing.priceQuote } : {}),
     ...(listing.productDetails ? { productDetails: listing.productDetails } : {}),
     ...(listing.verification ? { verification: listing.verification } : {}),
     ...(listing.imageUrl ? { imageUrl: listing.imageUrl } : {}),
@@ -28,7 +42,7 @@ function offer(listing: LiveListing, productId: string, stamp: string): Offer {
     ratingKnown: listing.rating !== undefined, reviewsKnown: listing.reviews !== undefined,
     landedPriceConfidence: listing.shippingFee !== undefined && listing.discount !== undefined ? 'exact' : 'estimated',
     finalPrice, url: listing.url, rating: listing.rating ?? 0, reviews: listing.reviews ?? 0,
-    inStock: true, isOfficial: listing.platform === 'web' ? false : listing.isOfficial ?? false,
+    inStock: listing.inStock, isOfficial: listing.platform === 'web' ? false : listing.isOfficial ?? false,
     lastSeen: listing.verification?.checkedAt ?? stamp,
     low30d: finalPrice, history: [],
   };
@@ -37,6 +51,7 @@ function offer(listing: LiveListing, productId: string, stamp: string): Offer {
 export function liveComparison(message: string, input: LiveSearchInput, result: LiveSearchResult): Comparison {
   const comparison = emptyLiveComparison(message, input.market, input.query, input.platforms);
   comparison.search!.scope = input.scope ?? 'platforms';
+  if (result.cache) comparison.search!.cache = { ...result.cache };
   if (input.geography) comparison.search!.geography = input.geography;
   if (input.geography && input.maxPrice !== undefined) comparison.search!.budgetCurrency = MARKETS[input.market].currency;
   if (input.excludedPlatforms?.length) comparison.search!.excludedPlatforms = input.excludedPlatforms;
@@ -62,14 +77,17 @@ export function liveComparison(message: string, input: LiveSearchInput, result: 
   if (!result.listings.length) return comparison;
   // Global cards retain original currencies and page-specific variants. Do not
   // feed mixed currencies into the local-market cheapest-price ranking UI.
-  if (input.model && input.geography !== 'global') {
+  const quality = (row: LiveListing) => (row.inStock ? 0 : row.priceQuote?.availability === 'unknown' ? 2 : 6)
+    + (row.priceQuote && row.priceQuote.kind !== 'exact' ? 1 : 0) + (row.priceQuote?.condition === 'used' || row.priceQuote?.condition === 'refurbished' ? 2 : 0);
+  const listings = [...result.listings].sort((a,b) => quality(a)-quality(b));
+  if (input.model && input.geography !== 'global' && result.listings.every(row => !row.priceQuote || (row.priceQuote.kind === 'exact' && row.priceQuote.availability === 'in-stock' && !row.priceQuote.note && !row.priceQuote.condition))) {
     comparison.kind = 'comparison';
     comparison.product = product(`live-${input.model.toLowerCase().replace(/[^a-z0-9]/g, '')}`, input.query);
-    comparison.offers = result.listings.map((listing) => offer(listing, comparison.product!.id, comparison.updatedAt));
+    comparison.offers = listings.map((listing) => offer(listing, comparison.product!.id, comparison.updatedAt));
   } else {
     comparison.kind = 'recommendation';
-    comparison.alternatives = result.listings.map((listing) => {
-      const item = product(`live-${listing.platform === 'web' ? listing.sourceHost : listing.platform}-${listing.itemId}`, listing.title);
+    comparison.alternatives = listings.map((listing) => {
+      const item = product(`live-${listing.platform === 'web' ? listing.sourceHost : listing.platform}-${listing.itemId}`, displayTitle(listing));
       return { product: item, market: input.market, offer: offer(listing, item.id, comparison.updatedAt) };
     });
   }

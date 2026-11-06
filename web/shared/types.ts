@@ -1,3 +1,9 @@
+export interface PriceQuote {
+  kind: 'exact' | 'from' | 'range'; maxPrice?: number;
+  availability: 'in-stock' | 'out-of-stock' | 'unknown' | 'preorder';
+  source: 'html' | 'fetch'; condition?: 'new' | 'used' | 'refurbished'; variant?: string; note?: string;
+}
+
 export const COUNTRY_CODES = ['SG', 'MY', 'TH', 'ID', 'PH', 'VN'] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 
@@ -163,6 +169,7 @@ export interface Offer {
   rating: number;
   reviews: number;
   inStock: boolean;
+  priceQuote?: PriceQuote;
   isOfficial: boolean;
   lastSeen: string;
   low30d: number;
@@ -174,6 +181,8 @@ export interface ComparisonAlternative {
   offer: Offer | null;
   market: CountryCode;
 }
+
+export interface SearchCacheMetadata { hit: boolean; checkedAt: string; expiresAt: string }
 
 export interface Comparison {
   kind: 'comparison' | 'suggestions' | 'recommendation' | 'empty';
@@ -201,6 +210,7 @@ export interface Comparison {
     failedSources?: string[];
     errorCode?: 'SERP_NOT_CONFIGURED' | 'CRAWLER_QUEUE_FULL' | 'CRAWLER_QUEUE_TIMEOUT' | 'PRODUCT_PAGE_UNVERIFIED';
     pageVerification?: { discovered: number; checked: number; verified: number };
+    cache?: SearchCacheMetadata;
     status: 'matched' | 'not_found' | 'failed' | 'unavailable';
   };
 }

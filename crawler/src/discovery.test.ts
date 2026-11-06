@@ -257,11 +257,10 @@ test('budget and stock are checked on the page, never on the discovery snippet',
   assert.equal(expensive.listings.length, 0); assert.equal(expensive.summary.skipped, 1);
 });
 
-test('failed, unreadable, wrong-model and unavailable pages never fall back to search prices', async () => {
+test('failed, unreadable and wrong-model pages never fall back to search prices', async () => {
   for (const fetchPage of [
     async () => { throw new Error('private-provider-secret'); },
     async () => '<html>Please sign in</html>',
-    async (url: string) => detailPage(url, 299).replace('InStock', 'OutOfStock'),
     async (url: string) => detailPage(url, 299, 'Sony WH-1000XM6'),
     async (url: string) => detailPage(url).replace('"@type":"Product"', '"@type":"Product","model":"WH-1000XM6"'),
   ]) {

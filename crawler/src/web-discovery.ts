@@ -1,3 +1,4 @@
+import { nonRetailPriceSource } from './product-page-prices.ts';
 import { config } from './config.ts';
 import { searchDeepSeekCandidates } from './deepseek/search.ts';
 import { searchWebCandidates, type WebSearchCandidate } from './brightdata/serp.ts';
@@ -17,9 +18,9 @@ export interface WebDiscoveryDependencies {
 }
 
 export const DISCOVERY_PLATFORMS: PlatformId[] = ['shopee', 'lazada', 'tiktok', 'amazon-sg', 'tokopedia', 'tiki'];
-const MAX_PAGES = 8;
-const MAX_PER_HOST = 2;
-const CONCURRENCY = 3;
+const MAX_PAGES = 12;
+const MAX_PER_HOST = 3;
+const CONCURRENCY = 4;
 const FAILURE_CODES = new Set([
   'SERP_NOT_CONFIGURED', 'SERP_AUTH_FAILED', 'SERP_HTTP_ERROR', 'SERP_TIMEOUT',
   'SERP_NETWORK_ERROR', 'SERP_PARSE_FAILED', 'SERP_SOURCE_FAILED', 'SERP_RESPONSE_TOO_LARGE',
@@ -61,6 +62,7 @@ function candidateUrl(value: string, followup = false): URL | null {
 
 /** Arbitrary retailers are allowed; known marketplace exclusions and market boundaries still apply. */
 export function webSourceAllowed(url: URL, market: MarketCode, excluded: PlatformId[], geography?: 'global'): boolean {
+  if (nonRetailPriceSource(url.hostname)) return false;
   for (const platform of DISCOVERY_PLATFORMS) {
     const domains = [...new Set(Object.values(MARKETS).flatMap((item) => item.domains[platform] ? [item.domains[platform]!] : []))];
     const known = [...domains, ...ALIASES[platform]].some((domain) => domainMatches(url.hostname, domain));
@@ -142,7 +144,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   // purchase intent without adding a country or changing the matched identity.
   const category = /\b(?:xiaomi|iphone|pixel|oneplus)\s*\d{1,2}[a-z]?\b/i.test(options.query) ? ' smartphone' : '';
   const discoveryQuery = options.geography === 'global' && !options.model
-    ? `${options.query}${category} in stock online store` : options.query;
+    ? `${options.query}${category} online store` : options.query;
   try { candidates = await search(discoveryQuery, options.market); }
   catch (error) { failed(error); return result(); }
 
@@ -216,15 +218,15 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       }
     }));
   };
-  // Reserve two of the eight page requests for direct product links found on
+  // Reserve two of the initial twelve page requests for direct product links found on
   // brand/category pages. One hop only; the total and per-host budgets stay fixed.
   const first = pages.slice(0, MAX_PAGES - 2);
   await checkBatch(first, pages.slice(first.length), MAX_PAGES);
-  // A global query with no verified offer gets one independent search, including
+  // A global query with no page price gets one independent search, including
   // short named products such as Xiaomi 17 without an alphanumeric model code.
-  // Exclude exhausted hosts, never a country, and spend at most four extra page
-  // requests (three candidates plus one same-product link). All filters remain.
-  if (options.geography === 'global' && candidates.length > 0 && !collected.flat().length) {
+  // Exclude exhausted hosts, never a country, and spend at most twelve extra page
+  // requests (ten candidates plus linked product pages). All filters remain.
+  if (options.geography === 'global' && candidates.length > 0 && !collected.some(rows => rows.length > 0)) {
     let query = `${options.query} online shop`;
     for (const host of [...hostVisits].sort((a, b) => b[1] - a[1]).map(([host]) => host)) {
       const next = `${query} -site:${host}`;
@@ -235,7 +237,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       const fallback = selectPages(await search(query, options.market), options.market, excluded, options.geography, options.query, options.model)
         .filter((page) => !followed.has(page.url) && (hostVisits.get(new URL(page.url).hostname.replace(/^www\./, '')) ?? 0) < MAX_PER_HOST);
       for (const page of fallback) discovered.add(page.url);
-      await checkBatch(fallback.slice(0, 3), fallback.slice(3), Math.min(MAX_PAGES + 4, summary.pagesChecked! + 4));
+      await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
     } catch (error) { failed(error); }
   }
   const seen = new Set<string>();
@@ -244,7 +246,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 12);
+  }).slice(0, 40);
   summary.discovered = discovered.size;
   summary.matched = listings.length;
   return result(listings);

@@ -54,12 +54,18 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
       .map((match) => match[0].replace(/(\d)\s+(gb|tb|ml|mm)/i, '$1$2'));
   };
   if (model) {
-    const brand = normalizeSearchLanguage(message.replace(/飞利浦/g, 'Philips').replace(/戴森/g, 'Dyson')
-      .replace(/松下/g, 'Panasonic').replace(/东芝/g, 'Toshiba').replace(/美的/g, 'Midea'))
-      .match(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|jbl|lenovo|dell|asus|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung)\b/i)?.[0] || '';
-    const normalizedBrand = /^(?:jbl|asus)$/i.test(brand) ? brand.toUpperCase() : brand.slice(0, 1).toUpperCase() + brand.slice(1).toLowerCase();
-    return { query: [normalizedBrand, model, ...variants(message)].filter(Boolean).join(' '), model, ...budget };
+    // Reuse the ordinary request cleaner, keeping all product words instead of
+    // rebuilding identity from a short allow-list of brands and variants.
+    const cleaned = liveSearchQuery(message, previous, 'catalog');
+    if (!cleaned) return null;
+    const compact = model.replace(/[-\s]/g, '');
+    const escaped = [...compact].map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[-\\s]*');
+    const normalized = cleaned.query.replace(new RegExp(escaped, 'gi'), model)
+      .replace(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|lenovo|dell|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung|honor|braun)\b/gi, name=>name[0].toUpperCase()+name.slice(1).toLowerCase())
+      .replace(/\b(?:jbl|asus)\b/gi, name=>name.toUpperCase());
+    return { ...cleaned, query: normalized, model, ...budget };
   }
+
   const ordinal = message.match(/第([一二三四1234])个/);
   if (ordinal && previous?.alternatives?.length) {
     const index = '一二三四'.includes(ordinal[1]) ? '一二三四'.indexOf(ordinal[1]) : Number(ordinal[1]) - 1;

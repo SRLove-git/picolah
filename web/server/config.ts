@@ -90,6 +90,9 @@ export const config = {
     perHour: Math.max(1, num(process.env.IMAGE_RATE_PER_HOUR, 6)),
   },
   crawlerTool: {
+    // Cache verified search results for at most five minutes; 0 disables reuse.
+    cacheTtlMs: Math.max(0, Math.min(300, Math.floor(num(process.env.PRICE_SEARCH_CACHE_TTL_SECONDS, 300)))) * 1000,
+    cacheMaxEntries: Math.max(1, Math.min(1000, Math.floor(num(process.env.PRICE_SEARCH_CACHE_MAX_ENTRIES, 200)))),
     searchScope: (process.env.CRAWLER_SEARCH_SCOPE === 'web' ? 'web' : 'platforms') as 'web' | 'platforms',
     url: (process.env.CRAWLER_TOOL_URL || '').replace(/\/+$/, ''),
     token: process.env.CRAWLER_TOOL_TOKEN || '',

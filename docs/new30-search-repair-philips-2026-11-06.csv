@@ -1,0 +1,2 @@
+轮次,原搜索词,实际搜索词,复核成功,缓存命中,价格返回秒,币种,价格,来源,说明
+3,Philips AC1715/30,Philips AC-1715/30,True,False,105.15,GBP,198.44,https://www.amazon.co.uk/dp/B09JGD91TS,完整 AC1715/30 型号来自主商品副标题，Amazon UK 页面价 GBP 198.44，最终返回来源为 HTML，缓存未命中。

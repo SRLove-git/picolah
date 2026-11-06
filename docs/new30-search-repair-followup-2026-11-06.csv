@@ -1,0 +1,4 @@
+轮次,序号,原搜索词,实际搜索词,原始价格返回,复核成功,缓存命中,价格返回秒,币种,价格,来源,说明
+2,23,Instant Pot Duo 6L,Instant Pot Duo 6L,True,True,False,108.24,ZAR,2399,https://kloppers.co.za/product/instant-pot-duo-cooker/,保留明确标注 Duo 7-in-1 6L 的页面价；Crisp/Easy 版本未混入，另有 6QT/5.7L 地区标注来源，规格原样展示。
+2,29,Philips AC1715/30,Philips AC-1715/30,False,False,False,,,,,第二轮仍未成功，保留 PRODUCT_PAGE_UNVERIFIED；继续补修 Fetch 的主标题和副标题区块读取。
+2,30,Estee Lauder Advanced Night Repair 50ml,Estee Lauder Advanced Night Repair 50ml,True,True,False,84.35,USD,62.17,https://business.walmart.com/ip/Estee-Lauder-Advanced-Night-Repair-Synchronized-Multi-Recovery-Complex-50ml-1-7oz/604998590,Walmart 50ml 页面 USD 62.17 正常；Goxip 聚合来源已从最终结果排除。

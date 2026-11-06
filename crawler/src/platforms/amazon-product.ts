@@ -40,36 +40,51 @@ function one(html: string, id: string, tag?: string): Element | undefined {
 /** Primary new-product offer only. Recommendations, used offers and list prices are excluded. */
 export function parseAmazonProduct(html: string, page: URL, market: MarketCode, geography?: 'global'): WebListing[] {
   const host = page.hostname.replace(/^www\./, '');
-  const currency = ({ 'amazon.com': 'USD', 'amazon.sg': 'SGD' } as Record<string, string>)[host];
-  const asin = page.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:\/|$)/i)?.[1].toUpperCase();
+  const currency = ({ 'amazon.com': 'USD', 'amazon.sg': 'SGD', 'amazon.co.uk': 'GBP' } as Record<string, string>)[host];
+  const asin = page.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:\/|$)/i)?.[1].toUpperCase();
   if (!currency || !asin || (geography !== 'global' && currency !== MARKETS[market].currency)
     || [...page.searchParams].some(([key, value]) => /condition/i.test(key) && !/^new$/i.test(value))) return [];
   const clean = html.replace(/<!--[\s\S]*?-->|<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
   for (const link of elements(clean, (tag) => tag.startsWith('<link ') && attr(tag, 'rel') === 'canonical')) {
     try {
       const target = new URL(attr(link.tag, 'href'), page);
-      if (target.hostname.replace(/^www\./, '') !== host || target.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:\/|$)/i)?.[1].toUpperCase() !== asin) return [];
+      if (target.hostname.replace(/^www\./, '') !== host || target.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:\/|$)/i)?.[1].toUpperCase() !== asin) return [];
     } catch { return []; }
   }
-  const title = visible(one(clean, 'productTitle', 'span')?.body ?? '');
+  const primaryTitle = visible(one(clean, 'productTitle', 'span')?.body ?? '');
+  // Amazon may put the complete model in the visible title differentiator.
+  // Bind it to the primary title container, never recommendations or body text.
+  const heading = one(clean, 'title_feature_div');
+  const subtitles = elements(heading?.body ?? '', tag => attr(tag, 'class').split(/\s+/).includes('dp-title-differentiators'));
+  if (subtitles.length > 1) return [];
+  const subtitle = subtitles.length ? visible(subtitles[0].body) : '';
+  if (subtitle.length > 500) return [];
+  const title = primaryTitle + (subtitle ? ' | ' + subtitle : '');
   const box = one(clean, 'newAccordionRow_0');
-  const primaryPrices = elements(clean, (tag) => attr(tag, 'id') === 'corePriceDisplay_desktop_feature_div')
-    .filter((node) => elements(node.body, (tag) => attr(tag, 'class').split(/\s+/).includes('priceToPay')).length > 0);
+  const priceNodes = (fragment: string) => elements(fragment, tag => attr(tag, 'id') === 'corePriceDisplay_desktop_feature_div')
+    .filter(node => elements(node.body, tag => attr(tag, 'class').split(/\s+/).includes('priceToPay')).length > 0);
+  const selectedPrices = priceNodes(box?.body ?? '');
+  const usedBoxes = elements(clean, tag => /^usedAccordionRow/.test(attr(tag, 'id')));
+  const primaryPrices = selectedPrices.length ? selectedPrices
+    : priceNodes(clean).filter(node => !usedBoxes.some(used => used.body.includes(node.body)));
   const primary = primaryPrices.length === 1 ? primaryPrices[0] : undefined;
+  const selectedAmounts = elements(box?.body ?? '', tag => attr(tag, 'class').split(/\s+/).includes('apex-pricetopay-value'));
+  if (selectedAmounts.length > 1) return [];
+  const selectedAmount = selectedAmounts[0];
   const currencies = elements(clean, (tag) => tag.startsWith('<input ') && attr(tag, 'name') === 'currencyOfPreference');
-  if (!title || /\b(?:renewed|refurbished|used)\b/i.test(title) || !box || !primary
+  if (!primaryTitle || /\b(?:renewed|refurbished|used)\b/i.test(title) || !box || (!primary && !selectedAmount)
     || !attr(box.tag, 'class').split(/\s+/).includes('a-accordion-active')
-    || attr(primary.tag, 'data-csa-c-asin') !== asin
-    || currencies.length !== 1 || attr(currencies[0].tag, 'value') !== currency
+    || (!selectedAmount && attr(primary!.tag, 'data-csa-c-asin') !== asin)
+    || (currencies.length ? currencies.length !== 1 || attr(currencies[0].tag, 'value') !== currency : currency !== 'GBP')
     || attr(one(box.body, 'ASIN', 'input')?.tag ?? '', 'value') !== asin
     || !one(box.body, 'add-to-cart-button') || !/^in stock\b/i.test(visible(one(box.body, 'availability')?.body ?? ''))) return [];
-  const prices = elements(primary.body, (tag) => attr(tag, 'class').split(/\s+/).includes('priceToPay'));
+  const prices = selectedAmount ? [selectedAmount] : elements(primary!.body, (tag) => attr(tag, 'class').split(/\s+/).includes('priceToPay'));
   if (prices.length !== 1) return [];
   const pricePart = (name: string) => elements(prices[0].body, (tag) => attr(tag, 'class').split(/\s+/).includes(name));
   const whole = pricePart('a-price-whole'), fraction = pricePart('a-price-fraction'), symbol = pricePart('a-price-symbol');
   if (whole.length !== 1 || fraction.length !== 1 || symbol.length !== 1) return [];
   const w = visible(whole[0].body).replace(/\s/g, ''), f = visible(fraction[0].body), s = visible(symbol[0].body);
-  if (!/^(?:\d{1,3}(?:,\d{3})*|\d+)\.$/.test(w) || !/^\d{2}$/.test(f) || !(currency === 'USD' ? ['$', 'US$'] : ['S$', '$']).includes(s)) return [];
+  if (!/^(?:\d{1,3}(?:,\d{3})*|\d+)\.$/.test(w) || !/^\d{2}$/.test(f) || !(currency === 'GBP' ? ['£'] : currency === 'USD' ? ['$', 'US$'] : ['S$', '$']).includes(s)) return [];
   const price = Number(w.replace(/,/g, '') + f);
   if (!Number.isFinite(price) || price <= 0 || price >= 1e9) return [];
   const url = `https://www.${host}/dp/${asin}`;

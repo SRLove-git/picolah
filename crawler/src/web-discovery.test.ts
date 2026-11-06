@@ -63,7 +63,7 @@ test('web discovery verifies independent shops rather than only predefined platf
     discovered: 2, pagesChecked: 2, pagesVerified: 2 });
 });
 
-test('web discovery has a hard page budget, three workers and host diversity', async () => {
+test('web discovery has a hard page budget, four workers and host diversity', async () => {
   const urls = Array.from({ length: 12 }, (_, n) => `https://shop${Math.floor(n / 3)}.example.com/products/${n}`);
   const visited: string[] = [];
   let active = 0; let peak = 0;
@@ -72,9 +72,9 @@ test('web discovery has a hard page budget, three workers and host diversity', a
     await new Promise((resolve) => setTimeout(resolve, 5));
     active--; return page(url);
   } } });
-  assert.equal(peak, 3); assert.equal(visited.length, 8); assert.equal(result.summary.requests, 9);
+  assert.equal(peak, 4); assert.equal(visited.length, 12); assert.equal(result.summary.requests, 13);
   assert.equal(new Set(visited.slice(0, 4).map((url) => new URL(url).hostname)).size, 4);
-  assert.equal(result.listings.length, 8);
+  assert.equal(result.listings.length, 12);
 });
 
 test('an idle worker verifies discovered links without waiting for unrelated slow pages', async () => {
@@ -98,7 +98,7 @@ test('an idle worker verifies discovered links without waiting for unrelated slo
       } finally {active--;}
     }}});
     assert.ok(pipelined,'linked product must start while the unrelated initial page is still waiting');
-    assert.equal(peak,3);assert.equal(visited.length,8);assert.equal(new Set(visited).size,8);
+    assert.equal(peak,4);assert.equal(visited.length,9);assert.equal(new Set(visited).size,9);
     assert.equal(visited.filter(url=>new URL(url).hostname==='shop1.example.com').length,2);
     assert.ok(result.listings.some(offer=>offer.url===child));
   } finally {clearTimeout(guard);release();}
@@ -114,7 +114,7 @@ test('classified provider failures survive the public summary without upstream m
 });
 
 test('slow directories retain their reserved link slots ahead of ordinary trailing candidates', async () => {
-  const urls=Array.from({length:8},(_,i)=>`https://shop${i}.example.com/item`);
+  const urls=Array.from({length:12},(_,i)=>`https://shop${i}.example.com/item`);
   const child='https://shop0.example.com/products/wf-1000xm6';
   let release!:()=>void;
   const ready=new Promise<void>(resolve=>{release=resolve;});
@@ -122,12 +122,12 @@ test('slow directories retain their reserved link slots ahead of ordinary traili
   await discoverProduct(input,{web:{search:async()=>urls.map(candidate),fetchPage:async url=>{
     visited.push(url);
     if(url===urls[0]) {await ready;await new Promise(resolve=>setTimeout(resolve,10));return `<a href="${child}">Sony WF-1000XM6</a>`;}
-    if(url===urls[5]) release();
+    if(url===urls[9]) release();
     return page(url);
   }}});
   assert.ok(visited.includes(child),'slow directory must not lose its product link to trailing search results');
-  assert.ok(visited.indexOf(child)<visited.indexOf(urls[6]));
-  assert.equal(visited.length,8);assert.ok(!visited.includes(urls[7]));
+  assert.ok(visited.indexOf(child)<visited.indexOf(urls[10]));
+  assert.equal(visited.length,12);assert.ok(!visited.includes(urls[11]));
 });
 
 test('unsafe, excluded, foreign-market and duplicate links are skipped before page fetch', async () => {
@@ -143,7 +143,7 @@ test('unsafe, excluded, foreign-market and duplicate links are skipped before pa
   assert.deepEqual(result.excludedPlatforms, ['lazada']);
 });
 
-test('wrong models, accessories, wrong currency, stock and budget never become offers', async () => {
+test('identity, currency and budget stay enforced; out-of-stock page prices are labelled', async () => {
   const variants = [
     { name: 'Sony WH-1000XM6' }, { name: 'Sony WF-1000XM6 case' },
     { offers: { '@type': 'Offer', price: 100, priceCurrency: 'USD', availability: 'InStock' } },
@@ -155,7 +155,7 @@ test('wrong models, accessories, wrong currency, stock and budget never become o
     search: async () => variants.map((_, i) => candidate(`https://store${i}.example.com/product`)),
     fetchPage: async (url) => page(url, variants[n++]),
   } });
-  assert.equal(result.listings.length, 0); assert.equal(result.summary.skipped, 3); assert.equal(result.summary.failed, 2);
+  assert.equal(result.listings.length,1);assert.equal(result.listings[0].priceQuote?.availability,'out-of-stock');assert.equal(result.listings[0].inStock,false);assert.equal(result.summary.skipped,3);assert.equal(result.summary.failed,1);
   assert.deepEqual(result.summary.failureCodes, ['PRODUCT_PAGE_UNVERIFIED']);
 });
 
@@ -209,7 +209,7 @@ test('brand directory links lead to verified product prices, never directory pri
   assert.equal(result.summary.pagesVerified, 1);
 });
 
-test('linked pages obey identity, same-origin, one-hop and two-pages-per-host limits', async () => {
+test('linked pages obey identity, same-origin, one-hop and three-pages-per-host limits', async () => {
   const directory = 'https://shop.example.sg/sony';
   const product = 'https://shop.example.sg/products/wf-1000xm6';
   const visited: string[] = [];
@@ -225,11 +225,11 @@ test('linked pages obey identity, same-origin, one-hop and two-pages-per-host li
         link('/products/another')].join('');
     },
   } });
-  assert.deepEqual(visited, [directory, product]);
+  assert.deepEqual(visited, [directory, product,'https://shop.example.sg/products/another']);
   assert.equal(result.listings.length, 0);
 });
 
-test('local directories and their product links take priority without exceeding eight requests', async () => {
+test('local directories and their product links take priority without exceeding twelve requests', async () => {
   const directory = 'https://shop.example.sg/sony';
   const product = 'https://shop.example.sg/products/wf-1000xm6';
   const visited: string[] = [];
@@ -244,18 +244,18 @@ test('local directories and their product links take priority without exceeding 
   } });
   assert.equal(visited[0], directory);
   assert.ok(visited.includes(product));
-  assert.equal(visited.length, 8);
-  assert.equal(result.summary.requests, 9);
+  assert.equal(visited.length, 12);
+  assert.equal(result.summary.requests, 13);
 });
 
-test('failed exact global searches retry other hosts once, preserving identity and a twelve-page cap', async () => {
+test('failed exact global searches retry other hosts once, preserving identity and a twenty-four-page cap', async () => {
   const queries: string[] = [], visited: string[] = [];
   const result = await discoverProduct({ ...input, geography: 'global' }, { web: {
     search: async (query) => { queries.push(query); return Array.from({ length: 12 }, (_, i) => candidate(`https://shop${i + (queries.length === 1 ? 0 : 20)}.example.com/product`)); },
     fetchPage: async (url) => { visited.push(url); return url.includes('shop20.') ? page(url, { offers: { '@type': 'Offer', price: 100, priceCurrency: 'USD', availability: 'InStock', url } }) : '<html>No verifiable price</html>'; },
   } });
   assert.equal(queries.length, 2); assert.match(queries[1], /-site:shop0\.example\.com/);
-  assert.equal(visited.length, 12); assert.equal(new Set(visited).size, 12);
+  assert.equal(visited.length, 24); assert.equal(new Set(visited).size, 24);
   assert.equal(result.query, input.query); assert.equal(result.model, input.model);
   assert.equal(result.listings.length, 1); assert.equal(result.listings[0].currency, 'USD');
 });
@@ -294,7 +294,7 @@ test('short named phones match the requested generation and honor separately sup
     url: 'https://shop.example.com/product/17', price: 899, currency: 'EUR', inStock: true };
   assert.equal(queryMatchesListing('Xiaomi 17', listing, 'SG', 'web', undefined, 'global'), true);
   assert.equal(queryMatchesListing('Xiaomi 17', { ...listing, title: '17T' }, 'SG', 'web', undefined, 'global'), false);
-  assert.equal(queryMatchesListing('Xiaomi 17', { ...listing, productDetails: { brand: 'Xiaomi', model: 'Xiaomi 17 - Pre-Order Bundle' } }, 'SG', 'web', undefined, 'global'), false);
+  assert.equal(queryMatchesListing('Xiaomi 17', { ...listing, productDetails: { brand: 'Xiaomi', model: 'Xiaomi 17 - Pre-Order Bundle' } }, 'SG', 'web', undefined, 'global'), true);
   assert.equal(queryMatchesListing('Xiaomi 17', { ...listing, productDetails: { brand: 'Samsung' } }, 'SG', 'web', undefined, 'global'), false);
 });
 
@@ -311,22 +311,22 @@ test('short global names prioritize product pages over launch articles without a
   } });
   assert.equal(visited[0], merchant);
   assert.equal(visited.some(url => url.includes('news')), false);
-  assert.equal(queries.length, 1); assert.match(queries[0], /in stock online store/);
+  assert.equal(queries.length, 1); assert.match(queries[0], /online store/); assert.doesNotMatch(queries[0], /in stock/);
   assert.equal(result.query, 'Xiaomi 17'); assert.equal(result.model, undefined);
   assert.equal(result.listings.length, 1); assert.equal(result.listings[0].verification?.source, 'product-page');
 });
 
-test('short global products retry once even when only one initial merchant is usable', async () => {
+test('short global products retry once when the initial merchant has no page price', async () => {
   const visited: string[] = [], queries: string[] = [];
   const result = await discoverProduct({ scope: 'web', geography: 'global', market: 'SG', platforms: [], query: 'Xiaomi 17' }, { web: {
     search: async (query) => { queries.push(query); return [{ url: `https://shop${queries.length}.example.com/product/xiaomi-17`, title: 'Xiaomi 17' }]; },
-    fetchPage: async (url) => { visited.push(url); return page(url, { name: 'Xiaomi 17', offers: {
+    fetchPage: async (url) => { visited.push(url); if (url.includes('shop1.')) return '<h1>Xiaomi 17</h1>'; return page(url, { name: 'Xiaomi 17', offers: {
       '@type': 'Offer', price: 899, priceCurrency: 'EUR', availability: url.includes('shop1.') ? 'BackOrder' : 'InStock', url,
     } }); },
   } });
   assert.equal(queries.length, 2); assert.match(queries[1], /-site:shop1.example.com/);
   assert.equal(visited.length, 2); assert.equal(result.listings.length, 1);
-  assert.equal(result.listings[0].currency, 'EUR'); assert.match(result.listings[0].url, /shop2/);
+  assert.ok(result.listings[0].url.includes('shop2'));
 });
 
 test('a conflicting page stays excluded while other verified sources survive with an explicit failure code', async () => {
@@ -358,7 +358,7 @@ test('product-shaped editorial, refurbished and unresolved URLs do not crowd out
   const result=await discoverProduct({scope:'web',geography:'global',market:'SG',platforms:[],query:'Xiaomi 14'},{web:{
     search:async()=>candidates,fetchPage:async url=>{visited.push(url);return page(url,{name:'Xiaomi 14'});},
   }});
-  assert.equal(visited[0],merchant);assert.equal(visited.length,8);assert.equal(result.listings.length,8);
+  assert.equal(visited[0],merchant);assert.equal(visited.length,9);assert.equal(result.listings.length,9);
   assert.ok(!visited.some(url=>/compare|review\.|used\.|bad\.|wrong\./.test(url)));
 });
 
@@ -374,4 +374,27 @@ test('same-model links never spend the reserved budget on directories or unresol
     },
   }});
   assert.deepEqual(visited,[source,target]);
+});
+
+
+test('a page price completes global search regardless of inventory or preorder title', async () => {
+  for (const [availability, title, expected] of [
+    ['OutOfStock', 'Xiaomi 17', 'out-of-stock'],
+    ['PreOrder', 'Xiaomi 17 - Pre-Order', 'preorder'],
+    ['BackOrder', 'Xiaomi 17 - Back-Order', 'preorder'],
+    [undefined, 'Xiaomi 17', 'unknown'],
+  ] as const) {
+    let searches = 0, pages = 0;
+    const url = 'https://shop.example.com/product/xiaomi-17';
+    const result = await discoverProduct({ scope: 'web', geography: 'global', market: 'SG', platforms: [], query: 'Xiaomi 17' }, { web: {
+      search: async () => { searches++; return [{ url, title }]; },
+      fetchPage: async () => { pages++; return page(url, { name: title, offers: {
+        '@type': 'Offer', price: 899, priceCurrency: 'EUR', availability, url,
+      } }); },
+    } });
+    assert.equal(searches, 1, title); assert.equal(pages, 1, title);
+    assert.equal(result.listings.length, 1, title); assert.equal(result.listings[0].price, 899);
+    assert.equal(result.listings[0].priceQuote?.availability, expected);
+    assert.equal(result.listings[0].inStock, false);
+  }
 });

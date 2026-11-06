@@ -47,41 +47,34 @@ test('canonical and variant identity conflicts are rejected rather than choosing
   assert.deepEqual(parseWebProduct(html({ ...product, url: variant, offers: { ...offer, url: variant } }, `<link rel="canonical" href="${url}">`), variant, 'SG'), []);
 });
 
-test('collections, related-item lists, product groups and multiple different products are not detail quotes', () => {
-  for (const data of [
-    { '@type': 'ItemList', itemListElement: [{ item: product }] },
-    { '@type': 'CollectionPage', mainEntity: product },
-    { ...product, '@type': ['Product', 'ProductGroup'] },
-    { ...product, hasVariant: [{ ...product }] }, { ...product, sku: ['black', 'white'] },
-    [product, { ...product, name: 'Sony WH-1000XM6' }],
-    [product, { ...product, offers: { ...offer, price: 299 } }],
-    [product, { ...product, offers: { ...offer, price: null } }],
-    [{ ...product, sku: 'black' }, { ...product, sku: 'white' }],
-    [{ ...product, gtin: '1234567890123' }, { ...product, gtin: '1234567890124' }],
-  ]) assert.deepEqual(parseWebProduct(html(data), url, 'SG'), [], JSON.stringify(data));
+test('collections and related item lists remain excluded while product variants are separate', () => {
+  for (const data of [ { '@type':'ItemList', itemListElement:[{item:product}] }, { '@type':'CollectionPage',mainEntity:product } ])
+    assert.deepEqual(parseWebProduct(html(data),url,'SG'),[]);
+  const rows=parseWebProduct(html({...product,'@type':'ProductGroup',offers:undefined,hasVariant:[
+    {...product,name:'Sony WF-1000XM6 Black',sku:'black'}, {...product,name:'Sony WF-1000XM6 White',sku:'white'}
+  ]}),url,'SG');
+  assert.equal(rows.length,2);assert.notEqual(rows[0].itemId,rows[1].itemId);
 });
 
-test('only single scalar prices in market currency and precision are accepted', () => {
-  for (const offers of [
-    [offer, { ...offer, price: 499 }], [], { ...offer, '@type': 'AggregateOffer' },
-    { ...offer, lowPrice: 299 }, { ...offer, highPrice: 499 }, { ...offer, priceRange: '299-499' },
-    { ...offer, price: '399-499' }, { ...offer, price: 'S$399' }, { ...offer, price: 'from 399' },
-    { ...offer, price: '399/499' }, { ...offer, price: '399,00' }, { ...offer, price: 399.005 },
-    { ...offer, price: null }, { ...offer, price: 0 }, { ...offer, price: -1 }, { ...offer, price: 1e12 },
-    { ...offer, priceCurrency: 'USD' }, { ...offer, priceCurrency: undefined },
-    { ...offer, priceSpecification: { price: 299 } },
-  ]) assert.deepEqual(parseWebProduct(html({ ...product, offers }), url, 'SG'), [], JSON.stringify(offers));
-  assert.deepEqual(parseWebProduct(html({ ...product, priceRange: '399-499' }), url, 'SG'), []);
-  const viet = { ...product, offers: { ...offer, priceCurrency: 'VND', price: 4000000 } };
-  assert.equal(parseWebProduct(html(viet), url, 'VN').length, 1);
-  assert.deepEqual(parseWebProduct(html({ ...viet, offers: { ...viet.offers, price: 4000000.01 } }), url, 'VN'), []);
+test('explicit page amounts retain valid currency and precision checks', () => {
+  for (const offers of [[],{...offer,price:'399-499'},{...offer,price:'S$399'},{...offer,price:'from 399'},
+    {...offer,price:'399/499'},{...offer,price:399.005},{...offer,price:null},{...offer,price:0},
+    {...offer,price:-1},{...offer,price:1e12},{...offer,priceCurrency:'USD'},{...offer,priceCurrency:undefined}])
+    assert.deepEqual(parseWebProduct(html({...product,offers}),url,'SG'),[],JSON.stringify(offers));
+  assert.equal(parseWebProduct(html({...product,offers:{...offer,price:'399,00'}}),url,'SG')[0]?.price,399);
+  const range=parseWebProduct(html({...product,offers:{'@type':'AggregateOffer',lowPrice:299,highPrice:499,priceCurrency:'SGD'}})+'<button>Add to cart</button>',url,'SG')[0];
+  assert.equal(range.priceQuote?.kind,'range');assert.equal(range.price,299);assert.equal(range.priceQuote?.maxPrice,499);
+  const viet={...product,offers:{...offer,priceCurrency:'VND',price:4000000}};
+  assert.equal(parseWebProduct(html(viet),url,'VN').length,1);
+  assert.deepEqual(parseWebProduct(html({...viet,offers:{...viet.offers,price:4000000.01}}),url,'VN'),[]);
 });
 
-test('unknown, out-of-stock and preorder offers are not manufactured into available quotes', () => {
-  for (const availability of [undefined, null, '', 'OutOfStock', 'SoldOut', 'PreOrder', 'BackOrder', 'OnlineOnly', 'Unknown']) {
-    assert.deepEqual(parseWebProduct(html({ ...product, offers: { ...offer, availability } }), url, 'SG'), [], String(availability));
+test('unknown, out-of-stock and preorder prices retain truthful availability', () => {
+  for (const availability of [undefined,null,'','OutOfStock','SoldOut','PreOrder','BackOrder','OnlineOnly','Unknown']) {
+    const [row]=parseWebProduct(html({...product,offers:{...offer,availability}}),url,'SG');
+    assert.ok(row);assert.equal(row.inStock,false);assert.ok(row.priceQuote?.availability);
   }
-  assert.equal(parseWebProduct(html({ ...product, offers: { ...offer, availability: 'LimitedAvailability' } }), url, 'SG').length, 1);
+  assert.equal(parseWebProduct(html({...product,offers:{...offer,availability:'LimitedAvailability'}}),url,'SG')[0].inStock,true);
 });
 
 test('ratings, written review counts and seller are explicit and individually validated', () => {
@@ -114,12 +107,14 @@ test('no script execution, price snippets, commented scripts or hydration guesse
   assert.deepEqual(parseWebProduct(html(Array(20001).fill(null)), url, 'SG'), []);
 });
 
-test('expired prices and non-new condition in structured detail data are not current new-product quotes', () => {
+test('expired prices are excluded and non-new conditions are explicitly labelled', () => {
   for (const patch of [
-    { itemCondition: 'https://schema.org/UsedCondition' }, { itemCondition: 'RefurbishedCondition' },
     { priceValidUntil: '2000-01-01' }, { priceValidUntil: 'unknown' },
   ]) assert.deepEqual(parseWebProduct(html({ ...product, offers: { ...offer, ...patch } }), url, 'SG'), []);
-  assert.deepEqual(parseWebProduct(html({ ...product, itemCondition: 'UsedCondition' }), url, 'SG'), []);
+  assert.equal(parseWebProduct(html({ ...product, itemCondition: 'UsedCondition' }), url, 'SG')[0]?.priceQuote?.condition,'used');
+  for (const [itemCondition, expected] of [['https://schema.org/UsedCondition', 'used'], ['RefurbishedCondition', 'refurbished']]) {
+    assert.equal(parseWebProduct(html({ ...product, offers: { ...offer, itemCondition } }), url, 'SG')[0]?.priceQuote?.condition, expected);
+  }
   assert.equal(parseWebProduct(html({ ...product, offers: { ...offer, itemCondition: 'NewCondition', priceValidUntil: '2099-12-31' } }), url, 'SG').length, 1);
 });
 

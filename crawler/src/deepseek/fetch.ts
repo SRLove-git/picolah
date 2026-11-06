@@ -4,7 +4,7 @@ import { BrightDataError } from '../brightdata/web-unlocker.ts';
 
 const ENDPOINT = 'https://api.deepseek.com/v1/tools/fetch';
 const MAX_BYTES = 2 * 1024 * 1024;
-export interface MarkdownPage { format: 'markdown'; title: string; content: string }
+export interface MarkdownPage { format: 'markdown'; title: string; content: string; stockUnconfirmed?: boolean }
 const failure = (code: string, status?: number) => new BrightDataError('网页抓取未能取得可用内容', { code, status });
 
 function httpFailure(status: number): BrightDataError {

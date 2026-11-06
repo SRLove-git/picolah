@@ -1,0 +1,14 @@
+商品,分组,有效页面价,缓存,返回价格秒,原因,说明,来源
+小米14,control,True,False,40.65,PAGE_PRICE,Xiaomi 14 12+512GB；缺货页面仍有 PLN 4799 标价。,https://mi-store.pl/product-eng-2660-Xiaomi-14-12-512GB-White-smartphone.html?selected_size=onesize
+Sony WH-CH720N,control,True,False,82.82,PAGE_PRICE,Sony 官方 WHCH720N/B 产品页 USD 89.99。,https://electronics.sony.com/audio/headphones/headband/p/whch720n-b
+iPhone 16 256GB,control,True,False,138.96,PAGE_PRICE,iPhone 16 256GB 本体 BHD 431.992；月供和延保加价已排除。,https://bahrain.sharafdg.com/product/apple-iphone-16-5g-256gb-pink-dual-sim-smartphone/?promo=446144
+Joyoung DJ13E-Q7,previous_failure,True,False,75.34,PAGE_PRICE,九阳 DJ13E-Q7 完整型号，科力普页面价 CNY 2397。,https://www.colipu.com/category3-officemachineselectricalequipment-householdappliances-otherofficeelectricalequipment-Joyoung-659793.html
+Apple Watch Series 10,previous_failure,True,False,92.28,PAGE_PRICE,Series 10 本体 USD 440.18，金属表壳不再误判保护套。,https://global.microless.com/product/apple-watch-series-10-always-on-retina-display-s10-sip-dual-core-processor-4-core-neural-engine-watchos-11-gps-46mm-m-l-jet-black-aluminum-case-with-black-sport-band-mwwq3zp-a/?offer_id=297649
+MacBook Air M3 13 256GB,previous_failure,True,False,103.86,PAGE_PRICE,Bic Camera 的 M3 13 英寸 256GB 商品页 JPY 136800；未再返回比价聚合页。,https://www.biccamera.com/bc/item/12756884/
+Lenovo ThinkPad X1 Carbon Gen 12,previous_failure,True,False,79.15,PAGE_PRICE,ThinkPad X1 Carbon Gen 12 商品页 AED 6600。,https://axhubs.com/product/lenovo-thinkpad-x1-carbon-gen-12-laptop/
+Sony ZV-E10,control,True,False,111.54,PAGE_PRICE,ZV-E10 第一代套机 GBP 457.99，返现金额已排除；镜头 II 不等于机身第二代。,https://www.onbuy.com/gb/p/sony-zv-e10-mirrorless-camera-with-16-50mm-lens-white~p55728437/
+DJI Osmo Pocket 3,control,True,False,68.18,PAGE_PRICE,Pocket 3 本体 USD 439；已无单卖滤镜、广角镜头和电池手柄混入。,https://www.uniquephoto.com/product/dji-osmo-pocket-3-camera
+Roborock S8,previous_failure,True,False,119.72,PAGE_PRICE,S8 商品页 EUR 489，S8+ 已排除；另有 CHF 280 二手报价并明确标注二手。,https://modelforce.eu/en/product/roborock-s8-robot-tolmuimeja-valge/
+Philips Sonicare HX9911,previous_failure,True,False,83.07,PAGE_PRICE,HX9911/23 对应未指定区域的 HX9911，商品页 EUR 184.53。,https://www.dateks.lv/en/cenas/elektriskas-zobu-birstes/1264953-philips-electric-toothbrush-hx9911-23
+DeLonghi EC685,previous_failure,True,False,120.45,PAGE_PRICE,EC685 本体 EUR 150.19；缺价页面的 USD 1 错误结果已消失。,https://needstore.eu/products/delonghi-dedica-style-pump-espresso-coffee-machine-ec685-built-in-milk-frother-semi-automatic-1300-w
+SK-II Facial Treatment Essence 230ml,previous_failure,True,False,85.69,PAGE_PRICE,完整保留 SK-II Facial Treatment Essence 230ml；HKTVmall 对应商品页 HKD 1818.7。,https://www.hktvmall.com/hktv/en/main/F-%26-M/s/H0967001/Skincare-%26-Makeup/Skincare-%26-Makeup/Skincare/Serum/Anti-Aging-Wrinkle-Serum/SKII-SK2-SKII-Facial-Treatment-Essence-230ml-Japan-version090888-parallel-import-/p/H0967001_S_SD4979006070064

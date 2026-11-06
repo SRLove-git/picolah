@@ -67,11 +67,13 @@ export async function planWebSearch(question: string, market: string, previous: 
   try {
     const plan = await invokeStructuredAgent({ schema: planSchema, name: 'PicoWebSearchPlan', disableThinking: true, maxTokens: 240, timeoutMs: 12_000,
       messages: [
-        { role: 'system', content: 'You route Pico shopping conversations. Return JSON {"query":"..."}. For explicit web search, latest facts/news, official specifications, model differences, reviews, or factual questions, produce one precise web search query (max 128 characters), resolving follow-up references from context and favoring official sources. Include region and date only if relevant. For a bare product name, shopping recommendations, price comparison, budget/platform filtering or casual chat return an empty query: these use the existing catalog. Do not answer the question. Never put credentials, personal identifiers or unrelated conversation details in a search query.' },
+        { role: 'system', content: 'You route Pico shopping conversations. Return JSON {"query":"..."}. For specifications, model differences, reviews, news or factual questions, produce one useful web search query (max 128 characters), resolving references from context. Favor relevant manufacturer or retailer sources; other relevant sources are allowed. Include region and date only when requested or necessary. For a bare product name, shopping recommendations, purchase availability, where to buy, price requests or budget/platform filters, return an empty query so the dedicated product search can retrieve product-page prices. A missing capacity, color, exact model or country is not a reason to divert a shopping request into general web summaries. An explicit request to search online does not change this shopping route. Casual chat also returns an empty query. Do not answer the question. Never put credentials, personal identifiers or unrelated conversation details in a search query.' },
         { role: 'user', content: JSON.stringify({ question, market, date: new Date().toISOString().slice(0, 10), previousProduct: previous?.product?.name ?? previous?.search?.model, recentQuestions: recentQuestions.slice(-3).map((s) => s.slice(0, 300)) }) },
       ],
     });
-    if (plan.query.trim()) return plan.query.trim();
+    // An intentional empty query selects product search, including explicit
+    // requests to search online. Only planner errors use the fallback below.
+    return plan.query.trim() || null;
   } catch { /* Explicit requests can still search if the planner is unavailable. */ }
   return explicit ? Array.from(question.trim()).slice(0, 128).join('') : null;
 }

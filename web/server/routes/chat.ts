@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { startSseHeartbeat } from '../sse-heartbeat.ts';
 import { Router } from 'express';
 import { z } from 'zod';
 import type { ChatMessage, Comparison } from '../../shared/types.ts';
@@ -107,6 +108,7 @@ chatRouter.post('/', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
+  startSseHeartbeat(res);
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
   if (!image && webSearchReady()) {
     sse(res, 'status', { label: '正在理解问题…' });
@@ -207,6 +209,18 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'status', { label: '正在整理搜索结果…' });
   let answer = '';
   let usedLlm = false;
+  const priceRows = [...comparison.offers, ...comparison.alternatives.flatMap(row => row.offer ? [row.offer] : [])];
+  if (priceRows.some(row => row.priceQuote && (row.priceQuote.kind !== 'exact' || row.priceQuote.availability !== 'in-stock' || row.priceQuote.note || row.priceQuote.condition))) {
+    const notice = '部分结果包含起价、区间价、库存未明确或缺货标价，请按各项标注确认规格、库存和价格条件。\n\n';
+    answer += notice; sse(res, 'delta', { text: notice });
+  }
+  const cacheInfo = comparison.search?.cache;
+  if (cacheInfo?.hit) {
+    const checked = new Date(cacheInfo.checkedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+    const notice = `本次使用近期缓存报价（核验时间：${checked}，北京时间），下单前请在商品页确认。\n\n`;
+    answer += notice;
+    sse(res, 'delta', { text: notice });
+  }
   // The LLM writes every reply, but its guard-railed payload only ever sees the real
   // search outcome, so a failed or empty search is described instead of invented.
   // Platform/market conflicts stay deterministic, and an unrecognised image keeps the
@@ -223,14 +237,14 @@ chatRouter.post('/', async (req, res) => {
         sse(res, 'delta', { text: delta });
       }
     } catch {
-      if (answer.trim()) {
+      if (usedLlm && answer.trim()) {
         const note = '\n\n（回答连接中断，可以重试。）';
         answer += note;
         sse(res, 'delta', { text: note });
       }
     }
   }
-  if (!answer.trim()) answer = await streamLocal(res, clarification || writeFallbackAnswer(comparison));
+  if (!usedLlm) answer += await streamLocal(res, clarification || writeFallbackAnswer(comparison));
   else if (usedLlm) {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }

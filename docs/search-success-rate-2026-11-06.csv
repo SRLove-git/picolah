@@ -1,0 +1,21 @@
+query,category,raw_price_return,fresh_verified_return,reviewed_success,cache_hit,price_seconds,total_seconds,offers,checked_pages,verified_pages,reason,urls
+小米14,phone,True,True,True,False,56.841,58.961,1,8,1,VERIFIED_PRICE,https://www.ostorz.com/ogifts-lb/electronics-en/cell-phones-and-accessories/cell-phones/xiaomi-14/
+Sony WH-CH720N,audio,True,True,True,False,59.331,60.815,1,8,1,VERIFIED_PRICE,https://electronics.sony.com/audio/headphones/headband/p/whch720n-b
+小米17,phone,True,True,True,False,45.144,47.151,1,8,1,VERIFIED_PRICE,https://www.galaxus.it/en/s1/product/xiaomi-17-512-gb-venture-green-630-dual-sim-5g-smartphones-67329088
+Sony WH-1000XM5,audio,True,True,True,False,101.383,103.137,1,12,1,VERIFIED_PRICE,https://www.hktvmall.com/hktv/en/main/Digital-Pro/s/S2402001/Gadgets-%26-Electronics/Gadgets-%26-Electronics/Headphone-%26-Earphone/Headphone/Sony-WH1000XM5-Wireless-Noise-Cancelling-Headphones-White/p/S2402001_S_SonyWHXM5WT
+iPhone 16 256GB,phone,True,True,True,False,96.318,98.477,1,12,1,VERIFIED_PRICE,https://www.businessdirect.bt.com/products/apple-iphone-16-256gb-pink-myeg3qn-a-HTZC.html
+AirPods Pro 2,audio,False,False,False,False,,124.743,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Samsung Galaxy S24 256GB,phone,False,False,False,False,,118.73,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+JBL Flip 6,audio,False,False,False,False,,99.47,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Dyson V12 Detect Slim,appliance,True,True,True,False,66.013,69.197,3,8,3,VERIFIED_PRICE,https://www.galaxus.nl/en/s2/product/dyson-v12-detect-slim-absolute-vacuum-cleaners-32849459 | https://www.nettoshop.ch/en/cleaning-household/vacuum-cleaner/cordless-vacuum-cleaner/dyson-v12-detect-slim-absolute-vacuum-cleaner-grey-yellow/p/IP548333 | https://www.dyson.com.sg/dyson-v12-detect-slim-absolute-yellow-nickel-hepa
+Logitech MX Master 3S,computer_camera,True,True,False,False,64.011,66.588,1,8,1,VERIFIED_PRICE,https://www.dealmoon.com/en/459-logitech-mx-master-3s-wireless-bluetooth-mouse-electromagnetic-scroll-wheel/6257340.html
+Philips HD9252/91,appliance,True,True,True,False,50.94,52.497,1,8,1,VERIFIED_PRICE,https://www.lahorecentre.com/products/philips-air-fryer-hd9252-91-air-fryer-large-4-1
+Logitech G502 HERO,computer_camera,False,False,False,False,,104.182,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Joyoung DJ13E-Q7,appliance,False,False,False,False,,119.515,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Samsung 990 PRO 1TB,computer_camera,False,False,False,False,,121.114,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Tefal RK818A,appliance,False,False,False,False,,100.631,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Canon EOS R50,computer_camera,True,True,True,False,36.296,38.808,3,8,3,VERIFIED_PRICE,https://www.hktvmall.com/hktv/en/main/4P-Store/s/H5993001/Gadgets-%26-Electronics/Gadgets-%26-Electronics/Camera-%26-Accessories/Camera-%26-Lens/Digital-SLR/Canon-EOS-R50-Mirrorless-Camera-with-1845mm-Lens-Black-parallel-import/p/H5993001_S_4P-Canon-EOSR501845-Black | https://becextech.com/products/canon-eos-r50.html | https://www.jessops.com/p/canon/eos-r50-mirrorless-camera-in-white-with-rf-s-18-45mm-lens-203234
+Nintendo Switch OLED,wearable_game,True,True,True,False,56.63,58.944,1,8,1,VERIFIED_PRICE,https://www.walmart.ca/en/ip/Nintendo-Switch-OLED-Model-w-White-Joy-Con/6000203472771
+Sony PlayStation 5 Slim,wearable_game,True,True,True,False,62.807,65.073,1,8,1,VERIFIED_PRICE,https://www.yohohongkong.com/en-us/product/111667-%E7%B4%A2%E5%B0%BC-Sony-PlayStation-5-Slim-Disc-Version
+Apple Watch Series 10,wearable_game,False,False,False,False,,93.74,0,12,0,PRODUCT_PAGE_UNVERIFIED,
+Garmin Forerunner 265,wearable_game,False,False,False,False,,94.833,0,12,0,PRODUCT_PAGE_UNVERIFIED,

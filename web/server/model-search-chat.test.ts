@@ -77,6 +77,7 @@ process.env.AUTH_REQUIRED = 'false';
 process.env.DATABASE_URL = '';
 process.env.PICOLAH_DB_PATH = ':memory:';
 process.env.LLM_API_KEY = '';
+process.env.PRICE_SEARCH_CACHE_TTL_SECONDS = '0';
 process.env.CRAWLER_TOOL_URL = await listen(crawler);
 process.env.CRAWLER_TOOL_TOKEN = 'model-search-test-token';
 process.env.CRAWLER_TOOL_DEFAULT_PLATFORMS = 'lazada';

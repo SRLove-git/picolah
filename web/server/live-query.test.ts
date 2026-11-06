@@ -185,3 +185,15 @@ test('base edition followups and retries normalize prior phone queries while ret
   assert.equal(liveSearchQuery('标准版价格', previous('Sony WH-CH720N')), null);
   assert.deepEqual(liveSearchQuery('小米17标准版价格', previous('iPhone 17 Pro 256GB')), { query: 'Xiaomi 17' });
 });
+
+test('live beauty searches retain the full identity instead of a fabricated capacity model', () => {
+ for (const text of ['SK-II Facial Treatment Essence 230ml', 'What is the price of SK-II Facial Treatment Essence 230ml in Singapore?']) {
+  assert.deepEqual(liveSearchQuery(text), {query: 'SK-II Facial Treatment Essence 230ml'});
+ }
+});
+
+test('ordinary product names and measurements retain their full shopping identity',()=>{
+ for(const query of ['LEGO 10328','Braun Series 9 Pro 9465cc','New Balance 2002R','CeraVe Moisturising Cream 454g','Insta360 X4'])assert.deepEqual(liveSearchQuery(query),{query});
+ assert.deepEqual(liveSearchQuery('荣耀 Magic6 Pro 512GB'),{query:'Honor Magic6 Pro 512GB'});
+ assert.deepEqual(liveSearchQuery('Find Acme Special Edition QX123 black under 500 SGD'),{query:'Acme Special Edition QX-123 black',model:'QX-123',maxPrice:500});
+});

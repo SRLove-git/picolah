@@ -2,11 +2,10 @@ import { config } from './config.ts';
 import { fetchDeepSeekPage, type MarkdownPage } from './deepseek/fetch.ts';
 import { fetchWebProductPage } from './brightdata/web-page.ts';
 import { inspectMarkdownProduct } from './platforms/markdown-product.ts';
-import { parseWebProduct } from './platforms/web-product.ts';
-import { BrightDataError } from './brightdata/web-unlocker.ts';
-import type { WebListing } from './types.ts';
-import type { MarketCode } from './markets.ts';
+import { nonPurchasePageHtml, nonPurchasePageText } from './product-page-prices.ts';
 import { queryMatchesListing } from './discovery-match.ts';
+import { parseWebProduct } from './platforms/web-product.ts';
+import type { MarketCode } from './markets.ts';
 
 export type ProductPageContent = string | MarkdownPage;
 export type PageReaderEvent = { provider: 'deepseek' | 'brightdata'; outcome: 'request' | 'parsed' | 'verified' | 'unverified' | 'fetched' | 'error' | 'conflict'; code?: string; status?: number };
@@ -17,82 +16,63 @@ const errorStatus = (error: unknown): { status?: number } => {
 };
 const SECURITY_ERRORS = ['UNSAFE_WEB_URL', 'WEB_DNS_FAILED', 'WEB_DNS_TIMEOUT', 'WEB_PAGE_REDIRECT_REJECTED'];
 
-function variantConflict(a: string, b: string): boolean {
-  const colors = (s: string) => new Set(s.toLowerCase().match(/\b(?:black|white|silver|blue|pink|green|red|purple|gold)\b/g) ?? []);
-  const left = colors(a), right = colors(b);
-  if (left.size && right.size && ![...left].some(color => right.has(color))) return true;
-  // RAM alone must not be compared with storage. Compare explicit storage-size
-  // candidates only, preserving a variant conflict even when RAM is identical.
-  const storage = (s: string) => Math.max(0, ...[...s.matchAll(/(\d+)\s*(GB|TB)\b/gi)].map(m => Number(m[1]) * (/tb/i.test(m[2]) ? 1024 : 1)).filter(n => n >= 64));
-  return !!storage(a) && !!storage(b) && storage(a) !== storage(b);
-}
-
-/** Fetch first, then at most one HTML corroboration/fallback. Conflicts never
- * select a lower price or combine price and stock from different responses. */
+/** Read both representations in parallel. HTML wins when it provides product
+ * prices; a usable fetched page survives HTML failures or missing structured data. */
 export async function readProductPage(url: string, market: MarketCode, options: {
   geography?: 'global'; query?: string; model?: string; provider?: 'deepseek' | 'brightdata'; fallback?: boolean;
   fetchMarkdown?: typeof fetchDeepSeekPage; fetchHtml?: typeof fetchWebProductPage;
-  /** Shared discovery budget: at most one short retry of this page's transport. */
-  consumeRetry?: () => boolean;
-  onEvent?: (event: PageReaderEvent) => void;
+  consumeRetry?: () => boolean; onEvent?: (event: PageReaderEvent) => void;
 } = {}): Promise<ProductPageContent> {
   const provider = options.provider ?? config.pageFetch.provider;
-  let markdown: MarkdownPage | undefined;
-  let markdownOffer: WebListing | undefined;
-  const matches = (listing: WebListing) => !options.query || queryMatchesListing(options.query, listing, market, 'web', options.model, options.geography);
-  if (provider === 'deepseek') {
-    const fallback = options.fallback ?? config.pageFetch.fallback;
-    try {
-      options.onEvent?.({ provider: 'deepseek', outcome: 'request' });
-      markdown = await (options.fetchMarkdown ?? fetchDeepSeekPage)(url, { timeoutMs: 12_000 });
-      const inspection = inspectMarkdownProduct(markdown, url, market, options.geography);
-      markdownOffer = inspection.listings.find(matches);
-      options.onEvent?.({ provider: 'deepseek', outcome: markdownOffer ? 'parsed' : 'unverified',
-        ...(!markdownOffer ? { code: inspection.reason || 'PRODUCT_IDENTITY_MISMATCH' } : {}) });
-      if (!fallback) return markdown;
-    } catch (error) {
-      const code = errorCode(error);
-      options.onEvent?.({ provider: 'deepseek', outcome: 'error', code, ...errorStatus(error) });
-      if (!fallback || SECURITY_ERRORS.includes(code)) throw error;
-    }
-  }
-  try {
-    options.onEvent?.({ provider: 'brightdata', outcome: 'request' });
+  const event = (v: PageReaderEvent) => options.onEvent?.(v);
+  const getHtml = async () => {
     const fetchHtml = options.fetchHtml ?? fetchWebProductPage;
-    let html: string;
+    event({provider:'brightdata',outcome:'request'});
     try {
-      html = await fetchHtml(url, market, { timeoutMs: provider === 'deepseek' ? 18_000 : 25_000, geography: options.geography });
-    } catch (error) {
-      const code = errorCode(error);
-      if (!['WEB_PAGE_TIMEOUT', 'WEB_PAGE_NETWORK_ERROR'].includes(code) || !options.consumeRetry?.()) throw error;
-      options.onEvent?.({ provider: 'brightdata', outcome: 'error', code, ...errorStatus(error) });
-      options.onEvent?.({ provider: 'brightdata', outcome: 'request' });
-      html = await fetchHtml(url, market, { timeoutMs: 8_000, geography: options.geography });
-    }
-    options.onEvent?.({ provider: 'brightdata', outcome: 'fetched' });
-    if (markdownOffer) {
-      const offers = parseWebProduct(html, url, market, options.geography);
-      const htmlOffer = offers.find(matches);
-      let conflict: string | undefined;
-      if (offers.length && (!htmlOffer || variantConflict(markdownOffer.title, htmlOffer.title))) conflict = 'PRODUCT_PAGE_IDENTITY_CONFLICT';
-      else if (htmlOffer && (htmlOffer.currency !== markdownOffer.currency || htmlOffer.price !== markdownOffer.price)) conflict = 'PRODUCT_PAGE_PRICE_CONFLICT';
-      if (conflict) {
-        options.onEvent?.({ provider: 'deepseek', outcome: 'conflict', code: conflict });
-        throw new BrightDataError('同一商品页面的报价或规格不一致，未采纳该报价', { code: conflict });
+      let html: string;
+      try { html = await fetchHtml(url, market, {timeoutMs:40_000,geography:options.geography}); }
+      catch(error) {
+        if (!['WEB_PAGE_TIMEOUT','WEB_PAGE_NETWORK_ERROR'].includes(errorCode(error)) || !options.consumeRetry?.()) throw error;
+        event({provider:'brightdata',outcome:'error',code:errorCode(error),...errorStatus(error)});
+        event({provider:'brightdata',outcome:'request'});
+        html = await fetchHtml(url,market,{timeoutMs:15_000,geography:options.geography});
       }
-      options.onEvent?.({ provider: 'deepseek', outcome: htmlOffer ? 'verified' : 'unverified',
-        ...(!htmlOffer ? { code: 'HTML_CORROBORATION_UNVERIFIED' } : {}) });
+      event({provider:'brightdata',outcome:'fetched'}); return html;
+    } catch(error) { event({provider:'brightdata',outcome:'error',code:errorCode(error),...errorStatus(error)}); throw error; }
+  };
+  if (provider !== 'deepseek') return getHtml();
+  const getMarkdown = async () => {
+    event({provider:'deepseek',outcome:'request'});
+    try {
+      const page = await (options.fetchMarkdown ?? fetchDeepSeekPage)(url,{timeoutMs:25_000});
+      const result=inspectMarkdownProduct(page,url,market,options.geography);
+      event({provider:'deepseek',outcome:result.listings.length?'parsed':'unverified',...(!result.listings.length?{code:result.reason}:{})});
+      return page;
+    } catch(error) { event({provider:'deepseek',outcome:'error',code:errorCode(error),...errorStatus(error)}); throw error; }
+  };
+  if (!(options.fallback ?? config.pageFetch.fallback)) return getMarkdown();
+  const [md,html] = await Promise.allSettled([getMarkdown(),getHtml()]);
+  for (const response of [md,html]) if(response.status==='rejected' && SECURITY_ERRORS.includes(errorCode(response.reason))) throw response.reason;
+  // Explicit non-retail text must not be overridden by a placeholder JSON-LD price.
+  if (md.status==='fulfilled' && nonPurchasePageText(md.value.content)) return md.value;
+  if (html.status==='fulfilled') {
+    if (nonPurchasePageHtml(html.value)) return html.value;
+    const offers=parseWebProduct(html.value,url,market,options.geography);
+    // UK title differentiators can be omitted by one representation. Only
+    // corroborate an exact model from Fetch when its primary title extends the
+    // single HTML identity; an explicitly different model still wins as conflict.
+    if (offers.length && options.query && md.status==='fulfilled' && /^(?:www\.)?amazon\.co\.uk$/.test(new URL(url).hostname)) {
+      const identity=(s:string)=>s.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+      const base=identity(offers[0].title);
+      const matches=(row:typeof offers[number])=>queryMatchesListing(options.query!,row,market,'web',options.model,options.geography);
+      if(base.length>=20 && offers.every(row=>identity(row.title)===base && !row.productDetails?.model) && !offers.some(matches)) {
+        const fetched=inspectMarkdownProduct(md.value,url,market,options.geography).listings;
+        if(fetched.some(row=>matches(row)&&identity(row.title).startsWith(base+' ')))return {...md.value,stockUnconfirmed:true};
+      }
     }
-    return html;
-  } catch (error) {
-    const code = errorCode(error);
-    if (code.startsWith('PRODUCT_PAGE_') && code.endsWith('_CONFLICT')) throw error;
-    options.onEvent?.({ provider: 'brightdata', outcome: 'error', code, ...errorStatus(error) });
-    if (SECURITY_ERRORS.includes(code)) throw error;
-    // Preserve safe same-site directory links from Fetch when HTML is blocked.
-    // When corroboration is enabled, a timeout must not resurrect an unchecked
-    // Markdown price either. Only incomplete content may survive for links.
-    if (markdown && !markdownOffer) return markdown;
-    throw error;
+    if (offers.length || md.status==='rejected') return html.value;
   }
+  if (md.status==='fulfilled') return { ...md.value, stockUnconfirmed: true };
+  if (html.status==='fulfilled') return html.value;
+  throw html.reason;
 }

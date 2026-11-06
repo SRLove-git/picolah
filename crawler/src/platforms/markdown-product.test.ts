@@ -13,12 +13,9 @@ test('Fetch product quotes use only primary current price, explicit currency and
  assert.equal(verified[0].verification?.source,'product-page');
  assert.deepEqual(await verifyProductPage(url,{market:'SG',geography:'global',query:'Sony WH-CH730N',model:'WH-CH730N'},async()=>page),[]);
 });
-test('missing, foreign, conflicting, conditional and variant prices remain unverified',()=>{
+test('invalid currency, unrelated headings and reference-only prices remain excluded',()=>{
  for(const content of [
   page.content.replace('USD 89.99','$89.99'),page.content.replace('USD 89.99','XYZ 89.99'),page.content.replace('USD 89.99','JPY 89.99'),
-  page.content.replace('Availability: In Stock','Add to cart'),page.content.replace('In Stock','Out of stock'),page.content.replace('In Stock','Pre-order'),
-  page.content.replace('Sale Price: USD 89.99','Member-only price: USD 89.99'),page.content.replace('Sale Price: USD 89.99','Starting at USD 89.99'),
-  page.content.replace('## Reviews','Price: USD 99.99\n## Reviews'),page.content.replace('## Reviews','Select color\n## Reviews'),
   page.content.replace('Sale Price: USD 89.99','List Price: USD 89.99'),page.content.replace('# Sony WH-CH720N Black','# Sony WH-CH730N Black'),
   page.content+'\n# Another Product\nPrice: USD 1.00\nIn stock',
  ]) assert.deepEqual(parse(content),[],content);
@@ -55,7 +52,7 @@ test('identical repeated headings and a matching H2 are one product, not differe
  assert.equal(parse(page.content.replace('Sale Price:','# Sony WH-CH720N Black\nSale Price:')).length,1);
  assert.equal(parse(page.content.replace('# Sony','## Sony')).length,1);
  assert.deepEqual(parse(page.content.replace('Sale Price:','# Sony WH-CH730N Black\nSale Price:')),[]);
- assert.deepEqual(parse(page.content+'\n# Sony WH-CH720N Black\nUSD 50.00\nIn Stock'),[]);
+ assert.equal(parse(page.content+'\n# Sony WH-CH720N Black\nUSD 50.00\nIn Stock')[0]?.price,89.99);
 });
 
 test('public regular prices can be separated from explicit member-only prices without choosing the cheapest',()=>{
@@ -69,11 +66,10 @@ test('public regular prices can be separated from explicit member-only prices wi
  assert.deepEqual(parse(bound.replace(url,'https://other.example.com/product')+content.replace('In Stock','')),[]);
 });
 
-test('ambiguous currency, unsupported money lines and missing stock retain specific rejection reasons',()=>{
+test('ambiguous currency and unsupported money lines retain specific rejection reasons',()=>{
  assert.equal(parse('# Sony WH-CH720N Black\nCurrency: SGD\n$106.89\nIn Stock')[0]?.currency,'SGD');
  for(const content of ['Price: $106.89\nIn Stock','Currency: EUR\n$106.89\nIn Stock','EUR 1.013\nIn Stock',
-  'EUR 12,34,56\nIn Stock','EUR 80.00\nUSD 70.00\nIn Stock','EUR 80.00\nEUR 90.00\nIn Stock','EUR 80.00\nAdd to cart',
-  'EUR 80.00\nNicht verfügbar','EUR 80.00\nIn Stock\nSelect model']) {
+  'EUR 12,34,56\nIn Stock','EUR 80.00\nUSD 70.00\nIn Stock','EUR 80.00\nEUR 90.00\nIn Stock']) {
   const result=inspectMarkdownProduct({...page,content:'# Sony WH-CH720N Black\n'+content},url,'SG','global');
   assert.deepEqual(result.listings,[]);assert.ok(result.reason);
  }

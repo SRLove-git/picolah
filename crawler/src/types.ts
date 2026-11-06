@@ -1,3 +1,9 @@
+export interface PriceQuote {
+  kind: 'exact' | 'from' | 'range'; maxPrice?: number;
+  availability: 'in-stock' | 'out-of-stock' | 'unknown' | 'preorder';
+  source: 'html' | 'fetch'; condition?: 'new' | 'used' | 'refurbished'; variant?: string; note?: string;
+}
+
 import type { MarketCode, PlatformId } from './markets.ts';
 
 export interface CatalogProduct {
@@ -30,6 +36,7 @@ export interface RawListing {
   location?: string;
   isOfficial?: boolean;
   inStock: boolean;
+  priceQuote?: PriceQuote;
   /** Present only after reading and validating the current product detail page. */
   verification?: { source: 'product-page'; checkedAt: string };
   productDetails?: { brand?: string; model?: string; description?: string };
@@ -59,6 +66,9 @@ export interface Offer {
   rating: number;
   reviews: number;
   inStock: boolean;
+  priceQuote?: PriceQuote;
+  verification?: { source: 'product-page'; checkedAt: string };
+  productDetails?: { brand?: string; model?: string; description?: string };
   isOfficial: boolean;
   capturedAt: string;
 }

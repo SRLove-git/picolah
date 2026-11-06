@@ -28,9 +28,9 @@ test('unrelated or conflicting state cannot supply product inventory', () => {
     { price: { ...state.price, value: 99.99 } }, { price: { ...state.price, currencyIso: 'SGD' } },
     { stock: { stockLevelStatus: 'outOfStock', stockLevel: 0 } }, { stock: { stockLevelStatus: 'inStock', stockLevel: 0 } },
     { preOrder: true }, { purchasable: false }, { notSellable: true }, { stock: {} },
-  ]) assert.deepEqual(parseWebProduct(html({ ...state, ...patch }), url, 'SG', 'global'), [], JSON.stringify(patch));
-  assert.deepEqual(parseWebProduct(html(state, {}, { success: false }), url, 'SG', 'global'), []);
-  assert.deepEqual(parseWebProduct(html(state, { offers: { ...product.offers, availability: 'OutOfStock' } }), url, 'SG', 'global'), []);
+  ]) { const rows=parseWebProduct(html({ ...state, ...patch }), url, 'SG', 'global');assert.ok(rows.length);if(!('price' in patch))assert.equal(rows[0].inStock,false,JSON.stringify(patch)); }
+  assert.equal(parseWebProduct(html(state, {}, { success: false }), url, 'SG', 'global')[0]?.priceQuote?.availability,'unknown');
+  assert.equal(parseWebProduct(html(state, { offers: { ...product.offers, availability: 'OutOfStock' } }), url, 'SG', 'global')[0]?.price,89.99);
   assert.deepEqual(parseWebProduct(html(state), url + '?variant=other', 'SG', 'global'), []);
 });
 
@@ -40,7 +40,7 @@ test('variant links never become offers and never inherit the selected color', (
     selected: variant('whch720n-w', 'White'),
     options: [variant('whch720n-b', 'Black'), variant('whch710n-b', 'Black'), variant('whch720n-p', 'Pink'), variant('whch720n-w', 'White'), variant('whch720n-x', 'Blue', 'https://evil.example.com/product')],
   }] };
-  assert.deepEqual(parseWebProduct(html(data), url, 'SG', 'global'), []);
+  const row=parseWebProduct(html(data), url, 'SG', 'global')[0];assert.equal(row.inStock,false);assert.equal(row.priceQuote?.availability,'out-of-stock');assert.equal(row.title,'Sony WHCH720N/W');
   assert.deepEqual(linkedProductPages(html(data), url + '?utm_source=search', 'Sony WH-CH720N Black', 'WH-CH720N').map((x) => x.url), ['https://retailer.example.com/products/whch720n-b']);
   assert.deepEqual(linkedProductPages(html(data), url, 'Sony WH-CH720N White', 'WH-CH720N'), []);
 });

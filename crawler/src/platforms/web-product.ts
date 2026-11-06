@@ -5,6 +5,7 @@ import { extractImageUrl } from '../image-url.ts';
 import type { WebListing } from '../types.ts';
 import { currencyDigits } from '../currencies.ts';
 import { commercePageProduct } from '../product-page-state.ts';
+import { broadHtmlPrices, retailPricePage, nonPurchasePageHtml } from '../product-page-prices.ts';
 import { parseAmazonProduct } from './amazon-product.ts';
 
 type RecordValue = Record<string, unknown>;
@@ -134,10 +135,10 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
 }
 
 /** Extract only a single current product's explicit JSON-LD price; never search snippets. */
-export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
+function parseStrictWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   const page = safeWebUrl(pageUrl);
   if (!page || !Object.hasOwn(MARKETS, market) || html.length > 8_000_000) return [];
-  if (/^(?:www\.)?amazon\.(?:com|sg)$/.test(page.hostname) && /\/(?:dp|gp\/product)\//.test(page.pathname)) return parseAmazonProduct(html, page, market, geography);
+  if (/^(?:www\.)?amazon\.(?:com|sg|co\.uk)$/.test(page.hostname) && /\/(?:dp|gp\/product|gp\/aw\/d)\//.test(page.pathname)) return parseAmazonProduct(html, page, market, geography);
   const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, '');
   const head = cleanHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
   let canonical = page;
@@ -195,4 +196,10 @@ export function parseWebProduct(html: string, pageUrl: string, market: MarketCod
     found = listing;
   }
   return found ? [found] : [];
+}
+
+export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
+  if (!retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
+  const strict = parseStrictWebProduct(html, pageUrl, market, geography);
+  return strict.length ? strict : broadHtmlPrices(html, pageUrl, market, geography);
 }

@@ -1,0 +1,14 @@
+序号,原搜索词,实际搜索词,原始价格返回,复核成功,缓存命中,价格返回秒,币种,价格,来源,说明
+1,Google Pixel 9 128GB,Google Pixel 9 128GB,True,True,False,93.55,USD,284.61,https://www.ebay.com/p/10071478529?iid=147589529892,Pixel 9 128GB 型号容量匹配；eBay 页面返回多条同款报价，样例 USD 284.61。
+2,Dell XPS 13 9340,Dell XPS 13 9340,True,True,False,108.32,JOD,1289,https://gds.jo/dell/dell-xps-13-9340-platinum-13-4-fhd-120hz-ips-intel-core-ultra-7-155h-16gb-lpddr5x-512gb-nvme-ssd-3-years-warranty?order=DESC&page=1&sort=p.price,保留 Core Ultra 7 155H 的 9340 报价；原先 i7-1355U 规格冲突来源已排除。
+6,LEGO 10328,LEGO 10328,True,True,False,135.52,EUR,49.9,https://www.coolblue.de/en/product/972462/lego-botanicals-bouquet-of-roses-10328.html,LEGO 10328 已按完整名称搜索，Coolblue 等三个商品页面返回对应套装价格。
+11,Braun Series 9 Pro 9465cc,Braun Series 9 Pro 9465cc,True,True,False,106.38,AED,3269,https://ae.tejar.com/braun-series-9-pro-9465cc-electric-shaver,完整保留 Braun Series 9 Pro 9465cc；三家商店匹配该型号，缺货项已标注。
+16,Beats Studio Pro,Beats Studio Pro,True,True,False,114.94,USD,199.99,https://www.bestbuy.com/product/beats-studio-pro-wireless-noise-cancelling-over-the-ear-headphones-duotone-gray/JJGCQP9KV8?condition=excellent&intl=nosplash,HKTV CASHBACK 的 9999 占位价已排除；Best Buy 商品页提供 USD 199.99 新品和另列的二手报价。
+18,Owala FreeSip 24oz,Owala FreeSip 24oz,True,True,False,166.71,USD,29.99,https://www.gliks.com/products/owala-freesip-24oz-stainless-steel-water-bottle-in-blue-oasis-c05951-blueoasis,只返回 FreeSip 24oz 单瓶 USD 29.99；Twist 版本和定制批量总价已消失。
+21,Insta360 X4,Insta360 X4,True,True,False,112.87,HKD,3399,https://store.insta360.com/HK/product/x4,官方 X4 页面 HKD 3399；MPB 正确返回 GBP 234–279 并标注二手。额外低价来源正文型号规格与 X4 一致，2.7K 是受支持模式，不按标题误判；未核验商家履约。
+23,Instant Pot Duo 6L,Instant Pot Duo 6L,True,True,False,72.6,ZAR,2399,https://kloppers.co.za/product/instant-pot-duo-cooker/,返回 Duo 7-in-1 6L 基础款，标注缺货页面价；Duo Crisp 已排除。
+24,CeraVe Moisturising Cream 454g,CeraVe Moisturising Cream 454g,True,True,False,101.98,EUR,20.13,https://www.cultbeauty.com/p/cerave-moisturising-cream-pot-with-ceramides-for-dry-to-very-dry-skin-454g/11798691/,实际搜索保留 CeraVe 品牌与 454g；返回 Cult Beauty 和 Lookfantastic 对应商品页。
+25,荣耀 Magic6 Pro 512GB,Honor Magic6 Pro 512GB,True,True,False,100.77,SAR,3499,https://gcc.luluhypermarket.com/en-sa/honor-magic6-pro-dual-sim-5g-smartphone-12-gb-ram-512-gb-storage-epi-green/p/2252645/,中文荣耀已转换为 Honor，返回两个 Magic6 Pro 512GB 页面价格并标注缺货。
+26,Razer DeathAdder V3,Razer DeathAdder V3,True,True,False,71.5,EUR,84.99,https://www.currys.ie/products/razer-deathadder-v3-optical-gaming-mouse-black-10246917.html,只返回基础款 DeathAdder V3；HyperSpeed 无线版本已排除。
+29,Philips AC1715/30,Philips AC-1715/30,False,False,False,,,,,本轮仍未获得完整 AC1715/30 型号的有效页面价格；保留失败结果，继续诊断候选与抓取。
+30,Estee Lauder Advanced Night Repair 50ml,Estee Lauder Advanced Night Repair 50ml,True,True,False,111.93,USD,62.17,https://business.walmart.com/ip/Estee-Lauder-Advanced-Night-Repair-Synchronized-Multi-Recovery-Complex-50ml-1-7oz/604998590,修复 Repair 和重音品牌匹配后，Walmart 返回 50ml 的 USD 62.17；额外 Goxip 聚合来源已准备单独过滤。

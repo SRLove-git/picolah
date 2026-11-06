@@ -1,5 +1,6 @@
 const nonModelPrefixes = new Set([
   'SONY', 'BOSE', 'SAMSUNG', 'APPLE', 'HUAWEI', 'XIAOMI', 'CANON', 'NIKON', 'JBL', 'LENOVO', 'DELL', 'ASUS', 'ACER',
+  'LEGO', 'PRO', 'PLUS', 'MINI', 'ULTRA', 'MAX', 'BALANCE', 'CREAM', 'ESSENCE', 'SERIES', 'EDITION', 'INSTA',
   'LAZADA', 'SHOPEE', 'AMAZON', 'TIKTOK', 'TOKOPEDIA', 'TIKI',
   'BUDGET', 'UNDER', 'BELOW', 'MAX', 'MAXIMUM', 'PRICE', 'PRICES', 'REVIEW', 'REVIEWS', 'RATING', 'RATINGS',
   'SGD', 'MYR', 'THB', 'IDR', 'PHP', 'VND', 'USD', 'EUR', 'GBP',
@@ -19,6 +20,8 @@ export function explicitModelCodes(text: string): string[] {
     /(?<![a-z0-9])((?:wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
   );
   return [...new Set([...matches].map((match) => compactModel(match[1]))
+    // Product names followed by a capacity are not invented model identifiers.
+    .filter((model) => !/^[A-Z]+\d+(?:GB|TB|ML|MM|CM|KG|MG|G|OZ|LB|CL|DL|L)$/.test(model))
     .filter((model) => !nonModelPrefixes.has(model.match(/^[A-Z]+/)?.[0] ?? ''))
     .map((model) => model.startsWith('WHCH')
       ? model.replace(/^WHCH(?=\d)/, 'WH-CH')

@@ -1,3 +1,4 @@
+import { broadMarkdownPrices, retailPricePage, nonPurchasePageText } from '../product-page-prices.ts';
 import { createHash } from 'node:crypto';
 import { safeWebUrl } from '../safe-web-url.ts';
 import { MARKETS, type MarketCode } from '../markets.ts';
@@ -52,7 +53,7 @@ function amount(value: string, explicitCurrency?: string): Amount | null {
 }
 
 /** Parse the primary offer without inferring currency, stock or a cheap variant. */
-export function inspectMarkdownProduct(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): MarkdownInspection {
+function inspectStrictMarkdownProduct(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): MarkdownInspection {
   const reject = (reason: string): MarkdownInspection => ({ listings: [], reason });
   const url = safeWebUrl(pageUrl), title = plain(page.title);
   if (!url || !Object.hasOwn(MARKETS, market) || !title || title.length > 1000 || page.content.length > 2 * 1024 * 1024
@@ -150,4 +151,36 @@ export function linkedMarkdownProducts(page: MarkdownPage, pageUrl: string, quer
     } catch { /* Invalid destinations are never requested. */ }
   }
   return parseSearchCandidates({ organic });
+}
+
+/** Amazon uses H1 for both the product and informational sections. Keep only
+ * the exact primary title and its immediate price block; a model subtitle must
+ * precede all price/section rows, never come from recommendations. */
+function amazonPrimaryMarkdown(page: MarkdownPage, pageUrl: string): MarkdownPage {
+  const url=safeWebUrl(pageUrl);
+  if(!url || !/^(?:www\.)?amazon\.co\.uk$/.test(url.hostname)
+    || !/\/(?:dp|gp\/product|gp\/aw\/d)\/[A-Z0-9]{10}(?:\/|$)/i.test(url.pathname)) return page;
+  const title=plain(page.title), lines=page.content.split(/\r?\n/);
+  const matches=lines.map((line,index)=>({line,index})).filter(x=>/^#\s+/.test(x.line) && plain(x.line.replace(/^#\s+/,''))===title);
+  if(matches.length!==1 || title.length<12 || title.length>500)return page;
+  const following=lines.slice(matches[0].index+1,matches[0].index+81);
+  const end=following.findIndex(line=>/^#{1,6}\s+/.test(line));
+  const block=(end<0?following:following.slice(0,end));
+  const first=block.map(plain).find(Boolean)??'';
+  const subtitle=first.length<=500 && /\([A-Z]{2,}[- ]?\d{3,}(?:[A-Z0-9-]*)(?:\/\d{2})?\)/i.test(first)
+    && !MONEY.test(first) && !/related|recommend|compare|compatible|replacement/i.test(first) ? first : '';
+  const identity=(title+(subtitle?' — '+subtitle:'')).replace(/[|–]/g,'—');
+  return {...page,title:identity,content:'# '+identity+'\n'+block.join('\n')};
+}
+
+export function inspectMarkdownProduct(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): MarkdownInspection {
+  if (!retailPricePage(pageUrl) || nonPurchasePageText(page.content)) return { listings: [], reason: 'PAGE_NOT_PRODUCT' };
+  page=amazonPrimaryMarkdown(page,pageUrl);
+  const strict = inspectStrictMarkdownProduct(page, pageUrl, market, geography);
+  const listings = strict.listings.length ? strict.listings : broadMarkdownPrices(page, pageUrl, market, geography);
+  if (page.stockUnconfirmed) for (const row of listings) if (row.inStock) {
+    row.inStock = false;
+    row.priceQuote = { ...row.priceQuote, kind: row.priceQuote?.kind ?? 'exact', availability: 'unknown', source: 'fetch' };
+  }
+  return listings.length ? { listings } : strict;
 }

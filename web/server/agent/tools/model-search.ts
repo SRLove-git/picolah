@@ -4,6 +4,8 @@ import { COUNTRY_CODES, MARKETS } from '../../../shared/types.ts';
 import { canonicalModelCode, compactModel } from '../../../shared/model-search.ts';
 import { config } from '../../config.ts';
 import { isSupportedCurrency } from '../../../shared/format.ts';
+import type { SearchCacheMetadata } from '../../../shared/types.ts';
+import { createSearchResultCache } from '../search-result-cache.ts';
 
 const platforms = ['lazada', 'shopee', 'amazon-sg'] as const;
 const excludedPlatforms = ['lazada', 'shopee', 'amazon-sg', 'tiktok', 'tokopedia', 'tiki'] as const;
@@ -32,7 +34,10 @@ const listingSchema = z.object({
   itemId: z.string().min(1).max(150), title: z.string().min(2).max(1000),
   url: z.string().url().max(2000), imageUrl: z.string().url().max(2000).optional(),
   price: z.number().finite().positive().max(1e12),
-  currency: z.string().length(3), inStock: z.literal(true),
+  currency: z.string().length(3), inStock: z.boolean(),
+  priceQuote: z.object({ kind:z.enum(['exact','from','range']), maxPrice:z.number().finite().positive().max(1e12).optional(),
+    availability:z.enum(['in-stock','out-of-stock','unknown','preorder']), source:z.enum(['html','fetch']),
+    condition:z.enum(['new','used','refurbished']).optional(), variant:z.string().max(200).optional(), note:z.string().max(200).optional() }).optional(),
   shippingFee: z.number().finite().min(0).max(1e9).optional(),
   discount: z.number().finite().min(0).max(1e9).optional(),
   rating: z.number().finite().min(0).max(5).optional(),
@@ -52,13 +57,13 @@ const resultSchema = z.object({
     skipped: z.number().int().nonnegative(), failed: z.number().int().nonnegative(),
     failureCodes: z.array(z.string().max(80)).max(20).optional(),
     failedPlatforms: z.array(z.enum(excludedPlatforms)).max(6).optional(),
-    discovered: z.number().int().nonnegative().max(24).optional(),
-    pagesChecked: z.number().int().nonnegative().max(12).optional(),
-    pagesVerified: z.number().int().nonnegative().max(12).optional(),
+    discovered: z.number().int().nonnegative().max(100).optional(),
+    pagesChecked: z.number().int().nonnegative().max(100).optional(),
+    pagesVerified: z.number().int().nonnegative().max(100).optional(),
   }),
-  listings: z.array(listingSchema).max(12),
+  listings: z.array(listingSchema).max(40),
 });
-export type LiveSearchResult = z.infer<typeof resultSchema>;
+export type LiveSearchResult = z.infer<typeof resultSchema> & { cache?: SearchCacheMetadata };
 
 const domains: Record<string, Partial<Record<typeof COUNTRY_CODES[number], string>>> = {
   lazada: { SG: 'lazada.sg', MY: 'lazada.com.my', TH: 'lazada.co.th', ID: 'lazada.co.id', PH: 'lazada.com.ph', VN: 'lazada.vn' },
@@ -93,10 +98,13 @@ function publicSourceHost(host: string): boolean {
 
 export function createModelSearchTool(options: {
   url: string; token: string; timeoutMs?: number; fetchImpl?: typeof fetch;
+  cacheTtlMs?: number; cacheMaxEntries?: number; now?: () => number;
 }) {
-  return tool(async (input: LiveSearchInput): Promise<LiveSearchResult> => {
+  const now = options.now ?? Date.now;
+  const cache = createSearchResultCache({ ttlMs: options.cacheTtlMs ?? 0, maxEntries: options.cacheMaxEntries, now });
+  const fetchValidated = async (input: LiveSearchInput): Promise<LiveSearchResult> => {
     if (!options.url || !options.token) throw new Error('真实爬虫工具尚未配置');
-    const startedAt = Date.now();
+    const startedAt = now();
     const response = await (options.fetchImpl ?? fetch)(`${options.url}/search`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${options.token}` },
@@ -120,7 +128,13 @@ export function createModelSearchTool(options: {
       throw new Error('商品搜索返回的查询或市场不一致');
     }
     for (const listing of result.listings) {
-      if (!listing.verification || Date.parse(listing.verification.checkedAt) > Date.now() + 60_000
+      const quote = listing.priceQuote;
+      if ((!quote && !listing.inStock) || (quote && listing.inStock !== (quote.availability === 'in-stock'))
+        || (quote?.maxPrice !== undefined && quote.maxPrice < listing.price)
+        || (quote?.kind === 'range' && !(quote.maxPrice !== undefined && quote.maxPrice > listing.price))) {
+        throw new Error('商品价格范围或库存状态不一致');
+      }
+      if (!listing.verification || Date.parse(listing.verification.checkedAt) > now() + 60_000
         || Date.parse(listing.verification.checkedAt) < startedAt - 60_000) {
         throw new Error('商品搜索返回了未经本次商品详情页核验的报价');
       }
@@ -153,9 +167,10 @@ export function createModelSearchTool(options: {
       }
     }
     return result;
-  }, {
+  };
+  return tool((input: LiveSearchInput) => cache.run(input, () => fetchValidated(input)), {
     name: 'search_marketplace_products',
-    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页核验型号、在售价格和库存。默认 scope=platforms，支持 Shopee、Lazada 及新加坡的 Amazon SG，保留用户平台筛选；配置了搜索引擎接口时可使用 scope=web、platforms=[]。只返回商品页已核验的报价与详情，不使用搜索摘要价或历史报价。',
+    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页匹配型号并读取页面价格。返回匹配商品的页面价格即成功，不要求商品有货。默认 scope=platforms，支持 Shopee、Lazada 及新加坡的 Amazon SG，保留用户平台筛选；配置了搜索引擎接口时可使用 scope=web、platforms=[]。返回商品页中的价格与详情，允许库存未知、缺货、起价和区间价，通过 priceQuote 明确标注，不把未知当作有货，不把起价当精确价。可复用最多五分钟的报价缓存并保留核验时间，不使用搜索摘要价。',
     schema: liveSearchInputSchema,
   });
 }
