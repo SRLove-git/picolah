@@ -222,6 +222,8 @@ export interface ChatMessage {
   createdAt: string;
   comparison?: Comparison;
   continuesProductContext?: boolean;
+  searchMode?: 'conversation' | 'automatic';
+  startsNewTopic?: boolean;
   image?: string;
 }
 

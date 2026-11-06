@@ -19,7 +19,7 @@ import { catalogAnswer, catalogQuotes, searchCatalog } from '../agent/catalog-se
 import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
 import { webSearchReady, webSearchTools } from '../agent/web-search.ts';
-import { conversationTools, fallbackConversationAnswer, needsProductClarification } from '../agent/conversation-turn.ts';
+import { conversationTools, fallbackConversationAnswer, needsProductClarification, needsChangeClarification, conversationSearchMode, resolveConversationTurn, conversationChangeTarget } from '../agent/conversation-turn.ts';
 
 export const chatRouter = Router();
 const chatSchema = z.object({
@@ -111,23 +111,32 @@ chatRouter.post('/', async (req, res) => {
   res.flushHeaders();
   startSseHeartbeat(res);
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
-  const conversationContext = { market, previous, history: priorMessages };
+  const conversationContext = { market, previous, history: priorMessages, searchMode: conversationSearchMode(priorMessages) };
   if (!image) sse(res, 'status', { label: '正在理解问题…' });
-  const turn = image ? null : needsProductClarification(message, conversationContext)
+  const planned = image ? null : needsProductClarification(message, conversationContext)
     ? { action: 'clarify_product' as const, query: '', continuesProductContext: false }
-    : await conversationTools.plan(message, conversationContext);
+    : needsChangeClarification(message, conversationContext)
+      ? { action: 'clarify_change' as const, query: '', continuesProductContext: true }
+      : await conversationTools.plan(message, conversationContext);
+  const turn = planned ? resolveConversationTurn(message, conversationContext, planned) : null;
+  const turnState = { searchMode: turn?.searchMode ?? 'automatic', startsNewTopic: turn?.startsNewTopic ?? false, routingAction: turn?.action ?? 'product_search' };
   if (res.destroyed) return;
-  if (turn?.action === 'reply' || turn?.action === 'clarify_product' || (turn?.action === 'web_search' && !webSearchReady())) {
+  if (turn?.action === 'reply' || turn?.action === 'clarify_product' || turn?.action === 'clarify_change' || (turn?.action === 'web_search' && !webSearchReady())) {
     sse(res, 'status', { label: '正在回复…' });
     let answer = '';
     let usedLlm = false;
+    const changeTarget = turn.startsNewTopic ? undefined : conversationChangeTarget(message, conversationContext);
+    const replyContext = { ...conversationContext, searchMode: turn.searchMode, startsNewTopic: turn.startsNewTopic,
+      previous: turn.continuesProductContext ? previous : null, changeTarget,
+      ...(turn.action === 'clarify_change' ? { replyIntent: 'clarify_change' as const }
+        : changeTarget ? { replyIntent: 'continue_change' as const } : {}) };
     if (turn.action === 'clarify_product') {
       answer = await streamLocal(res, /[\u3400-\u9fff]/.test(message)
         ? '你指的是哪款商品？告诉我商品名称或型号，我再帮你查。'
         : 'Which product do you mean? Please share its name or model.');
     } else if (llmConfigured) {
       try {
-        for await (const delta of streamChatAnswer(message, conversationContext)) {
+        for await (const delta of streamChatAnswer(message, replyContext)) {
           if (res.destroyed) return;
           answer += delta;
           usedLlm = true;
@@ -137,9 +146,9 @@ chatRouter.post('/', async (req, res) => {
         if (answer) { const note = '\n\n（回答连接中断，请重试。）'; answer += note; sse(res, 'delta', { text: note }); }
       }
     }
-    if (!answer) answer = await streamLocal(res, fallbackConversationAnswer(message, conversationContext));
+    if (!answer) answer = await streamLocal(res, fallbackConversationAnswer(message, replyContext));
     const assistantMessageId = await addAssistantReply(conversation.id, answer,
-      { usedLlm, source: 'conversation', continuesProductContext: turn.continuesProductContext });
+      { ...turnState, usedLlm, source: 'conversation', continuesProductContext: turn.continuesProductContext });
     if (!assistantMessageId) {
       sse(res, 'error', { message: '对话已删除，请开始新的对话。' });
       return res.end();
@@ -165,7 +174,7 @@ chatRouter.post('/', async (req, res) => {
       }
       if (res.destroyed) return;
       const assistantMessageId = await addAssistantReply(conversation.id, answer,
-        { usedLlm, source: 'web-search', webSearch: evidence });
+        { ...turnState, usedLlm, source: 'web-search', webSearch: evidence });
       if (!assistantMessageId) {
         sse(res, 'error', { message: '对话已删除，请开始新的对话。' });
         return res.end();
@@ -292,7 +301,7 @@ chatRouter.post('/', async (req, res) => {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }
   }
-  const assistantMessageId = await addAssistantReply(conversation.id, answer, { comparison, usedLlm, source: catalogMode ? 'catalog' : 'live-tools' });
+  const assistantMessageId = await addAssistantReply(conversation.id, answer, { ...turnState, comparison, usedLlm, source: catalogMode ? 'catalog' : 'live-tools' });
   if (!assistantMessageId) {
     sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
     return res.end();

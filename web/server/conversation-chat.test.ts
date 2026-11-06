@@ -161,3 +161,50 @@ test('unresolved references clarify without calling the model planner or crawler
   assert.match(named.comparison?.search.query, /iPhone 16/i);
   assert.equal(searches.length, count + 1);
 });
+
+
+test('ambiguous change requests converse about the known product instead of searching literal alternative suffixes', async () => {
+  const first = await ask('HCG Pregnancy Rapid Test');
+  const count = searches.length;
+  conversationTools.plan = async () => { throw new Error('an ambiguous change must not run query planning'); };
+  try {
+    for (const message of ['换一个呢', '那换一款呢', 'another one']) {
+      const result = await ask(message, first.id);
+      assert.equal(result.comparison, undefined);
+      assert.match(result.answer, /品牌.*商家/);
+      assert.doesNotMatch(result.answer, /失败|有效报价|alternative/);
+    }
+  } finally { conversationTools.plan = originalPlan; }
+  assert.equal(searches.length, count);
+  const stored = await getConversation(first.id, 'anon-conversation-regression');
+  assert.equal(stored?.messages.at(-1)?.continuesProductContext, true);
+  assert.equal(stored?.messages.at(-1)?.searchMode, 'conversation');
+  const selected = await ask('换品牌', first.id);
+  assert.equal(selected.comparison, undefined);
+  assert.match(selected.answer, /换成其他品牌/);
+  assert.doesNotMatch(selected.answer, /还是同款换一家商家/);
+  const again = await ask('换一个呢', first.id);
+  assert.equal(again.comparison, undefined);
+  assert.match(again.answer, /换成其他品牌/);
+  assert.equal(searches.length, count);
+});
+
+test('discussion preference survives requirements and blocks premature searches until an explicit lookup', async () => {
+  const count = searches.length;
+  const first = await ask('我想买手机，先聊需求，不用查价格');
+  assert.equal(first.comparison, undefined);
+  assert.equal((await getConversation(first.id, 'anon-conversation-regression'))?.messages.at(-1)?.searchMode, 'conversation');
+  conversationTools.plan = async () => ({ action: 'product_search', query: '拍照手机 预算2000', continuesProductContext: false });
+  try {
+    for (const message of ['预算两千，平时主要拍照', '续航也要好', '我更在意轻便一些']) {
+      assert.equal((await ask(message, first.id)).comparison, undefined);
+      assert.equal((await getConversation(first.id, 'anon-conversation-regression'))?.messages.at(-1)?.searchMode, 'conversation');
+    }
+    assert.equal(searches.length, count);
+    conversationTools.plan = async () => ({ action: 'product_search', query: 'Xiaomi 14', continuesProductContext: false, searchMode: 'automatic' });
+    const explicit = await ask('现在帮我查小米14价格', first.id);
+    assert.match(explicit.comparison?.search.query, /Xiaomi 14/i);
+    assert.equal(searches.length, count + 1);
+    assert.equal((await getConversation(first.id, 'anon-conversation-regression'))?.messages.at(-1)?.searchMode, 'automatic');
+  } finally { conversationTools.plan = originalPlan; }
+});
