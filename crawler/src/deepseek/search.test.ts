@@ -17,7 +17,7 @@ test('DeepSeek discovery bounds and localizes the query, discards all price hint
     assert.equal(init?.redirect, 'error');
     const body = JSON.parse(String(init?.body));
     assert.match(body.query, /Singapore SGD buy price$/);
-    assert.equal(body.count, 15);
+    assert.equal(body.count, 30);
     return Response.json({ results: [
       { title: 'Sony WH-1000XM5', url: 'https://shop.sg/products/headphone?pr_rec_id=abc', snippet: 'S$1.00', price: 1 },
       { title: 'Sony WH-1000XM5', url: 'https://shop.sg/products/headphone?pr_rec_id=def' },
@@ -68,4 +68,20 @@ test('global discovery retains independent merchants beyond the first twelve can
     return Response.json({ results: Array.from({ length: 30 }, (_, i) => ({ title: 'Sony WH-CH720N', url: `https://shop${i}.example.com/product` })) });
   } });
   assert.equal(result.length, 30); assert.equal(result.at(-1)?.url, 'https://shop29.example.com/product');
+});
+
+
+test('all supported country searches retain country and currency in provider queries', async () => {
+  const { MARKETS } = await import('../markets.ts');
+  const { buildWebSearchUrl } = await import('../brightdata/serp.ts');
+  for (const market of Object.values(MARKETS)) {
+    const google = new URL(buildWebSearchUrl('Sony WH-CH720N', market.code));
+    assert.equal(google.searchParams.get('gl'), market.code.toLowerCase());
+    assert.ok(google.searchParams.get('q')?.includes(`${market.name} ${market.currency}`));
+    await searchDeepSeekCandidates('Sony WH-CH720N', market.code, { apiKey: 'test', fetchImpl: async (_url, init) => {
+      const body = JSON.parse(String(init?.body));
+      assert.ok(body.query.endsWith(`${market.name} ${market.currency} buy price`));
+      return Response.json({ results: [] });
+    } });
+  }
 });

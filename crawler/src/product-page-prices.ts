@@ -13,7 +13,7 @@ const type = (v: Obj, name: string) => list(v['@type']).some(t => String(t).repl
 const clean = (v: any) => typeof v === 'string' ? v.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 /** Aggregators and editorial guides are discovery sources, not merchant quotes. */
 export function nonRetailPriceSource(host: string): boolean {
-  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|smartpicksguides\.com|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
+  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|phoneaqua\.com|mobilekishop\.net|smartpicksguides\.com|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
 }
 export function nonPurchasePageText(text: string): boolean {
   const plain=text.replace(/\s+/g,' ');

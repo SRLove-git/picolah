@@ -80,7 +80,7 @@ export function liveComparison(message: string, input: LiveSearchInput, result: 
   const quality = (row: LiveListing) => (row.inStock ? 0 : row.priceQuote?.availability === 'unknown' ? 2 : 6)
     + (row.priceQuote && row.priceQuote.kind !== 'exact' ? 1 : 0) + (row.priceQuote?.condition === 'used' || row.priceQuote?.condition === 'refurbished' ? 2 : 0);
   const listings = [...result.listings].sort((a,b) => quality(a)-quality(b));
-  if (input.model && input.geography !== 'global' && result.listings.every(row => !row.priceQuote || (row.priceQuote.kind === 'exact' && row.priceQuote.availability === 'in-stock' && !row.priceQuote.note && !row.priceQuote.condition))) {
+  if (input.model && input.scope !== 'web' && result.listings.every(row => !row.priceQuote || (row.priceQuote.kind === 'exact' && row.priceQuote.availability === 'in-stock' && !row.priceQuote.note && !row.priceQuote.condition))) {
     comparison.kind = 'comparison';
     comparison.product = product(`live-${input.model.toLowerCase().replace(/[^a-z0-9]/g, '')}`, input.query);
     comparison.offers = listings.map((listing) => offer(listing, comparison.product!.id, comparison.updatedAt));

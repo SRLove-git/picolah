@@ -1,3 +1,4 @@
+import { MARKETS } from '../markets.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildWebSearchUrl, parseSearchCandidates, searchWebCandidates } from './serp.ts';
@@ -11,7 +12,7 @@ test('SERP search URL scopes to market and asks for structured JSON without rest
   for (const market of ['SG', 'MY', 'TH', 'ID', 'PH', 'VN'] as const) {
     const url = new URL(buildWebSearchUrl('  Sony   WF-1000XM6  ', market));
     assert.equal(url.origin + url.pathname, 'https://www.google.com/search');
-    assert.equal(url.searchParams.get('q'), 'Sony WF-1000XM6');
+    assert.equal(url.searchParams.get('q'), `Sony WF-1000XM6 ${MARKETS[market].name} ${MARKETS[market].currency} buy price`);
     assert.equal(url.searchParams.get('gl'), market.toLowerCase());
     assert.equal(url.searchParams.get('hl'), 'en');
     assert.equal(url.searchParams.get('brd_json'), '1');

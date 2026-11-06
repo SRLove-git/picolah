@@ -83,7 +83,7 @@ chatRouter.post('/', async (req, res) => {
   const platformRestriction = directive.mode === 'include' ||
     (directive.mode === 'none' && directive.platformIds.length > 0);
   const scope = platformRestriction ? 'platforms' : config.crawlerTool.searchScope;
-  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${scope === 'web' ? '全球' : MARKETS[market].nameZh}`, market, profileUserId);
+  const conversation = stored ?? await createConversation(`${message.slice(0, 34)} · ${MARKETS[market].nameZh}`, market, profileUserId);
   const exclusionIds = ['lazada', 'shopee', 'amazon-sg', 'tiktok', 'tokopedia', 'tiki'] as const;
   const exclusions = directive.mode === 'exclude'
     ? [...new Set([...(previous?.search?.excludedPlatforms ?? []), ...directive.mentioned])]
@@ -165,7 +165,6 @@ chatRouter.post('/', async (req, res) => {
   }
   let comparison = emptyLiveComparison(message, market, target?.query || '', platforms, unsupported);
   comparison.search!.scope = scope;
-  if (scope === 'web') comparison.search!.geography = 'global';
   if (excludedPlatforms.length) comparison.search!.excludedPlatforms = excludedPlatforms;
   comparison.search!.model = target?.model || target?.query || '';
   if (target?.maxPrice !== undefined) comparison.search!.maxPrice = target.maxPrice;
@@ -184,7 +183,6 @@ chatRouter.post('/', async (req, res) => {
     sse(res, 'status', { label: '正在搜索商品并核对商品页价格…' });
     try {
       const input: LiveSearchInput = { market, scope, platforms, ...target,
-        ...(scope === 'web' ? { geography: 'global' as const } : {}),
         ...(scope === 'web' && excludedPlatforms.length ? { excludedPlatforms } : {}) };
       const result = await modelSearchTool.invoke(input);
       comparison = liveComparison(message, input, result);

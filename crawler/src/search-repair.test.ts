@@ -30,7 +30,7 @@ test('RAM and generation typography do not discard the requested laptop storage'
  assert.equal(queryMatchesTitle('Lenovo ThinkPad X1 Carbon Gen 12','Lenovo ThinkPad X1 Carbon 13th Generation'),false);
 });
 test('known aggregators and affiliate review pages cannot become HTML or Fetch quotes',()=>{
- for(const source of ['https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8']){
+ for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8']){
   assert.deepEqual(parseWebProduct(html(),source,'SG','global'),[]);
   assert.deepEqual(inspectMarkdownProduct(md('# Roborock S8\nUSD 149\nIn stock\nAdd to cart'),source,'SG','global').listings,[]);
  }

@@ -50,10 +50,10 @@ const crawler = createServer(async (request, response) => {
     ok: true, market: payload.market, scope: payload.scope, geography: payload.geography, platforms: payload.platforms, query: payload.query, model: payload.model,
     listings: matched ? [{
       platform: payload.scope === 'web' ? 'web' : payload.platforms.includes('lazada') ? 'lazada' : payload.platforms[0],
-      ...(payload.scope === 'web' ? { sourceHost: 'retailer.sg' } : {}), market: payload.market,
+      ...(payload.scope === 'web' ? { sourceHost: `retailer.${payload.market.toLowerCase()}` } : {}), market: payload.market,
       itemId: 'fixture-item-001', title: mode === 'wrong_model' ? 'Sony WH-1000XM5' : payload.model || payload.query,
-      url: payload.scope === 'web' ? 'https://www.retailer.sg/products/fixture-item-001.html' : 'https://www.lazada.sg/products/fixture-item-001.html',
-      price: mode === 'invalid_price' ? -399 : 399, currency: 'SGD',
+      url: payload.scope === 'web' ? `https://www.retailer.${payload.market.toLowerCase()}/products/fixture-item-001.html` : 'https://www.lazada.sg/products/fixture-item-001.html',
+      price: mode === 'invalid_price' ? -399 : 399, currency: payload.scope === 'web' ? ({ SG: 'SGD', MY: 'MYR', TH: 'THB', ID: 'IDR', PH: 'PHP', VN: 'VND' } as Record<string, string>)[payload.market] : 'SGD',
       shippingFee: 5, discount: 10, rating: 4.8, reviews: 42,
       seller: 'Fixture Store', inStock: true, isOfficial: false,
       verification: { source: 'product-page', checkedAt: new Date().toISOString() },
@@ -358,19 +358,19 @@ test('web discovery is opt-in while explicit supported platform restrictions sti
   assert.deepEqual(requests.at(-1)?.payload.platforms, []);
 });
 
-test('standard-edition phone questions send a canonical base model to global search and survive followups', async () => {
+test('standard-edition phone questions send a canonical base model to the selected country search and survive followups', async () => {
   config.crawlerTool.searchScope = 'web';
   mode = 'valid';
   const first = await ask('小米17标准版价格');
   assert.equal(requests.at(-1)?.payload.query, 'Xiaomi 17');
   assert.equal(requests.at(-1)?.payload.model, undefined);
-  assert.equal(requests.at(-1)?.payload.geography, 'global');
+  assert.equal(requests.at(-1)?.payload.geography, undefined);
   assert.equal(first.comparison.search?.status, 'matched');
   assert.equal(first.comparison.query, '小米17标准版价格');
   for (const message of ['普通版价格', '重试']) {
     const followup = await ask(message, { conversationId: first.conversationId });
     assert.equal(requests.at(-1)?.payload.query, 'Xiaomi 17');
-    assert.equal(followup.comparison.search?.geography, 'global');
+    assert.equal(followup.comparison.search?.geography, undefined);
     assert.equal(followup.comparison.search?.status, 'matched');
   }
 });
@@ -581,7 +581,7 @@ test('web price mode bypasses summary answers while keeping the catalog display 
     const result = await ask('全网搜索 Sony WH-1000XM5 价格');
     assert.equal(result.comparison.search?.scope, 'web');
     assert.equal(result.comparison.search?.status, 'matched');
-    assert.equal(result.comparison.search?.geography, 'global');
+    assert.equal(result.comparison.search?.geography, undefined);
     assert.equal(result.comparison.alternatives[0].offer?.verification?.source, 'product-page');
     assert.equal(result.comparison.alternatives[0].offer?.itemPrice, 399);
     assert.equal(requests.at(-1)?.payload.scope, 'web');
@@ -591,4 +591,23 @@ test('web price mode bypasses summary answers while keeping the catalog display 
     config.productSearchSource = saved.catalog;config.chatPriceSearchSource = saved.mode;
     config.webSearch.enabled = saved.enabled;config.webSearch.apiKey = saved.key;
   }
+});
+
+
+test('chat searches each selected country and an explicit country overrides the selector', async () => {
+  config.crawlerTool.searchScope = 'web'; mode = 'valid';
+  for (const market of ['SG', 'MY', 'TH', 'ID', 'PH', 'VN']) {
+    const result = await ask('小米14价格', { market });
+    assert.equal(requests.at(-1)?.payload.market, market);
+    assert.equal(requests.at(-1)?.payload.geography, undefined);
+    assert.equal(result.comparison.market, market);
+    assert.equal(result.comparison.search?.status, 'matched');
+    assert.equal(result.comparison.kind, 'recommendation');
+  }
+  const explicit = await ask('马来西亚小米14价格', { market: 'SG' });
+  assert.equal(requests.at(-1)?.payload.market, 'MY');
+  assert.equal(explicit.comparison.market, 'MY');
+  const retry = await ask('重试', { market: 'MY', conversationId: explicit.conversationId });
+  assert.equal(retry.comparison.market, 'MY');
+  assert.equal(requests.at(-1)?.payload.geography, undefined);
 });

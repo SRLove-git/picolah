@@ -1,5 +1,7 @@
 # DeepSeek Fetch for global price search — 2026-11-05
 
+> Historical release record: since 2026-11-06, chat price search defaults to the selected country. See [country-site search](country-site-search-2026-11-06.md) for the current behavior and validation.
+
 Global product discovery still uses DeepSeek Search. Product-page reads now prefer DeepSeek Fetch (`POST https://api.deepseek.com/v1/tools/fetch`). The original `sonywhch720n` input, global geography, exact model checks and original currencies remain intact.
 
 ## Configuration

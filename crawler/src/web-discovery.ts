@@ -1,3 +1,4 @@
+import { sourceCountry } from './source-country.ts';
 import { nonRetailPriceSource } from './product-page-prices.ts';
 import { config } from './config.ts';
 import { searchDeepSeekCandidates } from './deepseek/search.ts';
@@ -62,7 +63,7 @@ function candidateUrl(value: string, followup = false): URL | null {
 
 /** Arbitrary retailers are allowed; known marketplace exclusions and market boundaries still apply. */
 export function webSourceAllowed(url: URL, market: MarketCode, excluded: PlatformId[], geography?: 'global'): boolean {
-  if (nonRetailPriceSource(url.hostname)) return false;
+  if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) === 'foreign')) return false;
   for (const platform of DISCOVERY_PLATFORMS) {
     const domains = [...new Set(Object.values(MARKETS).flatMap((item) => item.domains[platform] ? [item.domains[platform]!] : []))];
     const known = [...domains, ...ALIASES[platform]].some((domain) => domainMatches(url.hostname, domain));
@@ -78,7 +79,10 @@ function selectPages(candidates: WebSearchCandidate[], market: MarketCode, exclu
   const groups = new Map<string, WebSearchCandidate[]>();
   const seen = new Set<string>();
   // Local merchant domains first; international .com shops remain eligible.
-  const local = (candidate: WebSearchCandidate) => geography !== 'global' && safeWebUrl(candidate?.url)?.hostname.endsWith(`.${market.toLowerCase()}`) ? 1 : 0;
+  const local = (candidate: WebSearchCandidate) => {
+    const url = safeWebUrl(candidate?.url);
+    return geography !== 'global' && url && sourceCountry(url, market) === 'local' ? 1 : 0;
+  };
   const relevance = (candidate: WebSearchCandidate) => {
     const url = safeWebUrl(candidate.url);
     const productPath = /\/(?:products?|p|dp|itm|buy)(?:\/|$)/i.test(url?.pathname || '');
@@ -143,7 +147,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   // Short product names otherwise retrieve launch prices and reviews. Express
   // purchase intent without adding a country or changing the matched identity.
   const category = /\b(?:xiaomi|iphone|pixel|oneplus)\s*\d{1,2}[a-z]?\b/i.test(options.query) ? ' smartphone' : '';
-  const discoveryQuery = options.geography === 'global' && !options.model
+  const discoveryQuery = !options.model
     ? `${options.query}${category} online store` : options.query;
   try { candidates = await search(discoveryQuery, options.market); }
   catch (error) { failed(error); return result(); }
@@ -222,11 +226,10 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   // brand/category pages. One hop only; the total and per-host budgets stay fixed.
   const first = pages.slice(0, MAX_PAGES - 2);
   await checkBatch(first, pages.slice(first.length), MAX_PAGES);
-  // A global query with no page price gets one independent search, including
-  // short named products such as Xiaomi 17 without an alphanumeric model code.
-  // Exclude exhausted hosts, never a country, and spend at most twelve extra page
-  // requests (ten candidates plus linked product pages). All filters remain.
-  if (options.geography === 'global' && candidates.length > 0 && !collected.some(rows => rows.length > 0)) {
+  // Retry discovery once when no page price survives. The same market reaches
+  // both providers and every linked/fallback page retains country filtering.
+  // Never widen a country search to global sources when local prices are absent.
+  if (!collected.some(rows => rows.length > 0)) {
     let query = `${options.query} online shop`;
     for (const host of [...hostVisits].sort((a, b) => b[1] - a[1]).map(([host]) => host)) {
       const next = `${query} -site:${host}`;

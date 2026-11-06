@@ -55,7 +55,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     if (status === 'unavailable') {
       return `已识别你要查找的商品 **${model}**，但当前市场或所选平台的实时搜索暂不可用，尚未取得商品信息。请切换平台或稍后重试。`;
     }
-    return `已${comparison.search.scope === 'web' ? '通过全网搜索查找' : '搜索'}${marketName}${platforms ? `的 ${platforms}` : ''}，本次返回结果暂未找到 **${model}** 的匹配在售商品。你可以稍后重试，或补充品牌和完整型号。`;
+    return `已${comparison.search.scope === 'web' ? '通过全网搜索查找' : '搜索'}${marketName}${platforms ? `的 ${platforms}` : ''}，本次未取得 **${model}** 的匹配页面价格；这不代表当地没有在售商品。你可以稍后重试，或补充品牌和完整型号。`;
   }
 
   if (comparison.search?.status === 'matched') {
@@ -76,7 +76,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     }
     const choices = comparison.alternatives.slice(0, 3).map(({ product: item, offer }) =>
       `**${item.name}**${offer ? `（${offer.platform}，商品价 ${quotePrice(offer, market, false)}）` : ''}`).join('；');
-    return `本次实时搜索找到：${choices}。\n\n这些结果可能包含不同型号或规格，请确认具体版本后再比价；未使用本地价格库。` + partialNote;
+    return `本次在${marketName}相关站点找到：${choices}。\n\n这些结果可能包含不同型号或规格，请确认具体版本后再比价；未使用本地价格库。` + partialNote;
   }
 
   if (comparison.kind === 'recommendation' && comparison.alternatives.length) {

@@ -1,5 +1,5 @@
 import { config } from '../config.ts';
-import type { MarketCode } from '../markets.ts';
+import { MARKETS, type MarketCode } from '../markets.ts';
 import { safeWebUrl } from '../safe-web-url.ts';
 import { BrightDataError } from './web-unlocker.ts';
 
@@ -31,7 +31,7 @@ export function buildWebSearchUrl(query: string, market: MarketCode, geography?:
     throw serpError('SERP_INVALID_QUERY', '全网搜索参数无效');
   }
   const url = new URL('https://www.google.com/search');
-  url.searchParams.set('q', cleaned);
+  url.searchParams.set('q', geography === 'global' ? cleaned : `${cleaned} ${MARKETS[market].name} ${MARKETS[market].currency} buy price`);
   if (geography !== 'global') url.searchParams.set('gl', market.toLowerCase());
   url.searchParams.set('hl', 'en');
   url.searchParams.set('brd_json', '1');

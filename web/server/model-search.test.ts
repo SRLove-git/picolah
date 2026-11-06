@@ -229,14 +229,14 @@ test('page title, details, source URL and checked time reach comparison and answ
   const result = await webTool([row], { summary: { requests: 2, matched: 1, skipped: 0, failed: 0,
     discovered: 1, pagesChecked: 1, pagesVerified: 1 } }).invoke(webInput);
   const comparison = liveComparison('查价格', webInput, result);
-  assert.equal(comparison.offers[0].lastSeen, row.verification.checkedAt);
+  assert.equal(comparison.alternatives[0].offer?.lastSeen, row.verification.checkedAt);
   assert.deepEqual(comparison.search?.pageVerification, { discovered: 1, checked: 1, verified: 1 });
   const payload = JSON.parse(buildLiveMessages(comparison, '查价格')[1].content as string);
   assert.equal(payload.liveResults[0].pageTitle, row.title);
   assert.deepEqual(payload.liveResults[0].details, row.productDetails);
   assert.equal(payload.liveResults[0].sourceUrl, row.url);
   assert.equal(payload.liveResults[0].verifiedAt, row.verification.checkedAt);
-  assert.match(writeFallbackAnswer(comparison), /商品页已核验/);
+  assert.equal(comparison.alternatives[0].offer?.verification?.source, 'product-page');
 });
 
 test('failed detail verification reports candidate links without claiming the product is unavailable', async () => {
@@ -254,10 +254,10 @@ test('web searches accept multiple website sources, show hostnames and do not im
   const comparison = liveComparison('WF1000XM6', webInput, result);
   assert.equal(comparison.search?.scope, 'web');
   assert.equal(comparison.sourceCount, 2);
-  assert.deepEqual(comparison.offers.map((offer) => offer.platformId), ['web:retailer.sg', 'web:electronics.sg']);
-  assert.deepEqual(comparison.offers.map((offer) => offer.platform), ['retailer.sg', 'electronics.sg']);
-  assert.ok(comparison.offers.every((offer) => !offer.isOfficial && !offer.shippingKnown));
-  assert.match(writeFallbackAnswer(comparison), /全网搜索.*2 个网站/);
+  assert.deepEqual(comparison.alternatives.map(({ offer }) => offer?.platformId), ['web:retailer.sg', 'web:electronics.sg']);
+  assert.deepEqual(comparison.alternatives.map(({ offer }) => offer?.platform), ['retailer.sg', 'electronics.sg']);
+  assert.ok(comparison.alternatives.every(({ offer }) => offer && !offer.isOfficial && !offer.shippingKnown));
+  assert.match(writeFallbackAnswer(comparison), /新加坡相关站点/);
 });
 
 test('web tool refuses unsafe, mismatched and excluded website sources', async () => {
@@ -314,4 +314,12 @@ test('capacity-bearing product names are not synthetic model codes', () => {
 test('brand set numbers, product descriptors and gram weights are not model hints',()=>{
  for(const value of ['LEGO 10328','Pro 9465cc','New Balance 2002R','CeraVe Cream 454g','Essence 100g','Body Lotion 500ml'])assert.equal(extractSearchModel(value),null,value);
  assert.equal(extractSearchModel('Philips AC1715/30'),'AC-1715/30');
+});
+
+
+test('country web response validation rejects foreign URLs even when the price uses local currency', async () => {
+  for (const url of ['https://retailer.com.my/products/item', 'https://retailer.com/en-us/products/item', 'https://retailer.co.uk/products/item']) {
+    const row = { ...webListing(), url, sourceHost: new URL(url).hostname };
+    await assert.rejects(webTool([row]).invoke({ ...webInput, geography: undefined }));
+  }
 });

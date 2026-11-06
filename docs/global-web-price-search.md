@@ -1,5 +1,7 @@
 # Global web price search — 2026-11-05
 
+> Historical release record: since 2026-11-06, chat price search defaults to the selected country. See [country-site search](country-site-search-2026-11-06.md) for the current behavior and validation.
+
 Web price searches now send `scope: web, geography: global`. The selected six-country market remains account/catalog context, but does not constrain web search terms, merchant domains, source currencies or the page fetcher's exit country. Explicit platform searches retain their existing market restrictions and platform exclusions still apply to global discovery.
 
 Both search backends omit the country filter in global mode. The page verifier accepts supported ISO currencies and validates precision using each currency's minor units. It still requires a fresh, single, source-bound in-stock product offer. Different model numbers, unverified snippets, ambiguous variants and stale prices remain invalid. International category spellings such as `soymilk`, `soybean milk machine` and `豆浆机` are normalized without changing model/capacity constraints. Explicit ISO expiry timestamps are supported; timezone-less timestamps use the earliest possible UTC instant so the parser cannot extend price validity.

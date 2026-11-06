@@ -1,4 +1,5 @@
 import { tool } from '@langchain/core/tools';
+import { sourceCountry } from '../../../shared/source-country.ts';
 import { z } from 'zod';
 import { COUNTRY_CODES, MARKETS } from '../../../shared/types.ts';
 import { canonicalModelCode, compactModel } from '../../../shared/model-search.ts';
@@ -150,6 +151,7 @@ export function createModelSearchTool(options: {
         (!domains[platform]?.[input.market] || !withinDomain(host, domains[platform][input.market]!)));
       const excluded = (input.excludedPlatforms ?? []).some((platform) => excludedDomains[platform].some((domain) => withinDomain(host, domain)));
       if (listing.market !== input.market || !validSource || excluded || foreignKnownMarket ||
+          (web && !global && sourceCountry(url, input.market) === 'foreign') ||
           (global ? !isSupportedCurrency(listing.currency) : listing.currency !== MARKETS[input.market].currency) ||
           (input.maxPrice !== undefined && (!global || listing.currency === MARKETS[input.market].currency) && listing.price > input.maxPrice) ||
           url.protocol !== 'https:' || url.username || url.password || url.port ||

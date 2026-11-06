@@ -20,7 +20,7 @@ export async function searchDeepSeekCandidates(query: string, market: MarketCode
     const response = await (options.fetchImpl ?? fetch)('https://api.deepseek.com/v1/tools/search', {
       method: 'POST', redirect: 'error', signal,
       headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ query: searchQuery, count: options.geography === 'global' ? 30 : 15, need_content: false }),
+      body: JSON.stringify({ query: searchQuery, count: 30, need_content: false }),
     });
     if (!response.ok) { await response.body?.cancel(); throw fail(response.status === 401 || response.status === 403 ? 'SERP_AUTH_FAILED' : 'SERP_HTTP_ERROR'); }
     const reader = response.body?.getReader();
@@ -37,7 +37,6 @@ export async function searchDeepSeekCandidates(query: string, market: MarketCode
     const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     if (!Array.isArray(data.results)) throw fail('SERP_PARSE_FAILED');
     const organic = data.results.slice(0, 30).map((row: { url?: unknown; title?: unknown }) => ({ link: row?.url, title: row?.title }));
-    if (options.geography !== 'global') return parseSearchCandidates({ organic });
     // Validate every candidate before ranking. A first-page cap used to discard
     // independent merchants behind repeated marketplace results.
     const seen = new Set<string>();

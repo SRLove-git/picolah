@@ -184,7 +184,7 @@ test('one page failure keeps other verified sources and sanitizes failure codes'
 
 test('an empty completed search is distinct from a failed search', async () => {
   const result = await discoverProduct(input, { web: { search: async () => [] } });
-  assert.deepEqual(result.summary, { requests: 1, matched: 0, skipped: 0, failed: 0,
+  assert.deepEqual(result.summary, { requests: 2, matched: 0, skipped: 0, failed: 0,
     discovered: 0, pagesChecked: 0, pagesVerified: 0 });
 });
 
@@ -397,4 +397,24 @@ test('a page price completes global search regardless of inventory or preorder t
     assert.equal(result.listings[0].priceQuote?.availability, expected);
     assert.equal(result.listings[0].inStock, false);
   }
+});
+
+
+test('country discovery rejects foreign storefronts before fetching and keeps fallback in the same market', async () => {
+  const calls: string[] = [], visited: string[] = [];
+  const foreign = ['https://retailer.com.my/products/sony', 'https://retailer.com/en-us/products/sony', 'https://www.amazon.com/dp/B0EXAMPLE00'];
+  const result = await discoverProduct(input, { web: {
+    search: async (_query, market) => {
+      calls.push(market);
+      return (calls.length === 1 ? foreign : [...foreign, 'https://store.sony.com.sg/products/wf1000xm6', 'https://independent.com/sg/products/wf1000xm6']).map(candidate);
+    },
+    fetchPage: async url => { visited.push(url); return page(url); },
+  } });
+  assert.deepEqual(calls, ['SG', 'SG']);
+  assert.equal(result.geography, undefined);
+  assert.equal(result.listings.length, 2);
+  assert.ok(visited.every(url => !foreign.includes(url)));
+  const absent = await discoverProduct(input, { web: { search: async () => foreign.map(candidate), fetchPage: async () => { throw new Error('foreign page must not be fetched'); } } });
+  assert.equal(absent.listings.length, 0);
+  assert.equal(absent.summary.pagesChecked, 0);
 });
