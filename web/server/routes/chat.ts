@@ -19,7 +19,7 @@ import { catalogAnswer, catalogQuotes, searchCatalog } from '../agent/catalog-se
 import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
 import { webSearchReady, webSearchTools } from '../agent/web-search.ts';
-import { conversationTools, fallbackConversationAnswer } from '../agent/conversation-turn.ts';
+import { conversationTools, fallbackConversationAnswer, needsProductClarification } from '../agent/conversation-turn.ts';
 
 export const chatRouter = Router();
 const chatSchema = z.object({
@@ -113,13 +113,19 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
   const conversationContext = { market, previous, history: priorMessages };
   if (!image) sse(res, 'status', { label: '正在理解问题…' });
-  const turn = image ? null : await conversationTools.plan(message, conversationContext);
+  const turn = image ? null : needsProductClarification(message, conversationContext)
+    ? { action: 'clarify_product' as const, query: '', continuesProductContext: false }
+    : await conversationTools.plan(message, conversationContext);
   if (res.destroyed) return;
-  if (turn?.action === 'reply' || (turn?.action === 'web_search' && !webSearchReady())) {
+  if (turn?.action === 'reply' || turn?.action === 'clarify_product' || (turn?.action === 'web_search' && !webSearchReady())) {
     sse(res, 'status', { label: '正在回复…' });
     let answer = '';
     let usedLlm = false;
-    if (llmConfigured) {
+    if (turn.action === 'clarify_product') {
+      answer = await streamLocal(res, /[\u3400-\u9fff]/.test(message)
+        ? '你指的是哪款商品？告诉我商品名称或型号，我再帮你查。'
+        : 'Which product do you mean? Please share its name or model.');
+    } else if (llmConfigured) {
       try {
         for await (const delta of streamChatAnswer(message, conversationContext)) {
           if (res.destroyed) return;

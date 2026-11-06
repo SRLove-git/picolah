@@ -92,6 +92,8 @@ test('unrelated conversation clears product reuse; acknowledgements and explanat
   const count = searches.length;
   const ambiguous = await ask('它多少钱', first.id);
   assert.equal(searches.length, count);
+  assert.equal(ambiguous.comparison, undefined);
+  assert.match(ambiguous.answer, /哪款商品/);
   assert.doesNotMatch(ambiguous.answer, /Sony|WH.?1000XM5/i);
 });
 
@@ -136,4 +138,26 @@ test('resolved product queries preserve explicit and inherited budgets without c
   } finally { conversationTools.plan = originalPlan; }
   await ask('iPhone 16', first.id);
   assert.equal(searches.at(-1)?.maxPrice, undefined);
+});
+
+
+test('unresolved references clarify without calling the model planner or crawler; a new named product still searches', async () => {
+  const first = await ask('Xiaomi 14');
+  await ask('讲个笑话', first.id);
+  const count = searches.length;
+  conversationTools.plan = async () => { throw new Error('bare reference must not invoke the model planner'); };
+  try {
+    for (const message of ['它多少钱？', '那这个现在多少钱呢？', '价格呢', '这款有货吗', 'How much is it?', 'What is its price?']) {
+      const result = await ask(message, first.id);
+      assert.equal(result.comparison, undefined);
+      assert.match(result.answer, /哪款商品|Which product/);
+      assert.doesNotMatch(result.answer, /Xiaomi|小米|669|SGD|S\$/i);
+    }
+    assert.equal(searches.length, count);
+  } finally { conversationTools.plan = originalPlan; }
+  const stored = await getConversation(first.id, 'anon-conversation-regression');
+  assert.equal(stored?.messages.at(-1)?.continuesProductContext, false);
+  const named = await ask('iPhone 16', first.id);
+  assert.match(named.comparison?.search.query, /iPhone 16/i);
+  assert.equal(searches.length, count + 1);
 });

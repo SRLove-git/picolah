@@ -120,7 +120,8 @@ test('a web topic switch cannot reuse the old product for an ambiguous price que
   assert.equal(first.frames.find(f => f.name === 'results')?.data.product?.id, 'sony-wh1000xm5');
   await ask('联网搜索NA221/09容量', first.id);
   const after = await ask('它多少钱', first.id);
-  assert.equal(after.frames.find(f => f.name === 'results')?.data.product, null);
+  assert.ok(!after.frames.some(f => f.name === 'results'));
+  assert.match(after.answer, /哪款商品/);
   assert.doesNotMatch(after.answer, /Sony|WH.?1000XM5/i);
 });
 
