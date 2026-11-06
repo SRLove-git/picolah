@@ -10,6 +10,7 @@ function sortByFinal(offers: Offer[]): Offer[] {
 export function liveSearchCoverageNote(comparison: Comparison): string {
   if (comparison.search?.status !== 'matched' || !comparison.search.failedPlatforms) return '';
   const web = comparison.search.scope === 'web';
+  if (web && !comparison.search.failedSources?.length) return '\n\n部分页面暂未取得可核实的价格，以上不是完整的搜索结果。';
   const failedSources = comparison.search.failedSources?.length ? comparison.search.failedSources.join('、')
     : `${comparison.search.failedPlatforms} 个${web ? '来源' : '平台'}`;
   return `\n\n另有 ${failedSources}暂未完成${comparison.search.pageVerification ? '搜索或商品页核验' : '搜索'}，以上不是完整的${web ? '搜索结果' : '平台对比'}。`;

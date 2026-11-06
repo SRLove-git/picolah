@@ -15,6 +15,8 @@ process.env.WEB_SEARCH_API_KEY = 'search-fixture-key';
 process.env.PRODUCT_SEARCH_SOURCE = 'catalog';
 const { config } = await import('./config.ts');
 const { normalizeWebEvidence, searchWeb, planWebSearch, citeWebAnswer, answerWeb, webSearchTools } = await import('./agent/web-search.ts');
+const { conversationTools } = await import('./agent/conversation-turn.ts');
+const originalPlan = conversationTools.plan;
 const { app } = await import('./index.ts');
 const { db } = await import('./db.ts');
 const { getConversation } = await import('./repo.ts');
@@ -28,6 +30,7 @@ const evidence = normalizeWebEvidence({ results: [row] }, 'Philips NA221/09 capa
 const original = { ...webSearchTools };
 after(async () => {
   Object.assign(webSearchTools, original);
+  conversationTools.plan = originalPlan;
   await new Promise<void>(r => { server.close(() => r()); server.closeAllConnections(); });
   await db.close();
 });
@@ -83,9 +86,9 @@ async function ask(message: string, conversationId?: string) {
 }
 test('web chat streams and persists sources, without creating quotes; quote follow-up keeps catalog route', async () => {
   const offersBefore = await db.all('SELECT id, final_price, last_seen FROM offers ORDER BY id');
-  webSearchTools.plan = async (q, _m, _p, history) => {
-    if (q.includes('多少钱')) { assert.ok(history.includes('联网搜索NA221/09容量')); return null; }
-    return 'Philips NA221/09 capacity';
+  conversationTools.plan = async (q, context) => {
+    if (q.includes('多少钱')) { assert.ok(context.history.some(m => m.content === '联网搜索NA221/09容量')); return { action: 'product_search', query: '', continuesProductContext: false }; }
+    return { action: 'web_search', query: 'Philips NA221/09 capacity', continuesProductContext: false };
   };
   webSearchTools.search = async () => evidence;
   webSearchTools.answer = async () => citeWebAnswer('NA221/09 容量为 4.2 L [1]', evidence);
@@ -102,7 +105,7 @@ test('web chat streams and persists sources, without creating quotes; quote foll
   assert.ok(!price.frames.some(f => f.name === 'status' && f.data.label === '正在联网搜索…'));
 });
 test('search failure completes honestly, with no fake evidence or catalog fallback', async () => {
-  webSearchTools.plan = async () => 'query';
+  conversationTools.plan = async () => ({ action: 'web_search', query: 'query', continuesProductContext: false });
   webSearchTools.search = async () => { throw new Error('upstream secret'); };
   const result = await ask('联网搜索最新参数');
   assert.match(result.answer, /连接失败.*未能完成核实/);
@@ -110,7 +113,7 @@ test('search failure completes honestly, with no fake evidence or catalog fallba
   assert.ok(!result.frames.some(f => f.name === 'results'));
 });
 test('a web topic switch cannot reuse the old product for an ambiguous price question', async () => {
-  webSearchTools.plan = async q => q.includes('联网') ? 'Philips NA221/09 capacity' : null;
+  conversationTools.plan = async q => ({ action: q.includes('联网') ? 'web_search' : 'product_search', query: q.includes('联网') ? 'Philips NA221/09 capacity' : '', continuesProductContext: false });
   webSearchTools.search = async () => evidence;
   webSearchTools.answer = async () => citeWebAnswer('NA221/09 容量为 4.2 L [1]', evidence);
   const first = await ask('Sony WH-1000XM5多少钱');

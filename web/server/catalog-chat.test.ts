@@ -72,9 +72,9 @@ async function ask(message: string, conversationId?: string, market = 'SG') {
   assert.equal(crawlerCalls, 0, 'catalog mode must never call the configured crawler');
   const reply = events.filter((event) => event.name === 'delta').map((event) => event.data.text).join('');
   assert.doesNotMatch(reply, /商品库|数据库|入库|采集|抓取|爬虫/);
-  assert.ok(events.some((event) => event.name === 'status' && event.data.label === '正在查找商品报价…'));
+  if (events.some(event => event.name === 'results')) assert.ok(events.some((event) => event.name === 'status' && event.data.label === '正在查找商品报价…'));
   return {
-    comparison: events.find((event) => event.name === 'results')!.data as Comparison,
+    comparison: events.find((event) => event.name === 'results')?.data as Comparison,
     conversationId: events.find((event) => event.name === 'meta')!.data.conversationId as string,
     answer: events.filter((event) => event.name === 'delta').map((event) => event.data.text).join(''),
   };
@@ -181,7 +181,7 @@ test('category search returns catalog candidates and never guesses unknown capac
 });
 test('greeting and unsupported platform requests do not launch a crawler', async () => {
   const hello = await ask('你好');
-  assert.deepEqual(hello.comparison.offers, []);
+  assert.equal(hello.comparison, undefined);
   assert.match(hello.answer, /帮你比价/);
   await realQuotes();
   const unsupported = await ask('Amazon Sony WH-1000XM5', undefined, 'MY');

@@ -19,6 +19,7 @@ import { catalogAnswer, catalogQuotes, searchCatalog } from '../agent/catalog-se
 import { streamCatalogAnswer } from '../agent/catalog-answer.ts';
 
 import { webSearchReady, webSearchTools } from '../agent/web-search.ts';
+import { conversationTools, fallbackConversationAnswer } from '../agent/conversation-turn.ts';
 
 export const chatRouter = Router();
 const chatSchema = z.object({
@@ -71,7 +72,7 @@ chatRouter.post('/', async (req, res) => {
   let previousTopicIndex = -1;
   for (let index = priorMessages.length - 1; index >= 0; index--) {
     const entry = priorMessages[index];
-    if (entry.role === 'assistant' && !entry.comparison) {
+    if (entry.role === 'assistant' && !entry.comparison && !entry.continuesProductContext) {
       previousTopicIndex = index;
       break;
     }
@@ -110,10 +111,38 @@ chatRouter.post('/', async (req, res) => {
   res.flushHeaders();
   startSseHeartbeat(res);
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
-  if (!image && webSearchReady()) {
-    sse(res, 'status', { label: '正在理解问题…' });
-    const query = await webSearchTools.plan(message, market, previous,
-      priorMessages.filter((entry) => entry.role === 'user').slice(-3).map((entry) => entry.content));
+  const conversationContext = { market, previous, history: priorMessages };
+  if (!image) sse(res, 'status', { label: '正在理解问题…' });
+  const turn = image ? null : await conversationTools.plan(message, conversationContext);
+  if (res.destroyed) return;
+  if (turn?.action === 'reply' || (turn?.action === 'web_search' && !webSearchReady())) {
+    sse(res, 'status', { label: '正在回复…' });
+    let answer = '';
+    let usedLlm = false;
+    if (llmConfigured) {
+      try {
+        for await (const delta of streamChatAnswer(message, conversationContext)) {
+          if (res.destroyed) return;
+          answer += delta;
+          usedLlm = true;
+          sse(res, 'delta', { text: delta });
+        }
+      } catch {
+        if (answer) { const note = '\n\n（回答连接中断，请重试。）'; answer += note; sse(res, 'delta', { text: note }); }
+      }
+    }
+    if (!answer) answer = await streamLocal(res, fallbackConversationAnswer(message, conversationContext));
+    const assistantMessageId = await addAssistantReply(conversation.id, answer,
+      { usedLlm, source: 'conversation', continuesProductContext: turn.continuesProductContext });
+    if (!assistantMessageId) {
+      sse(res, 'error', { message: '对话已删除，请开始新的对话。' });
+      return res.end();
+    }
+    sse(res, 'done', { messageId: assistantMessageId, conversationId: conversation.id });
+    return res.end();
+  }
+  if (turn?.action === 'web_search' && webSearchReady()) {
+    const query = turn.query;
     if (query) {
       sse(res, 'status', { label: '正在联网搜索…' });
       let answer: string;
@@ -158,7 +187,17 @@ chatRouter.post('/', async (req, res) => {
     context = queryContext ?? previous;
   }
   const queryMode = catalogMode ? 'catalog' : 'live';
-  let target = liveSearchQuery(rawMessage, context, queryMode);
+  const rawTarget = liveSearchQuery(rawMessage, context, queryMode);
+  let target = turn?.action === 'product_search' && turn.query
+    ? liveSearchQuery(turn.query, context, queryMode) : rawTarget;
+  // Intent inference resolves conversational references, but must not erase a
+  // parsed budget or the active budget on an otherwise identical product.
+  if (target && rawTarget?.maxPrice !== undefined) target.maxPrice = rawTarget.maxPrice;
+  const previousTarget = context?.search?.query ? liveSearchQuery(context.search.query, null, queryMode) : null;
+  if (target && target.maxPrice === undefined && context?.search?.maxPrice !== undefined && previousTarget
+    && target.query.replace(/\s+/g, '').toLowerCase() === previousTarget.query.replace(/\s+/g, '').toLowerCase()) {
+    target.maxPrice = context.search.maxPrice;
+  }
   if (image) {
     const recognized = await visualSearchQuery(image, rawMessage);
     if (recognized) target = liveSearchQuery(recognized, null, queryMode);

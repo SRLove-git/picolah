@@ -351,13 +351,14 @@ export async function getConversation(
   return {
     ...mapConversation(row),
     messages: messages.map((message) => {
-      const metadata = parseJson<{ comparison?: Comparison; image?: string }>(message.metadata, {});
+      const metadata = parseJson<{ comparison?: Comparison; image?: string; continuesProductContext?: boolean }>(message.metadata, {});
       return {
         id: String(message.id),
         role: String(message.role) as 'user' | 'assistant',
         content: String(message.content),
         createdAt: String(message.created_at),
         comparison: metadata.comparison,
+        continuesProductContext: metadata.continuesProductContext === true,
         image: typeof metadata.image === 'string' ? metadata.image : undefined,
       };
     }),

@@ -221,6 +221,7 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
   comparison?: Comparison;
+  continuesProductContext?: boolean;
   image?: string;
 }
 
