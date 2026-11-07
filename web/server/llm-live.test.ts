@@ -25,6 +25,17 @@ test('the live payload carries the real search outcome for the answer writer', (
   assert.equal(payload.question, '我想买个 iPhone');
 });
 
+test('a failed follow-up still tells the answer writer which product was searched', () => {
+  const comparison = searchComparison('failed', true);
+  comparison.search!.query = 'Philips AC1715/30';
+  const [, message] = buildLiveMessages(comparison, '那在新加坡呢？');
+  const data = JSON.parse(message.content as string);
+  assert.equal(data.question, '那在新加坡呢？');
+  assert.equal(data.searchedFor, 'Philips AC1715/30');
+  assert.equal(data.searchCountry, 'SG');
+  assert.deepEqual(data.liveResults, []);
+});
+
 test('every search status keeps the no-invention guard rails', () => {
   for (const status of ['matched', 'not_found', 'failed', 'unavailable'] as const) {
     const [system] = buildLiveMessages(searchComparison(status), 'iPhone');
