@@ -122,6 +122,14 @@ test('quote mode uses the first visible main amount when a page also prints an o
  assert.equal(row.price,274.31);assert.equal(row.currency,'SGD');assert.match(row.priceQuote?.note??'',/首个主报价/);
 });
 
+test('quote mode rejects a tiny payment amount when the renderer loses its instalment label',async()=>{
+ const page='https://www.courts.com.sg/lg-front-load-washer-and-dryer-13kg%2F8kg-fv1413h2ba-IP174279.html';
+ const markdown={format:'markdown' as const,title:'LG Front Load Washer And Dryer (13kg/8kg) FV1413H2BA',
+  content:'# LG Front Load Washer And Dryer (13kg/8kg) FV1413H2BA\nS$11\nS$1,699\nAdd to cart'};
+ await assert.rejects(verifyProductPage(page,{market:'SG',query:'LG Washer Dryer FV1413H2BA'},async()=>markdown),
+  (error:Error&{code?:string})=>error.code==='PRODUCT_PAGE_UNVERIFIED');
+});
+
 test('quote mode retains a product summary price rendered before the semantic H1',async()=>{
  const title='Asus Zenbook S 14 OLED UX5406SA-PZ267W U7-258V 32GB 1TB';
  const page={format:'markdown' as const,title,content:'Price:\nSale price$ 2,779.00 SGD\nNo reviews\n## Description\n# '+title+'\nProduct details'};
@@ -129,6 +137,28 @@ test('quote mode retains a product summary price rendered before the semantic H1
   market:'SG',query:'ASUS Zenbook S 14 UX5406SA',
  },async()=>page);
  assert.equal(row.price,2779);assert.equal(row.currency,'SGD');
+});
+
+test('Amazon Singapore Fetch binds a leading buy-box price to the exact appliance H1',async()=>{
+ const cases=[
+  {
+   url:'https://www.amazon.sg/dp/B0B722494K',
+   query:'Philips Sonicare DiamondClean 9000 HX9914/62',model:'HX-9914/62',price:367.42,
+   unitPrice:183.71,
+   title:'Philips Sonicare DiamondClean 9000 – Twin Pack White & White (Model HX9914/62)',
+  },
+  {
+   url:'https://www.amazon.sg/dp/B0B1RVNZ9V',
+   query:'Panasonic Lamdash Pro 6 ES-LS9A-K',model:'ES-LS9A-K',price:759,
+   title:'Panasonic ARC6 Electric Razor with Cleaning Station - ES-LS9A-K (Black)',
+  },
+ ];
+ for(const item of cases){
+  const page={format:'markdown' as const,title:item.title+' : Amazon.sg: Home - S$'+item.price.toFixed(2),
+   content:'S$'+item.price.toFixed(2)+(item.unitPrice?' S$'+item.unitPrice.toFixed(2)+' per count':'')+'\nOnly 1 left in stock.\nShipping S$20.00\n# '+item.title+'\nSecure transaction\nAbout this product'};
+  const [row]=await verifyProductPage(item.url,{market:'SG',query:item.query,model:item.model},async()=>page);
+  assert.equal(row.price,item.price,item.query);assert.equal(row.currency,'SGD');assert.match(row.title,new RegExp(item.model.replace(/-/g,'[- ]?').replace('/','\\/')));
+ }
 });
 
 test('quote mode reads visible HTML amounts but still rejects fees and unrelated identities',async()=>{
@@ -145,4 +175,14 @@ test('local marketplace symbols can be quoted after the strict Shopee layout fai
  const page={format:'markdown' as const,title:'Philips OneBlade QP2834/20 | Shopee Singapore',content:'# Philips OneBlade QP2834/20\n$49.90\nChoose variant\n## Shop Vouchers\n$10 OFF\n## Shipping\n$2.99'};
  const [row]=await verifyProductPage(shopee,{market:'SG',query:'Philips OneBlade QP2834/20'},async()=>page);
  assert.equal(row.price,49.9);assert.equal(row.currency,'SGD');assert.equal(row.priceQuote?.kind,'exact');
+});
+
+test('Carousell search collections never become a single product quote',async()=>{
+ const page={format:'markdown' as const,title:"Singapore有41件 'Bp04' 贩售中",content:"# Singapore有41件 'Bp04' 贩售中\nS$1.50 - S$1,199.99\nIn stock"};
+ assert.deepEqual(await verifyProductPage('https://www.carousell.sg/bp04/q/',{
+  market:'SG',query:'Dyson Purifier Big+Quiet Formaldehyde BP04',
+ },async()=>page),[]);
+ assert.deepEqual(await verifyProductPage('https://www.carousell.sg/vacuum/dreame-x40-ultra/q-5827/',{
+  market:'SG',query:'Dreame X40 Ultra',
+ },async()=>page),[]);
 });

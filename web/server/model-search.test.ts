@@ -109,6 +109,24 @@ test('model search rejects mismatched responses and hides raw provider errors', 
     (error: Error) => /HTTP 500/.test(error.message) && !error.message.includes('private-provider-secret'));
 });
 
+test('web validation accepts an appliance base SKU colour suffix but not another family', async () => {
+  let title = 'KitchenAid 5KSM175PSB 4.8 L Tilt-Head Stand Mixer';
+  const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+    fetchImpl: (async (_url, init) => {
+      const input = JSON.parse(String(init?.body));
+      return Response.json({ ...input, ok: true, summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
+        listings: [{ platform: 'web', sourceHost: 'electromart.sg', market: 'SG', itemId: '5ksm175psb', title,
+          url: 'https://electromart.sg/products/kitchenaid-5ksm175psb-stand-mixer', price: 923, currency: 'SGD',
+          inStock: false, priceQuote: { kind: 'exact', availability: 'unknown', source: 'fetch' },
+          verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] });
+    }) as typeof fetch });
+  const input = { scope: 'web' as const, market: 'SG' as const, platforms: [],
+    query: 'KitchenAid Artisan 5KSM175PS Stand Mixer', model: '5KSM175PS' };
+  assert.equal((await search.invoke(input)).listings.length, 1);
+  title = 'KitchenAid 5KSM185PSB 4.8 L Tilt-Head Stand Mixer';
+  await assert.rejects(search.invoke(input), /型号不一致/);
+});
+
 test('tool schema and title verification support canonical, compact and spaced CH model spellings', async () => {
   let title = 'Sony WH CH720N Wireless Headphones';
   const seen: string[] = [];
@@ -309,6 +327,20 @@ test('capacity-bearing product names are not synthetic model codes', () => {
  }
  assert.equal(extractSearchModel('Philips HX9911'), 'HX-9911');
  assert.equal(extractSearchModel('Sony WF1000XM6'), 'WF-1000XM6');
+});
+
+test('appliance SKU shapes are extracted without marketing-series collisions', () => {
+  const cases: Array<[string,string]> = [
+    ['KitchenAid Artisan 5KSM175PS Stand Mixer','5KSM175PS'],
+    ['Nespresso Vertuo Pop ENV90','ENV-90'],
+    ['Panasonic Lamdash Pro 6 ES-LS9A-K','ES-LS9A-K'],
+    ['Philips Shaver Series 9000 S9987/54','S-9987/54'],
+    ['Panasonic Hair Dryer EH-NA9N','EH-NA9N'],
+    ['Philips Sonicare DiamondClean 9000 HX9914/62','HX-9914/62'],
+  ];
+  for (const [query,model] of cases) assert.equal(extractSearchModel(query),model,query);
+  assert.deepEqual(explicitModelCodes('Philips Sonicare DiamondClean 9000 HX9914/62'),['HX-9914/62']);
+  for (const model of cases.map(([,model])=>model)) assert.equal(canonicalModelCode(model),model);
 });
 
 test('brand set numbers, product descriptors and gram weights are not model hints',()=>{

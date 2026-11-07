@@ -193,7 +193,7 @@ test('one page failure keeps other verified sources and sanitizes failure codes'
 
 test('an empty completed search is distinct from a failed search', async () => {
   const result = await discoverProduct(input, { web: { search: async () => [] } });
-  assert.deepEqual(result.summary, { requests: 3, matched: 0, skipped: 0, failed: 0,
+  assert.deepEqual(result.summary, { requests: 4, matched: 0, skipped: 0, failed: 0,
     discovered: 0, pagesChecked: 0, pagesVerified: 0 });
 });
 
@@ -417,7 +417,7 @@ test('country discovery rejects foreign storefronts before fetching and keeps fa
     },
     fetchPage: async url => { visited.push(url); return page(url); },
   } });
-  assert.deepEqual(calls, ['SG', 'SG', 'SG']);
+  assert.deepEqual(calls, ['SG', 'SG', 'SG', 'SG']);
   assert.equal(result.geography, undefined);
   assert.equal(result.listings.length, 2);
   assert.ok(visited.every(url => !foreign.includes(url)));
@@ -445,7 +445,7 @@ test('local rediscovery keeps the requested model and opens a retail page instea
       return page(url,{name:url===guide ? "David Busch's Nikon Z50 II Guide to Digital Photography" : 'Nikon Z50 II'});
     },
   }});
-  assert.deepEqual(queries.slice(1), ['site:.sg Nikon Z50 II', '"Nikon Z50 II" "S$"']);
+  assert.deepEqual(queries.slice(1), ['site:.sg Nikon Z50 II', '"Nikon Z50 II" "S$"', 'Nikon Z50 II Singapore buy']);
   assert.deepEqual(opened,[guide,direct]); assert.deepEqual(result.listings.map(row=>row.url),[direct]);
   assert.equal(queryMatchesTitle('Nintendo Switch OLED','Buy Nintendo Switch OLED & Lite Consoles'),false);
   assert.equal(queryMatchesTitle('Nintendo Switch OLED','Nintendo Switch OLED console with a game'),true);
@@ -466,7 +466,7 @@ test('the scoped retry uses the active market without changing regional model su
   await discoverProduct({scope:'web', market:'MY', platforms:[], query:'Philips AC1715/30'}, {web:{
     search:async q=>{queries.push(q);return [];},
   }});
-  assert.deepEqual(queries.slice(1), ['site:.my Philips AC1715/30', '"Philips AC1715/30" "RM"']);
+  assert.deepEqual(queries.slice(1), ['site:.my Philips AC1715/30', '"Philips AC1715/30" "RM"', 'Philips AC1715/30 Malaysia buy']);
 });
 
 test('market fallback can recover an exact product through a localized international store when the country suffix search fails', async () => {
@@ -480,7 +480,7 @@ test('market fallback can recover an exact product through a localized internati
     },
     fetchPage:async u=>{opened.push(u);return page(u);},
   }});
-  assert.deepEqual(queries.slice(1),['site:.sg Sony WF-1000XM6','"Sony WF-1000XM6" "S$"']);
+  assert.deepEqual(queries.slice(1),['site:.sg Sony WF-1000XM6','"Sony WF-1000XM6" "S$"','WF-1000XM6 Singapore buy']);
   assert.deepEqual(opened,[url]);assert.deepEqual(result.listings.map(i=>i.url),[url]);
   assert.equal(result.summary.pagesChecked,1);
 });

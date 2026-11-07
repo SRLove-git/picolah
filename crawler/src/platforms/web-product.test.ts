@@ -148,3 +148,26 @@ test('the primary visible price can qualify a structured offer as a starting pri
   const selected = { ...product, url: sku, offers: { ...offer, url: sku } };
   assert.notEqual(parseWebProduct(page('from $399', product.name, selected), sku, 'SG')[0]?.priceQuote?.kind, 'from');
 });
+
+test('COURTS requires matching product metadata and view-item price instead of a small payment amount', () => {
+  const page = 'https://www.courts.com.sg/lg-front-load-washer-and-dryer-13kg%2F8kg-fv1413h2ba-IP174279.html?bvstate=pg%3A2%2Fct%3Ar';
+  const canonical = '/lg-front-load-washer-and-dryer-13kg%2F8kg-fv1413h2ba-IP174279.html';
+  const name = 'LG Front Load Washer And Dryer (13kg/8kg) FV1413H2BA';
+  const tracking = { event:'view_item', ecommerce:{ currency:'SGD', value:'1699.00', items:[{
+    item_name:name, item_id:'IP174279', price:'1699.00', quantity:1,
+  }] } };
+  const markup = `<title>Shop ${name} in Singapore</title><link rel="canonical" href="${canonical}">`
+    + `<meta name="description" content="Buy ${name} at COURTS. Price: S$ 1,699.00. Order now!">`
+    + `<script>dataLayer.push(${JSON.stringify(tracking)});</script><div>S$ 11 monthly</div>`;
+  const [row] = parseWebProduct(markup, page, 'SG');
+  assert.equal(row.title, name); assert.equal(row.price, 1699); assert.equal(row.currency, 'SGD');
+  assert.equal(row.url, 'https://www.courts.com.sg' + canonical); assert.equal(row.inStock, false);
+  assert.deepEqual(row.priceQuote, { kind:'exact', availability:'unknown', source:'html' });
+
+  for (const invalid of [
+    markup.replace('Price: S$ 1,699.00', 'Price: S$ 11.00'),
+    markup.replace('"value":"1699.00"', '"value":"11.00"'),
+    markup.replace('"item_id":"IP174279"', '"item_id":"IP999999"'),
+    markup.replace(`Shop ${name}`, 'Shop another appliance'),
+  ]) assert.deepEqual(parseWebProduct(invalid, page, 'SG'), []);
+});

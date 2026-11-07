@@ -255,6 +255,11 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   const usedFirstVisible = firstVisibleQuote && values.length>1 && !isRange;
   if(values.length>1&&!isRange) {
     if (!firstVisibleQuote) return [];
+    // A tiny first amount followed by a much larger product amount is usually
+    // an instalment/monthly-payment widget whose label was lost by rendering.
+    // Do not turn that ambiguity into a confident item price.
+    const first=selected[0].price;
+    if(!explicitCurrent.length && values.some(value=>value>=first*5 && value-first>=50))return [];
     values=[selected[0].price];
   }
   const kind: PriceQuote['kind']=values.length>1?'range':isRange||choose?'from':'exact';

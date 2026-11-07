@@ -228,10 +228,64 @@ function applyVisibleStartingPrice(rows: WebListing[], html: string, pageUrl: st
   return [{ ...row, priceQuote: { availability: row.inStock ? 'in-stock' : 'unknown', source: 'html', ...row.priceQuote, kind: 'from' } }];
 }
 
+/** COURTS exposes the selected PDP price twice: in the page description and
+ * in its single view_item event. Its schema offer can retain an older list
+ * price after the item is unavailable, so require those two current-page
+ * declarations to agree and bind them to the item id in the URL. */
+function courtsTrackedProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
+  const page = safeWebUrl(pageUrl);
+  if (!page || market !== 'SG' || !/^(?:www\.)?courts\.com\.sg$/i.test(page.hostname)
+    || html.length > 8_000_000 || nonPurchasePageHtml(html)) return [];
+
+  const canonicals = [...html.matchAll(/<link\b[^>]*>/gi)]
+    .filter((match) => attribute(match[0], 'rel')?.split(/\s+/).some((rel) => rel.toLowerCase() === 'canonical'))
+    .map((match) => boundUrl(attribute(match[0], 'href'), page));
+  if (canonicals.length !== 1 || !canonicals[0]) return [];
+  const canonical = canonicals[0];
+
+  const description = [...html.matchAll(/<meta\b[^>]*>/gi)]
+    .filter((match) => attribute(match[0], 'name')?.toLowerCase() === 'description')
+    .map((match) => attribute(match[0], 'content'))
+    .filter((value): value is string => Boolean(value));
+  if (description.length !== 1) return [];
+
+  const normalize = (value: string) => value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+  const pageTitle = decodeAttribute(html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1] ?? '')
+    .replace(/<[^>]*>/g, ' ');
+  const rows: WebListing[] = [];
+  for (const match of html.matchAll(/dataLayer\.push\((\{"event":"view_item"[\s\S]{0,50000}?\})\);/g)) {
+    let data: RecordValue | null = null;
+    try { data = record(JSON.parse(match[1])); } catch { continue; }
+    const ecommerce = record(data?.ecommerce);
+    const items = Array.isArray(ecommerce?.items) ? ecommerce.items.map(record).filter(Boolean) : [];
+    const item = items.length === 1 ? items[0]! : null;
+    const title = text(item?.item_name, 1000);
+    const itemId = text(item?.item_id, 120);
+    const currency = text(ecommerce?.currency, 3)?.toUpperCase();
+    const price = number(item?.price);
+    const value = number(ecommerce?.value);
+    if (!title || !itemId || !/^IP\d{5,}$/i.test(itemId) || currency !== 'SGD' || price === undefined
+      || value !== price || item?.quantity !== 1 || (geography !== 'global' && currency !== MARKETS[market].currency)
+      || !new RegExp(`-${itemId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.html?$`, 'i').test(canonical.pathname)
+      || !normalize(pageTitle).includes(normalize(title)) || !normalize(description[0]).includes(normalize(title))) continue;
+    const metaAmount = description[0].match(/\bPrice\s*:\s*S\$\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?!\d)/i)?.[1];
+    if (!metaAmount || Number(metaAmount.replace(/,/g, '')) !== price) continue;
+    rows.push({
+      platform: 'web', sourceHost: sourceHost(page), market, itemId: createHash('sha256').update(canonical.href + itemId).digest('hex'),
+      title, url: canonical.href, price, currency, inStock: false, seller: sourceHost(page),
+      priceQuote: { kind: 'exact', availability: 'unknown', source: 'html' },
+    });
+  }
+  if (!rows.length) return [];
+  const signature = JSON.stringify(rows[0]);
+  return rows.every((row) => JSON.stringify(row) === signature) ? [rows[0]] : [];
+}
+
 export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   if (!retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
   if (html.includes('pdpTrackingData') && marketplacePage(pageUrl, market, 'lazada')) return lazadaTrackingPrice(html, pageUrl, market);
   const strict = parseStrictWebProduct(html, pageUrl, market, geography);
-  const rows = strict.length ? strict : broadHtmlPrices(html, pageUrl, market, geography);
+  const tracked = strict.length ? [] : courtsTrackedProduct(html, pageUrl, market, geography);
+  const rows = strict.length ? strict : tracked.length ? tracked : broadHtmlPrices(html, pageUrl, market, geography);
   return applyVisibleStartingPrice(rows, html, pageUrl);
 }

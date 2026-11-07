@@ -12,6 +12,19 @@ test('five-character complete models enter search while malformed hints stay inv
  for(const model of ['E685','EC68','Sony EC685','EC685 EC785'])assert.throws(()=>normalizeDiscoveryModel(model));
  assert.equal(queryMatchesTitle('EC-685','DeLonghi EC685 Coffee Machine','EC-685'),true);
 });
+test('regional appliance SKUs match abbreviated merchant titles without accepting accessories',()=>{
+ const cases:Array<[string,string,string]>=[
+  ['KitchenAid Artisan 5KSM175PS Stand Mixer','KitchenAid 5KSM175PS Mixer','5KSM175PS'],
+  ['Nespresso Vertuo Pop ENV90','Nespresso ENV90 Vertuo Pop Coffee Machine','ENV-90'],
+  ['Panasonic Lamdash Pro 6 ES-LS9A-K','Panasonic ES-LS9A-K Electric Shaver','ES-LS9A-K'],
+  ['Philips Shaver Series 9000 S9987/54','Philips S9987/54 Wet and Dry Shaver','S-9987/54'],
+  ['Panasonic Hair Dryer EH-NA9N','Panasonic EH-NA9N nanoe Hair Dryer','EH-NA9N'],
+  ['Philips Sonicare DiamondClean 9000 HX9914/62','Philips DiamondClean 9000 HX9914/62','HX-9914/62'],
+ ];
+ for(const [query,title,model] of cases){assert.equal(normalizeDiscoveryModel(model),model);assert.equal(queryMatchesTitle(query,title,model),true,title);}
+ assert.equal(queryMatchesTitle('HP Spectre x360 14-eu0000','Battery for HP Spectre X360 14-EU0000'),false);
+ assert.equal(queryMatchesTitle('Philips Air Purifier AC3033/30','Replacement Filter for Philips AC3033/30','AC-3033/30'),false);
+});
 test('device generation is distinct from a lens generation in a bundle',()=>{
  for(const title of ['Sony ZV-E10 II','Sony ZV-E10II','Sony ZV-E10 Mark II'])assert.equal(queryMatchesTitle('Sony ZV-E10',title),false,title);
  for(const title of ['Sony ZV-E10','Sony ZV-E10 with 16-50mm II Lens'])assert.equal(queryMatchesTitle('Sony ZV-E10',title),true,title);
@@ -87,6 +100,13 @@ test('an unspecified Philips regional suffix is retained without changing an exp
 test('marketing series numbers are not a conflicting appliance model',()=>{
  assert.equal(queryMatchesTitle('Philips Sonicare HX9911','Philips Sonicare 9000 Special Edition Rechargeable Toothbrush HX9911/90'),true);
  assert.equal(queryMatchesTitle('Philips Sonicare HX9911','Philips Sonicare HX9924/90'),false);
+});
+test('appliance base SKUs and segmented region suffixes remain the requested product',()=>{
+ assert.equal(queryMatchesTitle('KitchenAid Artisan 5KSM175PS Stand Mixer','KitchenAid 5KSM175PSBCA Artisan Stand Mixer','5KSM175PS'),true);
+ assert.equal(queryMatchesTitle('KitchenAid Artisan 5KSM175PS Stand Mixer','KitchenAid 5KSM185PSBCA Artisan Stand Mixer','5KSM175PS'),false);
+ assert.equal(queryMatchesTitle('KitchenAid Artisan 5KSM175PS Stand Mixer','Mixer Stand compatible with KitchenAid 5KSM175PS','5KSM175PS'),false);
+ assert.equal(queryMatchesTitle('Panasonic Lamdash Pro 6 ES-LS9A-K','Panasonic ARC6 Electric Razor ES-LS9A-K (Black)','ES-LS9A-K'),true);
+ assert.equal(queryMatchesTitle('Panasonic Lamdash Pro 6 ES-LS9A-K','Panasonic ARC6 Electric Razor ES-LS8A-K (Black)','ES-LS9A-K'),false);
 });
 test('unheaded delivery options cannot replace the primary item price',()=>{
  const page={format:'markdown' as const,title:'Philips HX9911/84 - Internet Explorer 11 is no longer supported',content:'# Philips HX9911/84\nGBP 360.99\nFREE standard delivery\nClick & Collect delivery options\nStandard delivery\nGBP 3.99\nExpected delivery 3-5 days\nFrom GBP 5.99 per week'};

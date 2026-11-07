@@ -13,6 +13,9 @@ function decode(value: string): string {
 
 // Retailers sometimes nest an actual SKU page beneath a catalog category.
 export function isDirectoryPath(path: string): boolean {
+  // Carousell uses /q/ and /q-<category>/ for result collections. Their price
+  // ranges span multiple sellers/items and are never a single product quote.
+  if (/\/(?:q|q-\d+)\/?$/i.test(path)) return true;
   const dir = path.match(/\/(?:collections|categor(?:y|ies)|brands?)(?:\/|$)/i);
   if (!dir) return false;
   const tail = path.slice(dir.index! + dir[0].length);

@@ -160,19 +160,26 @@ export function linkedMarkdownProducts(page: MarkdownPage, pageUrl: string, quer
  * precede all price/section rows, never come from recommendations. */
 function amazonPrimaryMarkdown(page: MarkdownPage, pageUrl: string): MarkdownPage {
   const url=safeWebUrl(pageUrl);
-  if(!url || !/^(?:www\.)?amazon\.co\.uk$/.test(url.hostname)
+  if(!url || !/^(?:www\.)?amazon\.(?:co\.uk|sg)$/.test(url.hostname)
     || !/\/(?:dp|gp\/product|gp\/aw\/d)\/[A-Z0-9]{10}(?:\/|$)/i.test(url.pathname)) return page;
   const title=plain(page.title), lines=page.content.split(/\r?\n/);
-  const matches=lines.map((line,index)=>({line,index})).filter(x=>/^#\s+/.test(x.line) && plain(x.line.replace(/^#\s+/,''))===title);
-  if(matches.length!==1 || title.length<12 || title.length>500)return page;
+  const matches=lines.map((line,index)=>({line,index,heading:plain(line.replace(/^#\s+/,''))}))
+    .filter(x=>/^#\s+/.test(x.line) && (x.heading===title || title.startsWith(x.heading+' : Amazon.')));
+  if(matches.length!==1 || matches[0].heading.length<12 || matches[0].heading.length>500)return page;
   const following=lines.slice(matches[0].index+1,matches[0].index+81);
   const end=following.findIndex(line=>/^#{1,6}\s+/.test(line));
   const block=(end<0?following:following.slice(0,end));
   const first=block.map(plain).find(Boolean)??'';
   const subtitle=first.length<=500 && /\([A-Z]{2,}[- ]?\d{3,}(?:[A-Z0-9-]*)(?:\/\d{2})?\)/i.test(first)
     && !MONEY.test(first) && !/related|recommend|compare|compatible|replacement/i.test(first) ? first : '';
-  const identity=(title+(subtitle?' — '+subtitle:'')).replace(/[|–]/g,'—');
-  return {...page,title:identity,content:'# '+identity+'\n'+block.join('\n')};
+  const identity=(matches[0].heading+(subtitle?' — '+subtitle:'')).replace(/[|–]/g,'—');
+  // Amazon Fetch can render the selected buy-box amount before the semantic
+  // H1. Keep only the first non-fee amount from that leading product summary;
+  // recommendations and informational H1 sections remain outside the block.
+  const leading=lines.slice(0,matches[0].index).map(plain).find(line=>MONEY.test(line)
+    && !/shipping|delivery|postage|import fees?|deposit|subtotal|installments?|per month|运费|配送|进口费|小计/i.test(line));
+  const stock=lines.slice(0,matches[0].index).map(plain).find(line=>/\b(?:in stock|left in stock|available now)\b|有货|现货/i.test(line));
+  return {...page,title:identity,content:'# '+identity+'\n'+[leading,stock,...block].filter(Boolean).join('\n')};
 }
 
 export function inspectMarkdownProduct(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): MarkdownInspection {
@@ -181,9 +188,14 @@ export function inspectMarkdownProduct(page: MarkdownPage, pageUrl: string, mark
     const listings = shopeeMarkdownPrice(page, pageUrl, market);
     return listings.length ? { listings } : { listings:[], reason:'PRIMARY_PRICE_UNVERIFIED' };
   }
-  page=amazonPrimaryMarkdown(page,pageUrl);
+  const amazonPage=amazonPrimaryMarkdown(page,pageUrl);
+  const amazonBound=amazonPage!==page;
+  page=amazonPage;
   const strict = inspectStrictMarkdownProduct(page, pageUrl, market, geography);
-  const listings = strict.listings.length ? strict.listings : broadMarkdownPrices(page, pageUrl, market, geography);
+  // Amazon can print a total followed by a per-count amount on the same
+  // selected buy-box line. Once the primary H1 and page ASIN are bound above,
+  // the first visible amount is the actual page total.
+  const listings = strict.listings.length ? strict.listings : broadMarkdownPrices(page, pageUrl, market, geography, amazonBound);
   if (page.stockUnconfirmed) for (const row of listings) if (row.inStock) {
     row.inStock = false;
     row.priceQuote = { ...row.priceQuote, kind: row.priceQuote?.kind ?? 'exact', availability: 'unknown', source: 'fetch' };

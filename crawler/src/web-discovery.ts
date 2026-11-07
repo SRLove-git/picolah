@@ -302,6 +302,12 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       const exact = `"${options.query.replace(/"/g,' ')}" "${symbol}"`;
       // Keep enough space for the search provider's market and currency suffix.
       if (Array.from(exact).length <= 95) queries.push(exact);
+      // Search providers can over-focus on reviews when "online store" is
+      // present and can ignore valid local PDPs when site:/currency syntax is
+      // too restrictive. A final plain identity + country purchase query gives
+      // appliance names and regional SKUs one deterministic local retry.
+      const local = `${options.model ?? options.query} ${MARKETS[options.market].name} buy`;
+      if (Array.from(local).length <= 110) queries.push(local);
     }
     const generalGroups = queries.map(async fallbackQuery => {
       summary.requests++;

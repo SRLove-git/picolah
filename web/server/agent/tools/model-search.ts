@@ -161,7 +161,9 @@ export function createModelSearchTool(options: {
         throw new Error('商品搜索返回了无效报价');
       }
       if (input.model) {
-        const full = compactModel(input.model).split('').join('[\\s-]*');
+        const compact = compactModel(input.model);
+        const variantSuffix = /^\d[A-Z]{2,}\d{2,}[A-Z]{1,3}$/.test(compact) ? '[A-Z]{0,4}' : '';
+        const full = compact.split('').join('[\\s-]*') + variantSuffix;
         const identity = [listing.title, listing.productDetails?.model].filter(Boolean).join(' ');
         if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(identity.normalize('NFKC'))) {
           throw new Error('商品搜索返回的型号不一致');

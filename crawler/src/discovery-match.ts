@@ -26,9 +26,9 @@ export function normalizeDiscoveryModel(value: string): string {
 
 // Permit spaces inside established Sony families without treating an arbitrary
 // brand + model phrase ("Sony WF-1000XM6") as one identifier.
-const MODEL_CODE = '(?:WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|[A-Z]{2,}-?\\d{2,}(?:[A-Z]+(?:-[A-Z]+)?\\d+)*[A-Z]*(?:/\\d{2})?)';
+const MODEL_CODE = '(?:WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|\\d[A-Z]{2,}\\d{2,}[A-Z0-9]*(?:/[A-Z0-9]+)?|[A-Z]{1,3}(?:-[A-Z]{1,4})+\\d[A-Z0-9]*(?:-[A-Z0-9]+)*(?:/[A-Z0-9]+)?|[A-Z]-?\\d{4,}[A-Z]*/[A-Z0-9]+|[A-Z]{2,}-?\\d{2,}(?:[A-Z]+(?:-[A-Z]+)?\\d+)*[A-Z]*(?:/\\d{2})?)';
 
-const NON_PRODUCT = /\b(?:case|cover|skin|sleeve|protector|cable|charger|adapter|stand|holder|mount|strap|ear\s?(?:tips?|pads?|cushions?)|replacement|compatible|sticker|decal|replica|counterfeit|imitation|fake|copy|clones?|used|refurbished|renewed|pre[-\s]?(?:owned|loved)|second[-\s]?hand|broken|repair|parts?|dummy|open[-\s]box|left\s+only|right\s+only)\b|保护套|保护壳|耳塞套|耳罩|替换|配件|仿制|高仿|二手|翻新|维修|故障|仅包装|空盒|单耳|单只|充电仓|充电盒/i;
+const NON_PRODUCT = /\b(?:case|cover|skin|sleeve|protector|cable|charger|adapter|stand|holder|mount|strap|ear\s?(?:tips?|pads?|cushions?)|replacement|compatible|sticker|decal|replica|counterfeit|imitation|fake|copy|clones?|used|refurbished|renewed|pre[-\s]?(?:owned|loved)|second[-\s]?hand|broken|repair|parts?|dummy|open[-\s]box|left\s+only|right\s+only)\b|\b(?:batter(?:y|ies)|filters?|brush(?:es)?|rollers?|hoses?|remotes?)\s+(?:for|compatible\s+with)\b|保护套|保护壳|耳塞套|耳罩|替换|配件|仿制|高仿|二手|翻新|维修|故障|仅包装|空盒|单耳|单只|充电仓|充电盒/i;
 
 function nonProductTitle(rawTitle: string): boolean {
   let title = rawTitle.normalize('NFKC');
@@ -48,6 +48,9 @@ function nonProductTitle(rawTitle: string): boolean {
   if (/\b(?:power|battery)\s*bank\b|移动电源|充电宝/i.test(title)) {
     title=title.replace(/\bportable\s+chargers?\b/gi,' ');
   }
+  // "Stand mixer" names the appliance itself; a standalone stand remains an
+  // accessory and continues to match NON_PRODUCT below.
+  if (/\bstand\s+mixers?\b/i.test(title)) title=title.replace(/\bstand\b/gi,' ');
   // A bundled charging/carrying case is a normal feature of headphones. Only
   // remove the explicit bundle phrase; a standalone case, replacement or pad
   // remains an accessory even if the title mentions headphones or their model.
@@ -70,10 +73,19 @@ function removeModelAliases(title: string, compact: string): string {
 }
 
 function exactTitle(model: string, rawTitle: string): boolean {
-  let title = rawTitle.normalize('NFKC').toUpperCase().replace(/\bSERIES\s+\d{3,4}\b/g, ' ');
+  let title = rawTitle.normalize('NFKC').toUpperCase()
+    .replace(/\bSERIES\s+\d{3,4}\b/g, ' ')
+    .replace(/\b(?:DIAMONDCLEAN|SONICARE)\s+\d{3,4}\b/g, ' ');
   if (!title.trim() || nonProductTitle(title)) return false;
   title=title.replace(/\b([A-Z]{3})\s*\d[\d.,]*(?=\s|$)/g,(value,code)=>currencyDigits(code)!==null?' ':value);
   const compact = model.replace(/[-\s]/g, '');
+  // KitchenAid and similar appliance families append colour/region letters to
+  // a documented base SKU (5KSM175PS -> 5KSM175PSBCA). The attached suffix is
+  // a sellable variant of that base appliance, not another generation.
+  if (/^\d[A-Z]{2,}\d{2,}[A-Z]{1,3}$/.test(compact)) {
+    const base = compact.split('').join('[-\\s]*');
+    title = title.replace(new RegExp(`(${base})[A-Z]{1,4}(?=$|[^A-Z0-9])`, 'g'), '$1');
+  }
   if (/^(?:HX|HD|HR|HC|MG|BR|NA)\d+[A-Z]*$/.test(compact)) {
     const family=compact.split('').join('[-\\s]*');
     title=title.replace(new RegExp(`(${family})/\\d{2}(?=$|[^A-Z0-9])`,'g'),'$1');
@@ -118,7 +130,7 @@ function exactTitle(model: string, rawTitle: string): boolean {
     // CH 720 N is the same model, but CH 720 NB / N2 are not. Require a
     // complete separated N so the next word (for example "Noise") cannot
     // become a model suffix on a code without N, such as WH-CH520.
-    const suffix = family === 'CH' ? '(?:[-\\s]+N(?=$|[^A-Z0-9])|[A-Z]*)' : '[A-Z]*';
+    const suffix = family === 'CH' ? '(?:[-\\s]+N(?=$|[^A-Z0-9])|[A-Z]*)' : '[A-Z]*(?:-[A-Z]+)*';
     for (const candidate of title.matchAll(new RegExp(`\\b${family}[-\\s]*\\d+${suffix}\\b`, 'g'))) {
       if (candidate[0].replace(/[-\s]/g, '') !== generation) return false;
     }
@@ -283,7 +295,14 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
   // spelling has "whch" and the other has separate "wh" / "ch" tokens.
   const requested = queryTokens(compactModel ? removeModelAliases(query.normalize('NFKC').toUpperCase(), compactModel) : query);
   const titleTokens = new Set(queryTokens(compactModel ? removeModelAliases(title.normalize('NFKC').toUpperCase(), compactModel) : title));
-  if ((!requested.length && !model) || !requested.every((token) => titleTokens.has(token))) return false;
+  // A complete manufacturer SKU is the product identity. Merchant titles
+  // routinely omit marketing/category words around appliance SKUs, so do not
+  // require every remaining prose token once that exact code is present.
+  if ((!requested.length && !model) || (!model && !requested.every((token) => titleTokens.has(token)))) return false;
+  if (model) {
+    const explicitQualifiers = requested.filter(token => /^(?:black|white|silver|blue|pink|green|gold|grey|gray|red)$/.test(token));
+    if (explicitQualifiers.some(token => !titleTokens.has(token))) return false;
+  }
   if (queryTokens(query).some((token) => /^\d+$/.test(token))) {
     // The exact guard already verified aliases such as "XM6 | 1000XM6";
     // they are not a numeric/capacity choice like "128 / 256GB".
