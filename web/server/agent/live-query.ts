@@ -36,9 +36,21 @@ export async function visualSearchQuery(image: string, caption: string): Promise
   } catch { return null; }
 }
 
+// Remove only complete presentation requests. Product clauses and numbers such
+// as a capacity, a budget or a model suffix must reach the search unchanged.
+const chinesePresentation = /^(?:请)?(?:用|以|按)(?:中文|英文|英语|日语|法语|表格|列表|短句|一句话|格式|markdown|\s)+(?:回答|回复|展示|输出|列出|给出)?(?:(?:商家|商品页|购买|来源)?链接|页面价格|价格|和|及|\s)*$/i;
+const englishPresentation = /^(?:please\s+)?(?:answer|reply|respond|format|use|present)\s+(?:(?:in|as|an?|the|english|chinese|markdown|table|list|with|and|prices?|retailer|merchant|source|links?)\b\s*)+$/i;
+function searchContent(message: string): string {
+  const content = message.split(/([，,。！？!?；;\n]|\.(?=\s|$))/).map((part) => {
+    const clause = part.trim();
+    return chinesePresentation.test(clause) || englishPresentation.test(clause) ? '' : part;
+  }).join('');
+  return content === message ? message : content.replace(/[\s，,。！？!?；;.]+$/, '');
+}
+
 /** Normalize a shopping request without consulting a product catalog. */
 export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live'): { query: string; model?: string; maxPrice?: number } | null {
-  message = normalizeBasePhoneEdition(separateBrandAndModel(message));
+  message = normalizeBasePhoneEdition(separateBrandAndModel(searchContent(message)));
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;
@@ -110,7 +122,7 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
     // Other measure words are only dropped when a latin product token follows,
     // so real words such as 台灯 or 套装 keep their first character.
     .replace(/^\s*(?:[一二两三四五六七八九十百千\d]+\s*)?[台部件套只双支把张片本辆架副对份]\s*(?=[A-Za-z0-9])/, '')
-    .replace(/哪里买最便宜|哪里最便宜|在哪里买|哪里买|多少钱|什么价格|最新价格|实时价格|价格|报价|比价|最便宜|便宜|贵不贵|怎么样|值得买吗|划算吗|只有|只看|不要|不看|排除|去掉|移除|恢复全部平台|全部平台|所有平台|取消筛选|不限平台|换成|换到|切换到|重试|再试|刷新/g, ' ')
+    .replace(/哪里买最便宜|哪里最便宜|在哪里买|哪里买|多少钱|什么价格|最新价格|实时价格|(?:的)?(?:商品页|页面)(?:标价|价格)|价格|报价|比价|最便宜|便宜|贵不贵|怎么样|值得买吗|划算吗|只有|只看|不要|不看|排除|去掉|移除|恢复全部平台|全部平台|所有平台|取消筛选|不限平台|换成|换到|切换到|重试|再试|刷新/g, ' ')
     .replace(/\bdon['’]t\b/gi, ' ')
     .replace(/\b(?:please|find|search|show|buy|me|for|price|prices|cheapest|cheap|compare|retry|refresh|only|on|in|the|how much|does|cost|exclude|excluding|except|without|avoid|not|no|do|from|use|include)\b/gi, ' ')
     .replace(/^[\s的在呢吗一下那这款它]+|[\s的在呢吗]+$/g, '')

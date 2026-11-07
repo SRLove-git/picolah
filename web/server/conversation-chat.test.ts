@@ -208,3 +208,13 @@ test('discussion preference survives requirements and blocks premature searches 
     assert.equal((await getConversation(first.id, 'anon-conversation-regression'))?.messages.at(-1)?.searchMode, 'automatic');
   } finally { conversationTools.plan = originalPlan; }
 });
+
+test('advice stays in conversation when intent inference is offline; explicit lookups resume', () => {
+  const context = {market:'SG' as const, previous:null, history:[]};
+  assert.equal(fallbackConversationTurn('换一个呢', context).action, 'reply');
+  const advice = fallbackConversationTurn('通勤坐地铁，头戴式和入耳式耳机怎么选？帮我比较舒适性和便携性。', context);
+  assert.equal(advice.action, 'reply');
+  assert.equal(advice.searchMode, 'conversation');
+  assert.equal(fallbackConversationTurn('戴眼镜，包里空间也很小。', {...context,searchMode:advice.searchMode}).action, 'reply');
+  assert.equal(fallbackConversationTurn('小米14值得买吗？现在帮我查价。', context).action, 'product_search');
+});

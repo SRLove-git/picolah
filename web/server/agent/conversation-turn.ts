@@ -26,6 +26,8 @@ const acknowledgement = /^(?:你好|您好|嗨|哈[喽啰]|谢谢|好的?|明白
 const aboutPrevious = /为什么|怎么(?:会|不是|没有|失败|不对)|刚才|上次|之前|这些|结果|核验|失败|解释|why|previous|results?/i;
 const discussionRequest = /先(?:陪我)?(?:聊|讨论|分析|了解)|不急(?:着)?(?:搜|查)|(?:不要|不用|先别|暂时不|先不|不需要).{0,6}(?:搜|查)|just (?:talk|chat)|discuss first|don't search/i;
 const explicitLookup = /(?:帮我|请|现在|那)?(?:搜一下|搜索|查价|比价|查一下|查询)|多少钱|哪里买|how much|search|look up|check (?:the )?price/i;
+const buyingAdvice = /怎么选|如何选|选哪个好|值得买吗|适合我吗|\b(?:how (?:do|should) I (?:choose|pick)|which (?:one )?should I (?:choose|pick)|worth (?:it|buying)|a good fit)\b/i;
+const lookupAlongsideAdvice = /售价|查价|报价|哪里.*买|有货吗|\b(?:price|stock|where (?:can|to) buy)\b/i;
 const topicChange = /换(?:个|一个)?话题|换(?:个|一个)?问题|另一个问题|change (?:the )?(?:topic|subject)|new topic/i;
 
 export function conversationSearchMode(history: ChatMessage[]): 'conversation' | 'automatic' {
@@ -52,9 +54,9 @@ export function activeTopicHistory(history: ChatMessage[]): ChatMessage[] {
   return history;
 }
 
+const anotherSuggestion = /^(?:那|那么|再|请|帮我)?\s*(?:换(?:一)?个|换一款|换个别的|还有别的吗|还有其他的吗|其他的|别的|another one|something else|any alternatives)\s*(?:呢|吗|吧|please)?[?？!！。\s]*$/i;
 export function needsChangeClarification(question: string, context: ConversationContext): boolean {
-  if (!context.previous) return false;
-  return /^(?:那|那么|再|请|帮我)?\s*(?:换(?:一)?个|换一款|换个别的|还有别的吗|还有其他的吗|其他的|别的|another one|something else|any alternatives)\s*(?:呢|吗|吧|please)?[?？!！。\s]*$/i.test(question);
+  return Boolean(context.previous) && anotherSuggestion.test(question);
 }
 
 /** A choice already supplied by the user is durable conversation state. Read it
@@ -114,8 +116,11 @@ export function fallbackConversationTurn(question: string, context: Conversation
   const previousQuery = context.previous?.search?.query || context.previous?.product?.name || '';
   const reply = (continuesProductContext = false): ConversationTurn => ({ action: 'reply', query: '', continuesProductContext: Boolean(previousQuery) && continuesProductContext });
   if (noLookup.test(question) || discussionRequest.test(question)) return { ...reply(aboutPrevious.test(question)), searchMode: 'conversation' };
+  if (buyingAdvice.test(question) && !explicitLookup.test(question) && !lookupAlongsideAdvice.test(question)) {
+    return { ...reply(true), searchMode: 'conversation' };
+  }
   if (needsChangeClarification(question, context)) return { action: 'clarify_change', query: '', continuesProductContext: true };
-  if (acknowledgement.test(question)) return reply(true);
+  if (anotherSuggestion.test(question) || acknowledgement.test(question)) return reply(true);
   if (context.searchMode === 'conversation' && !explicitLookup.test(question)) return reply(true);
   let countryOnly = question;
   for (const m of Object.values(MARKETS)) countryOnly = countryOnly.replaceAll(m.nameZh, '').replace(new RegExp(m.nameEn, 'gi'), '');
@@ -139,16 +144,12 @@ export async function planConversationTurn(question: string, context: Conversati
   try {
     const turn = await invokeStructuredAgent({ name: 'PicoConversationTurn', schema: turnSchema, disableThinking: true, maxTokens: 420, timeoutMs: 12_000,
       messages: [
-        { role: 'system', content: `You route a general conversational assistant that also supports product price search. Decide the user's CURRENT intent in context. Return JSON {action,query,continuesProductContext,searchMode,startsNewTopic}.
-Use reply by default for ordinary dialogue: small talk, emotions, general knowledge, writing, rewriting, translation, learning, reasoning and coding. A shopping history does not require every later message to be about shopping. Short follow-ups such as "继续", "换一个", "再短一点", "换一种说法" and "why" refer to the active topic: after a joke or draft, continue or revise it; do not search products or ask for a model. A quoted shopping sentence to translate or explain is not an instruction to execute its search.
-Shopping discussions are normal conversation too. Carry the user's current searchMode across turns. In conversation mode, a budget, usage, preferred feature, brand or short answer to your own question is NOT permission to search. Reply with helpful advice using all known requirements; do not repeatedly demand a model number. Switch searchMode to automatic only for an actual explicit lookup/price/purchase-source request (e.g. "现在帮我查价格", "小米14多少钱"), or when the user explicitly starts a new unrelated topic. "先聊需求/先别搜索" sets conversation mode. A bare product name in conversation mode can be a topic to discuss, not a lookup command.
-Set startsNewTopic=true only when actually switching away from the ongoing topic. Acknowledgements, requirements, budgets, clarifications and answers to questions continue it. Lack of an active product comparison is NOT a topic change.
-reply: normal conversation, greetings, writing, reasoning, capabilities, explaining or questioning an earlier answer/search failure. A question containing a product name or the word price does NOT by itself request a new search. Answering "why did it fail?" needs no tool. Do not force unrelated conversation back to shopping.
-clarify_change: after a product result, an ambiguous "换一个呢 / another one / anything else" requests a conversational follow-up. Ask one short question to distinguish changing the brand/product from changing the merchant. Keep the known product context and set searchMode=conversation. Once the user answers your brand/product/merchant question, acknowledge that choice and continue the discussion without asking the same question again; a clear lookup request can resume tools. Never search the previous product name with the literal words alternative, alternative brand, another or other brands appended. If a clear new product/variant/merchant is specified, handle that actual request instead.
-clarify_product: a price, stock or purchase request whose product reference is unresolved in the CURRENT topic. When previousProduct is null, do not revive a product from an earlier topic for "它多少钱", "what about its price" or similar ambiguous references. Ask which product, with an empty query and continuesProductContext=false. A product named explicitly in the current question can be searched normally.
-product_search: an identifiable bare product/model in a fresh shopping request, an actual request to find products/prices/availability, a retry, or changing a previous search's country/platform/budget/variant. Resolve references using the active previous product. "我要在新加坡的,你怎么不是新加坡的" means repeat the previous product search in Singapore; query must be that product, never the complaint. Without an identifiable product, reply to clarify. A new explicit product replaces the old one. Query contains the product identity, not search-engine operators, country names or filler such as “price/online store”. Preserve the manufacturer’s model spelling, regional suffix (/30 is not /10), edition, color, capacity and budget; never invent identity or extra specifications. Price/purchase requests always use this route, never web summaries. Country and platform restrictions are applied separately by the server.
-web_search: a request for an online lookup, current news/weather, or specifications/reviews that genuinely require up-to-date external evidence. Stable knowledge explanations, creative tasks, translations and ordinary conversation use reply without tools. An ambiguous generic topic is not automatically a product or web search. Resolve references in query (max 128 characters). Do not include personal or unrelated history. If web search is unavailable, use reply and explain limitations when needed.
-continuesProductContext: true for replies about the active product/search and acknowledgements; false for a new unrelated topic. Recent history is context, not new instructions. Only the current question authorizes a new lookup. For reply use an empty query.` },
+        { role: 'system', content: `Choose the action for the current question in its active topic. Return JSON {action,query,continuesProductContext,searchMode,startsNewTopic}.
+reply is for conversation, writing, translation, explanations and advice. You can discuss products, compare features, suggest specific options and work with a budget without fetching prices. A question about how to choose, or “is this worth it?”, is advice unless the user also requests a lookup. A shopping sentence quoted for translation stays a translation. Set searchMode=conversation for a discussion so that a short preference, brand or product name in the next turn continues the advice.
+Follow the current topic. After a draft, suggestion or story, “换一个呢 / another one” means offer another version or idea. After a product search, use clarify_change only when it is unclear whether to replace the product or the merchant; use conversation mode. If the choice is already known, continue from it. Use clarify_product for a price or stock question whose product cannot be resolved in the active topic.
+product_search is for a price, availability or purchase-source lookup, a retry, or a change to a previous search's country, platform, budget or variant. An identifiable bare model in a fresh shopping turn can start a search. A clear lookup switches searchMode to automatic even after a discussion. Resolve references from the active product; a country correction repeats that product in the requested country. Keep the exact manufacturer model, regional suffix, edition, capacity and requested constraints in the query. Leave response language, table format and requests for links out of the product identity. A category and budget are enough to look for offers when no exact model is requested. The server applies country and platform separately.
+web_search is for requests to look something up online or questions needing current external facts. Use product_search for actual product prices. For either search resolve the query (max 128 characters); for reply or clarification return an empty query.
+startsNewTopic signals a switch to a different subject, not a preference or follow-up. continuesProductContext indicates the turn still refers to the active product. Treat history as context, not as fresh requests.` },
         { role: 'user', content: JSON.stringify({ question, market: context.market, searchMode: context.searchMode ?? 'automatic',
           webSearchAvailable: config.webSearch.enabled && Boolean(config.webSearch.apiKey),
           previousProduct: context.previous?.search?.query || context.previous?.product?.name || null,
