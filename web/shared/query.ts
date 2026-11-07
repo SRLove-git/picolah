@@ -246,6 +246,21 @@ const PLATFORM_WORDS: Array<[string, RegExp]> = [
   ['official', /\bofficial\s*(?:store|shop)?\b|品牌官网|官网/i],
 ];
 
+// In "not just Shopee and Lazada" both names illustrate the scope of the search.
+const platformName = '(?:' + PLATFORM_WORDS.map(([,regex]) => regex.source).join('|') + ')';
+const platformList = platformName + '(?:\\s*(?:[、,，/&]|和|及|或|与|以及|\\band\\b|\\bor\\b)\\s*' + platformName + ')*';
+const exampleIntro = '(?:(?:并非|并不是|不是|不要|别|不应|不必|不能|不用)\\s*(?:只|仅)(?:是|仅)?\\s*(?:搜索|查询|查|搜|看|在|限于)?|(?:不局限于|不限于|不仅限于|不止|不只是|不光是)|(?:比如|例如|诸如|包括但不限于)|\\b(?:not (?:just|only|limited to)|including but not limited to|such as|for example|e\\.g\\.)\\s*)';
+const exampleEnd = '(?:之类(?:的)?|这类|等(?:等|平台|网站|商城|站点|(?=[，,。.!！？?\\s]|$))|\\s*,?\\s*etc\\.?)';
+const examplePlatforms = new RegExp('(?:' + exampleIntro + '\\s*[:：,，]?\\s*' + platformList + '(?:\\s*' + exampleEnd + ')?|' + platformList + '\\s*' + exampleEnd + ')', 'gi');
+
+export function stripPlatformExamples(text: string): string {
+  return text.replace(examplePlatforms, (phrase, offset: number) => {
+    // An explicit filter on the same list still applies, e.g. "排除 Shopee 等平台".
+    if (/(?:只|仅|排除|不要|不看|exclude|only|except|without)\s*(?:在|查|搜索|看|搜)?\s*$/i.test(text.slice(0,offset))) return phrase;
+    return ' ';
+  });
+}
+
 export function detectRequestedPlatforms(text: string): string[] {
   return PLATFORM_WORDS.filter(([, pattern]) => pattern.test(text)).map(([id]) => id);
 }
@@ -264,8 +279,11 @@ export function resolvePlatformDirective(
   market: CountryCode,
   previous: string[] = [],
 ): PlatformDirective {
+  const withoutExamples = stripPlatformExamples(text);
+  const hasExamples = withoutExamples !== text;
+  text = withoutExamples;
   const mentioned = detectRequestedPlatforms(text);
-  if (!mentioned.length && /全部平台|所有平台|取消(?:平台)?筛选|不限平台|都看|恢复全部|全网(?:搜索|搜)?|所有网站|\b(?:search\s+the\s+web|across\s+the\s+web|all\s+(?:websites|sites|platforms))\b/i.test(text)) {
+  if (!mentioned.length && (hasExamples || /全部平台|所有平台|取消(?:平台)?筛选|不限平台|都看|恢复全部|全网(?:搜索|搜)?|所有网站|\b(?:search\s+the\s+web|across\s+the\s+web|all\s+(?:websites|sites|platforms))\b/i.test(text))) {
     return { mode: 'reset', mentioned: [], platformIds: [], unsupported: [] };
   }
 

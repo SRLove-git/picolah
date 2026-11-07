@@ -1,3 +1,4 @@
+import { stripPlatformExamples } from '../../shared/query.ts';
 import type { Comparison } from '../../shared/types.ts';
 import { MARKETS } from '../../shared/types.ts';
 import { extractSearchModel, separateBrandAndModel } from '../../shared/model-search.ts';
@@ -50,7 +51,7 @@ function searchContent(message: string): string {
 
 /** Normalize a shopping request without consulting a product catalog. */
 export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live', originalQuestion?: string): { query: string; model?: string; maxPrice?: number } | null {
-  message = normalizeBasePhoneEdition(separateBrandAndModel(searchContent(message)));
+  message = normalizeBasePhoneEdition(separateBrandAndModel(searchContent(stripPlatformExamples(message))));
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;

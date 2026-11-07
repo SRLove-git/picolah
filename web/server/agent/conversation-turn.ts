@@ -1,3 +1,4 @@
+import { stripPlatformExamples } from '../../shared/query.ts';
 import { z } from 'zod';
 import type { ChatMessage, Comparison, CountryCode } from '../../shared/types.ts';
 import { MARKETS } from '../../shared/types.ts';
@@ -81,6 +82,14 @@ export function conversationChangeTarget(question: string, context: Conversation
 }
 
 export function resolveConversationTurn(question: string, context: ConversationContext, turn: ConversationTurn): ConversationTurn {
+  const remaining = stripPlatformExamples(question);
+  if (remaining !== question && /^(?:请|可以|也|要|能|应该|查询|搜索|看看|查|搜|网购平台|电商平台|购物网站|其他平台|平台|网站|都可以|[，、,。.!！？?\s])*$/u.test(remaining)) {
+    const product = context.previous?.search?.query || context.previous?.product?.name;
+    if (product && context.searchMode !== 'conversation') {
+      return {action:'product_search', query:product, continuesProductContext:true, searchMode:'automatic', startsNewTopic:false};
+    }
+    return {action:'reply', query:'', continuesProductContext:Boolean(product), searchMode:context.searchMode ?? 'automatic', startsNewTopic:false};
+  }
   let searchMode = noLookup.test(question) || discussionRequest.test(question)
     ? 'conversation' : turn.searchMode ?? context.searchMode ?? 'automatic';
   const previousQuery = context.previous?.search?.query || context.previous?.product?.name || '';

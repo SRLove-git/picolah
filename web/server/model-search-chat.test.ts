@@ -626,3 +626,18 @@ test('a compact lookup keeps the structured result and emits only the price or a
   assert.equal(missing.comparison.priceOnly,true);
   assert.equal(missing.answer,'暂无页面价');
 });
+
+test('broadening platform examples reuses the product without keeping a store restriction', async () => {
+  await ask('Sony WH-CH720N');
+  const defaultPlatforms = requests.at(-1)!.payload.platforms;
+  const first = await ask('只看 Shopee 的 Sony WH-CH720N');
+  assert.deepEqual(requests.at(-1)?.payload.platforms, ['shopee']);
+  for (const message of ['不是只查shopee，lazada', '可以查询网购平台，shopee，lazada之类的']) {
+    const count = requests.length;
+    const result = await ask(message, {conversationId:first.conversationId});
+    assert.equal(requests.length, count+1);
+    assert.equal(result.comparison.platformFilter, undefined);
+    assert.deepEqual(requests.at(-1)?.payload.platforms, defaultPlatforms);
+    assert.equal(requests.at(-1)?.payload.query, 'Sony WH-CH720N');
+  }
+});

@@ -216,3 +216,7 @@ test('merchant queries retain the user model spelling and regional edition indep
     assert.deepEqual(liveSearchQuery(planned,null,'live',raw),{query:expected,model});
   }
 });
+
+test('platform examples are omitted from the actual product lookup', () => {
+  assert.deepEqual(liveSearchQuery('Sony WH-CH720N，比如 Shopee、Lazada'), liveSearchQuery('Sony WH-CH720N'));
+});

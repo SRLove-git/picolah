@@ -172,7 +172,7 @@ export function createModelSearchTool(options: {
   };
   return tool((input: LiveSearchInput) => cache.run(input, () => fetchValidated(input)), {
     name: 'search_marketplace_products',
-    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页匹配型号并读取页面价格。返回匹配商品的页面价格即成功，不要求商品有货。默认 scope=platforms，支持 Shopee、Lazada 及新加坡的 Amazon SG，保留用户平台筛选；配置了搜索引擎接口时可使用 scope=web、platforms=[]。返回商品页中的价格与详情，允许库存未知、缺货、起价和区间价，通过 priceQuote 明确标注，不把未知当作有货，不把起价当精确价。可复用最多五分钟的报价缓存并保留核验时间，不使用搜索摘要价。按国家搜索时只接受目标国家的站点或专区，通用跨境页面仅切换显示币种不算本地报价；新闻、指南和混合型号分类页不是商品报价。',
+    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页匹配型号并读取页面价格。返回匹配商品的页面价格即成功，不要求商品有货。按服务配置的默认范围搜索。全网查价使用 scope=web、platforms=[]，覆盖当地商城、品牌官网和零售商。Shopee、Lazada 等举例不限定来源；指定平台查价时使用 scope=platforms 和相应平台列表。返回商品页中的价格与详情，允许库存未知、缺货、起价和区间价，通过 priceQuote 明确标注，不把未知当作有货，不把起价当精确价。可复用最多五分钟的报价缓存并保留核验时间，不使用搜索摘要价。按国家搜索时只接受目标国家的站点或专区，通用跨境页面仅切换显示币种不算本地报价；新闻、指南和混合型号分类页不是商品报价。',
     schema: liveSearchInputSchema,
   });
 }

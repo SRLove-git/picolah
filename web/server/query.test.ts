@@ -175,3 +175,16 @@ test('model editions stay distinct while explicit comparisons can include both e
   assert.deepEqual(await findProducts('Xiaomi G20 Ultra', [ordinary, max]), []);
   assert.deepEqual(new Set((await findProducts('Xiaomi G20 和 Xiaomi G20 Max', [ordinary, max])).map(item => item.product?.id)), new Set(['g20', 'g20-max']));
 });
+
+test('platform examples broaden the source list while separate restrictions still apply', () => {
+  for (const phrase of ['不是只查shopee，lazada','可以查询网购平台，shopee，lazada之类的',
+    '比如虾皮和来赞达', 'not just Shopee and Lazada', 'stores such as Shopee or Lazada']) {
+    assert.deepEqual(resolvePlatformDirective(phrase, 'SG', ['shopee']), {mode:'reset', mentioned:[], platformIds:[], unsupported:[]}, phrase);
+  }
+  for (const phrase of ['不要查 Shopee 等平台', '不是只查 Shopee、Lazada，但排除 TikTok']) {
+    const directive = resolvePlatformDirective(phrase, 'SG');
+    assert.equal(directive.mode, 'exclude');
+    assert.deepEqual(directive.mentioned, [phrase.startsWith('不要') ? 'shopee' : 'tiktok']);
+  }
+  assert.deepEqual(resolvePlatformDirective('只查 Shopee 和 Lazada', 'SG').platformIds, ['lazada','shopee']);
+});
