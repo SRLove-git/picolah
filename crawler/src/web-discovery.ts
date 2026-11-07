@@ -11,9 +11,14 @@ import { verifyProductPage } from './verify-product-page.ts';
 import { safeWebUrl } from './safe-web-url.ts';
 import { linkedProductPages, productPageUrl, type LinkedProductPage } from './product-page-links.ts';
 import { queryMatchesTitle } from './discovery-match.ts';
+import { parseWebProduct } from './platforms/web-product.ts';
 import type { WebListing } from './types.ts';
+import { MerchantLinks } from './merchant-links.ts';
+import { searchMerchant, singaporeShops, selectedMerchantHtml } from './merchant-search.ts';
 
 export interface WebDiscoveryDependencies {
+  links?: Pick<MerchantLinks, 'find' | 'remember'>;
+  merchantSearch?: typeof searchMerchant;
   search?: (query: string, market: MarketCode) => Promise<WebSearchCandidate[]>;
   fetchPage?: (url: string, market: MarketCode) => Promise<ProductPageContent>;
 }
@@ -135,8 +140,10 @@ function interleavePages(groups: WebSearchCandidate[][], visits: ReadonlyMap<str
   return result;
 }
 
+const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant };
+
 /** Optional cross-web path: one SERP discovery, then bounded live product-page verification. */
-export async function discoverWebProducts(options: DiscoveryOptions, dependencies: WebDiscoveryDependencies = {}): Promise<DiscoveryResult> {
+export async function discoverWebProducts(options: DiscoveryOptions, dependencies: WebDiscoveryDependencies = productionSources): Promise<DiscoveryResult> {
   const excluded = [...new Set(options.excludedPlatforms ?? [])];
   if (excluded.some((platform) => !DISCOVERY_PLATFORMS.includes(platform))) throw new Error('商品搜索排除平台无效');
   const summary: DiscoveryResult['summary'] = { requests: 0, matched: 0, skipped: 0, failed: 0,
@@ -155,17 +162,31 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
     listings, summary: { ...summary, ...(failureCodes.size ? { failureCodes: [...failureCodes].sort() } : {}) },
   });
   const search = dependencies.search ?? ((query: string, market: MarketCode) => (config.webSearch.provider === 'deepseek' ? searchDeepSeekCandidates : searchWebCandidates)(query, market, { geography: options.geography }));
-  let candidates: WebSearchCandidate[];
+  const saved = options.geography === 'global' ? [] : dependencies.links?.find(options) ?? [];
+  const shops = dependencies.merchantSearch && options.geography !== 'global' ? singaporeShops(options.query, options.market) : [];
+  let candidates: WebSearchCandidate[] = [];
   summary.requests++;
   // Short product names otherwise retrieve launch prices and reviews. Express
   // purchase intent without adding a country or changing the matched identity.
   const category = /\b(?:xiaomi|iphone|pixel|oneplus)\s*\d{1,2}[a-z]?\b/i.test(options.query) ? ' smartphone' : '';
   const discoveryQuery = !options.model
     ? `${options.query}${category} online store` : options.query;
+  // A retailer can return the exact SKU even when a web search restricted to its domain cannot.
+  const native = Promise.all(shops.map(async shop => {
+    summary.requests++;
+    try {
+      const hits = await dependencies.merchantSearch!(shop, options.query);
+      return selectPages(hits, options.market, excluded, options.geography, options.query, options.model);
+    } catch { return []; }
+  }));
   try { candidates = await search(discoveryQuery, options.market); }
-  catch (error) { failed(error); return result(); }
+  catch (error) { failed(error); if (!saved.length && !shops.length) return result(); }
 
-  const pages = selectPages(candidates, options.market, excluded, options.geography, options.query, options.model);
+  const generalPages = selectPages(candidates, options.market, excluded, options.geography, options.query, options.model);
+  const savedPages = selectPages(saved, options.market, excluded, options.geography, options.query, options.model);
+  const nativePages = await native;
+  const pages = savedPages.length || nativePages.some(group=>group.length)
+    ? interleavePages([savedPages, ...nativePages, generalPages],new Map()) : generalPages;
   summary.discovered = pages.length;
   const collected: WebListing[][] = [];
   const followed = new Set<string>();
@@ -174,14 +195,21 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   // Share two short transport retries across the whole search, including its
   // fallback search. Conflicts, unavailable products and parse failures do not retry.
   let transportRetries = 2;
-  const fetchPage = dependencies.fetchPage ?? ((url: string, market: MarketCode) => readProductPage(url, market, {
+  const fetchPage = dependencies.fetchPage ?? (async (url: string, market: MarketCode) => {
+    const local = await selectedMerchantHtml(url,market).catch(()=>undefined);
+    if (local && parseWebProduct(local,url,market,options.geography).length) {
+      summary.requests++;
+      return local;
+    }
+    return readProductPage(url, market, {
     geography: options.geography, query: options.query, model: options.model,
     consumeRetry: () => transportRetries > 0 && --transportRetries >= 0,
     onEvent: (event) => {
       if (event.outcome === 'request') summary.requests++;
       console.log('[product-page] ' + JSON.stringify({ host: new URL(url).hostname, ...event }));
     },
-  }));
+    });
+  });
   // Keep workers busy across the initial/linked-page boundary. Follow-up pages
   // use only links already discovered, never recurse, and share the same budget.
   const checkBatch = async (batch: WebSearchCandidate[], trailing: WebSearchCandidate[], limit: number) => {
@@ -260,13 +288,14 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       // Keep enough space for the search provider's market and currency suffix.
       if (Array.from(exact).length <= 95) queries.push(exact);
     }
-    const groups = await Promise.all(queries.map(async fallbackQuery => {
+    const generalGroups = queries.map(async fallbackQuery => {
       summary.requests++;
       try {
         const hits = await search(fallbackQuery, options.market);
         return selectPages(hits, options.market, excluded, options.geography, options.query, options.model, followed, hostVisits);
       } catch (error) { failed(error); return []; }
-    }));
+    });
+    const groups = await Promise.all(generalGroups);
     const fallback = interleavePages(groups, hostVisits);
     for (const page of fallback) discovered.add(page.url);
     await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
@@ -280,5 +309,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   }).slice(0, 40);
   summary.discovered = discovered.size;
   summary.matched = listings.length;
+  dependencies.links?.remember(options, listings.flatMap(row => row.verification?.source === 'product-page'
+    ? [{url:row.url,title:row.title,checkedAt:row.verification.checkedAt}] : []));
   return result(listings);
 }

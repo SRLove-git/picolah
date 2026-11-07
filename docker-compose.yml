@@ -130,10 +130,13 @@ services:
     environment:
       PICOLAH_API_BASE: http://picolah:8787
       PICOLAH_INGEST_KEY: ${INGEST_API_KEY}
+      MERCHANT_LINKS_DB: /var/lib/picolah-merchant-links/links.sqlite
       CRAWLER_TOOL_HOST: 0.0.0.0
       CRAWLER_TOOL_PORT: 8790
       CRAWLER_TOOL_TOKEN: ${CRAWLER_TOOL_TOKEN}
       CRAWLER_TOOL_SEARCH_CONCURRENCY: ${CRAWLER_TOOL_SEARCH_CONCURRENCY:-3}
+    volumes:
+      - merchant-links:/var/lib/picolah-merchant-links
     expose:
       - "8790"
     healthcheck:
@@ -151,3 +154,6 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+
+volumes:
+  merchant-links:

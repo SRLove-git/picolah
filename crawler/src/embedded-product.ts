@@ -118,3 +118,43 @@ export function selectedShopifyOffer(html: string, product: Data, page: URL) {
   const url = new URL(String(offer.url), page);
   return { url, sku: v.sku, product: { ...product, name: product.name + ' - ' + v.title, url: url.href, sku: v.sku, offers: [offer] } };
 }
+
+/** Owala's storefront publishes its base price in Open Graph even on a selected SKU.
+ * Bind the selected variant to the main displayed price and the add-to-cart control. */
+export function owalaSelectedOffer(html: string, page: URL) {
+  const ids = page.searchParams.getAll('variant');
+  if (page.origin !== 'https://owalalife.sg' || !/^\/products\/[^/]+\/?$/.test(page.pathname)
+    || ids.length !== 1 || !/^\d+$/.test(ids[0])) return;
+  const visible = html.replace(/<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'');
+  const headings = [...visible.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/gi)];
+  if (headings.length !== 1) return;
+  const heading = headings[0], name = heading[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const main = visible.slice(heading.index! + heading[0].length).split(/\bid=["']shopify-section-/i,1)[0];
+  const displayed = main.slice(0,4096).match(/class=["']main-product-price\b[^"']*["'][^>]*>[\s\S]{0,1000}?<p\b[^>]*class=["']price\s*["'][^>]*>\s*<span>\s*\$([\d,]+\.\d{2})\s*<\/span>/i);
+  if (!name || !displayed) return;
+  const amounts = new Set([...visible.matchAll(/<meta\b[^>]*>/gi)].map(m=>attributes(m[0]))
+    .filter(a=>/^(?:og|product):price:currency$/i.test(a.get('property') || '')).map(a=>a.get('content')?.toUpperCase()));
+  if (amounts.size!==1 || !amounts.has('SGD')) return;
+  const forms = [...main.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form\s*>/gi)]
+    .filter(m=>attributes('<form '+m[1]+'>').get('action')==='/cart/add');
+  const selected = forms.flatMap(m=>[...m[2].matchAll(/<input\b[^>]*>/gi)].map(i=>attributes(i[0]))
+    .filter(i=>i.get('name')==='id').map(i=>i.get('value')));
+  if (!selected.length || selected.some(id=>id!==ids[0])) return;
+  const cents = Math.round(Number(displayed[1].replace(/,/g,''))*100);
+  let found: {title:string; sku:string; price:number; available:boolean} | undefined;
+  for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
+    if (attributes('<script '+script[1]+'>').get('type')!=='application/json' || !script[2].trimStart().startsWith('[') || !script[2].includes(ids[0])) continue;
+    let variants;
+    try { variants=JSON.parse(script[2]); } catch { continue; }
+    if (!Array.isArray(variants)) continue;
+    for (const v of variants) {
+      if (String(v?.id)!==ids[0]) continue;
+      if (typeof v.sku!=='string' || !v.sku.trim() || typeof v.title!=='string' || !v.title.trim()
+        || v.price!==cents || typeof v.available!=='boolean') return;
+      const value = {title:`Owala ${name} - ${v.title}`,sku:v.sku,price:cents/100,available:v.available};
+      if (found && (found.sku!==value.sku || found.title!==value.title || found.available!==value.available)) return;
+      found=value;
+    }
+  }
+  return found;
+}

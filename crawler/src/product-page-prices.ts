@@ -1,4 +1,4 @@
-import { attributes, microdataProduct, selectedShopifyOffer } from './embedded-product.ts';
+import { attributes, microdataProduct, selectedShopifyOffer, owalaSelectedOffer } from './embedded-product.ts';
 import { isDirectoryPath, editorialPath } from './product-page-links.ts';
 import { createHash } from 'node:crypto';
 import { safeWebUrl } from './safe-web-url.ts';
@@ -104,6 +104,15 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
     canonicals.add(canonical.href);
   }
   if (canonicals.size > 1) return [];
+  if (selectedVariantOnly && market === 'SG') {
+    const option = owalaSelectedOffer(html,page);
+    if (option) {
+      const row = record(option.title,page,market,geography,option.price,'SGD',{
+        kind:'exact',source:'html',availability:option.available?'in-stock':'out-of-stock',variant:option.sku,
+      },option.sku);
+      if (row) return [row];
+    }
+  }
   const merchantControl=/<(?:button|input|form)\b[^>]*(?:add[-_ ]?to[-_ ]?(?:cart|bag|basket)|buy[-_ ]?now|name=["']add["'])/i.test(html) || /<button\b[^>]*>[\s\S]{0,250}?(?:add to (?:cart|bag|basket)|buy now|加入购物车|立即购买)/i.test(html);
   const products: Obj[] = []; let invalidPage = false, visited = 0;
   for (const m of html.matchAll(/<script\b[^>]*\stype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
