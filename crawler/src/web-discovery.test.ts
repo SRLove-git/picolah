@@ -67,9 +67,32 @@ test('web discovery verifies independent shops rather than only predefined platf
   const result = await discoverProduct(input, { web: { search: async () => urls.map(candidate), fetchPage: async (url) => page(url) } });
   assert.equal(result.scope, 'web');
   assert.deepEqual(result.platforms, []);
-  assert.deepEqual(result.listings.map((item) => item.platform === 'web' && item.sourceHost), ['store.sony.com.sg', 'bestdenki.com.sg']);
+  assert.deepEqual(result.listings.map((item) => item.platform === 'web' && item.sourceHost), ['bestdenki.com.sg', 'store.sony.com.sg']);
   assert.deepEqual(result.summary, { requests: 3, matched: 2, skipped: 0, failed: 0,
     discovered: 2, pagesChecked: 2, pagesVerified: 2 });
+});
+
+test('local discovery gives marketplace and mall pages the first worker slots', async () => {
+  const urls = {
+    shopee:'https://shopee.sg/product/101/202',
+    lazada:'https://www.lazada.sg/products/sony-i101-s202.html',
+    mall:'https://www.courts.com.sg/sony-wf-1000xm6-IP123456.html',
+    native:'https://online.challenger.sg/products/sony-wf-1000xm6',
+    saved:'https://store.sony.com.sg/products/wf-1000xm6',
+    general:'https://independent.example.sg/products/wf-1000xm6',
+  };
+  const visited:string[]=[];
+  const result=await discoverProduct(input,{web:{
+    links:{find:()=>[{url:urls.saved,title:'Sony WF-1000XM6'}],remember:()=>{}},
+    marketplaceSearch:async platform=>[{url:urls[platform],title:'Sony WF-1000XM6'}],
+    mallSearch:async()=>[{url:urls.mall,title:'Sony WF-1000XM6'}],
+    merchantSearch:async()=>[{url:urls.native,title:'Sony WF-1000XM6'}],
+    search:async()=>[{url:urls.general,title:'Sony WF-1000XM6'}],
+    fetchPage:async url=>{visited.push(url);return page(url);},
+  }});
+  assert.deepEqual(visited.slice(0,4),[urls.shopee,urls.lazada,urls.mall,urls.native]);
+  assert.ok(visited.indexOf(urls.saved)>3);assert.ok(visited.indexOf(urls.general)>3);
+  assert.equal(result.listings.length,6);
 });
 
 test('web discovery has a hard page budget, four workers and host diversity', async () => {

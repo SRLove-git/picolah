@@ -16,10 +16,12 @@ import type { WebListing } from './types.ts';
 import { marketplaces, marketplacePage, searchMarketplace } from './marketplace-search.ts';
 import { MerchantLinks } from './merchant-links.ts';
 import { searchMerchant, singaporeShops, selectedMerchantHtml } from './merchant-search.ts';
+import { isMallSite, mallPriority, searchMallPlatforms } from './mall-search.ts';
 
 export interface WebDiscoveryDependencies {
   links?: Pick<MerchantLinks, 'find' | 'remember'>;
   marketplaceSearch?: typeof searchMarketplace;
+  mallSearch?: typeof searchMallPlatforms;
   merchantSearch?: typeof searchMerchant;
   search?: (query: string, market: MarketCode) => Promise<WebSearchCandidate[]>;
   fetchPage?: (url: string, market: MarketCode) => Promise<ProductPageContent>;
@@ -56,10 +58,6 @@ function domainMatches(host: string, domain: string): boolean {
   return host === normalized || host.endsWith(`.${normalized}`);
 }
 
-const LOCAL_RETAILERS: Partial<Record<MarketCode, string[]>> = {
-  SG: ['ishopchangi.com'],
-};
-
 function candidateUrl(value: string, followup = false): URL | null {
   const url = productPageUrl(value, followup);
   if (!url) return null;
@@ -74,7 +72,7 @@ function candidateUrl(value: string, followup = false): URL | null {
 
 /** Arbitrary retailers are allowed; known marketplace exclusions and market boundaries still apply. */
 export function webSourceAllowed(url: URL, market: MarketCode, excluded: PlatformId[], geography?: 'global'): boolean {
-  const knownLocal = LOCAL_RETAILERS[market]?.some(domain => domainMatches(url.hostname, domain));
+  const knownLocal = isMallSite(url, market);
   if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) !== 'local' && !knownLocal)) return false;
   for (const platform of DISCOVERY_PLATFORMS) {
     const domains = [...new Set(Object.values(MARKETS).flatMap((item) => item.domains[platform] ? [item.domains[platform]!] : []))];
@@ -107,7 +105,8 @@ function selectPages(candidates: WebSearchCandidate[], market: MarketCode, exclu
     const identity = (model || query).toLowerCase().replace(/[^a-z0-9]/g, '');
     // An exact product slug also occurs on .html merchant URLs. Do not let a
     // generic /p/ or /dp/ path crowd those stores out of the bounded page pool.
-    return 1 + 4 * Number(!!identity && path.includes(identity)) + Number(manufacturer) + 2 * Number(productPath);
+    const retail = geography === 'global' || !url ? 0 : mallPriority(url, market);
+    return 1 + 20 * retail + 4 * Number(!!identity && path.includes(identity)) + Number(manufacturer) + 2 * Number(productPath);
   };
   for (const candidate of candidates.slice(0, 100).sort((a, b) => relevance(b) - relevance(a))) {
     if (relevance(candidate) === -2) continue;
@@ -147,7 +146,8 @@ function interleavePages(groups: WebSearchCandidate[][], visits: ReadonlyMap<str
   return result;
 }
 
-const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant, marketplaceSearch: searchMarketplace };
+const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant,
+  marketplaceSearch: searchMarketplace, mallSearch: searchMallPlatforms };
 
 /** Optional cross-web path: one SERP discovery, then bounded live product-page verification. */
 export async function discoverWebProducts(options: DiscoveryOptions, dependencies: WebDiscoveryDependencies = productionSources): Promise<DiscoveryResult> {
@@ -195,13 +195,22 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       return selectPages(hits, options.market, excluded, options.geography, options.query, options.model);
     } catch (error) { failed(error); return []; }
   }));
+  const malls = dependencies.mallSearch && options.geography !== 'global' ? (async () => {
+    summary.requests++;
+    try {
+      const hits = await dependencies.mallSearch!(options.market, options.query, search);
+      return selectPages(hits, options.market, excluded, options.geography, options.query, options.model);
+    } catch (error) { failed(error); return []; }
+  })() : Promise.resolve([]);
   try { candidates = await search(discoveryQuery, options.market); }
-  catch (error) { failed(error); if (!saved.length && !shops.length && !platforms.length) return result(); }
+  catch (error) { failed(error); if (!saved.length && !shops.length && !platforms.length && !dependencies.mallSearch) return result(); }
 
   const generalPages = selectPages(candidates, options.market, excluded, options.geography, options.query, options.model);
   const savedPages = selectPages(saved, options.market, excluded, options.geography, options.query, options.model);
-  const [nativePages, regionalPages] = await Promise.all([native, regional]);
-  const pages = interleavePages([savedPages, ...nativePages, generalPages, ...regionalPages], new Map());
+  const [nativePages, regionalPages, mallPages] = await Promise.all([native, regional, malls]);
+  // Marketplace and mall pages receive the first worker slots. Saved and
+  // arbitrary retailers remain fallbacks and still share the same hard limit.
+  const pages = interleavePages([...regionalPages, mallPages, ...nativePages, savedPages, generalPages], new Map());
   summary.discovered = pages.length;
   const collected: WebListing[][] = [];
   const followed = new Set<string>();
