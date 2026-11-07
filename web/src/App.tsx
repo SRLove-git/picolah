@@ -11,6 +11,7 @@ import type {
 } from '../shared/types';
 import { COUNTRY_CODES } from '../shared/types';
 import { getConfig, getConversation, getConversations, streamChat } from './lib/api';
+import { recoverChatReply } from './lib/recover-chat';
 import { uiText } from './lib/ui-copy';
 import { AppSidebar, type AppView } from './components/AppSidebar';
 import { HomeView } from './components/HomeView';
@@ -366,6 +367,19 @@ function AppWorkspace() {
       let settled = false;
       let conversationId = startingId || '';
 
+      let streamedUserId: string | undefined;
+      const recover = async () => {
+        if (!streamedUserId || !conversationId || settled || controller.signal.aborted || streamTokenRef.current !== token) return false;
+        setStream(previous => previous ? { ...previous, status: t('chat.loading') } : previous);
+        const reply = await recoverChatReply(conversationId, streamedUserId, controller.signal);
+        if (!reply || controller.signal.aborted || streamTokenRef.current !== token) return false;
+        settled = true;
+        setMessages(previous => previous.some(message => message.id === reply.id) ? previous : [...previous, reply]);
+        setStream(null);
+        setChatError(null);
+        return true;
+      };
+
       const finalize = (content: string, messageId: string, errorNote?: string) => {
         if (streamTokenRef.current !== token) return;
         setMessages((previous) => [
@@ -393,6 +407,7 @@ function AppWorkspace() {
             onMeta: (meta) => {
               if (streamTokenRef.current !== token) return;
               conversationId = meta.conversationId;
+              streamedUserId = meta.userMessageId;
               setActiveId(meta.conversationId);
               activeIdRef.current = meta.conversationId;
               setTitle(meta.title);
@@ -470,6 +485,7 @@ function AppWorkspace() {
         );
 
         if (!settled && !controller.signal.aborted && streamTokenRef.current === token) {
+          if (await recover() || controller.signal.aborted || streamTokenRef.current !== token) return;
           setChatError(uiText('Connection ended early. Please try again.'));
           if (collected.trim()) {
             finalize(collected.trim(), `incomplete-${Date.now()}`, uiText('The answer may be incomplete.'));
@@ -479,6 +495,7 @@ function AppWorkspace() {
         }
       } catch (error) {
         if (controller.signal.aborted || streamTokenRef.current !== token) return;
+        if (await recover() || controller.signal.aborted || streamTokenRef.current !== token) return;
         const messageText = error instanceof Error ? error.message : uiText('Network connection failed');
         setChatError(messageText);
         if (collected.trim()) {

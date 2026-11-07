@@ -55,6 +55,7 @@ test('conversation and explaining a failed lookup do not invoke search or produc
     assert.equal(searches.length, count, message);
     assert.ok(!result.frames.some(f => f.event === 'status' && /搜索商品/.test(f.data.label)));
     const stored = await getConversation(result.id, 'anon-conversation-regression');
+    assert.equal(stored?.messages.at(-1)?.replyToUserMessageId, stored?.messages.at(-2)?.id);
     assert.equal(stored?.messages.at(-1)?.content, result.answer);
   }
   const first = await ask('小米14');

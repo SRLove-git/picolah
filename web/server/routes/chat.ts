@@ -119,7 +119,7 @@ chatRouter.post('/', async (req, res) => {
       ? { action: 'clarify_change' as const, query: '', continuesProductContext: true }
       : await conversationTools.plan(message, conversationContext);
   const turn = planned ? resolveConversationTurn(message, conversationContext, planned) : null;
-  const turnState = { searchMode: turn?.searchMode ?? 'automatic', startsNewTopic: turn?.startsNewTopic ?? false, routingAction: turn?.action ?? 'product_search' };
+  const turnState = { replyToUserMessageId: userMessageId, searchMode: turn?.searchMode ?? 'automatic', startsNewTopic: turn?.startsNewTopic ?? false, routingAction: turn?.action ?? 'product_search' };
   if (res.destroyed) return;
   if (turn?.action === 'reply' || turn?.action === 'clarify_product' || turn?.action === 'clarify_change' || (turn?.action === 'web_search' && !webSearchReady())) {
     sse(res, 'status', { label: '正在回复…' });

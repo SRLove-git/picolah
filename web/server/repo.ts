@@ -351,13 +351,14 @@ export async function getConversation(
   return {
     ...mapConversation(row),
     messages: messages.map((message) => {
-      const metadata = parseJson<{ comparison?: Comparison; image?: string; continuesProductContext?: boolean; searchMode?: 'conversation' | 'automatic'; startsNewTopic?: boolean }>(message.metadata, {});
+      const metadata = parseJson<{ comparison?: Comparison; image?: string; replyToUserMessageId?: string; continuesProductContext?: boolean; searchMode?: 'conversation' | 'automatic'; startsNewTopic?: boolean }>(message.metadata, {});
       return {
         id: String(message.id),
         role: String(message.role) as 'user' | 'assistant',
         content: String(message.content),
         createdAt: String(message.created_at),
         comparison: metadata.comparison,
+        replyToUserMessageId: typeof metadata.replyToUserMessageId === 'string' ? metadata.replyToUserMessageId : undefined,
         continuesProductContext: metadata.continuesProductContext === true,
         searchMode: metadata.searchMode === 'conversation' || metadata.searchMode === 'automatic' ? metadata.searchMode : undefined,
         startsNewTopic: metadata.startsNewTopic === true,

@@ -217,6 +217,7 @@ export interface Comparison {
 
 export interface ChatMessage {
   id: string;
+  replyToUserMessageId?: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;

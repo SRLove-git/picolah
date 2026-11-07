@@ -15,6 +15,7 @@ interface ChatFixture {
   emit: (event: string, data: unknown) => void;
   start: () => void;
   finish: (text: string) => void;
+  dropAfterSave: (text: string) => void;
 }
 
 // Use a real, controllable SSE connection so navigation cannot hide an abort
@@ -23,12 +24,19 @@ const test = base.extend<{ chat: ChatFixture }>({
   chat: async ({ page }, use) => {
     let response: ServerResponse | undefined;
     let answer = '';
+    let dropped = false;
     let releaseLoad = () => {};
     const loadGate = new Promise<void>((resolve) => { releaseLoad = resolve; });
     const chat: ChatFixture = {
       requests: 0, inputs: [], aborted: 0, loads: 0, holdLoad: false, releaseLoad,
       emit(event, data) { response!.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); },
       start() { chat.emit('meta', { conversationId, title: summary.title, market: 'SG', userMessageId: 'user-message' }); },
+      dropAfterSave(text) {
+        answer = text;
+        dropped = true;
+        chat.emit('delta', { text: 'Partial output' });
+        response!.end();
+      },
       finish(text) {
         answer = text;
         chat.emit('delta', { text });
@@ -65,7 +73,9 @@ const test = base.extend<{ chat: ChatFixture }>({
         if (chat.holdLoad) await loadGate;
         await route.fulfill({ json: { conversation: { ...summary, messages: [
           { id: 'saved-user', role: 'user', content: 'A saved question', createdAt: now },
-          ...(answer ? [{ id: 'assistant-message', role: 'assistant', content: answer, createdAt: now }] : []),
+          ...(dropped ? [{ id: 'older-reply', role: 'assistant', content: 'Wrong turn', replyToUserMessageId: 'saved-user', createdAt: now }] : []),
+          ...(dropped ? [{ id: 'user-message', role: 'user', content: 'Hello Pico', createdAt: now }] : []),
+          ...(answer && (!dropped || chat.loads > 1) ? [{ id: 'assistant-message', role: 'assistant', content: answer, replyToUserMessageId: 'user-message', createdAt: now }] : []),
         ] } } });
         return;
       }
@@ -107,6 +117,17 @@ async function send(page: Page, chat: ChatFixture) {
   await page.getByRole('textbox', { name: 'Enter a price comparison question' }).press('Enter');
   await expect.poll(() => chat.requests).toBe(1);
 }
+
+test('a disconnected stream restores the saved answer for the exact user turn without a second search', async ({ page, chat }) => {
+  await send(page, chat);
+  chat.start();
+  chat.dropAfterSave('Recovered quote S$379');
+  await expect(page.getByText('Recovered quote S$379', { exact: true })).toBeVisible();
+  await expect(page.getByText('Partial output', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Wrong turn', { exact: true })).toHaveCount(0);
+  expect(chat.requests).toBe(1);
+  expect(chat.loads).toBeGreaterThanOrEqual(2);
+});
 
 for (const width of [1440, 390]) {
   test.describe(`${width}px`, () => {
