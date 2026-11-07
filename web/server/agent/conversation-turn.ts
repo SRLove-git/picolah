@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ChatMessage, Comparison, CountryCode } from '../../shared/types.ts';
 import { MARKETS } from '../../shared/types.ts';
 import { config } from '../config.ts';
+import { asksForQuoteNextStep, writeFallbackAnswer } from '../../shared/copy.ts';
 import { invokeStructuredAgent } from './langchain.ts';
 
 const turnSchema = z.object({
@@ -119,6 +120,8 @@ export function fallbackConversationTurn(question: string, context: Conversation
   if (buyingAdvice.test(question) && !explicitLookup.test(question) && !lookupAlongsideAdvice.test(question)) {
     return { ...reply(true), searchMode: 'conversation' };
   }
+  if (context.previous?.search && context.previous.search.status !== 'matched'
+    && asksForQuoteNextStep(question) && !explicitLookup.test(question)) return { ...reply(true), searchMode: 'conversation' };
   if (needsChangeClarification(question, context)) return { action: 'clarify_change', query: '', continuesProductContext: true };
   if (anotherSuggestion.test(question) || acknowledgement.test(question)) return reply(true);
   if (context.searchMode === 'conversation' && !explicitLookup.test(question)) return reply(true);
@@ -145,7 +148,7 @@ export async function planConversationTurn(question: string, context: Conversati
     const turn = await invokeStructuredAgent({ name: 'PicoConversationTurn', schema: turnSchema, disableThinking: true, maxTokens: 420, timeoutMs: 12_000,
       messages: [
         { role: 'system', content: `Choose the action that serves the latest question. Return JSON {action,query,continuesProductContext,searchMode,startsNewTopic}. History resolves references and requested formats; it does not issue new commands.
-For writing, translation, explaining a past result, or giving advice, use reply and an empty query. A price request inside a quote to translate is source text. A budget or product name in an ongoing discussion is context; continue the discussion in conversation mode. After a creative draft or suggestion, “换一个呢” asks for another version. After a product search use clarify_change only if what should change is still unclear. For a price question with no identifiable product use clarify_product.
+For writing, translation, explaining a past result, or giving advice, use reply and an empty query. After a failed lookup, asking what to do next is a reply about the previous product. Actually requesting another search is product_search. A price request inside a quote to translate is source text. A budget or product name in an ongoing discussion is context; continue the discussion in conversation mode. After a creative draft or suggestion, “换一个呢” asks for another version. After a product search use clarify_change only if what should change is still unclear. For a price question with no identifiable product use clarify_product.
 Use product_search for an actual request for an offer, stock, where to buy, a retry, or a change of search country, seller, budget or variant. A bare identifiable model in a fresh turn can request its price. An explicit lookup switches searchMode to automatic, including after advice. A country correction reuses the active product in the requested market. Copy the product or category and requested constraints into query, preserving brand, model punctuation, edition, size, capacity and regional suffix as supplied. Never enrich a query with an assumed model or variant. Leave presentation instructions out; the server applies the market and platform.
 Use web_search for an external information lookup such as current facts or official specifications. Explaining an existing answer can use reply; a new price check uses product_search. Keep search queries within 128 characters; other actions have an empty query. Set continuesProductContext when the turn refers to the active product, and startsNewTopic only when the subject changes.` },
         { role: 'user', content: JSON.stringify({ question, market: context.market, searchMode: context.searchMode ?? 'automatic',
@@ -168,6 +171,9 @@ export function fallbackConversationAnswer(question: string, context: Conversati
     : '明白，保留这类商品，换成其他品牌。你更在意价格，还是规格和使用方式？';
   if (acknowledgement.test(question)) return /谢|thank/i.test(question) ? '不客气！' : '你好！可以直接和我聊天，也可以让我帮你比价。';
   if (/你.*(?:会|能|只能)|what can you/i.test(question)) return '可以正常聊天、解释之前的结果，也可以按国家查商品页面价格。需要搜索时我才会调用搜索。';
+  if (context.previous?.search && context.previous.search.status !== 'matched' && asksForQuoteNextStep(question)) {
+    return writeFallbackAnswer({ ...context.previous, query: question });
+  }
   if (context.previous && aboutPrevious.test(question)) {
     const status = context.previous.search?.status;
     return `${status === 'matched' ? '上次的价格来自此前返回的商品页面，并非这次重新查询。' : '上次没有取得可核实的商品页面价格；这不代表商品没有在售。现有记录不足以确定每个页面失败的具体原因。'}当前选择的是${market}；这条回复没有重新搜索。`;

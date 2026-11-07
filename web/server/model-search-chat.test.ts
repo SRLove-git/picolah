@@ -440,7 +440,7 @@ test('queue failures survive LangChain invocation and become safe chat errors wi
     assert.equal(result.comparison.search?.status, 'failed');
     assert.equal(result.comparison.search?.errorCode, expectedCode);
     assert.match(result.answer, expectedCopy);
-    assert.match(result.answer, /请稍后重试.*这不代表没有匹配商品/);
+    assert.doesNotMatch(result.answer, /请稍后重试|发.*链接|补充.*型号/);
     assert.doesNotMatch(result.answer, /暂未找到|平台连接或数据读取失败/);
     assert.doesNotMatch(JSON.stringify(result.events), /private-provider-secret|unsafe raw queue details/);
     assertNoInventedResults(result);

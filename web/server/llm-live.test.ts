@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Comparison } from '../shared/types.ts';
 import { buildChatMessages, buildLiveMessages } from './llm.ts';
-import { liveSearchCoverageNote } from '../shared/copy.ts';
+import { asksForQuoteNextStep, liveSearchCoverageNote, writeFallbackAnswer } from '../shared/copy.ts';
+import { fallbackConversationAnswer, fallbackConversationTurn } from './agent/conversation-turn.ts';
 
 function searchComparison(status: 'matched' | 'not_found' | 'failed' | 'unavailable', failed = false): Comparison {
   return {
@@ -21,7 +22,7 @@ test('the live payload carries the real search outcome for the answer writer', (
   const payload = JSON.parse(messages[1].content as string);
   assert.equal(payload.searchStatus, 'failed');
   assert.deepEqual(payload.liveResults, []);
-  assert.match(payload.coverage, /失败/);
+  assert.match(payload.coverage, /failed/);
   assert.equal(payload.question, '我想买个 iPhone');
 });
 
@@ -39,7 +40,7 @@ test('a failed follow-up still tells the answer writer which product was searche
 test('every search status keeps the no-invention guard rails', () => {
   for (const status of ['matched', 'not_found', 'failed', 'unavailable'] as const) {
     const [system] = buildLiveMessages(searchComparison(status), 'iPhone');
-    assert.match(system.content as string, /绝对不能编造/);
+    assert.match(system.content as string, /绝对不能编造|Never invent a price or stock status/);
     assert.match(system.content as string, new RegExp(status));
   }
 });
@@ -56,4 +57,26 @@ test('coverage footer augments partial results but does not repeat a failed-sear
   assert.equal(liveSearchCoverageNote(searchComparison('not_found', true)), '');
   assert.equal(liveSearchCoverageNote(searchComparison('matched')), '');
   assert.match(liveSearchCoverageNote(searchComparison('matched', true)), /另有 Shopee、Lazada/);
+});
+
+test('a missing price uses its own prompt and fallback asks for nothing on a plain lookup', () => {
+  for (const status of ['failed', 'unavailable', 'not_found'] as const) {
+    const comparison = searchComparison(status, true);
+    comparison.search!.query = 'Philips AC1715/30';
+    const [prompt, , request] = buildLiveMessages(comparison, '那新加坡呢？');
+    assert.equal(request.content, '那新加坡呢？');
+    assert.match(prompt.content as string, /one declarative sentence/);
+    const result = writeFallbackAnswer(comparison);
+    assert.match(result, /新加坡.*Philips AC1715\/30/);
+    assert.doesNotMatch(result, /重试|试试|建议|提供|链接发|品牌官网/);
+    const context = { previous: comparison, market: comparison.market, history: [] };
+    const question = '接下来我可以怎么找？';
+    const turn = fallbackConversationTurn(question, context);
+    assert.equal(turn.action, 'reply');
+    assert.equal(turn.continuesProductContext, true);
+    assert.match(fallbackConversationAnswer(question, context), /品牌官网/);
+  }
+  assert.equal(asksForQuoteNextStep('只报价格，不要给下一步建议。'), false);
+  assert.equal(asksForQuoteNextStep('If it isn’t listed, suggest one next step.'), true);
+  assert.doesNotMatch(buildLiveMessages(searchComparison('matched'), '价格呢？')[0].content as string, /one declarative sentence/);
 });

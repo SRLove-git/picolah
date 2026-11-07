@@ -24,6 +24,12 @@ function quotePrice(offer: Offer, market: CountryCode, global: boolean): string 
     : offer.priceQuote?.kind === 'from' ? `${low} 起` : low;
 }
 
+// Used when the model is unavailable and the user explicitly asks for a next step.
+export function asksForQuoteNextStep(question: string): boolean {
+  if (/(?:只要|只报|只给|只说|仅需).{0,4}(?:金额|价格|结果)|(?:不用|无需|别|不要).{0,4}(?:建议|办法|下一步)|(?:just|only) (?:the )?(?:price|result)|(?:no|without) (?:suggestions|advice)/i.test(question)) return false;
+  return /下一步|接下来.*(?:怎么办|怎么找|怎么做|该怎么|可以怎么)|怎么办|怎么(?:继续找|再查找)|(?:怎么|如何)(?:再)?找|给.{0,6}(?:办法|建议)|what (?:can|should|could) I (?:try|do)|how (?:can|should) I (?:find|look)|(?:suggest|recommend) .{0,12}(?:step|way)|next steps?/i.test(question);
+}
+
 export function writeFallbackAnswer(comparison: Comparison): string {
   const { product, market } = comparison;
   const marketName = comparison.search?.geography === 'global' ? '全球' : MARKETS[market].nameZh;
@@ -36,27 +42,26 @@ export function writeFallbackAnswer(comparison: Comparison): string {
   }
 
   if (comparison.search && comparison.search.status !== 'matched') {
-    const { model, status } = comparison.search;
-    const platforms = comparison.search.platforms.map((id) => PLATFORMS[id]?.name || id).join('、');
-    if (comparison.search.errorCode === 'PRODUCT_PAGE_UNVERIFIED') {
-      return `已找到 **${model}** 的候选链接，但商品详情页暂未能确认匹配规格和页面价格，因此本次没有可比较的报价。请稍后重试或打开商品原页确认；这不代表没有在售商品。`;
+    const search = comparison.search;
+    const sites = search.scope === 'web' ? '' : search.platforms.map(id => PLATFORMS[id]?.name || id).join('、');
+    const item = `${marketName}${sites ? '（' + sites + '）' : ''}的 **${search.query || search.model}**`;
+    const wantsHelp = asksForQuoteNextStep(comparison.query);
+    const nextStep = wantsHelp ? ` 可以在品牌官网选择对应国家或地区，按完整型号查看商品详情页。` : '';
+    if (search.errorCode === 'PRODUCT_PAGE_UNVERIFIED') {
+      return `已找到${item}的候选链接，但商品详情页未能确认对应规格的页面价，这不代表没有在售商品。${nextStep}`;
     }
-    if (comparison.search.errorCode === 'SERP_NOT_CONFIGURED') {
-      return `全网搜索接口尚未配置，暂时无法为 **${model}** 发起跨网站搜索；这不代表没有在售商品。请先配置 Bright Data SERP API，或明确指定已接入的平台。`;
+    if (search.errorCode === 'SERP_NOT_CONFIGURED') {
+      return `全网搜索接口尚未配置，这次未能搜索${item}的页面价。${nextStep}`;
     }
-    if (comparison.search.errorCode === 'CRAWLER_QUEUE_FULL') {
-      return `当前搜索请求较多，**${model}** 尚未进入搜索队列。请稍后重试；这不代表没有匹配商品。`;
+    if (search.errorCode === 'CRAWLER_QUEUE_FULL' || search.errorCode === 'CRAWLER_QUEUE_TIMEOUT') {
+      const reason = search.errorCode === 'CRAWLER_QUEUE_FULL'
+        ? `当前搜索请求较多，${item}尚未进入搜索队列。`
+        : `${item}的搜索排队超时，尚未开始抓取商品。`;
+      return reason + (wantsHelp ? '请稍后重试。' : '');
     }
-    if (comparison.search.errorCode === 'CRAWLER_QUEUE_TIMEOUT') {
-      return `**${model}** 的搜索排队超时，尚未开始抓取商品。请稍后重试；这不代表没有匹配商品。`;
-    }
-    if (status === 'failed') {
-      return `**${model}** 的商品信息搜索暂时未完成，${comparison.search.failedSources?.length ? comparison.search.failedSources.join('、') : '平台'}连接或数据读取失败。请稍后重试；这不代表该型号没有在售商品。`;
-    }
-    if (status === 'unavailable') {
-      return `已识别你要查找的商品 **${model}**，但当前市场或所选平台的实时搜索暂不可用，尚未取得商品信息。请切换平台或稍后重试。`;
-    }
-    return `已${comparison.search.scope === 'web' ? '通过全网搜索查找' : '搜索'}${marketName}${platforms ? `的 ${platforms}` : ''}，本次未取得 **${model}** 的匹配页面价格；这不代表当地没有在售商品。你可以稍后重试，或补充品牌和完整型号。`;
+    if (search.status === 'failed') return `${item}搜索暂时未完成，本次未能确认页面价。${nextStep}`;
+    if (search.status === 'unavailable') return `查价服务暂不可用，这次未能取得${item}的页面价。${nextStep}`;
+    return `这次没有找到${item}的匹配页面价。${nextStep}`;
   }
 
   if (comparison.search?.status === 'matched') {
