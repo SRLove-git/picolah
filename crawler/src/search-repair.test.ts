@@ -75,6 +75,8 @@ test('processor and OS editions are not extra laptop model variants',()=>{
  assert.equal(queryMatchesTitle('Lenovo ThinkPad X1 Carbon Gen 12','ThinkPad X1 Carbon Gen 12'),true);
  assert.equal(queryMatchesTitle('MacBook Air M3 13 256GB','Apple MacBook Air 13 M3 8GB, 256GB SSD'),true);
  assert.equal(queryMatchesTitle('Samsung Galaxy S24','Samsung Galaxy S24 Ultra'),false);
+ assert.equal(queryMatchesTitle('ASUS Zenbook S 14 UX5406SA','ASUS Zenbook S 14 OLED UX5406SA-PZ267W 32GB 1TB'),true);
+ assert.equal(queryMatchesTitle('ASUS Zenbook S 14 UX5406SA-PZ267W','ASUS Zenbook S 14 OLED UX5406SA-PV030W 32GB 1TB'),false);
 });
 test('an unspecified Philips regional suffix is retained without changing an explicit one',()=>{
  assert.equal(queryMatchesTitle('Philips Sonicare HX9911','Philips Sonicare HX9911/23'),true);

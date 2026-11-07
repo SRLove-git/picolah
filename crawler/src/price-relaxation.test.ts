@@ -104,7 +104,7 @@ test('EOS model suffixes stay distinct while base bodies and lens kits still mat
 });
 
 test('quote mode accepts a visible amount without stock, schema or standard headings',async()=>{
- const markdown={format:'markdown' as const,title:'Anker Prime Power Bank 20000mAh 200W | Anker Singapore',content:'Anker Prime Power Bank 20000mAh 200W\nS$ 189.90\nChoose a colour\nCurrently unavailable'};
+ const markdown={format:'markdown' as const,title:'Anker Powercore GanPrime Power Bank 20000mAh 200W | Anker Singapore',content:'Anker Powercore GanPrime Power Bank 20000mAh 200W\n$ 189.90\nChoose a colour\nCurrently unavailable'};
  const [row]=await verifyProductPage('https://www.anker.com.sg/products/anker-prime-20k-200w',{
   market:'SG',query:'Anker Prime 20000mAh 200W',geography:undefined,
  },async()=>markdown);
@@ -113,6 +113,13 @@ test('quote mode accepts a visible amount without stock, schema or standard head
  await assert.rejects(verifyProductPage('https://www.anker.com.sg/products/anker-prime-20k-200w',{
   market:'SG',query:'Anker Prime 27650mAh 250W',
  },async()=>markdown));
+});
+
+test('quote mode uses the first visible main amount when a page also prints an old price',async()=>{
+ const page='https://www.ishopchangi.com/zh/product/oral-b-io-series-6-electric-toothbrush';
+ const markdown={format:'markdown' as const,title:'ORAL B Oral-B iO Series 6 Electric Toothbrush',content:'ORAL B\nOral-B iO Series 6 Electric Toothbrush\nS$274.31\nS$457.80\nQuantity limited'};
+ const [row]=await verifyProductPage(page,{market:'SG',query:'Oral-B iO Series 6'},async()=>markdown);
+ assert.equal(row.price,274.31);assert.equal(row.currency,'SGD');assert.match(row.priceQuote?.note??'',/首个主报价/);
 });
 
 test('quote mode reads visible HTML amounts but still rejects fees and unrelated identities',async()=>{

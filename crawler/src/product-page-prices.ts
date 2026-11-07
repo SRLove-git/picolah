@@ -8,6 +8,7 @@ import { MARKETS, type MarketCode } from './markets.ts';
 import type { WebListing, PriceQuote } from './types.ts';
 import type { MarkdownPage } from './deepseek/fetch.ts';
 import { queryMatchesTitle } from './discovery-match.ts';
+import { sourceCountry } from './source-country.ts';
 
 type Obj = Record<string, any>;
 const obj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -200,7 +201,7 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
   const seen = new Set<string>(); return output.filter(r=>{const key=r.itemId+JSON.stringify(r.priceQuote);if(seen.has(key))return false;seen.add(key);return true;}).slice(0,40);
 }
 const symbols: Record<string,string> = {'US$':'USD','S$':'SGD','HK$':'HKD','AU$':'AUD','CA$':'CAD','€':'EUR','£':'GBP','₹':'INR'};
-export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
+export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global', firstVisibleQuote = false): WebListing[] {
   const url=safeWebUrl(pageUrl);if(!url||!retailPricePage(pageUrl)||nonPurchasePageText(page.content)||!MARKETS[market]||page.content.length>2_000_000)return [];
   const plain=(s:string)=>s.replace(/~~[^~]*~~/g,'').replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/[*_`]/g,'').trim();
   let title=clean(page.title).replace(/\s*-\s*Internet Explorer.*$/i,'').replace(/\s+[|–]\s+[^|]+$/, '');
@@ -226,7 +227,7 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
     const host = domain.replace(/^www\./, '');
     return url.hostname === host || url.hostname.endsWith('.' + host);
   });
-  const sourceCurrency=localMarketplace?MARKETS[market].currency:/(^|\.)(?:colipu|suning|jd)\.com$/i.test(url.hostname)?'CNY':undefined;
+  const sourceCurrency=localMarketplace||sourceCountry(url,market)==='local'?MARKETS[market].currency:/(^|\.)(?:colipu|suning|jd)\.com$/i.test(url.hostname)?'CNY':undefined;
   const currencyHint=declared[0]??sourceCurrency;
   const money=/(US\$|S\$|HK\$|AU\$|CA\$|[€£₹¥￥]|\b[A-Z]{3}\b|\$)\s*(\d[\d.,]*(?:[ \u00a0]\d{3})*(?:[.,]\d+)?)|(?<![\p{L}\p{N}_.])(\d[\d.,]*)\s*(EUR|USD|SGD|GBP|€|£|₹)\b/gu;
   const candidates:Array<{price:number;currency:string;line:string}>=[];
@@ -248,13 +249,17 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   const taxFiltered=taxIncluded.length?taxIncluded:candidates;
   const explicitCurrent=taxFiltered.filter(c=>/^(?:now(?: price)?|sale price|current price|our price|售价|现价)/i.test(c.line));
   const selected=explicitCurrent.length?explicitCurrent:taxFiltered;
-  const values=[...new Set(selected.map(c=>c.price))].sort((a,b)=>a-b);
+  let values=[...new Set(selected.map(c=>c.price))].sort((a,b)=>a-b);
   const isRange=/price range|starting at|from\s+(?:[A-Z]{3}|[€£$])|起价|\d[\d.,]*\s*[-–~]\s*(?:[A-Z]{3}|[€£$])?\s*\d/i.test(selected.map(c=>c.line).join('\n'));
   const choose=/^(?:choose|select)\s+(?:a\s+)?(?:model|variant|size|color|colour)|^选择.*(?:规格|型号|颜色)/im.test(text);
-  if(values.length>1&&!isRange)return [];
+  const usedFirstVisible = firstVisibleQuote && values.length>1 && !isRange;
+  if(values.length>1&&!isRange) {
+    if (!firstVisibleQuote) return [];
+    values=[selected[0].price];
+  }
   const kind: PriceQuote['kind']=values.length>1?'range':isRange||choose?'from':'exact';
   const quote: PriceQuote={kind,availability:availability(text),source:'fetch',...(values.length>1?{maxPrice:values.at(-1)}:{}),
-    ...(condition(text)?{condition:condition(text)}:{}),...(taxIncluded.length?{note:'页面含税价'}:selected.some(c=>/tax excluded|excl\.?\s*(?:tax|vat)|excluding (?:tax|vat)|未税/i.test(c.line))?{note:'页面未税价，税费另计'}:/member|coupon|rebate|会员|券后/i.test(text)?{note:'页面含会员或优惠条件，购买前确认适用条件'}:{})};
+    ...(condition(text)?{condition:condition(text)}:{}),...(taxIncluded.length?{note:'页面含税价'}:selected.some(c=>/tax excluded|excl\.?\s*(?:tax|vat)|excluding (?:tax|vat)|未税/i.test(c.line))?{note:'页面未税价，税费另计'}:usedFirstVisible?{note:'页面首个主报价，其他金额未采用'}:/member|coupon|rebate|会员|券后/i.test(text)?{note:'页面含会员或优惠条件，购买前确认适用条件'}:{})};
   const row=record(title,url,market,geography,values[0],candidates[0].currency,quote);return row?[row]:[];
 }
 
@@ -297,7 +302,7 @@ export function quoteOnlyMarkdownPrice(page: MarkdownPage, pageUrl: string, mark
     && MONEY_LINE.test(line));
   const body = (nextProduct < 0 ? primary : primary.slice(0, nextProduct))
     .map(line => /^#{1,6}\s+/.test(line) ? line.replace(/^#{1,6}\s+/, '') : line);
-  return broadMarkdownPrices({ ...page, title: identity, content: '# ' + identity + '\n' + body.join('\n') }, pageUrl, market, geography);
+  return broadMarkdownPrices({ ...page, title: identity, content: '# ' + identity + '\n' + body.join('\n') }, pageUrl, market, geography, true);
 }
 
 const plainMarkdown = (value: string): string => value.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '').trim();

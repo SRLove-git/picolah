@@ -92,13 +92,18 @@ function exactTitle(model: string, rawTitle: string): boolean {
   const withoutSameGeneration = generation && /^WHCH/.test(compact)
     ? withoutFullModel.replace(new RegExp(`(^|[^A-Z0-9])${generation.split('').join('[\\s-]*')}(?=$|[^A-Z0-9])`, 'g'), '$1#')
     : withoutFullModel;
-  if (/\b[A-Z]{2,5}[-\s]*\d{3,}(?:[-\s]*[A-Z]+[-\s]*\d+)*[A-Z]*/.test(withoutSameGeneration)) return false;
+  // Laptop stores append a regional configuration SKU to the requested base
+  // chassis (UX5406SA-PZ267W). It is still the requested product family; the
+  // suffix remains mandatory when the user explicitly includes it.
+  const withoutRegionalSku = withoutSameGeneration.replace(/#[-\s]+[A-Z]{1,3}\d{2,5}[A-Z]{0,3}(?=$|[^A-Z0-9])/g, '#');
+  if (/\b[A-Z]{2,5}[-\s]*\d{3,}(?:[-\s]*[A-Z]+[-\s]*\d+)*[A-Z]*/.test(withoutRegionalSku)) return false;
   const shortFamily=compact.match(/^([A-Z]{2,})(\d{2})(?!\d)/)?.[1];
   if (shortFamily && new RegExp(`\\b${shortFamily}[-\\s]*\\d{2,}`).test(withoutSameGeneration)) return false;
-  const remaining = removeModelAliases(withoutFullModel, compact);
+  const remaining = removeModelAliases(withoutRegionalSku, compact);
   // The dropped-prefix form must also agree: 1000XM5 and 2000XM6 are not aliases.
   if (/\b\d{3,}[-\s]*[A-Z]+(?:[-\s]*\d+)+[A-Z]*\b/.test(remaining)) return false;
-  const tail = removeModelAliases(title.slice((match.index || 0) + match[0].length), compact);
+  const tail = removeModelAliases(title.slice((match.index || 0) + match[0].length), compact)
+    .replace(/^\s*-\s*[A-Z]{1,3}\d{2,5}[A-Z]{0,3}(?=$|[^A-Z0-9])/, ' ');
   if (/^(?:\s*[/&|+]\s*)+(?:[A-Z]+[-\s]*)?\d/.test(tail)) return false;
   // Reject shortened alternative generations as well, e.g. WF-1000XM6 and XM5.
   if (generation) {
@@ -151,13 +156,14 @@ export function validSourceListing(listing: DiscoveryListing, market: MarketCode
   return true;
 }
 
-const NAMED_NOT_MODEL = /^(?:LEGO|PRO|PLUS|MINI|ULTRA|MAX|BALANCE|CREAM|ESSENCE|SERIES|EDITION|INSTA)(?:[-\s]|\d)/i;
+const NAMED_NOT_MODEL = /^(?:LEGO|PRIME|PRO|PLUS|MINI|ULTRA|MAX|BALANCE|CREAM|ESSENCE|SERIES|EDITION|INSTA)(?:[-\s]|\d)/i;
 
 function queryTokens(value: string): string[] {
   // Equivalent category spellings used by international retailers. Model and
   // capacity tokens remain mandatory; these aliases never choose a product.
   const watch=/\bapple\b/i.test(value) ? value.replace(/\bwatch\s*(?:series\s*)?(\d{1,2})\b/gi,'watch series $1') : value;
   return watch.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/\bganprime\b/g, ' gan prime ')
     .replace(/\b([a-z]{1,5}\d+)\s*\+(?!\s*\d)/g, '$1 plus ')
     .replace(/\bthinkpad\b/g, ' lenovo thinkpad ').replace(/\b(?:macbook|ipad|iphone|airpods)\b/g, word=>' apple '+word+' ')
     .replace(/荣耀|榮耀/g, ' honor ').replace(/飞利浦|飛利浦/g, ' philips ').replace(/乐高/g, ' lego ').replace(/博朗/g, ' braun ').replace(/雅诗兰黛/g, ' estee lauder ').replace(/小米/g, ' xiaomi ').replace(/索尼/g, ' sony ').replace(/三星/g, ' samsung ').replace(/华为/g, ' huawei ')

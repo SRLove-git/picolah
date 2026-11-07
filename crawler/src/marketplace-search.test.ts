@@ -57,9 +57,11 @@ test('Lazada page price requires matching item, SKU, country, currency, title an
   await assert.rejects(verifyProductPage(lazada,opts,async()=>html(state,{...product,offers:{...product.offers,price:'120'}})));
 });
 test('Shopee reads only a primary price and preserves the voucher condition', async () => {
-  for (const primary of ['', '$20 OFF', '$39.99\n$19.99', 'Price $7 shipping']) {
+  for (const primary of ['', '$20 OFF', 'Price $7 shipping']) {
     await assert.rejects(verifyProductPage(shopee,opts,async()=>markdown(primary)));
   }
+  const [first] = await verifyProductPage(shopee,opts,async()=>markdown('$39.99\n$19.99'));
+  assert.equal(first.price,39.99); assert.match(first.priceQuote?.note??'',/首个主报价/);
   const [range] = await verifyProductPage(shopee,opts,async()=>markdown('$29.99\n$35–$55'));
   assert.equal(range.price,29.99); assert.equal(range.priceQuote?.kind,'range'); assert.equal(range.priceQuote?.maxPrice,55);
   const [row] = await verifyProductPage(shopee,opts,async()=>markdown('$293.90\nAfter Voucher'));

@@ -56,6 +56,10 @@ function domainMatches(host: string, domain: string): boolean {
   return host === normalized || host.endsWith(`.${normalized}`);
 }
 
+const LOCAL_RETAILERS: Partial<Record<MarketCode, string[]>> = {
+  SG: ['ishopchangi.com'],
+};
+
 function candidateUrl(value: string, followup = false): URL | null {
   const url = productPageUrl(value, followup);
   if (!url) return null;
@@ -70,7 +74,8 @@ function candidateUrl(value: string, followup = false): URL | null {
 
 /** Arbitrary retailers are allowed; known marketplace exclusions and market boundaries still apply. */
 export function webSourceAllowed(url: URL, market: MarketCode, excluded: PlatformId[], geography?: 'global'): boolean {
-  if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) !== 'local')) return false;
+  const knownLocal = LOCAL_RETAILERS[market]?.some(domain => domainMatches(url.hostname, domain));
+  if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) !== 'local' && !knownLocal)) return false;
   for (const platform of DISCOVERY_PLATFORMS) {
     const domains = [...new Set(Object.values(MARKETS).flatMap((item) => item.domains[platform] ? [item.domains[platform]!] : []))];
     const known = [...domains, ...ALIASES[platform]].some((domain) => domainMatches(url.hostname, domain));

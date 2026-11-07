@@ -53,6 +53,15 @@ function page(url: string, override: Record<string, unknown> = {}): string {
     offers: { '@type': 'Offer', price: '399', priceCurrency: 'SGD', availability: 'https://schema.org/InStock', url }, ...override })}</script>`;
 }
 
+test('a known Singapore retailer on a generic domain can provide a visible local quote', async()=>{
+ const url='https://www.ishopchangi.com/zh/product/oral-b-io-series-6-electric-toothbrush';
+ const result=await discoverProduct({scope:'web',market:'SG',platforms:[],query:'Oral-B iO Series 6'},{web:{
+  search:async()=>[{url,title:'ORAL B Oral-B iO Series 6 Electric Toothbrush'}],
+  fetchPage:async()=>'<title>ORAL B Oral-B iO Series 6 Electric Toothbrush</title><h1>Oral-B iO Series 6 Electric Toothbrush</h1><div>S$274.31</div><div>S$457.80</div>',
+ }});
+ assert.equal(result.listings[0]?.price,274.31);assert.equal(result.listings[0]?.currency,'SGD');
+});
+
 test('web discovery verifies independent shops rather than only predefined platforms', async () => {
   const urls = ['https://store.sony.com.sg/products/wf-1000xm6', 'https://www.bestdenki.com.sg/sony-wf1000xm6'];
   const result = await discoverProduct(input, { web: { search: async () => urls.map(candidate), fetchPage: async (url) => page(url) } });
