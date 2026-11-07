@@ -43,6 +43,11 @@ function nonProductTitle(rawTitle: string): boolean {
   if (/\b(?:smartwatch|watch)\b|手表|手錶/i.test(title)) {
     title=title.replace(/\b(?:alumini?um|titanium|stainless\s+steel|ceramic)\s+case\b/gi,' ');
   }
+  // A power bank is itself a portable charger, not a charger accessory for a
+  // different requested product.
+  if (/\b(?:power|battery)\s*bank\b|移动电源|充电宝/i.test(title)) {
+    title=title.replace(/\bportable\s+chargers?\b/gi,' ');
+  }
   // A bundled charging/carrying case is a normal feature of headphones. Only
   // remove the explicit bundle phrase; a standalone case, replacement or pad
   // remains an accessory even if the title mentions headphones or their model.
@@ -95,7 +100,9 @@ function exactTitle(model: string, rawTitle: string): boolean {
   // Laptop stores append a regional configuration SKU to the requested base
   // chassis (UX5406SA-PZ267W). It is still the requested product family; the
   // suffix remains mandatory when the user explicitly includes it.
-  const withoutRegionalSku = withoutSameGeneration.replace(/#[-\s]+[A-Z]{1,3}\d{2,5}[A-Z]{0,3}(?=$|[^A-Z0-9])/g, '#');
+  const withoutRegionalSku = withoutSameGeneration
+    .replace(/#[-\s]+[A-Z]{1,3}\d{2,5}[A-Z]{0,3}(?=$|[^A-Z0-9])/g, '#')
+    .replace(/\bU[3579][ -]\d{3}[A-Z]\b/g, ' ');
   if (/\b[A-Z]{2,5}[-\s]*\d{3,}(?:[-\s]*[A-Z]+[-\s]*\d+)*[A-Z]*/.test(withoutRegionalSku)) return false;
   const shortFamily=compact.match(/^([A-Z]{2,})(\d{2})(?!\d)/)?.[1];
   if (shortFamily && new RegExp(`\\b${shortFamily}[-\\s]*\\d{2,}`).test(withoutSameGeneration)) return false;

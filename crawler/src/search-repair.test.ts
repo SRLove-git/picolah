@@ -77,6 +77,7 @@ test('processor and OS editions are not extra laptop model variants',()=>{
  assert.equal(queryMatchesTitle('Samsung Galaxy S24','Samsung Galaxy S24 Ultra'),false);
  assert.equal(queryMatchesTitle('ASUS Zenbook S 14 UX5406SA','ASUS Zenbook S 14 OLED UX5406SA-PZ267W 32GB 1TB'),true);
  assert.equal(queryMatchesTitle('ASUS Zenbook S 14 UX5406SA-PZ267W','ASUS Zenbook S 14 OLED UX5406SA-PV030W 32GB 1TB'),false);
+ assert.equal(queryMatchesTitle('Anker Prime 20000mAh 200W','Anker Power Bank Powercore GanPrime 20000mAh 200W Portable Charger'),true);
 });
 test('an unspecified Philips regional suffix is retained without changing an explicit one',()=>{
  assert.equal(queryMatchesTitle('Philips Sonicare HX9911','Philips Sonicare HX9911/23'),true);
