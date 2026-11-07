@@ -21,6 +21,7 @@ const server = createServer(async (request, response) => {
         choices: [{ index: 0, delta: { role: 'assistant', content: '最低价' }, finish_reason: null }],
       })}\n\n`,
     );
+    if (body.model === 'stalled-stream') return;
     response.write(
       `data: ${JSON.stringify({
         id: 'chatcmpl-stream',
@@ -123,4 +124,15 @@ test('V4.1 Flash JSON and streaming requests use the official model id with thin
   assert.equal(structured.max_tokens, 300);
   assert.equal(streamed.stream, true);
   assert.equal(streamed.max_tokens, 80);
+});
+
+test('a provider that stops streaming after a token is cancelled and the partial answer is preserved', { timeout: 5000 }, async () => {
+  let received = '';
+  await assert.rejects(async () => {
+    for await (const text of streamAgentAnswer({
+      model: 'stalled-stream', messages: [{ role: 'user', content: '继续' }],
+      temperature: 0, maxTokens: 80, timeoutMs: 500,
+    })) received += text;
+  }, /abort|timeout/i);
+  assert.equal(received, '最低价');
 });

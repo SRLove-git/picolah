@@ -66,6 +66,7 @@ export async function invokeStructuredAgent<T extends Record<string, unknown>>(o
   });
 
   return (await chain.invoke(toLangChainMessages(options.messages), {
+    signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
     tags: ['picolah-agent', 'structured-understanding'],
     metadata: { agent: options.name },
   })) as T;
@@ -90,17 +91,30 @@ export async function* streamAgentAnswer(options: {
   disableThinking?: boolean;
 }): AsyncGenerator<string> {
   const model = createModel(options);
-  const stream = await model.stream(toLangChainMessages(options.messages), {
-    tags: ['picolah-agent', 'answer-writer'],
-    metadata: { agent: 'PicolahAnswerWriter' },
-  });
+  // The HTTP client's request timeout ends at the response headers. Keep the
+  // stream cancellable while waiting for the first or next piece of text.
+  const controller = new AbortController();
+  const idle = setTimeout(() => controller.abort(), options.timeoutMs ?? 60_000);
+  idle.unref();
+  try {
+    const stream = await model.stream(toLangChainMessages(options.messages), {
+      signal: controller.signal,
+      tags: ['picolah-agent', 'answer-writer'],
+      metadata: { agent: 'PicolahAnswerWriter' },
+    });
 
-  let emitted = false;
-  for await (const chunk of stream) {
-    const text = messageContentToText(chunk.content);
-    if (!text) continue;
-    emitted = true;
-    yield text;
+    let emitted = false;
+    for await (const chunk of stream) {
+      const text = messageContentToText(chunk.content);
+      if (!text) continue;
+      idle.refresh();
+      emitted = true;
+      yield text;
+    }
+    controller.signal.throwIfAborted();
+    if (!emitted) throw new Error('LLM returned an empty response');
+  } finally {
+    clearTimeout(idle);
+    controller.abort();
   }
-  if (!emitted) throw new Error('LLM returned an empty response');
 }
