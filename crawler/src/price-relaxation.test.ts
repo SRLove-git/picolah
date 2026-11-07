@@ -122,6 +122,15 @@ test('quote mode uses the first visible main amount when a page also prints an o
  assert.equal(row.price,274.31);assert.equal(row.currency,'SGD');assert.match(row.priceQuote?.note??'',/首个主报价/);
 });
 
+test('quote mode retains a product summary price rendered before the semantic H1',async()=>{
+ const title='Asus Zenbook S 14 OLED UX5406SA-PZ267W U7-258V 32GB 1TB';
+ const page={format:'markdown' as const,title,content:'Price:\nSale price$ 2,779.00 SGD\nNo reviews\n## Description\n# '+title+'\nProduct details'};
+ const [row]=await verifyProductPage('https://shop.winpro.com.sg/products/asus-zenbook-s-14-oled-ux5406sa-pz267w',{
+  market:'SG',query:'ASUS Zenbook S 14 UX5406SA',
+ },async()=>page);
+ assert.equal(row.price,2779);assert.equal(row.currency,'SGD');
+});
+
 test('quote mode reads visible HTML amounts but still rejects fees and unrelated identities',async()=>{
  const page='https://shop.example.sg/products/oral-b-io6';
  const markup=(amount:string,title='Oral-B iO Series 6 Electric Toothbrush')=>`<title>${title} | Merchant</title><h1>${title}</h1><div class="price">${amount}</div><button>Add to cart</button>`;

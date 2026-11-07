@@ -295,8 +295,12 @@ export function quoteOnlyMarkdownPrice(page: MarkdownPage, pageUrl: string, mark
   if (!identity) return [];
   const matchingHeading = lines.findIndex(line => /^#{1,3}\s+/.test(line)
     && queryMatchesTitle(query, plainMarkdown(line.replace(/^#{1,3}\s+/, '')), model));
-  const primary = lines.slice(matchingHeading < 0 ? 0 : matchingHeading + 1,
-    (matchingHeading < 0 ? 0 : matchingHeading + 1) + 180);
+  // Some storefront renderers emit the product summary and price before the
+  // semantic H1. Retain that identity-bound summary instead of starting after
+  // the later description heading.
+  const start = matchingHeading < 0 || lines.slice(0, matchingHeading).some(line => MONEY_LINE.test(line))
+    ? 0 : matchingHeading + 1;
+  const primary = lines.slice(start, start + 180);
   const nextProduct = primary.findIndex((line, index) => index > 0 && /^#{1,2}\s+/.test(line)
     && queryMatchesTitle(query, plainMarkdown(line.replace(/^#{1,2}\s+/, '')), model) === false
     && MONEY_LINE.test(line));
