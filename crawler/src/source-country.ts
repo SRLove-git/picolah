@@ -24,6 +24,13 @@ export function sourceCountry(url: URL, market: string): 'local' | 'foreign' | '
   // Tokopedia operates a dedicated Indonesian marketplace under a generic TLD.
   if (labels.slice(-2).join('.') === 'tokopedia.com') signals.push('ID');
   const tld = labels.at(-1)!;
+  // Canon publishes countries directly below its brand TLD, e.g. shop.sg.canon.
+  if (tld === 'canon') {
+    const country = region(labels.at(-2) ?? ''); if (country) signals.push(country);
+  }
+  if (labels.length >= 4 && /^(?:shop|store|shoponline)$/.test(labels[0])) {
+    const country = region(labels[1]); if (country) signals.push(country);
+  }
   if (/^[a-z]{2}$/.test(tld) && !genericTwoLetterTlds.has(tld)) signals.push(tld === 'uk' ? 'GB' : tld.toUpperCase());
   if (labels.length > 2) {
     const hostRegion = region(labels[0]); if (hostRegion) signals.push(hostRegion);

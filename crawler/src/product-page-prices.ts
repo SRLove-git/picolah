@@ -1,3 +1,4 @@
+import { attributes, microdataProduct, selectedShopifyOffer } from './embedded-product.ts';
 import { isDirectoryPath, editorialPath } from './product-page-links.ts';
 import { createHash } from 'node:crypto';
 import { safeWebUrl } from './safe-web-url.ts';
@@ -83,11 +84,24 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
   html = html.replace(/<!--[\s\S]*?-->/g,'');
   if (/captcha|robot check|verify you are human|access denied/i.test(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')) return [];
   const canonicals = new Set<string>();
+  let selectedVariantOnly = false;
   for (const tag of html.matchAll(/<link\b[^>]*>/gi)) {
-    if (!/rel\s*=\s*["']canonical["']/i.test(tag[0])) continue;
-    const href=tag[0].match(/href\s*=\s*["']([^"']+)["']/i)?.[1];
-    if (!href || !bound(href.replace(/&amp;/g,'&'),page)) return [];
-    canonicals.add(new URL(href.replace(/&amp;/g,'&'),page).href);
+    const fields = attributes(tag[0]);
+    if (!fields.get('rel')?.toLowerCase().split(/\s+/).includes('canonical')) continue;
+    const href = fields.get('href');
+    if (!href) return [];
+    let canonical: URL;
+    try { canonical = new URL(href, page); } catch { return []; }
+    if (!bound(href, page)) {
+      // Shopify canonicalizes a selected SKU to the base product. In this
+      // case only the matching selected-option record can authorize a quote.
+      const base = new URL(page);
+      const variants = base.searchParams.getAll('variant');
+      base.searchParams.delete('variant');
+      if (variants.length !== 1 || !/^\d+$/.test(variants[0]) || canonical.href !== base.href || !bound(href, base)) return [];
+      selectedVariantOnly = true;
+    }
+    canonicals.add(canonical.href);
   }
   if (canonicals.size > 1) return [];
   const merchantControl=/<(?:button|input|form)\b[^>]*(?:add[-_ ]?to[-_ ]?(?:cart|bag|basket)|buy[-_ ]?now|name=["']add["'])/i.test(html) || /<button\b[^>]*>[\s\S]{0,250}?(?:add to (?:cart|bag|basket)|buy now|加入购物车|立即购买)/i.test(html);
@@ -106,8 +120,7 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
   const heading = clean(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1]).toLowerCase();
   const output: WebListing[] = [];
   const state = commercePageProduct(html,pageUrl);
-  const productPage: URL = page;
-  function parse(product: Obj, parent?: Obj) {
+  function parse(product: Obj, parent?: Obj, productPage: URL = page!, selectedSku?: string) {
     if (output.length >= 40 || !bound(product.url, productPage, !!parent)) return;
     const rawName = clean(product.name || parent?.name); const brand = clean(product.brand?.name || product.brand || parent?.brand?.name || parent?.brand);
     let title = rawName;
@@ -141,18 +154,26 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
         const kind: PriceQuote['kind'] = high !== undefined && high > low ? 'range' : spec.lowPrice !== undefined || type(offer,'AggregateOffer') ? 'from' : 'exact';
         const quote: PriceQuote = { kind, ...(high !== undefined ? {maxPrice:high} : {}), availability: state ? (sameState ? (state.notSellable === true || state.purchasable === false || (obj(state.stock) && state.stock.stockLevel === 0) ? 'out-of-stock' : state.preOrder === true ? 'preorder' : availability(obj(state.stock) ? state.stock.stockLevelStatus : undefined)) : 'unknown') : availability(offer.availability ?? product.availability), source:'html',
           ...(condition(offer.itemCondition ?? product.itemCondition) ? {condition:condition(offer.itemCondition ?? product.itemCondition)} : {}),
-          ...(parent ? {variant:clean(product.sku || product.name).slice(0,200)} : {}),
+          ...(parent || selectedSku ? {variant:clean(selectedSku || product.sku || product.name).slice(0,200)} : {}),
           ...(label ? {note:label.slice(0,200)} : {}) };
         const row = record(title,productPage,market,geography,low,statePrice?.currencyIso ?? spec.priceCurrency ?? offer.priceCurrency ?? product.priceCurrency,quote,String(product.sku || offer.sku || ''));
         if (row) { row.productDetails = { ...(brand ? {brand:brand.slice(0,120)} : {}), ...(typeof product.model === 'string' ? {model:product.model.slice(0,120)} : {}) }; row.seller = clean(offer.seller?.name || offer.seller) || row.sourceHost; output.push(row); }
       }
     }
   }
-  for (const product of products) parse(product);
+  if (!products.length) {
+    const product = microdataProduct(html, href => bound(href,page));
+    if (product) products.push(product);
+  }
+  if (!selectedVariantOnly) for (const product of products) parse(product);
+  if (!output.length && products.length===1 && type(products[0],'Product')) {
+    const selected=selectedShopifyOffer(html,products[0],page);
+    if (selected) parse(selected.product,undefined,selected.url,selected.sku);
+  }
   // A primary, visible stock summary can be newer than a provider's cached
   // Markdown. Some used-product stores put a generic /model URL in JSON-LD.
   // Bind this fallback to one Product and its exact H1, never related cards.
-  if (!output.length && products.length===1 && type(products[0],'Product')) {
+  if (!selectedVariantOnly && !output.length && products.length===1 && type(products[0],'Product')) {
     const h1s=[...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
     const name=clean(products[0].name);
     if(h1s.length===1 && clean(h1s[0][1]).toLowerCase()===name.toLowerCase()) {

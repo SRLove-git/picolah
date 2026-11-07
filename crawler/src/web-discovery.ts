@@ -117,6 +117,24 @@ function selectPages(candidates: WebSearchCandidate[], market: MarketCode, exclu
   return pages;
 }
 
+// Give each fallback search a chance to contribute a new local merchant. The
+// two searches share the original twelve-page and per-host limits.
+function interleavePages(groups: WebSearchCandidate[][], visits: ReadonlyMap<string,number>): WebSearchCandidate[] {
+  const result: WebSearchCandidate[] = [], seen = new Set<string>(), counts = new Map(visits);
+  for (let i=0; i<MAX_PAGES; i++) {
+    for (const group of groups) {
+      const page=group[i];
+      if (!page || seen.has(page.url)) continue;
+      const host=new URL(page.url).hostname.replace(/^www\./,'');
+      const count=counts.get(host) ?? 0;
+      if (count>=MAX_PER_HOST) continue;
+      seen.add(page.url); counts.set(host,count+1); result.push(page);
+      if (result.length===MAX_PAGES) return result;
+    }
+  }
+  return result;
+}
+
 /** Optional cross-web path: one SERP discovery, then bounded live product-page verification. */
 export async function discoverWebProducts(options: DiscoveryOptions, dependencies: WebDiscoveryDependencies = {}): Promise<DiscoveryResult> {
   const excluded = [...new Set(options.excludedPlatforms ?? [])];
@@ -235,12 +253,23 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       const next = `${query} -site:${host}`;
       if (next.length <= 110) query = next;
     }
-    summary.requests++;
-    try {
-      const fallback = selectPages(await search(query, options.market), options.market, excluded, options.geography, options.query, options.model, followed, hostVisits);
-      for (const page of fallback) discovered.add(page.url);
-      await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
-    } catch (error) { failed(error); }
+    const queries = [query];
+    if (options.geography !== 'global') {
+      const symbol = {SG:'S$', MY:'RM', TH:'฿', ID:'Rp', PH:'₱', VN:'₫'}[options.market];
+      const exact = `"${options.query.replace(/"/g,' ')}" "${symbol}"`;
+      // Keep enough space for the search provider's market and currency suffix.
+      if (Array.from(exact).length <= 95) queries.push(exact);
+    }
+    const groups = await Promise.all(queries.map(async fallbackQuery => {
+      summary.requests++;
+      try {
+        const hits = await search(fallbackQuery, options.market);
+        return selectPages(hits, options.market, excluded, options.geography, options.query, options.model, followed, hostVisits);
+      } catch (error) { failed(error); return []; }
+    }));
+    const fallback = interleavePages(groups, hostVisits);
+    for (const page of fallback) discovered.add(page.url);
+    await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
   }
   const seen = new Set<string>();
   const listings = collected.flat().filter((listing) => {

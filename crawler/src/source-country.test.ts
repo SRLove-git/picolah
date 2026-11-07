@@ -16,3 +16,12 @@ test('six markets reject foreign domains and localized storefronts even with a l
   for (const url of ['https://merchant.com/products/pixel-9', 'https://merchant.co/products/phone', 'https://merchant.com/products/id/123']) assert.equal(sourceCountry(new URL(url), 'SG'), 'unspecified', url);
   assert.equal(sourceCountry(new URL('https://merchant.com/sg/products/phone'), 'SG'), 'local');
 });
+
+test('country-specific brand stores stay local only to their own market', () => {
+  for (const host of ['sg.canon','shop.sg.canon','store.sg.example.com']) {
+    assert.equal(sourceCountry(new URL('https://'+host+'/products/item'),'SG'),'local');
+    assert.equal(sourceCountry(new URL('https://'+host+'/products/item'),'MY'),'foreign');
+  }
+  assert.equal(sourceCountry(new URL('https://shop.sg.com/products/item'),'SG'),'unspecified');
+  assert.equal(sourceCountry(new URL('https://shop.my.canon/sg/product'),'SG'),'foreign');
+});
