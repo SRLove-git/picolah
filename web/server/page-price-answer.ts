@@ -34,6 +34,7 @@ export function pagePriceAnswer(comparison: Comparison, question: string): strin
       if (q.maxPrice===undefined || !Number.isFinite(q.maxPrice) || q.maxPrice<o.itemPrice) continue;
       text+='–'+money(q.maxPrice);
     } else if (q?.kind==='from') text=english?'From '+text:text+' 起';
+    if (q?.note === '券后价') text += english ? ' after voucher' : ' 券后';
     prices.add(text);
   }
   return prices.size ? [...prices].join('\n\n') : english?'No page price available':'暂无页面价';

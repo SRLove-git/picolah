@@ -6,6 +6,8 @@ import type { WebListing } from '../types.ts';
 import { currencyDigits } from '../currencies.ts';
 import { commercePageProduct } from '../product-page-state.ts';
 import { broadHtmlPrices, retailPricePage, nonPurchasePageHtml } from '../product-page-prices.ts';
+import { lazadaTrackingPrice } from './marketplace-prices.ts';
+import { marketplacePage } from '../marketplace-search.ts';
 import { parseAmazonProduct } from './amazon-product.ts';
 
 type RecordValue = Record<string, unknown>;
@@ -228,6 +230,7 @@ function applyVisibleStartingPrice(rows: WebListing[], html: string, pageUrl: st
 
 export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   if (!retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
+  if (html.includes('pdpTrackingData') && marketplacePage(pageUrl, market, 'lazada')) return lazadaTrackingPrice(html, pageUrl, market);
   const strict = parseStrictWebProduct(html, pageUrl, market, geography);
   const rows = strict.length ? strict : broadHtmlPrices(html, pageUrl, market, geography);
   return applyVisibleStartingPrice(rows, html, pageUrl);

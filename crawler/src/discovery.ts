@@ -1,5 +1,11 @@
 import { normalizeDiscoveryModel, normalizeSearchQuery, queryMatchesTitle } from './discovery-match.ts';
 import { config } from './config.ts';
+import { marketplaces, marketplacePage, searchMarketplace } from './marketplace-search.ts';
+import { searchDeepSeekCandidates } from './deepseek/search.ts';
+import { searchWebCandidates } from './brightdata/serp.ts';
+import { readProductPage } from './product-page-reader.ts';
+import { selectedMerchantHtml } from './merchant-search.ts';
+import { parseWebProduct } from './platforms/web-product.ts';
 import { fetchWebProductPage } from './brightdata/web-page.ts';
 import { isPlatformSupported, MARKETS, type MarketCode, type PlatformId } from './markets.ts';
 import { getAdapter } from './platforms/index.ts';
@@ -54,8 +60,14 @@ export async function discoverProduct(options: DiscoveryOptions, dependencies: D
     timeoutMs: config.liveSearchTimeoutMs,
     renderRetry: false,
   }));
-  const fetchPage = dependencies.fetchPage ?? ((url, market) =>
-    fetchWebProductPage(url, market, { timeoutMs: config.livePageTimeoutMs }));
+  const fetchPage: FetchProductPage = dependencies.fetchPage ?? (async (url, market) => {
+    if (marketplaces.some(platform => marketplacePage(url, market, platform))) {
+      const html = await selectedMerchantHtml(url, market).catch(() => undefined);
+      if (html && parseWebProduct(html, url, market).length) return html;
+      return readProductPage(url, market, { query, model });
+    }
+    return fetchWebProductPage(url, market, { timeoutMs: config.livePageTimeoutMs });
+  });
   const maxCandidatesPerPlatform = dependencies.maxCandidatesPerPlatform
     ?? config.liveCandidatesPerPlatform;
   const summary: DiscoveryResult['summary'] = { requests: platforms.length, matched: 0, skipped: 0, failed: 0,
@@ -71,7 +83,16 @@ export async function discoverProduct(options: DiscoveryOptions, dependencies: D
   // Preserve input order even when a faster platform completes first.
   const results = await Promise.all(platforms.map(async (platform) => {
     try {
-      const candidates = await search(platform, options.market, query);
+      let candidates: {url:string; title:string; platform:PlatformId; market:MarketCode}[];
+      if (!dependencies.search && (platform === 'shopee' || platform === 'lazada')) {
+        const index = config.webSearch.provider === 'deepseek' ? searchDeepSeekCandidates : searchWebCandidates;
+        const pages = await searchMarketplace(platform, options.market, query, index).catch(() => []);
+        candidates = pages.filter(p => queryMatchesTitle(query,p.title,model)).map(page => ({ ...page, platform, market:options.market }));
+        if (!candidates.length) {
+          summary.requests++;
+          candidates = await search(platform, options.market, query);
+        }
+      } else candidates = await search(platform, options.market, query);
       const seen = new Set<string>();
       const matches = candidates.slice(0, 100)
         .filter((listing) => {

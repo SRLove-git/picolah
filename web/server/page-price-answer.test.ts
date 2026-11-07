@@ -31,3 +31,9 @@ test('the amount-only view prefers the named item over a kit whenever an exact t
   cmp.offers[1].verification=undefined;
   assert.equal(pagePriceAnswer(cmp,'多少钱'),'S$19');
 });
+
+test('the price-only reply keeps voucher and unconditional marketplace prices distinct', () => {
+  const voucher = verified(293.9, { kind:'exact', availability:'unknown', source:'fetch', note:'券后价' });
+  assert.equal(pagePriceAnswer(result([voucher, verified(293.9)]),'只看价格'),'S$293.90 券后\n\nS$293.90');
+  assert.equal(pagePriceAnswer(result([voucher]),'price only'),'S$293.90 after voucher');
+});

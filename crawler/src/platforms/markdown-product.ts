@@ -7,6 +7,8 @@ import type { MarkdownPage } from '../deepseek/fetch.ts';
 import type { WebListing } from '../types.ts';
 import { parseSearchCandidates, type WebSearchCandidate } from '../brightdata/serp.ts';
 import { queryMatchesTitle } from '../discovery-match.ts';
+import { marketplacePage } from '../marketplace-search.ts';
+import { shopeeMarkdownPrice } from './marketplace-prices.ts';
 import { productPageUrl } from '../product-page-links.ts';
 
 const plain = (line: string) => line.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '').trim();
@@ -175,6 +177,10 @@ function amazonPrimaryMarkdown(page: MarkdownPage, pageUrl: string): MarkdownPag
 
 export function inspectMarkdownProduct(page: MarkdownPage, pageUrl: string, market: MarketCode, geography?: 'global'): MarkdownInspection {
   if (!retailPricePage(pageUrl) || nonPurchasePageText(page.content)) return { listings: [], reason: 'PAGE_NOT_PRODUCT' };
+  if (marketplacePage(pageUrl, market, 'shopee')) {
+    const listings = shopeeMarkdownPrice(page, pageUrl, market);
+    return listings.length ? { listings } : { listings:[], reason:'PRIMARY_PRICE_UNVERIFIED' };
+  }
   page=amazonPrimaryMarkdown(page,pageUrl);
   const strict = inspectStrictMarkdownProduct(page, pageUrl, market, geography);
   const listings = strict.listings.length ? strict.listings : broadMarkdownPrices(page, pageUrl, market, geography);

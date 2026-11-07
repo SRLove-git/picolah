@@ -13,11 +13,13 @@ import { linkedProductPages, productPageUrl, type LinkedProductPage } from './pr
 import { queryMatchesTitle } from './discovery-match.ts';
 import { parseWebProduct } from './platforms/web-product.ts';
 import type { WebListing } from './types.ts';
+import { marketplaces, marketplacePage, searchMarketplace } from './marketplace-search.ts';
 import { MerchantLinks } from './merchant-links.ts';
 import { searchMerchant, singaporeShops, selectedMerchantHtml } from './merchant-search.ts';
 
 export interface WebDiscoveryDependencies {
   links?: Pick<MerchantLinks, 'find' | 'remember'>;
+  marketplaceSearch?: typeof searchMarketplace;
   merchantSearch?: typeof searchMerchant;
   search?: (query: string, market: MarketCode) => Promise<WebSearchCandidate[]>;
   fetchPage?: (url: string, market: MarketCode) => Promise<ProductPageContent>;
@@ -104,7 +106,7 @@ function selectPages(candidates: WebSearchCandidate[], market: MarketCode, exclu
   };
   for (const candidate of candidates.slice(0, 100).sort((a, b) => relevance(b) - relevance(a))) {
     if (relevance(candidate) === -2) continue;
-    const url = candidateUrl(candidate?.url);
+    const url = marketplaces.map(p => marketplacePage(candidate?.url, market, p)).find(Boolean) ?? candidateUrl(candidate?.url);
     if (!url || !webSourceAllowed(url, market, excluded, geography) || seen.has(url.href) || visited?.has(url.href)) continue;
     seen.add(url.href);
     const host = url.hostname.replace(/^www\./, '');
@@ -140,7 +142,7 @@ function interleavePages(groups: WebSearchCandidate[][], visits: ReadonlyMap<str
   return result;
 }
 
-const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant };
+const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant, marketplaceSearch: searchMarketplace };
 
 /** Optional cross-web path: one SERP discovery, then bounded live product-page verification. */
 export async function discoverWebProducts(options: DiscoveryOptions, dependencies: WebDiscoveryDependencies = productionSources): Promise<DiscoveryResult> {
@@ -179,14 +181,22 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
       return selectPages(hits, options.market, excluded, options.geography, options.query, options.model);
     } catch { return []; }
   }));
+  const platforms = dependencies.marketplaceSearch && options.geography !== 'global'
+    ? marketplaces.filter(platform => !excluded.includes(platform)) : [];
+  const regional = Promise.all(platforms.map(async platform => {
+    summary.requests++;
+    try {
+      const hits = await dependencies.marketplaceSearch!(platform, options.market, options.query, search);
+      return selectPages(hits, options.market, excluded, options.geography, options.query, options.model);
+    } catch (error) { failed(error); return []; }
+  }));
   try { candidates = await search(discoveryQuery, options.market); }
-  catch (error) { failed(error); if (!saved.length && !shops.length) return result(); }
+  catch (error) { failed(error); if (!saved.length && !shops.length && !platforms.length) return result(); }
 
   const generalPages = selectPages(candidates, options.market, excluded, options.geography, options.query, options.model);
   const savedPages = selectPages(saved, options.market, excluded, options.geography, options.query, options.model);
-  const nativePages = await native;
-  const pages = savedPages.length || nativePages.some(group=>group.length)
-    ? interleavePages([savedPages, ...nativePages, generalPages],new Map()) : generalPages;
+  const [nativePages, regionalPages] = await Promise.all([native, regional]);
+  const pages = interleavePages([savedPages, ...nativePages, generalPages, ...regionalPages], new Map());
   summary.discovered = pages.length;
   const collected: WebListing[][] = [];
   const followed = new Set<string>();

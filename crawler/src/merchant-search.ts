@@ -1,5 +1,6 @@
 import type { WebSearchCandidate } from './brightdata/serp.ts';
 import type { MarketCode } from './markets.ts';
+import { marketplacePage } from './marketplace-search.ts';
 import { assertPublicWebUrl, safeWebUrl } from './safe-web-url.ts';
 
 const shops = ['online.challenger.sg', 'owalalife.sg'] as const;
@@ -29,6 +30,8 @@ async function fetchMerchantBody(url: URL, accept: string, maxBytes: number, fet
 /** Fetch the selected public retail page only from this fixed origin; never follow a redirect. */
 export async function selectedMerchantHtml(value: string, market: MarketCode): Promise<string | undefined> {
   const page = safeWebUrl(value);
+  const lazada = marketplacePage(value, market, 'lazada');
+  if (lazada) return fetchMerchantBody(lazada,'text/html',4_000_000,fetch);
   if (market!=='SG' || page?.origin!=='https://owalalife.sg' || !/^\/products\/[^/]+\/?$/.test(page.pathname)
     || page.searchParams.getAll('variant').length!==1 || !/^\d+$/.test(page.searchParams.get('variant') || '')) return;
   return fetchMerchantBody(page,'text/html',6_000_000,fetch);
