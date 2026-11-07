@@ -224,10 +224,10 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
     if(names(query)!==names(title)) return false;
   }
 
-  const accessory=/\bbattery\s+(?:handle|grip)|\bcharging\s+hub|\b(?:dust\s+bags?|mop\s+pads?)\b|\b(?:(?:magnetic\s+)?(?:nd|cpl|polarizing|neutral[- ]density)\s+filters?|wide[- ]angle\s+lens)\b|电池手柄|充电管家|尘袋|拖布|滤镜|廣角鏡|广角镜/i;
+  const accessory=/\bbattery\s+(?:handle|grip)|\b(?:fast[-\s]+)?charg(?:e|ing)\s+hub\b|\b(?:quick|memory[-\s]+card|micro[-\s]?sd|card)\s+readers?\b|\b(?:dust\s+bags?|mop\s+pads?)\b|\b(?:(?:magnetic\s+)?(?:nd|cpl|polarizing|neutral[- ]density)\s+filters?|wide[- ]angle\s+lens)\b|电池手柄|充电管家|尘袋|拖布|滤镜|廣角鏡|广角镜/i;
   // Only an explicit bundle phrase can make a device accessory part of the device.
   // Keep accessory searches possible when the user asks for that accessory itself.
-  const bundle=/\b(?:with|including|includes)\b.{0,35}(?:battery\s+(?:handle|grip)|charging\s+hub|(?:magnetic\s+)?(?:nd|cpl|polarizing|neutral[- ]density)\s+filters?|wide[- ]angle\s+lens)/i;
+  const bundle=/\b(?:with|including|includes)\b.{0,35}(?:battery\s+(?:handle|grip)|(?:fast[-\s]+)?charg(?:e|ing)\s+hub|(?:quick|memory[-\s]+card|micro[-\s]?sd|card)\s+readers?|(?:magnetic\s+)?(?:nd|cpl|polarizing|neutral[- ]density)\s+filters?|wide[- ]angle\s+lens)/i;
   if (!accessory.test(query) && accessory.test(title) && !bundle.test(title)) return false;
   // Short named phone families are identities too: Xiaomi 17 is neither 17T
   // nor Redmi Note 17. A shared numeric token alone cannot establish a match.
@@ -243,6 +243,16 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
     const identities=[...title.normalize('NFKC').matchAll(/\b(r\d+)(?:\s*(v|mark\s*(?:iv|iii|ii|\d+)))?\b/gi)];
     const key=(model:string,suffix='')=>(model+suffix).toLowerCase().replace(/\s/g,'');
     if(!identities.length||identities.some(found=>key(found[1],found[2])!==key(camera[1],camera[2])))return false;
+  }
+  // Word-numbered generations and named editions can be distinct devices
+  // even without a numeric model code ("Beam One" versus "Beam One Pro").
+  const names = queryTokens(query);
+  if (names.length >= 3 && (/^(?:one|two|three|four|ii|iii|iv)$/.test(names.at(-1)!) ||
+      names.some(name => /^(?:ultra|max|pro|lite)$/.test(name)))) {
+    const words = queryTokens(title);
+    const [previous, last] = names.slice(-2);
+    if (words.some((word,index) => word === last && words[index-1] === previous &&
+      /^(?:pro|plus|max|ultra|lite|ii|iii|iv)$/.test(words[index+1] || ''))) return false;
   }
   // The optional hint must not be required for exact-code safety.
   model ??= query.normalize('NFKC').toUpperCase().match(new RegExp(`(?:^|[^A-Z0-9])(${MODEL_CODE})(?=$|[^A-Z0-9])`))?.[1];

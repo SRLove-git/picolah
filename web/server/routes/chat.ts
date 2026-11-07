@@ -204,7 +204,7 @@ chatRouter.post('/', async (req, res) => {
   const queryMode = catalogMode ? 'catalog' : 'live';
   const rawTarget = liveSearchQuery(rawMessage, context, queryMode);
   let target = turn?.action === 'product_search' && turn.query
-    ? liveSearchQuery(turn.query, context, queryMode) : rawTarget;
+    ? liveSearchQuery(turn.query, context, queryMode, rawMessage) : rawTarget;
   // Intent inference resolves conversational references, but must not erase a
   // parsed budget or the active budget on an otherwise identical product.
   if (target && rawTarget?.maxPrice !== undefined) target.maxPrice = rawTarget.maxPrice;

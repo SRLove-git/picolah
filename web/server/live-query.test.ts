@@ -13,7 +13,7 @@ test('brand and model typed without spaces retain separate identities and constr
   assert.equal(target?.model, 'WH-1000XM5');
   assert.match(target?.query ?? '', /^sony WH-1000XM5 Black$/i);
   assert.equal(target?.maxPrice, 400);
-  assert.deepEqual(liveSearchQuery('philipsna221/09价格'), { query: 'Philips NA-221/09', model: 'NA-221/09' });
+  assert.deepEqual(liveSearchQuery('philipsna221/09价格'), { query: 'Philips NA221/09', model: 'NA-221/09' });
 });
 
 function previous(query: string): Comparison {
@@ -195,7 +195,7 @@ test('live beauty searches retain the full identity instead of a fabricated capa
 test('ordinary product names and measurements retain their full shopping identity',()=>{
  for(const query of ['LEGO 10328','Braun Series 9 Pro 9465cc','New Balance 2002R','CeraVe Moisturising Cream 454g','Insta360 X4'])assert.deepEqual(liveSearchQuery(query),{query});
  assert.deepEqual(liveSearchQuery('荣耀 Magic6 Pro 512GB'),{query:'Honor Magic6 Pro 512GB'});
- assert.deepEqual(liveSearchQuery('Find Acme Special Edition QX123 black under 500 SGD'),{query:'Acme Special Edition QX-123 black',model:'QX-123',maxPrice:500});
+ assert.deepEqual(liveSearchQuery('Find Acme Special Edition QX123 black under 500 SGD'),{query:'Acme Special Edition QX123 black',model:'QX-123',maxPrice:500});
 });
 
 test('reply-format clauses stay out of merchant queries while SKU and budget are retained', () => {
@@ -204,4 +204,15 @@ test('reply-format clauses stay out of merchant queries while SKU and budget are
     liveSearchQuery('Philips AC1715/30 under 200 SGD'));
   assert.deepEqual(liveSearchQuery('iPhone 15 256GB，请用表格回答，预算 500 SGD'),liveSearchQuery('iPhone 15 256GB，预算 500 SGD'));
   assert.equal(liveSearchQuery('Scrabble English Edition')?.query,'Scrabble English Edition');
+});
+
+test('merchant queries retain the user model spelling and regional edition independently of the matching key', () => {
+  for (const [raw, planned, expected, model] of [
+    ['Philips AC1715/30 新加坡多少钱？','Philips AC-1715/30','Philips AC1715/30','AC-1715/30'],
+    ['ASUS Zenbook 14 UX3405MA','ASUS Zenbook 14 UX-3405MA','ASUS Zenbook 14 UX3405MA','UX-3405MA'],
+    ['Philips AC-1715/30','Philips AC1715/30','Philips AC-1715/30','AC-1715/30'],
+    ['查一下 Philips AC1715/20','Philips AC-1715/30','Philips AC1715/20','AC-1715/20'],
+  ]) {
+    assert.deepEqual(liveSearchQuery(planned,null,'live',raw),{query:expected,model});
+  }
 });

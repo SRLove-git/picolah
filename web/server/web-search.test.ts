@@ -127,6 +127,6 @@ test('a web topic switch cannot reuse the old product for an ambiguous price que
 
 test('appliance price searches retain the brand alongside their full manufacturer model', async () => {
   const { liveSearchQuery } = await import('./agent/live-query.ts');
-  assert.equal(liveSearchQuery('全网搜索 Philips NA221/09 价格')?.query, 'Philips NA-221/09');
-  assert.equal(liveSearchQuery('全网搜索飞利浦 NA221/09 价格')?.query, 'Philips NA-221/09');
+  assert.equal(liveSearchQuery('全网搜索 Philips NA221/09 价格')?.query, 'Philips NA221/09');
+  assert.equal(liveSearchQuery('全网搜索飞利浦 NA221/09 价格')?.query, 'Philips NA221/09');
 });

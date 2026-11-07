@@ -3,6 +3,7 @@ import test from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { queryMatchesTitle } from './discovery-match.ts';
 import { MerchantLinks } from './merchant-links.ts';
 import { discoverWebProducts } from './web-discovery.ts';
 import { owalaSelectedOffer } from './embedded-product.ts';
@@ -62,4 +63,22 @@ test('a Shopify SKU needs the matching cart control, displayed price, currency a
   assert.deepEqual(owalaSelectedOffer(body,u),{title:'Owala FreeSip - 24oz / Grey',sku:'test-24',price:47.99,available:true});
   for(const bad of [body.replace('$47.99','$39.99'),body.replace('value="42"','value="43"'),body.replace('"SGD"','"USD"'),body.replace('<h1>','<h1>Other</h1><h1>'),
     body.replace('4799','3999'),body.replace('FreeSip','FreeSip</h1><h1>Twist')])assert.equal(owalaSelectedOffer(bad,u),undefined);
+});
+
+test('merchant suggestions and detail matches separate a camera from its reader or charge hub',()=>{
+  for (const addon of ['Quick Reader','Fast Charge Hub','Card Reader']) {
+    assert.equal(queryMatchesTitle('Insta360 X4','Insta360 X4 '+addon),false);
+    assert.equal(queryMatchesTitle('Insta360 X4 '+addon,'Insta360 X4 '+addon),true);
+    assert.equal(queryMatchesTitle('Insta360 X4','Insta360 X4 Camera with '+addon),true);
+  }
+  assert.equal(queryMatchesTitle('Insta360 X4','Insta360 X4'),true);
+});
+
+test('merchant candidates respect a named device edition even when no numeric code was requested',()=>{
+  assert.equal(queryMatchesTitle('Acme Beam One','Acme X72 Beam One Pro headphones'),false);
+  assert.equal(queryMatchesTitle('Acme Beam One','Acme Beam One black'),true);
+  assert.equal(queryMatchesTitle('Acme Beam One Pro','Acme Beam One Pro'),true);
+  assert.equal(queryMatchesTitle('Acme Studio Ultra Headphones','Acme Studio Ultra Headphones II Gold'),false);
+  assert.equal(queryMatchesTitle('Acme Studio Ultra Headphones II','Acme Studio Ultra Headphones II Gold'),true);
+  assert.equal(queryMatchesTitle('wireless headphones','Acme Wireless Headphones Pro'),true);
 });

@@ -49,7 +49,7 @@ function searchContent(message: string): string {
 }
 
 /** Normalize a shopping request without consulting a product catalog. */
-export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live'): { query: string; model?: string; maxPrice?: number } | null {
+export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live', originalQuestion?: string): { query: string; model?: string; maxPrice?: number } | null {
   message = normalizeBasePhoneEdition(separateBrandAndModel(searchContent(message)));
   const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
@@ -59,6 +59,10 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
   // Catalog matching needs the whole product identity. A generic model-code
   // extractor can mistake "Pro 256GB" or "Balance 530" for that identity.
   const model = mode === 'catalog' ? null : extractSearchModel(message);
+  const userModel = originalQuestion ? extractSearchModel(originalQuestion) : null;
+  if (originalQuestion && model && userModel && model !== userModel && model.split('/')[0] === userModel.split('/')[0]) {
+    return liveSearchQuery(originalQuestion, previous, mode);
+  }
   const variants = (text: string) => {
     const translated = text.replace(/黑色/g, ' Black ').replace(/白色/g, ' White ').replace(/银色/g, ' Silver ')
       .replace(/蓝色/g, ' Blue ').replace(/粉色/g, ' Pink ');
@@ -72,7 +76,14 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
     if (!cleaned) return null;
     const compact = model.replace(/[-\s]/g, '');
     const escaped = [...compact].map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[-\\s]*');
-    const normalized = cleaned.query.replace(new RegExp(escaped, 'gi'), model)
+    // The canonical code is for matching. Keep the manufacturer's punctuation in
+    // the merchant query, including regional suffixes supplied in the user turn.
+    const token = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9/])`, 'i');
+    const original = originalQuestion && userModel === model
+      ? separateBrandAndModel(originalQuestion).match(token)?.[0] : undefined;
+    // Sony's established WH/WF codes use a hyphen even in common unspaced aliases.
+    const spelling = /^(?:WH|WF)-/.test(model) ? model : (original ?? cleaned.query.match(token)?.[0] ?? model).toUpperCase();
+    const normalized = cleaned.query.replace(token, () => spelling)
       .replace(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|lenovo|dell|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung|honor|braun)\b/gi, name=>name[0].toUpperCase()+name.slice(1).toLowerCase())
       .replace(/\b(?:jbl|asus)\b/gi, name=>name.toUpperCase());
     return { ...cleaned, query: normalized, model, ...budget };
