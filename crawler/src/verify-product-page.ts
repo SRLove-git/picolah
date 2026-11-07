@@ -1,3 +1,4 @@
+import { isDirectoryPath } from './product-page-links.ts';
 import { fetchWebProductPage } from './brightdata/web-page.ts';
 import { BrightDataError } from './brightdata/web-unlocker.ts';
 import { queryMatchesListing } from './discovery-match.ts';
@@ -16,6 +17,9 @@ export async function verifyProductPage(
   fetchPage: FetchProductPage = fetchWebProductPage,
 ): Promise<WebListing[]> {
   const html = await fetchPage(url, options.market);
+  // Directory pages may reveal a direct product link, but their own prices
+  // (including the lowest offer across multiple models) cannot be quoted.
+  if (isDirectoryPath(new URL(url).pathname)) return [];
   const listings = typeof html === 'string' ? parseWebProduct(html, url, options.market, options.geography)
     : parseMarkdownProduct(html, url, options.market, options.geography);
   if (!listings.length) {

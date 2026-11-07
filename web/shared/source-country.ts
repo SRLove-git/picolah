@@ -1,4 +1,4 @@
-/** URL country signals only; neutral domains still require a verified local-currency page.
+/** URL country signals for market-scoped discovery. Currency alone is not storefront evidence.
  * Mirrored in crawler/src/source-country.ts and web/shared/source-country.ts because
  * the two deployable images are independent. Keep both copies identical. */
 const countries: Record<string, string> = {
@@ -21,6 +21,8 @@ function region(value: string): string | undefined {
 export function sourceCountry(url: URL, market: string): 'local' | 'foreign' | 'unspecified' {
   const signals: string[] = [];
   const labels = url.hostname.toLowerCase().replace(/^www\./, '').split('.');
+  // Tokopedia operates a dedicated Indonesian marketplace under a generic TLD.
+  if (labels.slice(-2).join('.') === 'tokopedia.com') signals.push('ID');
   const tld = labels.at(-1)!;
   if (/^[a-z]{2}$/.test(tld) && !genericTwoLetterTlds.has(tld)) signals.push(tld === 'uk' ? 'GB' : tld.toUpperCase());
   if (labels.length > 2) {

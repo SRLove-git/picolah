@@ -204,6 +204,11 @@ function sameCameraGeneration(query: string, title: string): boolean {
 /** Discovery can filter titles without trusting search-card prices or stock. */
 export function queryMatchesTitle(query: string, title: string, model?: string): boolean {
   if (!title?.trim() || title.length > 1000 || nonProductTitle(title)) return false;
+  // A book about a device or a category spanning multiple editions does not
+  // quote the requested item. Keep explicit book searches and real bundles.
+  const manual = /\b(?:guide to (?:digital )?photography|camera guide series|user(?:'s)? manual|instruction (?:book|manual)|field guide|handbook)\b|摄影指南|使用手册/i;
+  if (manual.test(title) && !manual.test(query)) return false;
+  if (/\b(?:OLED\s*(?:&|and|\/)\s*(?:Switch\s+)?Lite|Lite\s*(?:&|and|\/)\s*(?:Switch\s+)?OLED)\s+(?:consoles?|models?|systems?)\b/i.test(title)) return false;
   if (!sameCameraGeneration(query, title)) return false;
   // Dell's 9340 specifications list Core Ultra H CPUs; an older Core i CPU
   // contradicts that model. https://www.dell.com/support/manuals/en-us/xps-13-9340-laptop

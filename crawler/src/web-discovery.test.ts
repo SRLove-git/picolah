@@ -64,7 +64,7 @@ test('web discovery verifies independent shops rather than only predefined platf
 });
 
 test('web discovery has a hard page budget, four workers and host diversity', async () => {
-  const urls = Array.from({ length: 12 }, (_, n) => `https://shop${Math.floor(n / 3)}.example.com/products/${n}`);
+  const urls = Array.from({ length: 12 }, (_, n) => `https://shop${Math.floor(n / 3)}.example.sg/products/${n}`);
   const visited: string[] = [];
   let active = 0; let peak = 0;
   const result = await discoverProduct(input, { web: { search: async () => urls.map(candidate), fetchPage: async (url) => {
@@ -78,8 +78,8 @@ test('web discovery has a hard page budget, four workers and host diversity', as
 });
 
 test('an idle worker verifies discovered links without waiting for unrelated slow pages', async () => {
-  const urls = Array.from({length:8},(_,i)=>`https://shop${i}.example.com/item`);
-  const child = 'https://shop1.example.com/products/wf-1000xm6';
+  const urls = Array.from({length:8},(_,i)=>`https://shop${i}.example.sg/item`);
+  const child = 'https://shop1.example.sg/products/wf-1000xm6';
   let release!:()=>void;
   const slow = new Promise<void>(resolve=>{release=resolve;});
   let slowFinished=false, pipelined=false, active=0, peak=0;
@@ -99,14 +99,14 @@ test('an idle worker verifies discovered links without waiting for unrelated slo
     }}});
     assert.ok(pipelined,'linked product must start while the unrelated initial page is still waiting');
     assert.equal(peak,4);assert.equal(visited.length,9);assert.equal(new Set(visited).size,9);
-    assert.equal(visited.filter(url=>new URL(url).hostname==='shop1.example.com').length,2);
+    assert.equal(visited.filter(url=>new URL(url).hostname==='shop1.example.sg').length,2);
     assert.ok(result.listings.some(offer=>offer.url===child));
   } finally {clearTimeout(guard);release();}
 });
 
 test('classified provider failures survive the public summary without upstream messages', async () => {
   for(const code of ['WEB_PAGE_PAYMENT_REQUIRED','WEB_PAGE_POLICY_REJECTED','WEB_PAGE_RATE_LIMITED','WEB_PAGE_PROVIDER_ERROR']) {
-    const result=await discoverProduct(input,{web:{search:async()=>[candidate('https://shop.example.com/product')],
+    const result=await discoverProduct(input,{web:{search:async()=>[candidate('https://shop.example.sg/product')],
       fetchPage:async()=>{throw Object.assign(Error('secret upstream response'),{code});}}});
     assert.deepEqual(result.summary.failureCodes,[code]);assert.equal(result.summary.failed,1);
     assert.ok(!JSON.stringify(result).includes('secret'));
@@ -114,8 +114,8 @@ test('classified provider failures survive the public summary without upstream m
 });
 
 test('slow directories retain their reserved link slots ahead of ordinary trailing candidates', async () => {
-  const urls=Array.from({length:12},(_,i)=>`https://shop${i}.example.com/item`);
-  const child='https://shop0.example.com/products/wf-1000xm6';
+  const urls=Array.from({length:12},(_,i)=>`https://shop${i}.example.sg/item`);
+  const child='https://shop0.example.sg/products/wf-1000xm6';
   let release!:()=>void;
   const ready=new Promise<void>(resolve=>{release=resolve;});
   const visited:string[]=[];
@@ -152,7 +152,7 @@ test('identity, currency and budget stay enforced; out-of-stock page prices are 
   ];
   let n = 0;
   const result = await discoverProduct({ ...input, maxPrice: 300 }, { web: {
-    search: async () => variants.map((_, i) => candidate(`https://store${i}.example.com/product`)),
+    search: async () => variants.map((_, i) => candidate(`https://store${i}.example.sg/product`)),
     fetchPage: async (url) => page(url, variants[n++]),
   } });
   assert.equal(result.listings.length,1);assert.equal(result.listings[0].priceQuote?.availability,'out-of-stock');assert.equal(result.listings[0].inStock,false);assert.equal(result.summary.skipped,3);assert.equal(result.summary.failed,1);
@@ -172,7 +172,7 @@ test('missing SERP configuration fails explicitly without a fallback to Lazada',
 
 test('one page failure keeps other verified sources and sanitizes failure codes', async () => {
   const result = await discoverProduct(input, { web: {
-    search: async () => ['https://a.example.com/product', 'https://b.example.com/product'].map(candidate),
+    search: async () => ['https://a.example.sg/product', 'https://b.example.sg/product'].map(candidate),
     fetchPage: async (url) => {
       if (url.includes('a.example')) throw Object.assign(new Error('secret'), { code: 'TOKEN_VALUE_SHOULD_NOT_LEAK' });
       return page(url);
@@ -229,7 +229,7 @@ test('linked pages obey identity, same-origin, one-hop and three-pages-per-host 
   assert.equal(result.listings.length, 0);
 });
 
-test('local directories and their product links take priority without exceeding twelve requests', async () => {
+test('a local directory can lead to its detail page without fetching unscoped retailers', async () => {
   const directory = 'https://shop.example.sg/sony';
   const product = 'https://shop.example.sg/products/wf-1000xm6';
   const visited: string[] = [];
@@ -242,10 +242,8 @@ test('local directories and their product links take priority without exceeding 
       return page(url);
     },
   } });
-  assert.equal(visited[0], directory);
-  assert.ok(visited.includes(product));
-  assert.equal(visited.length, 12);
-  assert.equal(result.summary.requests, 13);
+  assert.deepEqual(visited, [directory, product]);
+  assert.equal(result.summary.requests, 3);
 });
 
 test('failed exact global searches retry other hosts once, preserving identity and a twenty-four-page cap', async () => {
@@ -363,8 +361,8 @@ test('product-shaped editorial, refurbished and unresolved URLs do not crowd out
 });
 
 test('same-model links never spend the reserved budget on directories or unresolved template URLs', async () => {
-  const source='https://shop.example.com/xiaomi-14';
-  const target='https://shop.example.com/collections/phones/products/xiaomi-14-black';
+  const source='https://shop.example.sg/xiaomi-14';
+  const target='https://shop.example.sg/collections/phones/products/xiaomi-14-black';
   const visited:string[]=[];
   await discoverProduct({scope:'web',market:'SG',platforms:[],query:'Xiaomi 14'},{web:{
     search:async()=>[{url:source,title:'Xiaomi 14'}],fetchPage:async url=>{
@@ -417,4 +415,47 @@ test('country discovery rejects foreign storefronts before fetching and keeps fa
   const absent = await discoverProduct(input, { web: { search: async () => foreign.map(candidate), fetchPage: async () => { throw new Error('foreign page must not be fetched'); } } });
   assert.equal(absent.listings.length, 0);
   assert.equal(absent.summary.pagesChecked, 0);
+});
+
+test('local rediscovery keeps the requested model and opens a retail page instead of quoting currency-only or editorial sources', async () => {
+  const queries: string[] = [], opened: string[] = [];
+  const direct = 'https://store.example.com/sg/products/nikon-z50-ii';
+  const guide = 'https://books.example.sg/products/123';
+  const news = 'https://publisher.sg/tech-news-new-nikon';
+  const other = 'https://shop.app/products/z50';
+  const result = await discoverProduct({ scope:'web',market:'SG',platforms:[],query:'Nikon Z50 II' }, {web:{
+    search:async query=>{
+      queries.push(query);
+      return queries.length === 1 ? [
+        {url:news,title:'Nikon Z50 II'}, {url:other,title:'Nikon Z50 II'},
+        {url:guide,title:'Nikon Z50 II'},
+      ] : [{url:direct,title:'Nikon Z50 II'}];
+    },
+    fetchPage:async url=>{
+      opened.push(url);
+      return page(url,{name:url===guide ? "David Busch's Nikon Z50 II Guide to Digital Photography" : 'Nikon Z50 II'});
+    },
+  }});
+  assert.equal(queries.length,2); assert.match(queries[1],/^site:\.sg Nikon Z50 II$/);
+  assert.deepEqual(opened,[guide,direct]); assert.deepEqual(result.listings.map(row=>row.url),[direct]);
+  assert.equal(queryMatchesTitle('Nintendo Switch OLED','Buy Nintendo Switch OLED & Lite Consoles'),false);
+  assert.equal(queryMatchesTitle('Nintendo Switch OLED','Nintendo Switch OLED console with a game'),true);
+  assert.equal(queryMatchesTitle('Nikon Z50 II Guide to Digital Photography',"David Busch's Nikon Z50 II Guide to Digital Photography"),true);
+});
+
+test('category prices cannot become quotes; a nested SKU page can still be followed', async () => {
+  const category = 'https://merchant.sg/category/audio', sku = category + '/sony-wf-1000xm6.html';
+  const result = await discoverProduct(input, { web: {
+    search: async () => [candidate(category)],
+    fetchPage: async url => url === category ? page(url) + `<a href="${sku}">Sony WF-1000XM6</a>` : page(url),
+  }});
+  assert.deepEqual(result.listings.map(row => row.url), [sku]);
+});
+
+test('the scoped retry uses the active market without changing regional model suffixes', async () => {
+  const queries: string[] = [];
+  await discoverProduct({scope:'web', market:'MY', platforms:[], query:'Philips AC1715/30'}, {web:{
+    search:async q=>{queries.push(q);return [];},
+  }});
+  assert.equal(queries[1], 'site:.my Philips AC1715/30');
 });

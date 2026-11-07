@@ -9,8 +9,8 @@ test('chat cache shares verified quotes, retains owner isolation and includes fa
     const input = JSON.parse(body); calls++;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ ok: true, ...input, summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
-      listings: [{ platform: 'web', sourceHost: 'merchant.com', market: input.market, itemId: 'xiaomi-14',
-        title: input.query, url: 'https://merchant.com/product/xiaomi-14', price: 599, currency: 'SGD', inStock: true,
+      listings: [{ platform: 'web', sourceHost: 'merchant.sg', market: input.market, itemId: 'xiaomi-14',
+        title: input.query, url: 'https://merchant.sg/product/xiaomi-14', price: 599, currency: 'SGD', inStock: true,
         verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] }));
   });
   const listen = async (server: Server) => {

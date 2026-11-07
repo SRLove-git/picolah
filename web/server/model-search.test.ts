@@ -318,7 +318,7 @@ test('brand set numbers, product descriptors and gram weights are not model hint
 
 
 test('country web response validation rejects foreign URLs even when the price uses local currency', async () => {
-  for (const url of ['https://retailer.com.my/products/item', 'https://retailer.com/en-us/products/item', 'https://retailer.co.uk/products/item']) {
+  for (const url of ['https://retailer.com.my/products/item', 'https://retailer.com/en-us/products/item', 'https://retailer.co.uk/products/item', 'https://shop.app/products/item']) {
     const row = { ...webListing(), url, sourceHost: new URL(url).hostname };
     await assert.rejects(webTool([row]).invoke({ ...webInput, geography: undefined }));
   }

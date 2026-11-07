@@ -16,3 +16,10 @@ test('six markets reject foreign domains and localized storefronts even with a l
   for (const url of ['https://merchant.com/products/pixel-9', 'https://merchant.co/products/phone', 'https://merchant.com/products/id/123']) assert.equal(sourceCountry(new URL(url), 'SG'), 'unspecified', url);
   assert.equal(sourceCountry(new URL('https://merchant.com/sg/products/phone'), 'SG'), 'local');
 });
+
+test('dedicated country marketplace on a generic domain stays scoped to its country', () => {
+  const url = new URL('https://www.tokopedia.com/shop/item');
+  assert.equal(sourceCountry(url, 'ID'), 'local');
+  assert.equal(sourceCountry(url, 'SG'), 'foreign');
+  assert.equal(sourceCountry(new URL('https://fake-tokopedia.com/shop/item'), 'ID'), 'unspecified');
+});

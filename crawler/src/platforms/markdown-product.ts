@@ -57,7 +57,7 @@ function inspectStrictMarkdownProduct(page: MarkdownPage, pageUrl: string, marke
   const reject = (reason: string): MarkdownInspection => ({ listings: [], reason });
   const url = safeWebUrl(pageUrl), title = plain(page.title);
   if (!url || !Object.hasOwn(MARKETS, market) || !title || title.length > 1000 || page.content.length > 2 * 1024 * 1024
-    || /\/(?:collections|search|blogs?|reviews?|articles?|news|category)(?:\/|$)/i.test(url.pathname)) return reject('PAGE_NOT_PRODUCT');
+    || !retailPricePage(pageUrl)) return reject('PAGE_NOT_PRODUCT');
   const lines = page.content.split(/\r?\n/);
   const allHeadings = lines.map((line, index) => ({ text: plain(line.replace(/^#{1,2}\s+/, '')), index, level: line.match(/^(#{1,2})\s+/)?.[1].length }));
   let headings = allHeadings.filter(row => row.level === 1);

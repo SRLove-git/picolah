@@ -10,6 +10,18 @@ function decode(value: string): string {
   }).replace(/&(?:amp|quot|apos|nbsp);/gi, (entity) => ({ '&amp;': '&', '&quot;': '"', '&apos;': "'", '&nbsp;': ' ' })[entity.toLowerCase()]!);
 }
 
+// Retailers sometimes nest an actual SKU page beneath a catalog category.
+export function isDirectoryPath(path: string): boolean {
+  const dir = path.match(/\/(?:collections|categor(?:y|ies)|brands?)(?:\/|$)/i);
+  if (!dir) return false;
+  const tail = path.slice(dir.index! + dir[0].length);
+  return !/(?:^|\/)(?:products?|p|dp|itm|buy)\/[^/]+/i.test(tail) && !/\/[^/]+\.html?$/i.test(tail);
+}
+
+export function editorialPath(path: string): boolean {
+  return /\/(?:tech-news|press-release|newsroom)(?:[-/]|$)/i.test(path);
+}
+
 /** Filter unresolved URLs before link/host caps can discard real products. */
 export function productPageUrl(value: string, followup = false): URL | null {
   const url = safeWebUrl(value);
@@ -17,11 +29,12 @@ export function productPageUrl(value: string, followup = false): URL | null {
   let path: string;
   try { path = decodeURIComponent(url.pathname); } catch { return null; }
   if (/(?:^|\/)(?:undefined|null|NaN|\[object Object\])(?:\/|$)/i.test(path)) return null;
+  // Hyphenated newsroom slugs also occur on retail-looking domains.
+  if (editorialPath(path)) return null;
   if (followup) {
     if (path === '/' || /\/(?:search|blogs?|reviews?|articles?|news)(?:\/|$)/i.test(path)) return null;
     // Shopify also serves real products below /collections/<name>/products/.
-    const directory = path.match(/\/(?:collections|categor(?:y|ies)|brands?)(?:\/|$)/i);
-    if (directory && !/\/(?:products?|p|dp|itm|buy)\/[^/]+/i.test(path.slice(directory.index! + directory[0].length))) return null;
+    if (isDirectoryPath(path)) return null;
   }
   return url;
 }

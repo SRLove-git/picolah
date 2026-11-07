@@ -63,7 +63,7 @@ function candidateUrl(value: string, followup = false): URL | null {
 
 /** Arbitrary retailers are allowed; known marketplace exclusions and market boundaries still apply. */
 export function webSourceAllowed(url: URL, market: MarketCode, excluded: PlatformId[], geography?: 'global'): boolean {
-  if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) === 'foreign')) return false;
+  if (nonRetailPriceSource(url.hostname) || (geography !== 'global' && sourceCountry(url, market) !== 'local')) return false;
   for (const platform of DISCOVERY_PLATFORMS) {
     const domains = [...new Set(Object.values(MARKETS).flatMap((item) => item.domains[platform] ? [item.domains[platform]!] : []))];
     const known = [...domains, ...ALIASES[platform]].some((domain) => domainMatches(url.hostname, domain));
@@ -75,14 +75,9 @@ export function webSourceAllowed(url: URL, market: MarketCode, excluded: Platfor
   return true;
 }
 
-function selectPages(candidates: WebSearchCandidate[], market: MarketCode, excluded: PlatformId[], geography?: 'global', query = '', model?: string): WebSearchCandidate[] {
+function selectPages(candidates: WebSearchCandidate[], market: MarketCode, excluded: PlatformId[], geography?: 'global', query = '', model?: string, visited?: ReadonlySet<string>, visits?: ReadonlyMap<string, number>): WebSearchCandidate[] {
   const groups = new Map<string, WebSearchCandidate[]>();
   const seen = new Set<string>();
-  // Local merchant domains first; international .com shops remain eligible.
-  const local = (candidate: WebSearchCandidate) => {
-    const url = safeWebUrl(candidate?.url);
-    return geography !== 'global' && url && sourceCountry(url, market) === 'local' ? 1 : 0;
-  };
   const relevance = (candidate: WebSearchCandidate) => {
     const url = safeWebUrl(candidate.url);
     const productPath = /\/(?:products?|p|dp|itm|buy)(?:\/|$)/i.test(url?.pathname || '');
@@ -102,14 +97,14 @@ function selectPages(candidates: WebSearchCandidate[], market: MarketCode, exclu
     // generic /p/ or /dp/ path crowd those stores out of the bounded page pool.
     return 1 + 4 * Number(!!identity && path.includes(identity)) + Number(manufacturer) + 2 * Number(productPath);
   };
-  for (const candidate of candidates.slice(0, 100).sort((a, b) => local(b) - local(a) || relevance(b) - relevance(a))) {
+  for (const candidate of candidates.slice(0, 100).sort((a, b) => relevance(b) - relevance(a))) {
     if (relevance(candidate) === -2) continue;
     const url = candidateUrl(candidate?.url);
-    if (!url || !webSourceAllowed(url, market, excluded, geography) || seen.has(url.href)) continue;
+    if (!url || !webSourceAllowed(url, market, excluded, geography) || seen.has(url.href) || visited?.has(url.href)) continue;
     seen.add(url.href);
     const host = url.hostname.replace(/^www\./, '');
     const group = groups.get(host) ?? [];
-    if (group.length < MAX_PER_HOST) group.push({ ...candidate, url: url.href });
+    if (group.length + (visits?.get(host) ?? 0) < MAX_PER_HOST) group.push({ ...candidate, url: url.href });
     groups.set(host, group);
   }
   const pages: WebSearchCandidate[] = [];
@@ -230,15 +225,19 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
   // both providers and every linked/fallback page retains country filtering.
   // Never widen a country search to global sources when local prices are absent.
   if (!collected.some(rows => rows.length > 0)) {
-    let query = `${options.query} online shop`;
-    for (const host of [...hostVisits].sort((a, b) => b[1] - a[1]).map(([host]) => host)) {
+    // A second near-identical query often rediscovers the same international pages.
+    // Change the discovery strategy, not the requested product or verification rules.
+    let query = options.geography === 'global' ? `${options.query} online shop`
+      : `site:.${options.market.toLowerCase()} ${options.query}`;
+    // With a country suffix, keep eligible merchants: an already visited store may
+    // have another detail URL. The page/host budgets below still apply.
+    if (options.geography === 'global') for (const [host] of [...hostVisits].sort((a, b) => b[1] - a[1])) {
       const next = `${query} -site:${host}`;
       if (next.length <= 110) query = next;
     }
     summary.requests++;
     try {
-      const fallback = selectPages(await search(query, options.market), options.market, excluded, options.geography, options.query, options.model)
-        .filter((page) => !followed.has(page.url) && (hostVisits.get(new URL(page.url).hostname.replace(/^www\./, '')) ?? 0) < MAX_PER_HOST);
+      const fallback = selectPages(await search(query, options.market), options.market, excluded, options.geography, options.query, options.model, followed, hostVisits);
       for (const page of fallback) discovered.add(page.url);
       await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
     } catch (error) { failed(error); }

@@ -1,3 +1,4 @@
+import { isDirectoryPath, editorialPath } from './product-page-links.ts';
 import { createHash } from 'node:crypto';
 import { safeWebUrl } from './safe-web-url.ts';
 import { currencyDigits } from './currencies.ts';
@@ -26,7 +27,7 @@ export function nonPurchasePageText(text: string): boolean {
 /** Known rental-only product amounts must not re-enter via Fetch when HTML fails. */
 export function retailPricePage(url: string): boolean {
   const u = safeWebUrl(url);
-  return !!u && !nonRetailPriceSource(u.hostname) && !(/\/collections(?:\/|$)/i.test(u.pathname) && !/\/products\//i.test(u.pathname)) && !/(^|\.)dealmoon\./i.test(u.hostname) && !/(^|\.)cinch\.sg$/i.test(u.hostname) && !/\/(?:blogs?|articles?|news|reviews?|search|category)(?:\/|$)/i.test(u.pathname);
+  return !!u && !nonRetailPriceSource(u.hostname) && !isDirectoryPath(u.pathname) && !editorialPath(u.pathname) && !/(^|\.)dealmoon\./i.test(u.hostname) && !/(^|\.)cinch\.sg$/i.test(u.hostname) && !/\/(?:blogs?|articles?|news|reviews?|search)(?:\/|$)/i.test(u.pathname);
 }
 /** Classify the primary page metadata, not incidental customer reviews. */
 export function nonPurchasePageHtml(html: string): boolean {
