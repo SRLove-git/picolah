@@ -162,11 +162,15 @@ for (const width of [1440, 390]) {
       await send(page, chat);
       chat.start();
       chat.finish(Array.from({ length: 70 }, (_, i) => `Paragraph ${i + 1}: a detailed reply to keep reading.`).join('\n\n'));
-      await expect(page.locator('.pc-chat .message-assistant')).toHaveCount(1);
+      await expect(page.locator('.pc-chat .message-assistant:not(.is-streaming)')).toContainText('Paragraph 70:');
       const input = page.getByRole('textbox', { name: 'Enter a price comparison question' });
       await input.fill('Keep this unsent follow-up');
       const thread = page.locator('.pc-chat-scroll');
-      await thread.evaluate((element) => { element.scrollTop = 180; });
+      await thread.evaluate(async element => {
+        // Let the completed answer's scheduled scroll finish before simulating a reader scrolling up.
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        element.scrollTop = 180;
+      });
       await expect.poll(() => thread.evaluate((element) => element.scrollTop)).toBe(180);
       await expect(page.getByRole('button', { name: 'Back to bottom' })).toBeVisible();
       await navigate(page, 'Discover');
