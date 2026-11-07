@@ -130,3 +130,21 @@ test('a separately declared brand remains visible with a short numeric product n
   assert.equal(row.productDetails?.brand, 'Xiaomi');
   assert.equal(parseWebProduct(html({ ...product, name: 'Xiaomi 17', brand: 'Xiaomi' }), url, 'SG')[0].title, 'Xiaomi 17');
 });
+
+test('the primary visible price can qualify a structured offer as a starting price', () => {
+  const page = (label: string, heading = product.name, entry = product) => html(entry) +
+    `<h1><a>Sony</a><p>${heading}</p></h1><div>${label}</div>`;
+  for (const label of ['<span>from</span><span>$399.00</span>', 'Starting at S$399', '起价 SGD 399']) {
+    const [row] = parseWebProduct(page(label), url, 'SG');
+    assert.equal(row.price, 399);
+    assert.deepEqual(row.priceQuote, { kind: 'from', source: 'html', availability: 'in-stock' });
+  }
+  for (const label of ['Shipping from $399', 'from US$399', 'from $399.95', 'from $3999',
+    '<h2>Accessories</h2>from $399', '<template>from $399</template>$399']) {
+    assert.notEqual(parseWebProduct(page(label), url, 'SG')[0]?.priceQuote?.kind, 'from', label);
+  }
+  assert.notEqual(parseWebProduct(page('from $399', 'Related earbuds'), url, 'SG')[0]?.priceQuote?.kind, 'from');
+  const sku = url + '?variant=123';
+  const selected = { ...product, url: sku, offers: { ...offer, url: sku } };
+  assert.notEqual(parseWebProduct(page('from $399', product.name, selected), sku, 'SG')[0]?.priceQuote?.kind, 'from');
+});

@@ -49,7 +49,7 @@ function boundUrl(raw: unknown, page: URL): URL | null {
     if (!url || sourceHost(url) !== sourceHost(page) || url.pathname !== page.pathname) return null;
     // A URL may omit tracking parameters, but must not select a different variant.
     for (const key of new Set([...page.searchParams.keys(), ...url.searchParams.keys()])) {
-      if (/^(?:variant|sku|sku_id|skuid|product_id|productid|item_id|itemid|id|size|color|colour|capacity)$/i.test(key)
+      if (selectedOption.test(key)
         && page.searchParams.get(key) !== url.searchParams.get(key)) return null;
     }
     return url;
@@ -198,8 +198,37 @@ function parseStrictWebProduct(html: string, pageUrl: string, market: MarketCode
   return found ? [found] : [];
 }
 
+const selectedOption = /^(?:variant|sku|sku_id|skuid|product_id|productid|item_id|itemid|id|size|color|colour|capacity)$/i;
+
+function applyVisibleStartingPrice(rows: WebListing[], html: string, pageUrl: string): WebListing[] {
+  const [row] = rows;
+  if (rows.length !== 1 || row.priceQuote?.variant || (row.priceQuote && row.priceQuote.kind !== 'exact')
+    || [...new URL(pageUrl).searchParams.keys()].some(key => selectedOption.test(key)) || !/<h1\b/i.test(html)) return rows;
+
+  // Structured offers can omit a qualifier printed beside the main product name.
+  const visible = html.replace(/<!--[\s\S]*?-->|<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  const headings = [...visible.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/gi)];
+  if (headings.length !== 1) return rows;
+  const [heading] = headings;
+  const plain = (value: string) => decodeAttribute(value.replace(/<[^>]*>/g, ' ')).replace(/&nbsp;|\s+/gi, ' ').trim();
+  const words = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  if (!(' '+words(plain(heading[1]))+' ').includes(' '+words(row.title)+' ')) return rows;
+  const after = visible.slice(heading.index! + heading[0].length, heading.index! + heading[0].length + 4096);
+  const label = plain(after.split(/<h[1-6]\b/i, 1)[0]).match(
+    /^(?:from\s+|starting\s+at\s+|起价\s*[:：]?\s*)([A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|£|€)\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)(?![\d.,])/i);
+  if (!label || Number(label[2].replace(/,/g, '')) !== row.price) return rows;
+  const currencies: Record<string, string[]> = {
+    '$': ['SGD','USD','HKD','AUD','NZD','CAD'], 'S$': ['SGD'], 'US$': ['USD'], 'HK$': ['HKD'],
+    'A$': ['AUD'], 'NZ$': ['NZD'], 'CA$': ['CAD'], '£': ['GBP'], '€': ['EUR'],
+  };
+  const code = label[1].toUpperCase();
+  if (!(currencies[code] ?? [code]).includes(row.currency)) return rows;
+  return [{ ...row, priceQuote: { availability: row.inStock ? 'in-stock' : 'unknown', source: 'html', ...row.priceQuote, kind: 'from' } }];
+}
+
 export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   if (!retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
   const strict = parseStrictWebProduct(html, pageUrl, market, geography);
-  return strict.length ? strict : broadHtmlPrices(html, pageUrl, market, geography);
+  const rows = strict.length ? strict : broadHtmlPrices(html, pageUrl, market, geography);
+  return applyVisibleStartingPrice(rows, html, pageUrl);
 }
