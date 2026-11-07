@@ -5,6 +5,7 @@ import { inspectMarkdownProduct } from './platforms/markdown-product.ts';
 import { queryMatchesListing } from './discovery-match.ts';
 import { readProductPage } from './product-page-reader.ts';
 import { BrightDataError } from './brightdata/web-unlocker.ts';
+import { verifyProductPage } from './verify-product-page.ts';
 const url='https://merchant.com/product/xiaomi-14';
 const product=(offers:any,extra:any={})=>({'@type':'Product',name:'Xiaomi 14',url,offers,...extra});
 const offer=(extra:any={})=>({'@type':'Offer',price:599,priceCurrency:'USD',...extra});
@@ -100,4 +101,32 @@ test('EOS model suffixes stay distinct while base bodies and lens kits still mat
  const base=parse(product(offer()))[0];
  for(const title of ['Canon EOS R50 V','Canon EOS R50V','Canon EOS R50 Mark II'])assert.equal(queryMatchesListing('Canon EOS R50',{...base,title},'SG','web',undefined,'global'),false,title);
  for(const title of ['Canon EOS R50 Body','Canon EOS R50 with RF-S 18-45mm Lens'])assert.equal(queryMatchesListing('Canon EOS R50',{...base,title},'SG','web',undefined,'global'),true,title);
+});
+
+test('quote mode accepts a visible amount without stock, schema or standard headings',async()=>{
+ const markdown={format:'markdown' as const,title:'Anker Prime Power Bank 20000mAh 200W | Anker Singapore',content:'Anker Prime Power Bank 20000mAh 200W\nS$ 189.90\nChoose a colour\nCurrently unavailable'};
+ const [row]=await verifyProductPage('https://www.anker.com.sg/products/anker-prime-20k-200w',{
+  market:'SG',query:'Anker Prime 20000mAh 200W',geography:undefined,
+ },async()=>markdown);
+ assert.equal(row.price,189.9);assert.equal(row.currency,'SGD');assert.equal(row.inStock,false);
+ assert.equal(row.priceQuote?.availability,'out-of-stock');assert.equal(row.priceQuote?.kind,'from');
+ await assert.rejects(verifyProductPage('https://www.anker.com.sg/products/anker-prime-20k-200w',{
+  market:'SG',query:'Anker Prime 27650mAh 250W',
+ },async()=>markdown));
+});
+
+test('quote mode reads visible HTML amounts but still rejects fees and unrelated identities',async()=>{
+ const page='https://shop.example.sg/products/oral-b-io6';
+ const markup=(amount:string,title='Oral-B iO Series 6 Electric Toothbrush')=>`<title>${title} | Merchant</title><h1>${title}</h1><div class="price">${amount}</div><button>Add to cart</button>`;
+ const [row]=await verifyProductPage(page,{market:'SG',query:'Oral-B iO Series 6'},async()=>markup('S$ 250.57'));
+ assert.equal(row.price,250.57);assert.equal(row.priceQuote?.source,'html');assert.equal(row.priceQuote?.availability,'unknown');
+ await assert.rejects(verifyProductPage(page,{market:'SG',query:'Oral-B iO Series 6'},async()=>markup('Shipping S$ 4.90')));
+ await assert.rejects(verifyProductPage(page,{market:'SG',query:'Oral-B iO Series 6'},async()=>markup('S$ 250.57','Oral-B iO Series 9')));
+});
+
+test('local marketplace symbols can be quoted after the strict Shopee layout fails',async()=>{
+ const shopee='https://shopee.sg/product/101/202';
+ const page={format:'markdown' as const,title:'Philips OneBlade QP2834/20 | Shopee Singapore',content:'# Philips OneBlade QP2834/20\n$49.90\nChoose variant\n## Shop Vouchers\n$10 OFF\n## Shipping\n$2.99'};
+ const [row]=await verifyProductPage(shopee,{market:'SG',query:'Philips OneBlade QP2834/20'},async()=>page);
+ assert.equal(row.price,49.9);assert.equal(row.currency,'SGD');assert.equal(row.priceQuote?.kind,'exact');
 });

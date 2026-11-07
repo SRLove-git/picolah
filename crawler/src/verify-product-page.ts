@@ -7,6 +7,7 @@ import { parseWebProduct } from './platforms/web-product.ts';
 import type { PriceQuote, WebListing } from './types.ts';
 import type { ProductPageContent } from './product-page-reader.ts';
 import { parseMarkdownProduct } from './platforms/markdown-product.ts';
+import { quoteOnlyHtmlPrice, quoteOnlyMarkdownPrice } from './product-page-prices.ts';
 
 export type FetchProductPage = (url: string, market: MarketCode) => Promise<ProductPageContent>;
 
@@ -34,8 +35,11 @@ export async function verifyProductPage(
   // Directory pages may reveal a direct product link, but their own prices
   // (including the lowest offer across multiple models) cannot be quoted.
   if (isDirectoryPath(new URL(url).pathname)) return [];
-  const listings = typeof html === 'string' ? parseWebProduct(html, url, options.market, options.geography)
+  let listings = typeof html === 'string' ? parseWebProduct(html, url, options.market, options.geography)
     : parseMarkdownProduct(html, url, options.market, options.geography);
+  if (!listings.length) listings = typeof html === 'string'
+    ? quoteOnlyHtmlPrice(html, url, options.market, options.query, options.model, options.geography)
+    : quoteOnlyMarkdownPrice(html, url, options.market, options.query, options.model, options.geography);
   if (!listings.length) {
     // Missing/ambiguous structured data or a challenge is not proof of no stock.
     throw new BrightDataError('商品详情页未提供可核验的单品报价', { code: 'PRODUCT_PAGE_UNVERIFIED' });

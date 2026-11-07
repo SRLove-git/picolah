@@ -7,6 +7,7 @@ import { commercePageProduct } from './product-page-state.ts';
 import { MARKETS, type MarketCode } from './markets.ts';
 import type { WebListing, PriceQuote } from './types.ts';
 import type { MarkdownPage } from './deepseek/fetch.ts';
+import { queryMatchesTitle } from './discovery-match.ts';
 
 type Obj = Record<string, any>;
 const obj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -49,7 +50,7 @@ function numeric(v: any): number | undefined {
 }
 const availability = (v: unknown): PriceQuote['availability'] => {
   const s = String(v ?? '');
-  if (/OutOfStock|SoldOut|Discontinued|out\s*of\s*stock|sold\s*out|缺货|售罄/i.test(s)) return 'out-of-stock';
+  if (/OutOfStock|SoldOut|Discontinued|out\s*of\s*stock|sold\s*out|unavailable|缺货|售罄/i.test(s)) return 'out-of-stock';
   if (/PreOrder|PreSale|BackOrder|pre[- ]?order|back[- ]?order|预售/i.test(s)) return 'preorder';
   if (/InStock|LimitedAvailability|in\s*stock|有货|现货/i.test(s)) return 'in-stock';
   return 'unknown';
@@ -221,12 +222,16 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   if(new Set(declared).size>1)return [];
   // These domestic storefronts display yuan without repeating its ISO code.
   // A bare yen/dollar symbol on an unknown store remains unsupported.
-  const sourceCurrency=/(^|\.)(?:colipu|suning|jd)\.com$/i.test(url.hostname)?'CNY':undefined;
+  const localMarketplace = Object.values(MARKETS[market].domains).some(domain => {
+    const host = domain.replace(/^www\./, '');
+    return url.hostname === host || url.hostname.endsWith('.' + host);
+  });
+  const sourceCurrency=localMarketplace?MARKETS[market].currency:/(^|\.)(?:colipu|suning|jd)\.com$/i.test(url.hostname)?'CNY':undefined;
   const currencyHint=declared[0]??sourceCurrency;
   const money=/(US\$|S\$|HK\$|AU\$|CA\$|[€£₹¥￥]|\b[A-Z]{3}\b|\$)\s*(\d[\d.,]*(?:[ \u00a0]\d{3})*(?:[.,]\d+)?)|(?<![\p{L}\p{N}_.])(\d[\d.,]*)\s*(EUR|USD|SGD|GBP|€|£|₹)\b/gu;
   const candidates:Array<{price:number;currency:string;line:string}>=[];
   for(const line of body){
-    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|返现|积分|运费|原价/i.test(line))continue;
+    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|返现|积分|运费|原价/i.test(line))continue;
     for(const match of line.matchAll(money)){
       const symbol=match[1]||match[4], currency=symbols[symbol]??(symbol==='$'&&['USD','SGD','AUD','CAD','HKD','NZD'].includes(currencyHint)?currencyHint:/^[¥￥]$/.test(symbol)&&['CNY','JPY'].includes(currencyHint)?currencyHint:symbol.toUpperCase()); const price=numeric((match[2]||match[3]).replace(/(?<=\d)[.,]$/,''));
       if(price!==undefined&&currency&&currencyDigits(currency)!==null) {
@@ -251,4 +256,72 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   const quote: PriceQuote={kind,availability:availability(text),source:'fetch',...(values.length>1?{maxPrice:values.at(-1)}:{}),
     ...(condition(text)?{condition:condition(text)}:{}),...(taxIncluded.length?{note:'页面含税价'}:selected.some(c=>/tax excluded|excl\.?\s*(?:tax|vat)|excluding (?:tax|vat)|未税/i.test(c.line))?{note:'页面未税价，税费另计'}:/member|coupon|rebate|会员|券后/i.test(text)?{note:'页面含会员或优惠条件，购买前确认适用条件'}:{})};
   const row=record(title,url,market,geography,values[0],candidates[0].currency,quote);return row?[row]:[];
+}
+
+const htmlEntity = (value: string): string => value
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&apos;|&#39;/gi, "'")
+  .replace(/&#(?:x([0-9a-f]+)|(\d+));/gi, (raw, hex: string | undefined, decimal: string | undefined) => {
+    const point = parseInt(hex ?? decimal ?? '', hex ? 16 : 10);
+    return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : raw;
+  });
+
+function quoteIdentity(pageTitle: string, headings: string[], query: string, model?: string): string | undefined {
+  const candidates = [...headings, pageTitle]
+    .map(value => clean(htmlEntity(value)).replace(/\s+[|–—]\s+[^|–—]+$/, ''))
+    .filter((value, index, rows) => value.length >= 2 && rows.indexOf(value) === index);
+  return candidates.find(value => queryMatchesTitle(query, value, model));
+}
+
+/**
+ * Last-resort quote mode. The requested product must still match the detail
+ * page identity, but stock, condition, schema.org and heading layout are not
+ * required. broadMarkdownPrices continues to reject freight, instalments,
+ * rewards and prices outside the primary product block.
+ */
+export function quoteOnlyMarkdownPrice(page: MarkdownPage, pageUrl: string, market: MarketCode,
+  query: string, model?: string, geography?: 'global'): WebListing[] {
+  const url = safeWebUrl(pageUrl);
+  if (!url || !retailPricePage(pageUrl) || nonPurchasePageText(page.content) || page.content.length > 2_000_000) return [];
+  const lines = page.content.split(/\r?\n/);
+  const headings = lines.filter(line => /^#{1,2}\s+/.test(line)).slice(0, 20)
+    .map(line => line.replace(/^#{1,2}\s+/, ''));
+  const identity = quoteIdentity(page.title, headings, query, model);
+  if (!identity) return [];
+  const matchingHeading = lines.findIndex(line => /^#{1,3}\s+/.test(line)
+    && queryMatchesTitle(query, plainMarkdown(line.replace(/^#{1,3}\s+/, '')), model));
+  const primary = lines.slice(matchingHeading < 0 ? 0 : matchingHeading + 1,
+    (matchingHeading < 0 ? 0 : matchingHeading + 1) + 180);
+  const nextProduct = primary.findIndex((line, index) => index > 0 && /^#{1,2}\s+/.test(line)
+    && queryMatchesTitle(query, plainMarkdown(line.replace(/^#{1,2}\s+/, '')), model) === false
+    && MONEY_LINE.test(line));
+  const body = (nextProduct < 0 ? primary : primary.slice(0, nextProduct))
+    .map(line => /^#{1,6}\s+/.test(line) ? line.replace(/^#{1,6}\s+/, '') : line);
+  return broadMarkdownPrices({ ...page, title: identity, content: '# ' + identity + '\n' + body.join('\n') }, pageUrl, market, geography);
+}
+
+const plainMarkdown = (value: string): string => value.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '').trim();
+const MONEY_LINE = /(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d|\d[\d.,]*\s*(?:EUR|USD|SGD|GBP|€|£|₹)\b/i;
+
+/** Read a visible amount when a product page has no usable Product schema. */
+export function quoteOnlyHtmlPrice(html: string, pageUrl: string, market: MarketCode,
+  query: string, model?: string, geography?: 'global'): WebListing[] {
+  const url = safeWebUrl(pageUrl);
+  if (!url || html.length > 8_000_000 || !retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
+  const withoutCode = html.replace(/<!--[^]*?-->|<(script|style|template|noscript|svg)\b[^>]*>[^]*?<\/\1\s*>/gi, '');
+  const pageTitle = htmlEntity(withoutCode.match(/<title\b[^>]*>([^]*?)<\/title\s*>/i)?.[1] ?? '').replace(/<[^>]*>/g, ' ');
+  const headingMatches = [...withoutCode.matchAll(/<h1\b[^>]*>([^]*?)<\/h1\s*>/gi)].slice(0, 10);
+  const headings = headingMatches.map(match => htmlEntity(match[1].replace(/<[^>]*>/g, ' ')));
+  const identity = quoteIdentity(pageTitle, headings, query, model);
+  if (!identity) return [];
+  const matchingHeading = headingMatches.find(match => queryMatchesTitle(query,
+    clean(htmlEntity(match[1].replace(/<[^>]*>/g, ' '))), model));
+  const start = matchingHeading ? matchingHeading.index! + matchingHeading[0].length : 0;
+  const fragment = withoutCode.slice(start, start + 80_000).split(/<h1\b/i, 1)[0]
+    .replace(/<(?:br|p|div|li|section|article|h[2-6]|button|label|option|dt|dd)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ');
+  const visible = htmlEntity(fragment).split(/\r?\n/).map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean).slice(0, 180).join('\n');
+  return quoteOnlyMarkdownPrice({ format:'markdown', title:identity, content:'# ' + identity + '\n' + visible },
+    pageUrl, market, query, model, geography).map(row => ({ ...row, priceQuote:{ ...row.priceQuote!, source:'html' } }));
 }

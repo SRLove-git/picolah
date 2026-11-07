@@ -3,7 +3,7 @@ import { config } from './config.ts';
 import { fetchDeepSeekPage, type MarkdownPage } from './deepseek/fetch.ts';
 import { fetchWebProductPage } from './brightdata/web-page.ts';
 import { inspectMarkdownProduct } from './platforms/markdown-product.ts';
-import { nonPurchasePageHtml, nonPurchasePageText } from './product-page-prices.ts';
+import { nonPurchasePageHtml, nonPurchasePageText, quoteOnlyMarkdownPrice } from './product-page-prices.ts';
 import { queryMatchesListing } from './discovery-match.ts';
 import { parseWebProduct } from './platforms/web-product.ts';
 import type { MarketCode } from './markets.ts';
@@ -47,6 +47,8 @@ export async function readProductPage(url: string, market: MarketCode, options: 
     try {
       const page = await (options.fetchMarkdown ?? fetchDeepSeekPage)(url,{timeoutMs:25_000});
       const result=inspectMarkdownProduct(page,url,market,options.geography);
+      if (!result.listings.length && options.query) result.listings = quoteOnlyMarkdownPrice(
+        page,url,market,options.query,options.model,options.geography);
       event({provider:'deepseek',outcome:result.listings.length?'parsed':'unverified',...(!result.listings.length?{code:result.reason}:{})});
       return page;
     } catch(error) { event({provider:'deepseek',outcome:'error',code:errorCode(error),...errorStatus(error)}); throw error; }
@@ -71,7 +73,15 @@ export async function readProductPage(url: string, market: MarketCode, options: 
         if(fetched.some(row=>matches(row)&&identity(row.title).startsWith(base+' ')))return {...md.value,stockUnconfirmed:true};
       }
     }
-    if (offers.length || md.status==='rejected') return html.value;
+    if (offers.length || md.status==='rejected') {
+      if (offers.length && options.query && !offers.some(row => queryMatchesListing(
+        options.query!,row,market,'web',options.model,options.geography)) && md.status==='fulfilled') {
+        const fetched=quoteOnlyMarkdownPrice(md.value,url,market,options.query,options.model,options.geography);
+        if(fetched.some(row=>queryMatchesListing(options.query!,row,market,'web',options.model,options.geography)))
+          return {...md.value,stockUnconfirmed:true};
+      }
+      return html.value;
+    }
     // Let discovery verify the merchant's new URL rather than quote Markdown
     // cached under an obsolete slug. The old page itself remains unverified.
     if (options.query && canonicalProductPage(html.value,url,options.query,options.model)) return html.value;
