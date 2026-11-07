@@ -261,11 +261,6 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'status', { label: '正在整理搜索结果…' });
   let answer = '';
   let usedLlm = false;
-  const priceRows = [...comparison.offers, ...comparison.alternatives.flatMap(row => row.offer ? [row.offer] : [])];
-  if (priceRows.some(row => row.priceQuote && (row.priceQuote.kind !== 'exact' || row.priceQuote.availability !== 'in-stock' || row.priceQuote.note || row.priceQuote.condition))) {
-    const notice = '部分结果包含起价、区间价、库存未明确或缺货标价，请按各项标注确认规格、库存和价格条件。\n\n';
-    answer += notice; sse(res, 'delta', { text: notice });
-  }
   const cacheInfo = comparison.search?.cache;
   if (cacheInfo?.hit) {
     const checked = new Date(cacheInfo.checkedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
