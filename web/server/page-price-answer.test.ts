@@ -21,3 +21,13 @@ test('the web price preference respects explicit detail requests and a previous-
   assert.equal(isPriceRestatement('只要显示价格就可以'),true);
   assert.equal(isPriceRestatement('只要小米14的价格'),false);
 });
+
+test('the amount-only view prefers the named item over a kit whenever an exact title is verified',()=>{
+  const offer=(title:string,price:number)=>({...verified(price),productTitle:title});
+  const cmp=result([offer('Acme Cleansing Gel 200ml + Gift Set',27),offer('Acme Cleansing Gel – 200ml（缺货，页面标价）',18)]);
+  cmp.search={status:'matched',query:'Acme Cleansing Gel 200ml',model:'Acme Cleansing Gel 200ml',platforms:[]};
+  assert.equal(pagePriceAnswer(cmp,'多少钱'),'S$18');
+  cmp.offers[0]=offer('Acme Cleansing Gel 200ml Pump Bottle',19);
+  cmp.offers[1].verification=undefined;
+  assert.equal(pagePriceAnswer(cmp,'多少钱'),'S$19');
+});

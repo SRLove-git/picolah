@@ -17,10 +17,16 @@ export function isPriceRestatement(question: string): boolean {
 /** One line per distinct verified page amount. A starting price or range is part of the amount. */
 export function pagePriceAnswer(comparison: Comparison, question: string): string {
   const english=/请用(?:英文|英语)|用(?:英文|英语)回答/i.test(question) || (!/[\u3400-\u9fff]/.test(question) && /\b(?:price|cost|how much|show|only|under|find|check)\b/i.test(question));
-  const offers=[...comparison.offers,...comparison.alternatives.flatMap(a=>a.offer?[a.offer]:[])];
+  const offers=[...comparison.offers,...comparison.alternatives.flatMap(a=>a.offer?[a.offer]:[])]
+    .filter(o=>o.source==='live' && o.verification?.source==='product-page' && Number.isFinite(o.itemPrice) && o.itemPrice>0 &&
+      (o.priceQuote?.kind!=='range' || (Number.isFinite(o.priceQuote.maxPrice) && o.priceQuote.maxPrice!>=o.itemPrice)));
+  // In an amount-only reply the shopper cannot distinguish a kit or a different formula from the named item.
+  // When a merchant explicitly names the requested product, prefer its prices.
+  const identity=(s:string)=>s.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');
+  const query=identity(comparison.search?.query || comparison.search?.model || '');
+  const exact=query ? offers.filter(o=>identity((o.productTitle || '').replace(/（[^（）]*(?:缺货|库存未明确|预售|二手|翻新|起|价格区间)[^（）]*）$/u,''))===query) : [];
   const prices=new Set<string>();
-  for (const o of offers) {
-    if (o.source!=='live' || o.verification?.source!=='product-page' || !Number.isFinite(o.itemPrice) || o.itemPrice<=0) continue;
+  for (const o of exact.length ? exact : offers) {
     const currency=o.currency || MARKETS[comparison.market].currency;
     const money=(amount:number)=>(currency===MARKETS[comparison.market].currency ? formatMoney(amount,comparison.market) : formatCurrency(amount,currency)).replace(/([.,])00(?=\s*[^\d]*$)/,'');
     const q=o.priceQuote;let text=money(o.itemPrice);
