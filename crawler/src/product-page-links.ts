@@ -1,3 +1,4 @@
+import { attributes } from './embedded-product.ts';
 import { parseSearchCandidates, type WebSearchCandidate } from './brightdata/serp.ts';
 import { queryMatchesTitle } from './discovery-match.ts';
 import { safeWebUrl } from './safe-web-url.ts';
@@ -39,6 +40,37 @@ export function productPageUrl(value: string, followup = false): URL | null {
   return url;
 }
 
+/** A merchant's canonical link is a new candidate, never a price source.
+ * Re-open the replacement URL only if this page names the requested product. */
+export function canonicalProductPage(html: string, pageUrl: string, query: string, model?: string): WebSearchCandidate | undefined {
+  const page = safeWebUrl(pageUrl);
+  if (!page || !/canonical/i.test(html)) return;
+  const visible = html.replace(/<!--[\s\S]*?-->|<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  const headings = [...visible.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
+  if (headings.length !== 1) return;
+  const title = decode(headings[0][1].replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  if (!queryMatchesTitle(query,title,model)) return;
+  const urls = new Map<string, URL>();
+  for (const match of visible.matchAll(/<link\b[^>]*>/gi)) {
+    const fields = attributes(match[0]);
+    if (!fields.get('rel')?.toLowerCase().split(/\s+/).includes('canonical')) continue;
+    const href = fields.get('href');
+    if (!href) return;
+    try {
+      const url = productPageUrl(/^https?:/i.test(href) ? href : new URL(href, page).href, true);
+      if (!url || url.origin !== page.origin || url.pathname === page.pathname) return;
+      // A canonical may remove tracking. It must preserve a selected option,
+      // country/locale or item ID instead of silently widening the request.
+      const identity = /^(?:variant|variantid|sku|sku_id|skuid|product_id|productid|item_id|itemid|id|size|colou?r|capacity|country|countrycode|region|locale|shipto)$/i;
+      for (const key of new Set([...page.searchParams.keys(),...url.searchParams.keys()])) {
+        if (identity.test(key) && JSON.stringify(page.searchParams.getAll(key)) !== JSON.stringify(url.searchParams.getAll(key))) return;
+      }
+      urls.set(url.href,url);
+    } catch { return; }
+  }
+  if (urls.size === 1) return {url:[...urls.keys()][0],title};
+}
+
 /** Directory links only supply candidates. Their prices are never read or used. */
 export type LinkedProductPage = WebSearchCandidate & { relation?: 'variant' };
 export function linkedProductPages(html: string, pageUrl: string, query: string, model?: string): LinkedProductPage[] {
@@ -47,6 +79,8 @@ export function linkedProductPages(html: string, pageUrl: string, query: string,
   const organic: Array<{ link: string; title: string }> = [];
   const seen = new Set<string>();
   const variants = new Set<string>();
+  const canonical = canonicalProductPage(html,pageUrl,query,model);
+  if (canonical) { seen.add(canonical.url); organic.push({link:canonical.url,title:canonical.title}); }
   const state = commercePageProduct(html, pageUrl);
   if (state && typeof state.seoTitle === 'string' && Array.isArray(state.baseOptions)) {
     const labels = (value: unknown): string[] => Array.isArray(value) ? value.flatMap((item) => {

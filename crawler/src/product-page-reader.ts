@@ -1,3 +1,4 @@
+import { canonicalProductPage } from './product-page-links.ts';
 import { config } from './config.ts';
 import { fetchDeepSeekPage, type MarkdownPage } from './deepseek/fetch.ts';
 import { fetchWebProductPage } from './brightdata/web-page.ts';
@@ -71,6 +72,9 @@ export async function readProductPage(url: string, market: MarketCode, options: 
       }
     }
     if (offers.length || md.status==='rejected') return html.value;
+    // Let discovery verify the merchant's new URL rather than quote Markdown
+    // cached under an obsolete slug. The old page itself remains unverified.
+    if (options.query && canonicalProductPage(html.value,url,options.query,options.model)) return html.value;
   }
   if (md.status==='fulfilled') return { ...md.value, stockUnconfirmed: true };
   if (html.status==='fulfilled') return html.value;

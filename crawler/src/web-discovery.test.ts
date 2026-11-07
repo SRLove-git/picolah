@@ -475,3 +475,17 @@ test('market fallback can recover an exact product through a localized internati
   assert.deepEqual(opened,[url]);assert.deepEqual(result.listings.map(i=>i.url),[url]);
   assert.equal(result.summary.pagesChecked,1);
 });
+
+test('renamed product pages supply a candidate whose own price is fetched, never the stale alias amount', async () => {
+  const old='https://merchant.sg/product/old-sony-slug/', current='https://merchant.sg/product/current-sony-slug/';
+  const opened:string[]=[];
+  const result=await discoverProduct(input,{web:{
+    search:async()=>[candidate(old)],
+    fetchPage:async u=>{
+      opened.push(u);
+      if (u===old) return '<h1>Sony WF-1000XM6</h1><link rel=canonical href="'+current+'">' + page(old);
+      return page(current,{offers:{'@type':'Offer',price:'123',priceCurrency:'SGD',availability:'InStock',url:current}});
+    },
+  }});
+  assert.deepEqual(opened,[old,current]); assert.deepEqual(result.listings.map(r=>[r.url,r.price]),[[current,123]]);
+});

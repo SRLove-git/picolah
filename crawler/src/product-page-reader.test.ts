@@ -73,3 +73,14 @@ test('source refusals do not retry; failed retries terminate and two failed prov
  assert.deepEqual(result,{...page,stockUnconfirmed:true});assert.equal(retries,1);assert.equal(calls,2);
  await assert.rejects(readProductPage(url,'SG',{...base,fetchMarkdown:async()=>{throw fail('WEB_PAGE_TIMEOUT');},fetchHtml:async()=>{throw fail('WEB_PAGE_SOURCE_FAILED');}}),{code:'WEB_PAGE_SOURCE_FAILED'});
 });
+
+test('an exact same-merchant canonical can be rediscovered even when stale Markdown is readable',async()=>{
+ const {canonicalProductPage}=await import('./product-page-links.ts');
+ const dest='https://shop.example.com/product/sony-new';
+ const html='<h1>Sony WH-CH720N</h1><link href="'+dest+'" rel="canonical">';
+ assert.equal(await readProductPage(url,'SG',{...base,query:'Sony WH-CH720N',fetchMarkdown:async()=>page,fetchHtml:async()=>html}),html);
+ assert.deepEqual(canonicalProductPage(html,url,'Sony WH-CH720N'),{url:dest,title:'Sony WH-CH720N'});
+ for(const [markup,source] of [[html.replace('sony-new','../blogs/new'),url],[html.replace(dest,'https://other.sg/product/sony'),url],
+   [html.replace('WH-CH720N','WH-CH730N'),url],[html,url+'?variant=5'],[html+'<link rel=canonical href="/product/conflict">',url],
+   ['<script>'+html+'</script>',url]]) assert.equal(canonicalProductPage(markup,source,'Sony WH-CH720N'),undefined);
+});
