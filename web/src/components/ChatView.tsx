@@ -160,7 +160,7 @@ export function ChatView({
                   <StreamingMessage
                     status={stream.status}
                     text={stream.text}
-                    hasResults={Boolean(stream.comparison?.offers.length)}
+                    hasResults={!stream.comparison?.priceOnly && Boolean(stream.comparison?.offers.length)}
                     offerCount={stream.comparison?.offers.length || 0}
                   />
                 )}

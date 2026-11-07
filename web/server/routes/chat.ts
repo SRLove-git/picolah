@@ -9,6 +9,7 @@ import { config, crawlerToolConfigured, llmConfigured } from '../config.ts';
 import { addAssistantReply, addMessage, createConversation, getConversation } from '../repo.ts';
 import { writeFallbackAnswer } from '../copy.ts';
 import { liveSearchCoverageNote } from '../../shared/copy.ts';
+import { isPriceRestatement, pagePriceAnswer, wantsPagePriceOnly } from '../page-price-answer.ts';
 import { streamChatAnswer, streamLlmAnswer } from '../llm.ts';
 import { recordConversationComparison, requestUserId } from '../profile.ts';
 import { supportedRealCrawlerPlatforms } from '../agent/tools/real-crawler.ts';
@@ -24,6 +25,7 @@ import { conversationTools, fallbackConversationAnswer, needsProductClarificatio
 export const chatRouter = Router();
 const chatSchema = z.object({
   message: z.string().trim().max(1200).default(''),
+  priceDisplay: z.enum(['amount','details']).optional(),
   conversationId: z.string().trim().min(1).max(100).optional().nullable(),
   market: z.enum(COUNTRY_CODES).default('SG'),
   image: z.string().trim().max(4_500_000).optional().nullable(),
@@ -113,7 +115,9 @@ chatRouter.post('/', async (req, res) => {
   sse(res, 'meta', { conversationId: conversation.id, title: conversation.title, market, userMessageId });
   const conversationContext = { market, previous, history: priorMessages, searchMode: conversationSearchMode(priorMessages) };
   if (!image) sse(res, 'status', { label: '正在理解问题…' });
-  const planned = image ? null : needsProductClarification(message, conversationContext)
+  const planned = image ? null : previous && isPriceRestatement(message)
+    ? {action:'reply' as const,query:'',continuesProductContext:true,startsNewTopic:false}
+    : needsProductClarification(message, conversationContext)
     ? { action: 'clarify_product' as const, query: '', continuesProductContext: false }
     : needsChangeClarification(message, conversationContext)
       ? { action: 'clarify_change' as const, query: '', continuesProductContext: true }
@@ -134,6 +138,8 @@ chatRouter.post('/', async (req, res) => {
       answer = await streamLocal(res, /[\u3400-\u9fff]/.test(message)
         ? '你指的是哪款商品？告诉我商品名称或型号，我再帮你查。'
         : 'Which product do you mean? Please share its name or model.');
+    } else if (replyContext.previous && isPriceRestatement(message)) {
+      answer = await streamLocal(res,pagePriceAnswer(replyContext.previous,message));
     } else if (llmConfigured) {
       try {
         for await (const delta of streamChatAnswer(message, replyContext)) {
@@ -249,6 +255,8 @@ chatRouter.post('/', async (req, res) => {
     }
   }
 
+  if (!catalogMode && target && comparison.search && !comparison.unsupportedPlatforms?.length &&
+    wantsPagePriceOnly(message, parsed.data.priceDisplay === 'amount')) comparison.priceOnly = true;
   try {
     if (!(await recordConversationComparison(conversation.id, comparison))) {
       sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
@@ -262,7 +270,7 @@ chatRouter.post('/', async (req, res) => {
   let answer = '';
   let usedLlm = false;
   const cacheInfo = comparison.search?.cache;
-  if (cacheInfo?.hit) {
+  if (!comparison.priceOnly && cacheInfo?.hit) {
     const checked = new Date(cacheInfo.checkedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
     const notice = `本次使用近期缓存报价（核验时间：${checked}，北京时间），下单前请在商品页确认。\n\n`;
     answer += notice;
@@ -274,7 +282,9 @@ chatRouter.post('/', async (req, res) => {
   // explicit "补充型号" clarification.
   const chatOnly = !target && !image;
   const canAnswer = !comparison.unsupportedPlatforms?.length && (Boolean(target) || chatOnly);
-  if (llmConfigured && canAnswer && (!catalogMode || catalogQuotes(comparison).length > 0)) {
+  if (comparison.priceOnly) {
+    answer = await streamLocal(res,pagePriceAnswer(comparison,message));
+  } else if (llmConfigured && canAnswer && (!catalogMode || catalogQuotes(comparison).length > 0)) {
     try {
       const stream = catalogMode ? streamCatalogAnswer(comparison, message)
         : target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
@@ -291,7 +301,7 @@ chatRouter.post('/', async (req, res) => {
       }
     }
   }
-  if (!usedLlm) answer += await streamLocal(res, clarification || writeFallbackAnswer(comparison));
+  if (!usedLlm && !comparison.priceOnly) answer += await streamLocal(res, clarification || writeFallbackAnswer(comparison));
   else if (usedLlm) {
     const notice = liveSearchCoverageNote(comparison);
     if (notice) { answer += notice; sse(res, 'delta', { text: notice }); }

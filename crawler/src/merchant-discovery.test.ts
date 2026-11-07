@@ -66,7 +66,7 @@ test('a Shopify SKU needs the matching cart control, displayed price, currency a
 });
 
 test('merchant suggestions and detail matches separate a camera from its reader or charge hub',()=>{
-  for (const addon of ['Quick Reader','Fast Charge Hub','Card Reader']) {
+  for (const addon of ['Quick Reader','Fast Charge Hub','Card Reader','Battery','Premium Lens Guards','Invisible Selfie Stick']) {
     assert.equal(queryMatchesTitle('Insta360 X4','Insta360 X4 '+addon),false);
     assert.equal(queryMatchesTitle('Insta360 X4 '+addon,'Insta360 X4 '+addon),true);
     assert.equal(queryMatchesTitle('Insta360 X4','Insta360 X4 Camera with '+addon),true);

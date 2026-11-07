@@ -109,12 +109,12 @@ after(async () => {
 
 async function ask(
   message: string,
-  options: { market?: string; conversationId?: string; userId?: string; onEvent?: (event: Event) => void } = {},
+  options: { priceDisplay?: 'amount'; market?: string; conversationId?: string; userId?: string; onEvent?: (event: Event) => void } = {},
 ) {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-picolah-user': options.userId || 'anon-model-search-test' },
-    body: JSON.stringify({ message, market: options.market || 'SG', conversationId: options.conversationId }),
+    body: JSON.stringify({ message, priceDisplay:options.priceDisplay, market: options.market || 'SG', conversationId: options.conversationId }),
     signal: AbortSignal.timeout(15_000),
   });
   assert.equal(response.status, 200);
@@ -610,4 +610,19 @@ test('chat searches each selected country and an explicit country overrides the 
   const retry = await ask('重试', { market: 'MY', conversationId: explicit.conversationId });
   assert.equal(retry.comparison.market, 'MY');
   assert.equal(requests.at(-1)?.payload.geography, undefined);
+});
+
+test('a compact lookup keeps the structured result and emits only the price or a no-price reply',async()=>{
+  mode='valid';
+  const matched=await ask('Sony WH-CH720N',{priceDisplay:'amount'});
+  if (matched.comparison.offers.length || matched.comparison.alternatives.some(i=>i.offer)) {
+    assert.equal(matched.comparison.priceOnly,true);
+    assert.match(matched.answer,/^S\$[\d,.]+(?:\n\nS\$[\d,.]+)*$/);
+  } else {
+    assert.equal(matched.answer,'暂无页面价');
+  }
+  mode='not_found';
+  const missing=await ask('价格：Sony WF-1000XM6',{priceDisplay:'amount'});
+  assert.equal(missing.comparison.priceOnly,true);
+  assert.equal(missing.answer,'暂无页面价');
 });

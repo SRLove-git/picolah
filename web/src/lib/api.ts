@@ -288,7 +288,7 @@ export async function streamChat(
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...userHeaders() },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, priceDisplay: 'amount' }),
     signal,
   });
 

@@ -49,7 +49,7 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
     );
   }
 
-  const comparison = message.comparison;
+  const comparison = message.comparison?.priceOnly ? undefined : message.comparison;
   const hasComparison =
     comparison?.product && comparison.offers.length > 0 && comparison.kind === 'comparison';
 

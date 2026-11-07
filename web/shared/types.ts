@@ -185,6 +185,7 @@ export interface ComparisonAlternative {
 export interface SearchCacheMetadata { hit: boolean; checkedAt: string; expiresAt: string }
 
 export interface Comparison {
+  priceOnly?: boolean;
   kind: 'comparison' | 'suggestions' | 'recommendation' | 'empty';
   query: string;
   market: CountryCode;

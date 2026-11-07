@@ -224,6 +224,12 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
     if(names(query)!==names(title)) return false;
   }
 
+  // Action-camera merchants often name the camera first even for a standalone accessory.
+  if (/\b(?:insta360|gopro|action camera)\b/i.test(query)) {
+    const addon=/\b(?:batter(?:y|ies)|(?:premium |standard )?lens guards?|selfie sticks?)\b/i;
+    const match=addon.exec(title);
+    if (match && !addon.test(query) && !/\b(?:with|includes|including|bundle)\b|\+|含|套装/i.test(title.slice(0,match.index))) return false;
+  }
   const accessory=/\bbattery\s+(?:handle|grip)|\b(?:fast[-\s]+)?charg(?:e|ing)\s+hub\b|\b(?:quick|memory[-\s]+card|micro[-\s]?sd|card)\s+readers?\b|\b(?:dust\s+bags?|mop\s+pads?)\b|\b(?:(?:magnetic\s+)?(?:nd|cpl|polarizing|neutral[- ]density)\s+filters?|wide[- ]angle\s+lens)\b|电池手柄|充电管家|尘袋|拖布|滤镜|廣角鏡|广角镜/i;
   // Only an explicit bundle phrase can make a device accessory part of the device.
   // Keep accessory searches possible when the user asks for that accessory itself.
