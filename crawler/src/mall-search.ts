@@ -42,14 +42,17 @@ export function mallPriority(url: URL, market: MarketCode): number {
 }
 
 /** One extra retail-focused discovery request complements the native Shopee,
- * Lazada and Challenger paths without multiplying product-page fetches. */
+ * Lazada and Challenger paths without multiplying product-page fetches. Keep
+ * the product identity contiguous: a list of retailer brand names caused the
+ * search provider to treat those names as mandatory terms and lose exact-SKU
+ * appliance pages. The returned hosts are still restricted to mallDomains. */
 export async function searchMallPlatforms(
   market: MarketCode,
   query: string,
   search: (query: string, market: MarketCode) => Promise<WebSearchCandidate[]>,
 ): Promise<WebSearchCandidate[]> {
   if (market !== 'SG') return [];
-  const hits = await search(`${query} Amazon SG COURTS "Harvey Norman" "Best Denki" Challenger`, market);
+  const hits = await search(`${query} Singapore online shop`, market);
   const seen = new Set<string>();
   return hits.filter((candidate) => {
     const url = safeWebUrl(candidate.url);

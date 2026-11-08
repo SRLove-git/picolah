@@ -284,6 +284,10 @@ function courtsTrackedProduct(html: string, pageUrl: string, market: MarketCode,
 export function parseWebProduct(html: string, pageUrl: string, market: MarketCode, geography?: 'global'): WebListing[] {
   if (!retailPricePage(pageUrl) || nonPurchasePageHtml(html)) return [];
   if (html.includes('pdpTrackingData') && marketplacePage(pageUrl, market, 'lazada')) return lazadaTrackingPrice(html, pageUrl, market);
+  // Shopee HTML can expose an unselected option's S$1/S$2 placeholder as the
+  // Product offer. Its Fetch renderer has a stricter, selected primary-price
+  // parser, so never let the broad HTML fallback override that evidence.
+  if (marketplacePage(pageUrl, market, 'shopee')) return [];
   const strict = parseStrictWebProduct(html, pageUrl, market, geography);
   const tracked = strict.length ? [] : courtsTrackedProduct(html, pageUrl, market, geography);
   const rows = strict.length ? strict : tracked.length ? tracked : broadHtmlPrices(html, pageUrl, market, geography);

@@ -28,7 +28,7 @@ test('mall discovery uses one Singapore-focused request and discards unrelated h
     ];
   });
   assert.equal(calls.length,1);assert.equal(calls[0][1],'SG');
-  assert.match(calls[0][0],/Amazon SG/);assert.match(calls[0][0],/COURTS/);
+  assert.equal(calls[0][0],'KitchenAid 5KSM175PS Singapore online shop');
   assert.deepEqual(rows.map(row=>new URL(row.url).hostname),['www.courts.com.sg','www.amazon.sg']);
   let searched=false;
   assert.deepEqual(await searchMallPlatforms('MY','KitchenAid',async()=>{searched=true;return [];}),[]);

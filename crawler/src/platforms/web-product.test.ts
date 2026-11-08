@@ -69,6 +69,13 @@ test('explicit page amounts retain valid currency and precision checks', () => {
   assert.deepEqual(parseWebProduct(html({...viet,offers:{...viet.offers,price:4000000.01}}),url,'VN'),[]);
 });
 
+test('Shopee broad HTML offers cannot override its selected primary-price parser', () => {
+  const shopee='https://shopee.sg/Canon-EOS-R50-i.40894980.22252976607';
+  const data={...product,name:'Canon EOS R50 Mirrorless Camera',url:shopee,
+    offers:{...offer,url:shopee,price:'2.00'}};
+  assert.deepEqual(parseWebProduct(html(data),shopee,'SG'),[]);
+});
+
 test('unknown, out-of-stock and preorder prices retain truthful availability', () => {
   for (const availability of [undefined,null,'','OutOfStock','SoldOut','PreOrder','BackOrder','OnlineOnly','Unknown']) {
     const [row]=parseWebProduct(html({...product,offers:{...offer,availability}}),url,'SG');

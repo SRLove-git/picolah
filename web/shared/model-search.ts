@@ -19,6 +19,10 @@ export function separateBrandAndModel(text: string): string {
 export function explicitModelCodes(text: string): string[] {
   const normalized = separateBrandAndModel(text);
   const patterns = [
+    // XPS names contain a screen-size family followed by the actual four-digit
+    // chassis code. Treating only "XPS 13" as the model allowed a newer XPS 13
+    // page to satisfy an explicit "XPS 13 9340" request.
+    /(?<![a-z0-9])((?:xps)[\s-]*(?:13|14|15|16|17)[\s-]*\d{4})(?![a-z0-9])/gi,
     /(?<![a-z0-9])((?:wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
     // TV and regional appliance prefixes can alternate digit and letter blocks
     // before the merchant-specific suffix (QA55QN85 -> QA55QN85DBKXXS).
@@ -36,16 +40,21 @@ export function explicitModelCodes(text: string): string[] {
     const raw = value.normalize('NFKC').toUpperCase()
       .replace(/\s*\/\s*/g, '/').replace(/\s*-\s*/g, '-').replace(/\s+/g, '');
     const compact = compactModel(raw);
+    const xps = compact.match(/^XPS(13|14|15|16|17)(\d{4})$/);
+    if (xps) return `XPS-${xps[1]}-${xps[2]}`;
     if (compact.startsWith('WHCH')) return compact.replace(/^WHCH(?=\d)/, 'WH-CH');
     if (/^(?:WF|WH)\d{3,}XM\d+[A-Z]*$/.test(compact)) return compact.replace(/^(WF|WH)/, '$1-');
     return raw.includes('-') ? raw : compact.replace(/^([A-Z]+)(\d)/, '$1-$2');
   };
-  return [...new Set(matches.map(canonical)
+  const unique = [...new Set(matches.map(canonical)
     // Product names followed by a capacity are not invented model identifiers.
     .filter((model) => !/^[A-Z]+\d+(?:GB|TB|ML|MM|CM|KG|MG|G|OZ|LB|CL|DL|L)$/.test(compactModel(model)))
     .filter((model) => !nonModelPrefixes.has(model.match(/^[A-Z]+/)?.[0] ?? ''))
-    )]
-    .filter((model) => model.replace(/[^A-Z0-9]/g, '').length >= 5 && model.length <= 40);
+    )].filter((model) => model.replace(/[^A-Z0-9]/g, '').length >= 5 && model.length <= 40);
+  // A more specific multi-part model may also satisfy an older generic regex
+  // (XPS-13-9340 also looked like XPS-13). Keep only the longest identity.
+  return unique.filter((model) => !unique.some((other) => other !== model
+    && compactModel(other).startsWith(compactModel(model))));
 }
 
 export function compactModel(model: string): string {

@@ -17,7 +17,7 @@ const type = (v: Obj, name: string) => list(v['@type']).some(t => String(t).repl
 const clean = (v: any) => typeof v === 'string' ? v.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 /** Aggregators and editorial guides are discovery sources, not merchant quotes. */
 export function nonRetailPriceSource(host: string): boolean {
-  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|phoneaqua\.com|mobilekishop\.net|smartpicksguides\.com|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
+  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|phoneaqua\.com|mobilekishop\.net|smartpicksguides\.com|whistleout\.com\.sg|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
 }
 export function nonPurchasePageText(text: string): boolean {
   const plain=text.replace(/\s+/g,' ');
@@ -30,7 +30,9 @@ export function nonPurchasePageText(text: string): boolean {
 /** Known rental-only product amounts must not re-enter via Fetch when HTML fails. */
 export function retailPricePage(url: string): boolean {
   const u = safeWebUrl(url);
-  return !!u && !nonRetailPriceSource(u.hostname) && !isDirectoryPath(u.pathname) && !editorialPath(u.pathname) && !/(^|\.)dealmoon\./i.test(u.hostname) && !/(^|\.)cinch\.sg$/i.test(u.hostname) && !/\/(?:blogs?|articles?|news|reviews?|search)(?:\/|$)/i.test(u.pathname);
+  const paymentPlan = u && [...u.searchParams].some(([key,value]) =>
+    /^(?:plan|payment[_-]?plan|term|tenure|installments?)$/i.test(key) && /(?:month|year|week|\d)/i.test(value));
+  return !!u && !paymentPlan && !nonRetailPriceSource(u.hostname) && !isDirectoryPath(u.pathname) && !editorialPath(u.pathname) && !/(^|\.)dealmoon\./i.test(u.hostname) && !/(^|\.)cinch\.sg$/i.test(u.hostname) && !/\/(?:blogs?|articles?|news|reviews?|search)(?:\/|$)/i.test(u.pathname);
 }
 /** Classify the primary page metadata, not incidental customer reviews. */
 export function nonPurchasePageHtml(html: string): boolean {
@@ -162,6 +164,10 @@ export function broadHtmlPrices(html: string, pageUrl: string, market: MarketCod
         const statePrice = sameState && obj(state.price) ? state.price : null;
         const low = numeric(statePrice?.value ?? spec.lowPrice ?? spec.price), high = numeric(spec.highPrice);
         if (low === undefined) continue;
+        // A very small minimum beside a normal device price is commonly a
+        // deposit, accessory option or instalment masquerading as an aggregate
+        // product range. Do not publish that minimum as the device's price.
+        if (high !== undefined && high >= low * 4 && high - low >= 100) continue;
         const kind: PriceQuote['kind'] = high !== undefined && high > low ? 'range' : spec.lowPrice !== undefined || type(offer,'AggregateOffer') ? 'from' : 'exact';
         const quote: PriceQuote = { kind, ...(high !== undefined ? {maxPrice:high} : {}), availability: state ? (sameState ? (state.notSellable === true || state.purchasable === false || (obj(state.stock) && state.stock.stockLevel === 0) ? 'out-of-stock' : state.preOrder === true ? 'preorder' : availability(obj(state.stock) ? state.stock.stockLevelStatus : undefined)) : 'unknown') : availability(offer.availability ?? product.availability), source:'html',
           ...(condition(offer.itemCondition ?? product.itemCondition) ? {condition:condition(offer.itemCondition ?? product.itemCondition)} : {}),
@@ -232,7 +238,7 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   const money=/(US\$|S\$|HK\$|AU\$|CA\$|[€£₹¥￥]|\b[A-Z]{3}\b|\$)\s*(\d[\d.,]*(?:[ \u00a0]\d{3})*(?:[.,]\d+)?)|(?<![\p{L}\p{N}_.])(\d[\d.,]*)\s*(EUR|USD|SGD|GBP|€|£|₹)\b/gu;
   const candidates:Array<{price:number;currency:string;line:string}>=[];
   for(const line of body){
-    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|返现|积分|运费|原价/i.test(line))continue;
+    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|deposit|booking fee|down payment|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|订金|定金|返现|积分|运费|原价/i.test(line))continue;
     for(const match of line.matchAll(money)){
       const symbol=match[1]||match[4], currency=symbols[symbol]??(symbol==='$'&&['USD','SGD','AUD','CAD','HKD','NZD'].includes(currencyHint)?currencyHint:/^[¥￥]$/.test(symbol)&&['CNY','JPY'].includes(currencyHint)?currencyHint:symbol.toUpperCase()); const price=numeric((match[2]||match[3]).replace(/(?<=\d)[.,]$/,''));
       if(price!==undefined&&currency&&currencyDigits(currency)!==null) {
@@ -252,6 +258,7 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   let values=[...new Set(selected.map(c=>c.price))].sort((a,b)=>a-b);
   const isRange=/price range|starting at|from\s+(?:[A-Z]{3}|[€£$])|起价|\d[\d.,]*\s*[-–~]\s*(?:[A-Z]{3}|[€£$])?\s*\d/i.test(selected.map(c=>c.line).join('\n'));
   const choose=/^(?:choose|select)\s+(?:a\s+)?(?:model|variant|size|color|colour)|^选择.*(?:规格|型号|颜色)/im.test(text);
+  if (values.length > 1 && values.at(-1)! >= values[0] * 4 && values.at(-1)! - values[0] >= 100) return [];
   const usedFirstVisible = firstVisibleQuote && values.length>1 && !isRange;
   if(values.length>1&&!isRange) {
     if (!firstVisibleQuote) return [];

@@ -71,6 +71,15 @@ test('keeps abbreviated appliance model prefixes as fuzzy live-search hints', ()
   });
 });
 
+test('keeps the complete XPS chassis code instead of matching only the screen-size family', () => {
+  assert.deepEqual(liveSearchQuery('Dell XPS 13 9340'), {
+    query: 'Dell XPS 13 9340', model: 'XPS-13-9340',
+  });
+  assert.deepEqual(liveSearchQuery('Dell XPS-13-9350 price'), {
+    query: 'Dell XPS-13-9350', model: 'XPS-13-9350',
+  });
+});
+
 test('platform-only and retry followups retain the prior product and translated constraints', () => {
   const context = previous('iPhone 15 256GB 黑色');
   context.search!.maxPrice = 6000;

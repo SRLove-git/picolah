@@ -92,7 +92,7 @@ test('local discovery gives marketplace and mall pages the first worker slots', 
   }});
   assert.deepEqual(visited.slice(0,4),[urls.shopee,urls.lazada,urls.mall,urls.native]);
   assert.ok(visited.indexOf(urls.saved)>3);assert.ok(visited.indexOf(urls.general)>3);
-  assert.equal(result.listings.length,6);
+  assert.equal(result.listings.length,5,'Shopee broad HTML placeholders require its strict Fetch price layout');
 });
 
 test('web discovery has a hard page budget, four workers and host diversity', async () => {
@@ -506,6 +506,23 @@ test('market fallback can recover an exact product through a localized internati
   assert.deepEqual(queries.slice(1),['site:.sg Sony WF-1000XM6','"Sony WF-1000XM6" "S$"','WF-1000XM6 Singapore buy']);
   assert.deepEqual(opened,[url]);assert.deepEqual(result.listings.map(i=>i.url),[url]);
   assert.equal(result.summary.pagesChecked,1);
+});
+
+test('a failed descriptive query retries malls with brand and exact model', async()=>{
+  const opened:string[]=[], mallQueries:string[]=[];
+  const url='https://www.courts.com.sg/breville-barista-pro-bes878-IP123.html';
+  const result=await discoverProduct({scope:'web',market:'SG',platforms:[],
+    query:'Breville Coffee Machine BES878',model:'BES-878'},{web:{
+    search:async()=>[],
+    mallSearch:async(_market,query)=>{mallQueries.push(query);return query==='Breville BES-878'
+      ? [{url,title:'Breville Barista Pro Coffee Machine BES878'}] : [];},
+    fetchPage:async pageUrl=>{opened.push(pageUrl);return `<script type="application/ld+json">${JSON.stringify({
+      '@type':'Product',name:'Breville Barista Pro Coffee Machine BES878',url,
+      offers:{'@type':'Offer',price:1099,priceCurrency:'SGD',availability:'InStock',url},
+    })}</script>`;},
+  }});
+  assert.deepEqual(mallQueries,['Breville Coffee Machine BES878','Breville BES-878']);
+  assert.deepEqual(opened,[url]);assert.equal(result.listings[0]?.price,1099);
 });
 
 test('renamed product pages supply a candidate whose own price is fetched, never the stale alias amount', async () => {

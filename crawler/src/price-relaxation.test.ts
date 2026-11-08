@@ -25,6 +25,8 @@ test('aggregate ranges and priceSpecification expose their actual meanings',()=>
  const spec=parse(product({'@type':'Offer',priceSpecification:{'@type':'UnitPriceSpecification',price:'599.00',priceCurrency:'USD'}}))[0];assert.equal(spec.price,599);
  assert.equal(parse(product({'@type':'Offer',priceSpecification:{price:25,priceCurrency:'USD',name:'Monthly installment'}})).length,0);
  assert.equal(parse(product({'@type':'AggregateOffer',lowPrice:799,highPrice:599,priceCurrency:'USD'})).length,0);
+ assert.equal(parse(product({'@type':'AggregateOffer',lowPrice:160,highPrice:989,priceCurrency:'USD'})).length,0,
+  'an accessory/deposit minimum must not become the camera price');
 });
 test('multiple declared variants remain separate and still honor requested capacity',()=>{
  const rows=parse({'@type':'ProductGroup',name:'Xiaomi 14',url,hasVariant:[256,512].map((size,i)=>product(offer({price:599+i*100}),{name:'Xiaomi 14 '+size+'GB',sku:String(size),url:url+'?variant='+size}))});
@@ -96,6 +98,7 @@ test('aggregated prices require merchant purchase controls, not just Product sch
 test('known lease pages cannot re-enter from Markdown when HTML times out',async()=>{
  const md={format:'markdown' as const,title:'AirPods Pro 2',content:'# AirPods Pro 2\nPrice range: SGD 4.99 - SGD 125\nAdd to cart'};
  assert.deepEqual(inspectMarkdownProduct(md,'https://cinch.sg/product/apple-hdp-app-appro2-wht','SG','global').listings,[]);
+ assert.deepEqual(inspectMarkdownProduct(md,'https://nowcircular.sg/product/iphone-16-pro?plan=12-months','SG','global').listings,[]);
 });
 test('EOS model suffixes stay distinct while base bodies and lens kits still match',()=>{
  const base=parse(product(offer()))[0];

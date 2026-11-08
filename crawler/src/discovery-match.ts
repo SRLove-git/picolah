@@ -45,7 +45,7 @@ function expandedTitleModel(model: string, rawTitle: string): string | undefined
 
 // Permit spaces inside established Sony families without treating an arbitrary
 // brand + model phrase ("Sony WF-1000XM6") as one identifier.
-const MODEL_CODE = '(?:WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|\\d[A-Z]{2,}\\d{2,}[A-Z0-9]*(?:/[A-Z0-9]+)?|[A-Z]{1,3}(?:-[A-Z]{1,4})+\\d[A-Z0-9]*(?:-[A-Z0-9]+)*(?:/[A-Z0-9]+)?|[A-Z]-?\\d{4,}[A-Z]*/[A-Z0-9]+|[A-Z]{2,}-?\\d{2,}(?:[A-Z]+(?:-[A-Z]+)?\\d+)*[A-Z]*(?:/\\d{2})?)';
+const MODEL_CODE = '(?:XPS[-\\s]*(?:13|14|15|16|17)[-\\s]*\\d{4}|WH[-\\s]*CH[-\\s]*\\d{3,}(?:[-\\s]+N|[A-Z]*)|(?:WF|WH)[-\\s]*\\d{3,}[-\\s]*XM[-\\s]*\\d+[A-Z]*|\\d[A-Z]{2,}\\d{2,}[A-Z0-9]*(?:/[A-Z0-9]+)?|[A-Z]{1,3}(?:-[A-Z]{1,4})+\\d[A-Z0-9]*(?:-[A-Z0-9]+)*(?:/[A-Z0-9]+)?|[A-Z]-?\\d{4,}[A-Z]*/[A-Z0-9]+|[A-Z]{2,}-?\\d{2,}(?:[A-Z]+(?:-[A-Z]+)?\\d+)*[A-Z]*(?:/\\d{2})?)';
 
 const NON_PRODUCT = /\b(?:case|cover|skin|sleeve|protector|cable|charger|adapter|stand|holder|mount|strap|ear\s?(?:tips?|pads?|cushions?)|replacement|compatible|sticker|decal|replica|counterfeit|imitation|fake|copy|clones?|used|refurbished|renewed|pre[-\s]?(?:owned|loved)|second[-\s]?hand|broken|repair|parts?|dummy|open[-\s]box|left\s+only|right\s+only)\b|\b(?:batter(?:y|ies)|filters?|brush(?:es)?|rollers?|hoses?|remotes?)\s+(?:for|compatible\s+with)\b|保护套|保护壳|耳塞套|耳罩|替换|配件|仿制|高仿|二手|翻新|维修|故障|仅包装|空盒|单耳|单只|充电仓|充电盒/i;
 
@@ -80,6 +80,7 @@ function nonProductTitle(rawTitle: string): boolean {
 }
 
 function modelGeneration(compact: string): string | undefined {
+  if (/^XPS(?:13|14|15|16|17)\d{4}$/.test(compact)) return;
   return compact.match(/^WH(CH\d+[A-Z]*)$/)?.[1] ?? compact.match(/([A-Z]+\d+[A-Z]*)$/)?.[1];
 }
 
@@ -135,7 +136,9 @@ function exactTitle(model: string, rawTitle: string): boolean {
   // suffix remains mandatory when the user explicitly includes it.
   const withoutRegionalSku = withoutSameGeneration
     .replace(/#[-\s]+[A-Z]{1,3}\d{2,5}[A-Z]{0,3}(?=$|[^A-Z0-9])/g, '#')
-    .replace(/\bU[3579][ -]\d{3}[A-Z]\b/g, ' ');
+    .replace(/\bU[3579][ -]\d{3}[A-Z]\b/g, ' ')
+    .replace(/\bI[3579][ -]\d{4,5}[A-Z]*\b/g, ' ')
+    .replace(/\b(?:INTEL\s+)?CORE\s+ULTRA\s+[3579]\s+\d{3}[A-Z]\b/g, ' ');
   if (/\b[A-Z]{2,5}[-\s]*\d{3,}(?:[-\s]*[A-Z]+[-\s]*\d+)*[A-Z]*/.test(withoutRegionalSku)) return false;
   const shortFamily=compact.match(/^([A-Z]{2,})(\d{2})(?!\d)/)?.[1];
   if (shortFamily && new RegExp(`\\b${shortFamily}[-\\s]*\\d{2,}`).test(withoutSameGeneration)) return false;
@@ -256,6 +259,10 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
   if (manual.test(title) && !manual.test(query)) return false;
   if (/\b(?:OLED\s*(?:&|and|\/)\s*(?:Switch\s+)?Lite|Lite\s*(?:&|and|\/)\s*(?:Switch\s+)?OLED)\s+(?:consoles?|models?|systems?)\b/i.test(title)) return false;
   if (!sameCameraGeneration(query, title)) return false;
+  // A television page may mention its included remote, but a replacement
+  // remote page is never a quote for the television itself.
+  const replacementRemote = /\b(?:replace(?:ment)?|compatible)\b.{0,30}\bremote controls?\b|\bremote controls?\b.{0,90}\b(?:works?\s+(?:on|with)|compatible\s+with|replacement\s+for)\b/i;
+  if (!/\bremote controls?\b/i.test(query) && replacementRemote.test(title)) return false;
   // Dell's 9340 specifications list Core Ultra H CPUs; an older Core i CPU
   // contradicts that model. https://www.dell.com/support/manuals/en-us/xps-13-9340-laptop
   if (/\bxps\s*13\s*[- ]?9340\b/i.test(title) && /\bi[3579][-\s]\d{4,5}[a-z]*\b/i.test(title)) return false;
@@ -336,7 +343,7 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
       .replace(/\b(?:windows|win|w)\s*1[01]\s*pro\b/gi,' ')
       .replace(/\b(?:intel\s+(?:core\s+)?|core\s+)ultra\s*\d+(?:[- ]\d+[a-z]?)?/gi,' ');
     const variantTokens=new Set(queryTokens(deviceVariantText));
-    if (variants.some((variant) => variantTokens.has(variant) && !requested.includes(variant))) return false;
+    if (!model && variants.some((variant) => variantTokens.has(variant) && !requested.includes(variant))) return false;
     const capacities = storageCapacities(query);
     if (capacities.length) {
       const titleCapacities = storageCapacities(title);

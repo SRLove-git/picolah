@@ -325,7 +325,31 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
         return selectPages(hits, options.market, excluded, options.geography, options.query, options.model, followed, hostVisits);
       } catch (error) { failed(error); return []; }
     });
-    const groups = await Promise.all(generalGroups);
+    // When a descriptive user query produced only blocked/unpriced pages, make
+    // one model-focused pass through malls and marketplaces. This specifically
+    // recovers cases such as "Breville Coffee Machine BES878" where the generic
+    // category words hide a retailer's "Barista Pro BES878" product title.
+    const focused = options.model
+      ? [options.query.match(/^[\p{L}\p{N}][\p{L}\p{N}.'&+-]*/u)?.[0], options.model].filter(Boolean).join(' ')
+      : '';
+    const retailGroups: Array<Promise<WebSearchCandidate[]>> = [];
+    if (focused && dependencies.mallSearch) retailGroups.push((async () => {
+      summary.requests++;
+      try {
+        return selectPages(await dependencies.mallSearch!(options.market, focused, search), options.market,
+          excluded, options.geography, options.query, options.model, followed, hostVisits);
+      } catch (error) { failed(error); return []; }
+    })());
+    if (focused && dependencies.marketplaceSearch && options.geography !== 'global') for (const platform of platforms) {
+      retailGroups.push((async () => {
+        summary.requests++;
+        try {
+          return selectPages(await dependencies.marketplaceSearch!(platform, options.market, focused, search), options.market,
+            excluded, options.geography, options.query, options.model, followed, hostVisits);
+        } catch (error) { failed(error); return []; }
+      })());
+    }
+    const groups = await Promise.all([...retailGroups, ...generalGroups]);
     const fallback = interleavePages(groups, hostVisits);
     for (const page of fallback) discovered.add(page.url);
     await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));

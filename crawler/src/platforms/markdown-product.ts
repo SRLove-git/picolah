@@ -91,7 +91,7 @@ function inspectStrictMarkdownProduct(page: MarkdownPage, pageUrl: string, marke
   const declarations = normalized.map(line => line.match(/^(?:currency|币种)\s*[:：]\s*([A-Z]{3})$/i)?.[1].toUpperCase()).filter(Boolean);
   if (new Set(declarations).size > 1) return reject('CURRENCY_CONFLICT');
   const explicitCurrency = declarations[0];
-  const conditional = /friends? price|members?[- ]?(?:only|price)|loyal customer|with coupon|after rebate|starting at|price range|会员价|券后|起价/i.test(text);
+  const conditional = /friends? price|members?[- ]?(?:only|price)|loyal customer|with coupon|after rebate|starting at|price range|deposit|booking fee|down payment|会员价|券后|起价|订金|定金/i.test(text);
   const current: Amount[] = [], regular: Amount[] = [];
   const savings: Array<{ original: Amount; discount: Amount }> = [];
   for (const line of normalized) {
@@ -112,7 +112,7 @@ function inspectStrictMarkdownProduct(page: MarkdownPage, pageUrl: string, marke
     const value = line.replace(/^(?:sale price|current price|our price|price|preis|prix|precio|售价|现价|价格)\s*[:：]?\s*/i, '');
     const parsed = amount(value, explicitCurrency);
     if (parsed) current.push(parsed);
-    else if (MONEY.test(line) && !/\b(?:installments?|per month|apr)\b|\bx\s*\d+\b|\/mo\b/i.test(line)) return reject('PRICE_FORMAT_UNSUPPORTED');
+    else if (MONEY.test(line) && !/\b(?:deposit|booking fee|down payment|installments?|per month|apr)\b|\bx\s*\d+\b|\/mo\b|订金|定金/i.test(line)) return reject('PRICE_FORMAT_UNSUPPORTED');
   }
   const prices = current.length ? current : regular;
   if (!prices.length) return reject(conditional ? 'CONDITIONAL_PRICE_ONLY' : 'PRICE_OR_CURRENCY_MISSING');

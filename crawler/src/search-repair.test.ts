@@ -51,6 +51,14 @@ test('accessory prices cannot masquerade as the main device',()=>{
  assert.equal(queryMatchesTitle('DJI Osmo Pocket 3','DJI Osmo Pocket 3 Battery Handle'),false);
  assert.equal(queryMatchesTitle('DJI Osmo Pocket 3','DJI Osmo Pocket 3 with Battery Handle'),true);
  assert.equal(queryMatchesTitle('DJI Osmo Pocket 3 Battery Handle','DJI Osmo Pocket 3 Battery Handle'),true);
+ assert.equal(queryMatchesTitle('Sony BRAVIA TV K-55XR70',
+  'AULCMEET Replace Voice Remote Control Works on Sony K-55XR70 K-65XR70','K-55XR70'),false);
+});
+test('complete XPS chassis codes stay mandatory',()=>{
+ assert.equal(normalizeDiscoveryModel('XPS-13-9340'),'XPS-13-9340');
+ assert.equal(queryMatchesTitle('Dell XPS 13 9340','Dell XPS 13 9340 Laptop','XPS-13-9340'),true);
+ assert.equal(queryMatchesTitle('Dell XPS 13 9340','XPS 13 Laptop (2026)','XPS-13-9340'),false);
+ assert.equal(queryMatchesTitle('Dell XPS 13 9340','Dell XPS 13 9350 Laptop','XPS-13-9340'),false);
 });
 test('RAM and generation typography do not discard the requested laptop storage',()=>{
  assert.equal(queryMatchesTitle('MacBook Air M3 13 256GB','Apple MacBook Air M3 13 inch 8GB RAM 256GB SSD'),true);
@@ -59,7 +67,7 @@ test('RAM and generation typography do not discard the requested laptop storage'
  assert.equal(queryMatchesTitle('Lenovo ThinkPad X1 Carbon Gen 12','Lenovo ThinkPad X1 Carbon 13th Generation'),false);
 });
 test('known aggregators and affiliate review pages cannot become HTML or Fetch quotes',()=>{
- for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8']){
+ for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8','https://www.whistleout.com.sg/MobilePhones/Phones/Samsung/Galaxy-S24-Ultra']){
   assert.deepEqual(parseWebProduct(html(),source,'SG','global'),[]);
   assert.deepEqual(inspectMarkdownProduct(md('# Roborock S8\nUSD 149\nIn stock\nAdd to cart'),source,'SG','global').listings,[]);
  }
