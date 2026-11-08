@@ -67,3 +67,12 @@ test('Shopee reads only a primary price and preserves the voucher condition', as
   const [row] = await verifyProductPage(shopee,opts,async()=>markdown('$293.90\nAfter Voucher'));
   assert.equal(row.priceQuote?.note,'券后价'); assert.equal(row.priceQuote?.availability,'unknown');
 });
+
+test('Shopee device searches reject unselected variant token prices without blocking inexpensive goods', async () => {
+  assert.deepEqual(await verifyProductPage(shopee, { ...opts, query:'Canon EOS R50', model:'Canon EOS R50' },
+    async()=>({ ...markdown('$2'), title:'Canon EOS R50', content:'# Canon EOS R50\n$2' })), []);
+  assert.deepEqual(await verifyProductPage(shopee, { ...opts, query:'Samsung Galaxy S24 Ultra', model:'Samsung Galaxy S24 Ultra' },
+    async()=>({ ...markdown('$2'), title:'Samsung Galaxy S24 Ultra', content:'# Samsung Galaxy S24 Ultra\n$2' })), []);
+  const [unrestricted] = await verifyProductPage(shopee, opts, async()=>markdown('$2'));
+  assert.equal(unrestricted.price,2);
+});

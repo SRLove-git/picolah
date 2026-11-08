@@ -11,6 +11,25 @@ import { quoteOnlyHtmlPrice, quoteOnlyMarkdownPrice } from './product-page-price
 
 export type FetchProductPage = (url: string, market: MarketCode) => Promise<ProductPageContent>;
 
+const shopeeDevicePriceFloor: Record<MarketCode, number> = {
+  SG: 50,
+  MY: 50,
+  TH: 500,
+  PH: 500,
+  ID: 100_000,
+  VN: 200_000,
+};
+
+/** Shopee can render the currently unselected option's token amount (often
+ * S$1/S$2) as the first visible quote. Keep inexpensive goods searchable, but
+ * do not publish that amount as the price of an explicitly requested device. */
+function marketplaceVariantPlaceholder(listing: WebListing, query: string, market: MarketCode): boolean {
+  const host = new URL(listing.url).hostname;
+  if (!/(^|\.)shopee\./i.test(host) || listing.currency !== MARKETS[market].currency) return false;
+  const device = /\b(?:iphone|ipad|galaxy\s+(?:s|z|tab)|pixel\s+\d|xps|macbook|laptop|notebook|camera|eos\b|bravia|television|tv\b|washer|dryer|refrigerator|fridge|air\s*conditioner|coffee\s+machine|espresso\s+machine|projector|monitor|playstation|xbox|console|drone)\b/i;
+  return device.test(query) && listing.price < shopeeDevicePriceFloor[market];
+}
+
 // A classified ad can quote the right model and price while selling a used
 // item. Read the seller's condition field, not wording from related ads.
 function classifiedCondition(content: ProductPageContent): PriceQuote['condition'] {
@@ -56,6 +75,7 @@ export async function verifyProductPage(
   const checkedAt = new Date().toISOString();
   return listings
     .filter((listing) => queryMatchesListing(options.query, listing, options.market, 'web', options.model, options.geography))
+    .filter((listing) => !marketplaceVariantPlaceholder(listing, options.query, options.market))
     // A foreign amount cannot be compared numerically to a budget without FX evidence.
     .filter((listing) => options.maxPrice === undefined || (options.geography === 'global' && listing.currency !== MARKETS[options.market].currency) || listing.price <= options.maxPrice)
     .map((listing) => ({ ...listing, verification: { source: 'product-page' as const, checkedAt } }));
