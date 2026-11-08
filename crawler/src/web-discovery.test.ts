@@ -72,7 +72,7 @@ test('web discovery verifies independent shops rather than only predefined platf
     discovered: 2, pagesChecked: 2, pagesVerified: 2 });
 });
 
-test('same-merchant campaign aliases collapse while real variants remain', async () => {
+test('one merchant contributes one preferred quote across campaign aliases and variants', async () => {
   const promotion='https://shop.example.sg/promotions/sale/tefal-ey905b40';
   const canonical='https://shop.example.sg/home-appliances/tefal-ey905b40';
   const white='https://shop.example.sg/home-appliances/tefal-ey905b40-white';
@@ -87,10 +87,9 @@ test('same-merchant campaign aliases collapse while real variants remain', async
       offers:{'@type':'Offer',price:url===promotion?229:199,priceCurrency:'SGD',availability:'InStock',url}});},
   }});
   assert.deepEqual(new Set(visited),new Set([promotion,canonical,white]));
-  assert.equal(rows.listings.length,2);
+  assert.equal(rows.listings.length,1);
   assert.deepEqual(rows.listings.map(row=>[row.title,row.price,row.url]),[
     ['Tefal EY905B40 Air Fryer - Grey',199,canonical],
-    ['Tefal EY905B40 Air Fryer - White',199,white],
   ]);
 });
 
@@ -148,7 +147,7 @@ test('web discovery has a hard page budget, four workers and host diversity', as
   } } });
   assert.equal(peak, 4); assert.equal(visited.length, 12); assert.equal(result.summary.requests, 13);
   assert.equal(new Set(visited.slice(0, 4).map((url) => new URL(url).hostname)).size, 4);
-  assert.equal(result.listings.length, 12);
+  assert.equal(result.listings.length, 4, 'comparison output keeps one quote per merchant');
 });
 
 test('an idle worker verifies discovered links without waiting for unrelated slow pages', async () => {
