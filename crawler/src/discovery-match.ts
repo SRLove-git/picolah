@@ -12,16 +12,35 @@ export function normalizeSearchQuery(value: string): string {
   return query;
 }
 
-/** Discovery is intentionally limited to one explicit model, not arbitrary search prose. */
+/** Accept one model or a useful model prefix, never arbitrary search prose. */
 export function normalizeDiscoveryModel(value: string): string {
   const model = value.normalize('NFKC').trim().toUpperCase();
   const compact = model.replace(/[-\s]/g, '');
   if (model.length > 40 || compact.length < 5 || !new RegExp(`^(?:${MODEL_CODE})$`).test(model)) {
-    throw new Error('model 必须是单一完整型号，例如 WF-1000XM6');
+    throw new Error('model 必须是单一型号或至少 5 字符的型号片段，例如 FV1413');
   }
   if (/^WHCH\d{3,}[A-Z]*$/.test(compact)) return compact.replace(/^WHCH/, 'WH-CH');
   if (/^(?:WF|WH)\d{3,}XM\d+[A-Z]*$/.test(compact)) return compact.replace(/^(WF|WH)/, '$1-');
   return model;
+}
+
+/** A user may supply the stable beginning of a regional SKU (FV1413), while
+ * a merchant prints its sellable suffix (FV1413H2BA). Expand only a contiguous
+ * suffix from the same title token, then run the ordinary exact-model conflict
+ * checks against that complete candidate. */
+function expandedTitleModel(model: string, rawTitle: string): string | undefined {
+  const compact = model.replace(/[-\s]/g, '').toUpperCase();
+  // A stable appliance/TV prefix normally ends in a multi-digit sequence.
+  // Do not weaken established complete Sony or camera generations such as
+  // WF-1000XM6, WH-CH720N, ZV-E10 and EOS R50.
+  if (compact.length < 5 || !/[A-Z]/.test(compact) || !/\d{2,}$/.test(compact)
+    || /^(?:WF|WH)\d|^WHCH|^ZVE\d|^EOSR\d/.test(compact)) return;
+  const prefix = compact.split('').map((character) => character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s-]*');
+  const title = rawTitle.normalize('NFKC').toUpperCase();
+  const match = new RegExp(`(^|[^A-Z0-9])(${prefix})((?:[A-Z0-9]{1,12}|[/.-][A-Z0-9]{1,8})(?:[/.-][A-Z0-9]{1,8})?)(?=$|[^A-Z0-9])`).exec(title);
+  if (!match) return;
+  const expanded = (match[2] + match[3]).replace(/[\s-]/g, '');
+  return expanded.length > compact.length ? expanded : undefined;
 }
 
 // Permit spaces inside established Sony families without treating an arbitrary
@@ -91,6 +110,8 @@ function exactTitle(model: string, rawTitle: string): boolean {
     title=title.replace(new RegExp(`(${family})/\\d{2}(?=$|[^A-Z0-9])`,'g'),'$1');
   }
   const fullModel = compact.split('').join('[\\s-]*');
+  const expanded = expandedTitleModel(model, rawTitle);
+  if (expanded) return exactTitle(expanded, rawTitle);
   const match = new RegExp(`(^|[^A-Z0-9])(${fullModel})(?=$|[^A-Z0-9])`).exec(title);
   if (!match) return false;
 

@@ -62,6 +62,15 @@ test('a full model is normalized without dropping brand, color or budget constra
   assert.doesNotMatch(variant?.query || '', /WH-1000XM5/);
 });
 
+test('keeps abbreviated appliance model prefixes as fuzzy live-search hints', () => {
+  assert.deepEqual(liveSearchQuery('查一下 LG Washer Dryer FV1413 价格'), {
+    query: 'LG Washer Dryer FV1413', model: 'FV-1413',
+  });
+  assert.deepEqual(liveSearchQuery('Bosch WGG254 洗衣机'), {
+    query: 'Bosch WGG254 洗衣机', model: 'WGG-254',
+  });
+});
+
 test('platform-only and retry followups retain the prior product and translated constraints', () => {
   const context = previous('iPhone 15 256GB 黑色');
   context.search!.maxPrice = 6000;

@@ -15,11 +15,14 @@ export function separateBrandAndModel(text: string): string {
   );
 }
 
-/** A complete alphanumeric model, not a platform, budget, or vague family name. */
+/** An alphanumeric model or useful model prefix, not a platform, budget, or vague family name. */
 export function explicitModelCodes(text: string): string[] {
   const normalized = separateBrandAndModel(text);
   const patterns = [
     /(?<![a-z0-9])((?:wh[\s-]*ch[\s-]*\d{3,}(?:[\s-]*n)?|[a-z]{2,}[\s-]*\d{3,}(?:[\s-]*[a-z]{1,4}[\s-]*\d{1,2}(?!\d))*[a-z]{0,3})(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
+    // TV and regional appliance prefixes can alternate digit and letter blocks
+    // before the merchant-specific suffix (QA55QN85 -> QA55QN85DBKXXS).
+    /(?<![a-z0-9])([a-z]{2,}[\s-]*\d{2,}[a-z]{1,4}\d{2,}[a-z0-9]*)(?![a-z0-9])/gi,
     // Compact appliance SKUs can start with a series digit (5KSM175PS).
     /(?<![a-z0-9])(\d[a-z]{2,}\d{2,}[a-z0-9]*(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
     // Regional appliance SKUs often contain a letter block before their first digit (ES-LS9A-K, EH-NA9N).
@@ -49,13 +52,26 @@ export function compactModel(model: string): string {
   return model.normalize('NFKC').replace(/[\s-]+/g, '').toUpperCase();
 }
 
+/** Match a canonical model against a crawler identity. Stable appliance/TV
+ * prefixes may omit a merchant-specific regional suffix; established Sony and
+ * camera generations keep their exact boundaries. */
+export function modelMatchesIdentity(model: string, identity: string): boolean {
+  const compact = compactModel(model);
+  const normalized = identity.normalize('NFKC').toUpperCase();
+  const prefix = compact.split('').map((character) => character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s-]*');
+  const variantSuffix = /^\d[A-Z]{2,}\d{2,}[A-Z]{1,3}$/.test(compact) ? '[A-Z]{0,4}' : '';
+  if (new RegExp(`(^|[^A-Z0-9])${prefix}${variantSuffix}(?=$|[^A-Z0-9])`).test(normalized)) return true;
+  if (!/\d{2,}$/.test(compact) || /^(?:WF|WH)\d|^WHCH|^ZVE\d|^EOSR\d/.test(compact)) return false;
+  return new RegExp(`(^|[^A-Z0-9])${prefix}(?:[A-Z0-9]{1,12}|[/.-][A-Z0-9]{1,8})(?:[/.-][A-Z0-9]{1,8})?(?=$|[^A-Z0-9])`).test(normalized);
+}
+
 /** Validate a model-only tool argument and normalize its supported separators. */
 export function canonicalModelCode(value: string): string | null {
   const models = explicitModelCodes(value);
   return models.length === 1 && compactModel(value) === compactModel(models[0]) ? models[0] : null;
 }
 
-/** Discovery is deliberately narrower than catalog lookup: only one full model. */
+/** Discovery accepts one model/prefix while rejecting prose and multiple models. */
 export function extractSearchModel(text: string): string | null {
   if (/https?:\/\/|配件|保护套|耳机套|耳塞套|充电盒|替换|\b(?:case|cover|skin|tips|pads|replacement|charger|cable)\b/i.test(text)) return null;
   const models = explicitModelCodes(text);

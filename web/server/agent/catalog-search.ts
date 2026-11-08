@@ -72,11 +72,11 @@ export function catalogQuotes(comparison: Comparison): Offer[] {
 }
 
 export function catalogAnswer(comparison: Comparison, target: Target | null): string {
-  if (!target) return '想买什么？告诉我商品名称或完整型号，我来帮你比价。';
+  if (!target) return '想买什么？告诉我商品名称或型号片段，我来帮你比价。';
   if (comparison.unsupportedPlatforms?.length) return '当前市场暂不支持所选平台，请切换市场或平台后查询。';
   const quotes = catalogQuotes(comparison);
   if (!comparison.product && !comparison.alternatives.length) {
-    return `暂未找到与「${target.query}」匹配的商品。可以补充品牌、完整型号或容量再试。`;
+    return `暂未找到与「${target.query}」匹配的商品。可以补充品牌、更多型号片段或容量再试。`;
   }
   if (!quotes.length) {
     const names = comparison.product?.name || comparison.alternatives.map((item) => item.product.name).join('、');

@@ -2,7 +2,7 @@ import { tool } from '@langchain/core/tools';
 import { sourceCountry } from '../../../shared/source-country.ts';
 import { z } from 'zod';
 import { COUNTRY_CODES, MARKETS } from '../../../shared/types.ts';
-import { canonicalModelCode, compactModel } from '../../../shared/model-search.ts';
+import { canonicalModelCode, modelMatchesIdentity } from '../../../shared/model-search.ts';
 import { config } from '../../config.ts';
 import { isSupportedCurrency } from '../../../shared/format.ts';
 import type { SearchCacheMetadata } from '../../../shared/types.ts';
@@ -21,7 +21,7 @@ export const liveSearchInputSchema = z.object({
   model: z.string().trim().min(6).max(40).transform((value, ctx) => {
     const model = canonicalModelCode(value);
     if (model) return model;
-    ctx.addIssue({ code: 'custom', message: '请提供完整且唯一的商品型号' });
+    ctx.addIssue({ code: 'custom', message: '请提供单一商品型号或型号片段' });
     return z.NEVER;
   }).optional(),
 }).refine((input) => input.scope === 'web' ? input.platforms.length === 0 : input.platforms.length > 0,
@@ -161,11 +161,8 @@ export function createModelSearchTool(options: {
         throw new Error('商品搜索返回了无效报价');
       }
       if (input.model) {
-        const compact = compactModel(input.model);
-        const variantSuffix = /^\d[A-Z]{2,}\d{2,}[A-Z]{1,3}$/.test(compact) ? '[A-Z]{0,4}' : '';
-        const full = compact.split('').join('[\\s-]*') + variantSuffix;
         const identity = [listing.title, listing.productDetails?.model].filter(Boolean).join(' ');
-        if (!new RegExp(`(^|[^A-Z0-9])${full}(?=$|[^A-Z0-9])`, 'i').test(identity.normalize('NFKC'))) {
+        if (!modelMatchesIdentity(input.model, identity)) {
           throw new Error('商品搜索返回的型号不一致');
         }
       }
@@ -174,7 +171,7 @@ export function createModelSearchTool(options: {
   };
   return tool((input: LiveSearchInput) => cache.run(input, () => fetchValidated(input)), {
     name: 'search_marketplace_products',
-    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页匹配型号并读取页面价格。返回匹配商品的页面价格即成功，不要求商品有货。按服务配置的默认范围搜索。全网查价使用 scope=web、platforms=[]，覆盖当地商城、品牌官网和零售商。Shopee、Lazada 等举例不限定来源；指定平台查价时使用 scope=platforms 和相应平台列表。返回商品页中的价格与详情，允许库存未知、缺货、起价和区间价，通过 priceQuote 明确标注，不把未知当作有货，不把起价当精确价。可复用最多五分钟的报价缓存并保留核验时间，不使用搜索摘要价。按国家搜索时只接受目标国家的站点或专区，通用跨境页面仅切换显示币种不算本地报价；新闻、指南和混合型号分类页不是商品报价。',
+    description: '商品比价使用两阶段查询：先搜索当前市场的商品链接，再抓取详情页匹配型号并读取页面价格。型号可以是单一完整型号或有辨识度的前缀片段，例如 FV1413 可匹配 FV1413H2BA；不要因缺少地区或颜色后缀而拒绝搜索。返回匹配商品的页面价格即成功，不要求商品有货。按服务配置的默认范围搜索。全网查价使用 scope=web、platforms=[]，覆盖当地商城、品牌官网和零售商。Shopee、Lazada 等举例不限定来源；指定平台查价时使用 scope=platforms 和相应平台列表。返回商品页中的价格与详情，允许库存未知、缺货、起价和区间价，通过 priceQuote 明确标注，不把未知当作有货，不把起价当精确价。可复用最多五分钟的报价缓存并保留核验时间，不使用搜索摘要价。按国家搜索时只接受目标国家的站点或专区，通用跨境页面仅切换显示币种不算本地报价；新闻、指南、配件和混合型号分类页不是商品报价。',
     schema: liveSearchInputSchema,
   });
 }

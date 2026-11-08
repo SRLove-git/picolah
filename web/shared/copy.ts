@@ -46,7 +46,7 @@ export function writeFallbackAnswer(comparison: Comparison): string {
     const sites = search.scope === 'web' ? '' : search.platforms.map(id => PLATFORMS[id]?.name || id).join('、');
     const item = `${marketName}${sites ? '（' + sites + '）' : ''}的 **${search.query || search.model}**`;
     const wantsHelp = asksForQuoteNextStep(comparison.query);
-    const nextStep = wantsHelp ? ` 可以在品牌官网选择对应国家或地区，按完整型号查看商品详情页。` : '';
+    const nextStep = wantsHelp ? ` 可以在品牌官网选择对应国家或地区，或补充更多型号片段后重试。` : '';
     if (search.errorCode === 'PRODUCT_PAGE_UNVERIFIED') {
       return `已找到${item}的候选链接，但商品详情页未能确认对应规格的页面价，这不代表没有在售商品。${nextStep}`;
     }

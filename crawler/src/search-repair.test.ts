@@ -12,6 +12,22 @@ test('five-character complete models enter search while malformed hints stay inv
  for(const model of ['E685','EC68','Sony EC685','EC685 EC785'])assert.throws(()=>normalizeDiscoveryModel(model));
  assert.equal(queryMatchesTitle('EC-685','DeLonghi EC685 Coffee Machine','EC-685'),true);
 });
+test('model prefixes can match a longer regional SKU without accepting another prefix or accessories',()=>{
+ const matches:Array<[string,string,string?]>=[
+  ['LG Washer Dryer FV1413','LG Front Load Washer Dryer 13kg/8kg FV1413H2BA','FV1413'],
+  ['Bosch Washer WGG254','Bosch 10kg Front Load Washing Machine WGG254A0SG','WGG254'],
+  ['Panasonic Fridge NR BX471','Panasonic Refrigerator NR-BX471XSSG','NR-BX471'],
+  ['Samsung TV QA55QN85','Samsung Neo QLED TV QA55QN85DBKXXS','QA55QN85'],
+  ['Philips Air Purifier AC3033','Philips Air Purifier AC3033/30','AC3033'],
+ ];
+ for(const [query,title,model] of matches) assert.equal(queryMatchesTitle(query,title,model),true,title);
+ assert.equal(normalizeDiscoveryModel('FV141'),'FV141');
+ assert.equal(queryMatchesTitle('LG FV141','LG Washer Dryer FV1413H2BA','FV141'),true);
+ assert.equal(queryMatchesTitle('LG FV142','LG Washer Dryer FV1413H2BA','FV142'),false);
+ assert.equal(queryMatchesTitle('LG FV1413','Replacement Filter for LG FV1413H2BA','FV1413'),false);
+ assert.equal(queryMatchesTitle('LG FV1413','LG FV1413H2BA / FV1413H3BA Washer Dryer','FV1413'),false);
+ assert.equal(queryMatchesTitle('Bosch WGG254A0SG','Bosch WGG254A1SG Washer','WGG254A0SG'),false);
+});
 test('regional appliance SKUs match abbreviated merchant titles without accepting accessories',()=>{
  const cases:Array<[string,string,string]>=[
   ['KitchenAid Artisan 5KSM175PS Stand Mixer','KitchenAid 5KSM175PS Mixer','5KSM175PS'],

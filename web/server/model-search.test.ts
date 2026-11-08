@@ -55,6 +55,13 @@ test('extracts the exact requested full model, without shopping phrases', () => 
   assert.deepEqual(explicitModelCodes('WF1000XM6 WF-1000XM6'), ['WF-1000XM6']);
 });
 
+test('extracts a single useful model prefix for fuzzy product discovery', () => {
+  assert.equal(extractSearchModel('LG Washer Dryer FV1413'), 'FV-1413');
+  assert.equal(extractSearchModel('Bosch WGG254 洗衣机'), 'WGG-254');
+  assert.equal(extractSearchModel('Samsung QA55QN85 电视'), 'QA-55QN85');
+  assert.equal(extractSearchModel('FV1413 WGG254'), null);
+});
+
 test('CH-family models retain their terminal letter without absorbing the brand or shopping constraints', () => {
   for (const model of ['whch720n', 'WH CH720N', 'WH-CH720N', 'WH CH 720 N', 'ＷＨＣＨ７２０Ｎ']) {
     assert.equal(extractSearchModel(model), 'WH-CH720N');
@@ -124,6 +131,23 @@ test('web validation accepts an appliance base SKU colour suffix but not another
     query: 'KitchenAid Artisan 5KSM175PS Stand Mixer', model: '5KSM175PS' };
   assert.equal((await search.invoke(input)).listings.length, 1);
   title = 'KitchenAid 5KSM185PSB 4.8 L Tilt-Head Stand Mixer';
+  await assert.rejects(search.invoke(input), /型号不一致/);
+});
+
+test('web validation accepts a longer regional SKU for a fuzzy model prefix', async () => {
+  let title = 'LG Front Load Washer Dryer FV1413H2BA';
+  const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test-token',
+    fetchImpl: (async (_url, init) => {
+      const input = JSON.parse(String(init?.body));
+      return Response.json({ ...input, ok: true, summary: { requests: 1, matched: 1, skipped: 0, failed: 0 },
+        listings: [{ platform: 'web', sourceHost: 'courts.com.sg', market: 'SG', itemId: 'fv1413h2ba', title,
+          url: 'https://courts.com.sg/products/fv1413h2ba', price: 1699, currency: 'SGD', inStock: true,
+          verification: { source: 'product-page', checkedAt: new Date().toISOString() } }] });
+    }) as typeof fetch });
+  const input = { scope: 'web' as const, market: 'SG' as const, platforms: [],
+    query: 'LG Washer Dryer FV1413', model: 'FV-1413' };
+  assert.equal((await search.invoke(input)).listings.length, 1);
+  title = 'LG Front Load Washer Dryer FV1423H2BA';
   await assert.rejects(search.invoke(input), /型号不一致/);
 });
 
