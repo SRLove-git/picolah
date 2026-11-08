@@ -69,9 +69,11 @@ test('Shopee reads only a primary price and preserves the voucher condition', as
 });
 
 test('Shopee device searches reject unselected variant token prices without blocking inexpensive goods', async () => {
-  assert.deepEqual(await verifyProductPage(shopee, { ...opts, query:'Canon EOS R50', model:'Canon EOS R50' },
+  const canon='https://shopee.sg/Canon-EOS-R50-Mirrorless-Camera-i.40894980.22252976607';
+  const galaxy='https://shopee.sg/Samsung-Galaxy-S24-Ultra-i.88314577.27471298706';
+  assert.deepEqual(await verifyProductPage(canon, { ...opts, query:'Canon EOS R50', model:'Canon EOS R50' },
     async()=>({ ...markdown('$2'), title:'Canon EOS R50', content:'# Canon EOS R50\n$2' })), []);
-  assert.deepEqual(await verifyProductPage(shopee, { ...opts, query:'Samsung Galaxy S24 Ultra', model:'Samsung Galaxy S24 Ultra' },
+  assert.deepEqual(await verifyProductPage(galaxy, { ...opts, query:'Samsung Galaxy S24 Ultra', model:'Samsung Galaxy S24 Ultra' },
     async()=>({ ...markdown('$2'), title:'Samsung Galaxy S24 Ultra', content:'# Samsung Galaxy S24 Ultra\n$2' })), []);
   const [unrestricted] = await verifyProductPage(shopee, opts, async()=>markdown('$2'));
   assert.equal(unrestricted.price,2);

@@ -26,7 +26,7 @@ const shopeeDevicePriceFloor: Record<MarketCode, number> = {
 function marketplaceVariantPlaceholder(listing: WebListing, query: string, market: MarketCode): boolean {
   const host = new URL(listing.url).hostname;
   if (!/(^|\.)shopee\./i.test(host) || listing.currency !== MARKETS[market].currency) return false;
-  const device = /\b(?:iphone|ipad|galaxy\s+(?:s|z|tab)|pixel\s+\d|xps|macbook|laptop|notebook|camera|eos\b|bravia|television|tv\b|washer|dryer|refrigerator|fridge|air\s*conditioner|coffee\s+machine|espresso\s+machine|projector|monitor|playstation|xbox|console|drone)\b/i;
+  const device = /\b(?:iphone|ipad|galaxy\s+(?:s\d+|z\s*(?:flip|fold)\s*\d+|tab\s+s?\d+)|pixel\s+\d|xps|macbook|laptop|notebook|camera|eos\b|bravia|television|tv\b|washer|dryer|refrigerator|fridge|air\s*conditioner|coffee\s+machine|espresso\s+machine|projector|monitor|playstation|xbox|console|drone)\b/i;
   return device.test(query) && listing.price < shopeeDevicePriceFloor[market];
 }
 
