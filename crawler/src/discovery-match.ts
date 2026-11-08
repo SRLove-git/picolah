@@ -271,7 +271,7 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
     && /\bbody(?:\s+only)?\b/i.test(query);
   if (cameraBody && !/\b(?:lens|kit)\b/i.test(query)) {
     const kit = /\blens\s+kit\b|\bkit\b(?!\s*box\b.{0,30}\bbody\s+only\b)|\bwith\b.{0,45}\b(?:lens|\d{2,3}\s*(?:-|–)\s*\d{2,3}\s*mm)\b/i;
-    if (kit.test(title) && !/\bbody\s+only\b/i.test(title)) return false;
+    if (kit.test(title)) return false;
   }
   // Standalone soundbar searches must not quote a soundbar + subwoofer set.
   // The set remains searchable when the user explicitly asks for the Sub.

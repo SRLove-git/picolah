@@ -80,7 +80,9 @@ test('camera body aliases retain exact bodies without accepting lens kits',()=>{
  assert.equal(queryMatchesTitle('Nikon Z6 III body','Nikon Z6 III Kit (NIKKOR Z 24-105mm Lens)'),false);
  assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony α7 V Body'),true);
  assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Full Frame Mirrorless Camera Body Only'),true);
+ assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Body (Kit Box, Body Only)'),true);
  assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Kit with 28-70mm Lens'),false);
+ assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Body only / Lens Kit with 28-70mm Lens'),false);
 });
 test('standalone audio and console requests reject mixed bundle prices',()=>{
  assert.equal(queryMatchesTitle('Sonos Arc Ultra','Sonos Arc Ultra Premium Soundbar'),true);
