@@ -37,11 +37,11 @@ function classifiedCondition(content: ProductPageContent): PriceQuote['condition
     ? content.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '').replace(/<[^>]*>/g, '\n')
     : content.content;
   const primary = body.split(/(?:浏览卖家页面|瀏覽賣家頁面|Meet the seller|Similar listings|你可能还喜欢)/i)[0];
-  const value = primary.match(/(?:^|\n)\s*(?:商品[状狀][况況]|物品[状狀][况況]|condition)\s*[:：]?\s*([^\n]{1,60})/i)?.[1]?.trim();
+  const value = primary.match(/(?:^|\n)\s*(?:商品[状狀][况況]|物品[状狀][况況]|product\s+condition|condition)\s*[:：]?\s*([^\n]{1,60})/i)?.[1]?.trim();
   if (!value) return;
   if (/^(?:refurbished|翻新|整新)$/i.test(value)) return 'refurbished';
-  if (/^(?:like new|(?:lightly|well|heavily) used|[状狀][况況](?:良好|尚可|欠佳)|近乎全新|[几幾]乎全新|二手|[轻輕]微使用)$/i.test(value)) return 'used';
-  if (/^(?:brand new|new|全新)$/i.test(value)) return 'new';
+  if (/^(?:pre[- ]?owned(?:\s*\(used\))?|good as new|like new|(?:lightly|well|heavily) used|[状狀][况況](?:良好|尚可|欠佳)|近乎全新|[几幾]乎全新|二手|[轻輕]微使用)$/i.test(value)) return 'used';
+  if (/^(?:sealed|brand new|new|全新)$/i.test(value)) return 'new';
 }
 
 /** The only price source is the fetched page. A search result is just a URL. */
@@ -63,13 +63,15 @@ export async function verifyProductPage(
     // Missing/ambiguous structured data or a challenge is not proof of no stock.
     throw new BrightDataError('商品详情页未提供可核验的单品报价', { code: 'PRODUCT_PAGE_UNVERIFIED' });
   }
-  if (/(?:^|\.)carousell\.(?:sg|com\.my|com\.hk|ph|com\.ph)$/i.test(new URL(url).hostname)) {
+  const classifiedHost = new URL(url).hostname;
+  if (/(?:^|\.)(?:carousell\.(?:sg|com\.my|com\.hk|ph|com\.ph)|cashconverters\.sg)$/i.test(classifiedHost)) {
     const condition = classifiedCondition(html);
     for (const listing of listings) {
       const quote = listing.priceQuote ??= { kind:'exact', availability:listing.inStock?'in-stock':'unknown',
         source:typeof html==='string'?'html':'fetch' };
       if (condition && (!quote.condition || quote.condition === 'new')) quote.condition = condition;
-      if (!quote.condition) quote.note = ['卖家刊登，成色未核实',quote.note].filter(Boolean).join('；').slice(0,200);
+      if (!quote.condition) quote.note = [classifiedHost.endsWith('cashconverters.sg') ? '转售商品，成色未核实' : '卖家刊登，成色未核实',
+        quote.note].filter(Boolean).join('；').slice(0,200);
     }
   }
   const checkedAt = new Date().toISOString();

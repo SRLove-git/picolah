@@ -146,6 +146,61 @@ function interleavePages(groups: WebSearchCandidate[][], visits: ReadonlyMap<str
   return result;
 }
 
+function normalizedQuoteTitle(title: string): string {
+  return title.normalize('NFKC').toLowerCase().replace(/\s*(?:[-–—]\s*)?delivery only\s*$/i, '').replace(/\s+/g, ' ').trim();
+}
+
+function merchantProductAlias(url: string): string {
+  const page = new URL(url);
+  return (page.pathname.split('/').filter(Boolean).at(-1) ?? '').normalize('NFKC').toLowerCase().replace(/\.html?$/i, '');
+}
+
+function listingPreference(listing: WebListing): number {
+  const quote = listing.priceQuote;
+  const page = new URL(listing.url);
+  return 32 * Number(listing.inStock)
+    + 16 * Number(quote?.availability && quote.availability !== 'unknown')
+    + 8 * Number(!!quote?.condition)
+    + 4 * Number(!!quote?.variant)
+    + 2 * Number(quote?.source === 'html')
+    + 2 * Number(!/(?:^|\/)(?:promotions?|collections?)(?:\/|$)/i.test(page.pathname))
+    + Number(!page.search);
+}
+
+function preferAlias(next: WebListing, current: WebListing): boolean {
+  if (next.inStock !== current.inStock) return next.inStock;
+  const nextKnown = !!next.priceQuote?.availability && next.priceQuote.availability !== 'unknown';
+  const currentKnown = !!current.priceQuote?.availability && current.priceQuote.availability !== 'unknown';
+  if (nextKnown !== currentKnown) return nextKnown;
+  if (next.price !== current.price) return next.price < current.price;
+  return listingPreference(next) > listingPreference(current);
+}
+
+/** Search engines often return campaign, collection and tracking aliases for
+ * one merchant product. Keep one current merchant quote while retaining real
+ * variants whose title, condition or selected variant differs. */
+function deduplicateListings(rows: WebListing[]): WebListing[] {
+  const output: WebListing[] = [];
+  const itemSeen = new Set<string>();
+  const identityIndex = new Map<string, number>();
+  for (const listing of rows) {
+    const itemKey = `${listing.sourceHost}:${listing.itemId}`;
+    if (itemSeen.has(itemKey)) continue;
+    itemSeen.add(itemKey);
+    const identity = [listing.sourceHost, listing.currency, merchantProductAlias(listing.url), normalizedQuoteTitle(listing.title),
+      listing.priceQuote?.variant?.normalize('NFKC').toLowerCase().trim() ?? '', listing.priceQuote?.condition ?? ''].join('\u0000');
+    const previous = identityIndex.get(identity);
+    if (previous === undefined) {
+      identityIndex.set(identity, output.length);
+      output.push(listing);
+      continue;
+    }
+    const current = output[previous];
+    if (preferAlias(listing, current)) output[previous] = listing;
+  }
+  return output;
+}
+
 const productionSources = { links: new MerchantLinks(process.env.MERCHANT_LINKS_DB || ':memory:'), merchantSearch: searchMerchant,
   marketplaceSearch: searchMarketplace, mallSearch: searchMallPlatforms };
 
@@ -354,13 +409,7 @@ export async function discoverWebProducts(options: DiscoveryOptions, dependencie
     for (const page of fallback) discovered.add(page.url);
     await checkBatch(fallback.slice(0, 10), fallback.slice(10), Math.min(MAX_PAGES + 12, summary.pagesChecked! + 12));
   }
-  const seen = new Set<string>();
-  const listings = collected.flat().filter((listing) => {
-    const key = `${listing.sourceHost}:${listing.itemId}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 40);
+  const listings = deduplicateListings(collected.flat()).slice(0, 40);
   summary.discovered = discovered.size;
   summary.matched = listings.length;
   dependencies.links?.remember(options, listings.flatMap(row => row.verification?.source === 'product-page'

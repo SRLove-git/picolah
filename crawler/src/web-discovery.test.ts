@@ -72,6 +72,28 @@ test('web discovery verifies independent shops rather than only predefined platf
     discovered: 2, pagesChecked: 2, pagesVerified: 2 });
 });
 
+test('same-merchant campaign aliases collapse while real variants remain', async () => {
+  const promotion='https://shop.example.sg/promotions/sale/tefal-ey905b40';
+  const canonical='https://shop.example.sg/home-appliances/tefal-ey905b40';
+  const white='https://shop.example.sg/home-appliances/tefal-ey905b40-white';
+  const visited:string[]=[];
+  const rows=await discoverProduct({scope:'web',market:'SG',platforms:[],query:'Tefal EY905B40',model:'EY905B40'},{web:{
+    search:async()=>[
+      {url:promotion,title:'Tefal EY905B40 Air Fryer - Grey'},
+      {url:canonical,title:'Tefal EY905B40 Air Fryer - Grey'},
+      {url:white,title:'Tefal EY905B40 Air Fryer - White'},
+    ],
+    fetchPage:async url=>{visited.push(url);return page(url,{name:url===white?'Tefal EY905B40 Air Fryer - White':'Tefal EY905B40 Air Fryer - Grey',
+      offers:{'@type':'Offer',price:url===promotion?229:199,priceCurrency:'SGD',availability:'InStock',url}});},
+  }});
+  assert.deepEqual(new Set(visited),new Set([promotion,canonical,white]));
+  assert.equal(rows.listings.length,2);
+  assert.deepEqual(rows.listings.map(row=>[row.title,row.price,row.url]),[
+    ['Tefal EY905B40 Air Fryer - Grey',199,canonical],
+    ['Tefal EY905B40 Air Fryer - White',199,white],
+  ]);
+});
+
 test('local discovery gives marketplace and mall pages the first worker slots', async () => {
   const urls = {
     shopee:'https://shopee.sg/product/101/202',

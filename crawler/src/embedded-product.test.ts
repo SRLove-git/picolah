@@ -46,3 +46,15 @@ test('classified prices retain the seller condition and ignore unrelated listing
     if (!expected) assert.match(rows[0].priceQuote?.note ?? '', /成色未核实/);
   }
 });
+
+test('Cash Converters quotes disclose resale condition instead of looking new', async () => {
+  const url='https://cashconverters.sg/products/electrolux-emg25d22bm', title='Electrolux EMG25D22BM Microwave';
+  for (const [field, expected] of [['Product Condition: Lightly Used','used'],['Product Condition: Sealed','new']] as const) {
+    const content=`# ${title}\n\n$109\n\n${field}\n`;
+    const rows=await verifyProductPage(url,{query:'Electrolux EMG25D22BM',market:'SG'},async()=>({format:'markdown',title,content}));
+    assert.equal(rows.length,1);assert.equal(rows[0].priceQuote?.condition,expected);
+  }
+  const rows=await verifyProductPage(url,{query:'Electrolux EMG25D22BM',market:'SG'},
+    async()=>({format:'markdown',title,content:`# ${title}\n\n$109`}));
+  assert.match(rows[0].priceQuote?.note ?? '',/转售商品，成色未核实/);
+});
