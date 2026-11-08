@@ -302,6 +302,12 @@ test('web searches accept multiple website sources, show hostnames and do not im
   assert.match(writeFallbackAnswer(comparison), /新加坡相关站点/);
 });
 
+test('web validation retains known Singapore retailers on generic domains', async () => {
+  const rows = ['gaincity.com','ishopchangi.com','tangs.com','7daysdeals.com'].map((host,index) =>
+    ({ ...webListing(host), itemId:`local-${index}` }));
+  assert.equal((await webTool(rows).invoke(webInput)).listings.length, rows.length);
+});
+
 test('web tool refuses unsafe, mismatched and excluded website sources', async () => {
   const invalid = [
     { sourceHost: 'other.sg' }, { sourceHost: undefined },

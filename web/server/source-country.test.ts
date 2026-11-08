@@ -23,3 +23,11 @@ test('dedicated country marketplace on a generic domain stays scoped to its coun
   assert.equal(sourceCountry(url, 'SG'), 'foreign');
   assert.equal(sourceCountry(new URL('https://fake-tokopedia.com/shop/item'), 'ID'), 'unspecified');
 });
+
+test('established Singapore retailers on generic domains remain country scoped', () => {
+  for (const host of ['gaincity.com','www.ishopchangi.com','tangs.com','7daysdeals.com']) {
+    assert.equal(sourceCountry(new URL(`https://${host}/products/item`),'SG'),'local',host);
+    assert.equal(sourceCountry(new URL(`https://${host}/products/item`),'MY'),'foreign',host);
+  }
+  assert.equal(sourceCountry(new URL('https://ishopchangi.com/en-my/products/item'),'SG'),'foreign');
+});

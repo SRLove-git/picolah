@@ -9,6 +9,12 @@ const countries: Record<string, string> = {
 };
 const codes = new Set('SG MY TH ID PH VN US GB UK AU NZ CA IN CN HK TW JP KR DE FR IT ES NL BE CH AT IE AE SA ZA BR MX PL SE NO DK FI PT TR RU'.split(' '));
 const genericTwoLetterTlds = new Set(['io', 'ai', 'co', 'me', 'tv', 'fm', 'cc', 'ws', 'to', 'sh']);
+// Established Singapore retailers on generic TLDs have no country signal in
+// their URL. Keep this short and explicit; currency or search wording alone is
+// never enough to classify an arbitrary .com storefront as local.
+const retailerCountries: Record<string, string> = {
+  'gaincity.com': 'SG', 'ishopchangi.com': 'SG', 'tangs.com': 'SG', '7daysdeals.com': 'SG',
+};
 function region(value: string): string | undefined {
   const token = value.toLowerCase().replace(/\s+/g, '-');
   const code = countries[token] ?? (codes.has(token.toUpperCase()) ? token.toUpperCase() : undefined);
@@ -21,6 +27,10 @@ function region(value: string): string | undefined {
 export function sourceCountry(url: URL, market: string): 'local' | 'foreign' | 'unspecified' {
   const signals: string[] = [];
   const labels = url.hostname.toLowerCase().replace(/^www\./, '').split('.');
+  const host = labels.join('.');
+  for (const [domain, country] of Object.entries(retailerCountries)) {
+    if (host === domain || host.endsWith('.' + domain)) signals.push(country);
+  }
   // Tokopedia operates a dedicated Indonesian marketplace under a generic TLD.
   if (labels.slice(-2).join('.') === 'tokopedia.com') signals.push('ID');
   const tld = labels.at(-1)!;
