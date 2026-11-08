@@ -94,6 +94,26 @@ test('same-merchant campaign aliases collapse while real variants remain', async
   ]);
 });
 
+test('same merchant model aliases and tracking-condition conflicts remain one quote', async () => {
+  const old='https://shop.example.sg/products/brandt-bdf54dba-dishwasher';
+  const current='https://shop.example.sg/products/brandt-60cm-dishwasher-bdf54dba';
+  const ad='https://classified.example.sg/p/electrolux-emfb25bg-123/';
+  const tracked=ad+'?ref=search';
+  const result=await discoverProduct({scope:'web',market:'SG',platforms:[],query:'Brandt BDF54DBA',model:'BDF54DBA'},{web:{
+    search:async()=>[{url:old,title:'Brandt BDF54DBA Dishwasher'},{url:current,title:'Brandt BDF54DBA Dishwasher'}],
+    fetchPage:async url=>page(url,{name:'Brandt BDF54DBA Dishwasher',offers:{'@type':'Offer',price:url===old?1150:1035,
+      priceCurrency:'SGD',availability:'InStock',url}}),
+  }});
+  assert.deepEqual(result.listings.map(row=>[row.price,row.url]),[[1035,current]]);
+
+  const aliases=await discoverProduct({scope:'web',market:'SG',platforms:[],query:'Electrolux EMFB25BG',model:'EMFB25BG'},{web:{
+    search:async()=>[{url:ad,title:'Electrolux EMFB25BG Microwave'},{url:tracked,title:'Electrolux EMFB25BG Microwave'}],
+    fetchPage:async url=>page(url,{name:'Electrolux EMFB25BG Microwave',offers:{'@type':'Offer',price:453,
+      priceCurrency:'SGD',availability:url===ad?'InStock':'OutOfStock',itemCondition:url===tracked?'NewCondition':undefined,url}}),
+  }});
+  assert.equal(aliases.listings.length,1);assert.equal(aliases.listings[0].url,ad);assert.equal(aliases.listings[0].inStock,true);
+});
+
 test('local discovery gives marketplace and mall pages the first worker slots', async () => {
   const urls = {
     shopee:'https://shopee.sg/product/101/202',

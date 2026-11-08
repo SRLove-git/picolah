@@ -150,9 +150,15 @@ function normalizedQuoteTitle(title: string): string {
   return title.normalize('NFKC').toLowerCase().replace(/\s*(?:[-–—]\s*)?delivery only\s*$/i, '').replace(/\s+/g, ' ').trim();
 }
 
-function merchantProductAlias(url: string): string {
+function merchantProductAlias(url: string, title: string): string {
   const page = new URL(url);
-  return (page.pathname.split('/').filter(Boolean).at(-1) ?? '').normalize('NFKC').toLowerCase().replace(/\.html?$/i, '');
+  const slug = (page.pathname.split('/').filter(Boolean).at(-1) ?? '').normalize('NFKC').toLowerCase().replace(/\.html?$/i, '');
+  const compactSlug = slug.replace(/[^a-z0-9]/g, '');
+  const model = (title.normalize('NFKC').toLowerCase().match(/[a-z0-9][a-z0-9./_-]{4,}/g) ?? [])
+    .map((token) => token.replace(/[^a-z0-9]/g, ''))
+    .filter((token) => token.length >= 5 && /\d/.test(token) && compactSlug.includes(token))
+    .sort((a, b) => b.length - a.length)[0];
+  return model ? `model:${model}` : `slug:${slug}`;
 }
 
 function listingPreference(listing: WebListing): number {
@@ -187,8 +193,8 @@ function deduplicateListings(rows: WebListing[]): WebListing[] {
     const itemKey = `${listing.sourceHost}:${listing.itemId}`;
     if (itemSeen.has(itemKey)) continue;
     itemSeen.add(itemKey);
-    const identity = [listing.sourceHost, listing.currency, merchantProductAlias(listing.url), normalizedQuoteTitle(listing.title),
-      listing.priceQuote?.variant?.normalize('NFKC').toLowerCase().trim() ?? '', listing.priceQuote?.condition ?? ''].join('\u0000');
+    const identity = [listing.sourceHost, listing.currency, merchantProductAlias(listing.url, listing.title), normalizedQuoteTitle(listing.title),
+      listing.priceQuote?.variant?.normalize('NFKC').toLowerCase().trim() ?? ''].join('\u0000');
     const previous = identityIndex.get(identity);
     if (previous === undefined) {
       identityIndex.set(identity, output.length);
