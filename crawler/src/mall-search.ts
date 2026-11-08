@@ -9,6 +9,10 @@ const LOCAL_MALLS: Partial<Record<MarketCode, readonly string[]>> = {
     'amazon.sg', 'courts.com.sg', 'harveynorman.com.sg', 'gaincity.com',
     'bestdenki.com.sg', 'online.challenger.sg', 'metro.com.sg', 'tangs.com',
     'fairprice.com.sg', 'robinsons.com.sg', 'ishopchangi.com',
+    'alanphoto.com.sg', 'cathayphoto.com.sg', 'tkfoto.com.sg', 'mscolor.com.sg',
+    'audiohouse.com.sg', 'megadiscountstore.com.sg', 'electronicscrazy.sg',
+    'luckystore.com.sg', 'webtronic.sg', 'mobilerelation.com.sg', 'switch.sg',
+    'connect-it.com.sg', '7daysdeals.com', 'sg.tcacoustic.asia',
   ],
 };
 

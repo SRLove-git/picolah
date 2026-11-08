@@ -67,13 +67,27 @@ test('RAM and generation typography do not discard the requested laptop storage'
  assert.equal(queryMatchesTitle('Lenovo ThinkPad X1 Carbon Gen 12','Lenovo ThinkPad X1 Carbon 13th Generation'),false);
 });
 test('known aggregators and affiliate review pages cannot become HTML or Fetch quotes',()=>{
- for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8','https://www.whistleout.com.sg/MobilePhones/Phones/Samsung/Galaxy-S24-Ultra']){
+ for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8','https://www.whistleout.com.sg/MobilePhones/Phones/Samsung/Galaxy-S24-Ultra','https://robbreport.com.sg/jbl-tour-pro-3-future-ready/']){
   assert.deepEqual(parseWebProduct(html(),source,'SG','global'),[]);
   assert.deepEqual(inspectMarkdownProduct(md('# Roborock S8\nUSD 149\nIn stock\nAdd to cart'),source,'SG','global').listings,[]);
  }
  const guide='Our verdict: Best overall. We earn a commission. Typical price USD 749.';
  assert.deepEqual(parseWebProduct(html()+guide,url,'SG','global'),[]);
  assert.deepEqual(inspectMarkdownProduct(md('# Roborock S8\nUSD 749\nIn stock\n'+guide),url,'SG','global').listings,[]);
+});
+test('camera body aliases retain exact bodies without accepting lens kits',()=>{
+ assert.equal(queryMatchesTitle('Nikon Z6 III body','Nikon Z6 III Mirrorless Camera | Alan Photo'),true);
+ assert.equal(queryMatchesTitle('Nikon Z6 III body','Nikon Z6 III Kit (NIKKOR Z 24-105mm Lens)'),false);
+ assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony α7 V Body'),true);
+ assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Full Frame Mirrorless Camera Body Only'),true);
+ assert.equal(queryMatchesTitle('Sony Alpha 7 V body','Sony A7 V Kit with 28-70mm Lens'),false);
+});
+test('standalone audio and console requests reject mixed bundle prices',()=>{
+ assert.equal(queryMatchesTitle('Sonos Arc Ultra','Sonos Arc Ultra Premium Soundbar'),true);
+ assert.equal(queryMatchesTitle('Sonos Arc Ultra','9.1.4 Sonos Premium Set with Arc Ultra and Sub 4'),false);
+ assert.equal(queryMatchesTitle('Sonos Arc Ultra with Sub 4','9.1.4 Sonos Premium Set with Arc Ultra and Sub 4'),true);
+ assert.equal(queryMatchesTitle('Sony PlayStation 5 Pro','Sony PlayStation 5 Pro Console'),true);
+ assert.equal(queryMatchesTitle('Sony PlayStation 5 Pro','Sony PS5 Pro / PS5 Slim / NBA 2K26'),false);
 });
 test('cashback, instalment and related-item numbers are not a product range',()=>{
  const page=md('# Roborock S8\nUSD 749\nEarn USD 7.49 cashback\nPay in 12 instalments of USD 62.42\nAdd to cart\n## How this compares on paper\nOther vacuum USD 149–199');

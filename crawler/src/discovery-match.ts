@@ -204,8 +204,13 @@ const NAMED_NOT_MODEL = /^(?:LEGO|PRIME|PRO|PLUS|MINI|ULTRA|MAX|BALANCE|CREAM|ES
 function queryTokens(value: string): string[] {
   // Equivalent category spellings used by international retailers. Model and
   // capacity tokens remain mandatory; these aliases never choose a product.
-  const watch=/\bapple\b/i.test(value) ? value.replace(/\bwatch\s*(?:series\s*)?(\d{1,2})\b/gi,'watch series $1') : value;
-  return watch.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+  let normalized=/\bapple\b/i.test(value) ? value.replace(/\bwatch\s*(?:series\s*)?(\d{1,2})\b/gi,'watch series $1') : value;
+  // Sony uses Alpha, the Greek alpha glyph and A interchangeably in retail
+  // titles (Alpha 7 V / α7 V / A7 V). Restrict the alias to Sony identities so
+  // an ordinary article never becomes a product token.
+  if (/\bsony\b|索尼/i.test(normalized)) normalized=normalized.replace(/(?:\balpha\b|α)\s*(?=\d)/gi,'a');
+  normalized=normalized.replace(/\bplaystation\s*5\b/gi,'ps5');
+  return normalized.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
     .replace(/\bganprime\b/g, ' gan prime ')
     .replace(/\b([a-z]{1,5}\d+)\s*\+(?!\s*\d)/g, '$1 plus ')
     .replace(/\bthinkpad\b/g, ' lenovo thinkpad ').replace(/\b(?:macbook|ipad|iphone|airpods)\b/g, word=>' apple '+word+' ')
@@ -259,6 +264,28 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
   if (manual.test(title) && !manual.test(query)) return false;
   if (/\b(?:OLED\s*(?:&|and|\/)\s*(?:Switch\s+)?Lite|Lite\s*(?:&|and|\/)\s*(?:Switch\s+)?OLED)\s+(?:consoles?|models?|systems?)\b/i.test(title)) return false;
   if (!sameCameraGeneration(query, title)) return false;
+  // A camera body page often omits the words "body only" while still naming
+  // the exact camera. Accept that omission only when the merchant title does
+  // not advertise a lens kit or a kit variant.
+  const cameraBody = /\b(?:sony|nikon|canon|fujifilm|panasonic|lumix|leica|olympus)\b/i.test(query)
+    && /\bbody(?:\s+only)?\b/i.test(query);
+  if (cameraBody && !/\b(?:lens|kit)\b/i.test(query)) {
+    const kit = /\blens\s+kit\b|\bkit\b(?!\s*box\b.{0,30}\bbody\s+only\b)|\bwith\b.{0,45}\b(?:lens|\d{2,3}\s*(?:-|–)\s*\d{2,3}\s*mm)\b/i;
+    if (kit.test(title) && !/\bbody\s+only\b/i.test(title)) return false;
+  }
+  // Standalone soundbar searches must not quote a soundbar + subwoofer set.
+  // The set remains searchable when the user explicitly asks for the Sub.
+  if (/\bsonos\b.{0,30}\b(?:arc|beam)\b|\b(?:soundbar|sound bar)\b/i.test(query)
+    && !/\bsub(?:woofer)?\b/i.test(query)
+    && /\b(?:with|and|\+)\b.{0,30}\bsub(?:woofer)?\s*\d*\b/i.test(title)) return false;
+  // Marketplace titles that combine PS5 Pro and PS5 Slim are variant menus,
+  // not a verified price for the requested console edition.
+  if (/\b(?:playstation\s*5|ps5)\b/i.test(query)) {
+    const editions = (text:string) => [...new Set([...text.matchAll(/\b(?:playstation\s*5|ps5)\s*(pro|slim)\b/gi)]
+      .map(match=>match[1].toLowerCase()))];
+    const requested=editions(query), offered=editions(title);
+    if (requested.length && (offered.length!==1 || offered[0]!==requested[0])) return false;
+  }
   // A television page may mention its included remote, but a replacement
   // remote page is never a quote for the television itself.
   const replacementRemote = /\b(?:replace(?:ment)?|compatible)\b.{0,30}\bremote controls?\b|\bremote controls?\b.{0,90}\b(?:works?\s+(?:on|with)|compatible\s+with|replacement\s+for)\b/i;
@@ -321,7 +348,8 @@ export function queryMatchesTitle(query: string, title: string, model?: string):
   // The exact guard has already matched the model character-by-character.
   // Token comparison must not re-reject WHCH720N versus WH-CH720N because one
   // spelling has "whch" and the other has separate "wh" / "ch" tokens.
-  const requested = queryTokens(compactModel ? removeModelAliases(query.normalize('NFKC').toUpperCase(), compactModel) : query);
+  const requested = queryTokens(compactModel ? removeModelAliases(query.normalize('NFKC').toUpperCase(), compactModel) : query)
+    .filter(token => !(cameraBody && token === 'body'));
   const titleTokens = new Set(queryTokens(compactModel ? removeModelAliases(title.normalize('NFKC').toUpperCase(), compactModel) : title));
   // A complete manufacturer SKU is the product identity. Merchant titles
   // routinely omit marketing/category words around appliance SKUs, so do not
