@@ -40,6 +40,34 @@ function attribute(tag: string, name: string): string | undefined {
 
 const sourceHost = (url: URL): string => url.hostname.replace(/^www\./, '');
 
+/** Some retailer templates emit literal line breaks inside JSON-LD string
+ * values. Escape only forbidden control characters while preserving every
+ * other byte and JSON delimiter; malformed structure still fails JSON.parse. */
+function parseJsonLd(value: string): unknown {
+  let normalized = '';
+  let quoted = false;
+  let escaped = false;
+  for (const character of value) {
+    if (quoted && character.charCodeAt(0) <= 0x1f) {
+      normalized += `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`;
+      escaped = false;
+      continue;
+    }
+    normalized += character;
+    if (quoted && escaped) { escaped = false; continue; }
+    if (character === '\\' && quoted) { escaped = true; continue; }
+    if (character === '"') quoted = !quoted;
+  }
+  try { return JSON.parse(normalized); }
+  catch (error) {
+    const trimmed = normalized.trim();
+    // FairPrice currently duplicates the Product object's final closing brace
+    // after otherwise complete JSON-LD. Repair only that exact trailing shape.
+    if (trimmed.startsWith('{') && /}\s*}$/.test(trimmed)) return JSON.parse(trimmed.slice(0, -1));
+    throw error;
+  }
+}
+
 function boundUrl(raw: unknown, page: URL): URL | null {
   if (raw === undefined) return page;
   const value = text(raw, 4000);
@@ -48,7 +76,10 @@ function boundUrl(raw: unknown, page: URL): URL | null {
     if (/^[a-z][a-z\d+.-]*:/i.test(value) && !safeWebUrl(value)) return null;
     if (value.startsWith('//') && !safeWebUrl(`https:${value}`)) return null;
     const url = safeWebUrl(new URL(value, page).href);
-    if (!url || sourceHost(url) !== sourceHost(page) || url.pathname !== page.pathname) return null;
+    const sameHost = url && sourceHost(url) === sourceHost(page);
+    const fairPriceAlias = url && new Set([sourceHost(url), sourceHost(page)]).size === 2
+      && [sourceHost(url), sourceHost(page)].every((host) => ['fairprice.com.sg', 'omni.fairprice.com.sg'].includes(host));
+    if (!url || (!sameHost && !fairPriceAlias) || url.pathname !== page.pathname) return null;
     // A URL may omit tracking parameters, but must not select a different variant.
     for (const key of new Set([...page.searchParams.keys(), ...url.searchParams.keys()])) {
       if (selectedOption.test(key)
@@ -93,7 +124,7 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
   const factor = 10 ** (digits ?? 2);
   if (price === undefined || price <= 0 || price >= 1e12 || !currency || digits === null || (geography !== 'global' && currency !== MARKETS[market].currency)
     || Math.abs(price * factor - Math.round(price * factor)) > 1e-6) return null;
-  let availability = typeof offer.availability === 'string' ? offer.availability.replace(/^https?:\/\/schema\.org\//i, '') : '';
+  let availability = typeof offer.availability === 'string' ? offer.availability.trim().replace(/^https?:\/\/schema\.org\//i, '') : '';
   if (state) {
     const statePrice = record(state.price);
     const stock = record(state.stock);
@@ -105,7 +136,11 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
       || (stock.stockLevel !== undefined && !(Number(stock.stockLevel) > 0))) return null;
     if (!availability) availability = 'InStock';
   }
-  if (!['InStock', 'LimitedAvailability'].includes(availability)) return null;
+  const quoteAvailability = ['InStock', 'LimitedAvailability'].includes(availability) ? 'in-stock'
+    : ['OutOfStock', 'SoldOut', 'Discontinued'].includes(availability) ? 'out-of-stock'
+    : ['PreOrder', 'PreSale', 'BackOrder'].includes(availability) ? 'preorder'
+    : undefined;
+  if (!quoteAvailability) return null;
   // Some merchant JSON-LD encodes an absent offer URL as {}. Accept it only
   // when the product's explicit identity binds the single offer to this page.
   const emptyOfferUrl = record(offer.url) && Object.keys(offer.url as RecordValue).length === 0;
@@ -129,7 +164,8 @@ function parseProduct(product: RecordValue, page: URL, canonical: URL, market: M
   const productDetails = { ...(brand ? { brand } : {}), ...(model ? { model } : {}), ...(description ? { description } : {}) };
   return {
     platform: 'web', sourceHost: host, market, itemId: createHash('sha256').update(url).digest('hex'),
-    title, url, price, currency, inStock: true, seller,
+    title, url, price, currency, inStock: quoteAvailability === 'in-stock', seller,
+    ...(quoteAvailability === 'in-stock' ? {} : { priceQuote: { kind: 'exact' as const, availability: quoteAvailability, source: 'html' as const } }),
     ...(imageUrl ? { imageUrl } : {}),
     ...(rating !== undefined ? { rating } : {}), ...(reviews !== undefined ? { reviews } : {}),
     ...(Object.keys(productDetails).length ? { productDetails } : {}),
@@ -158,7 +194,7 @@ function parseStrictWebProduct(html: string, pageUrl: string, market: MarketCode
   for (const script of cleanHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     if (attribute(script[1], 'type')?.toLowerCase() !== 'application/ld+json') continue;
     let parsed: unknown;
-    try { parsed = JSON.parse(script[2]); } catch { continue; }
+    try { parsed = parseJsonLd(script[2]); } catch { continue; }
     const queue: unknown[] = [parsed];
     for (let index = 0; index < queue.length; index += 1) {
       visited += 1;

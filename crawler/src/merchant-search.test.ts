@@ -10,6 +10,13 @@ test('direct merchant fetch accepts one COURTS PDP and rejects broader pages', (
   assert.equal(selectedDirectMerchantPage(product, 'MY'), undefined);
 });
 
+test('direct merchant fetch accepts one FairPrice PDP and removes tracking parameters', () => {
+  const product = 'https://www.fairprice.com.sg/product/toshiba-10l-electric-rice-cookerrc-10nmfeis';
+  assert.equal(selectedDirectMerchantPage(product + '?gad_source=1', 'SG')?.href, product);
+  assert.equal(selectedDirectMerchantPage('https://www.fairprice.com.sg/category/rice-cookers', 'SG'), undefined);
+  assert.equal(selectedDirectMerchantPage('https://omni.fairprice.com.sg/product/toshiba-10nmfeis', 'SG'), undefined);
+});
+
 test('direct merchant fetch keeps requiring a selected Owala variant', () => {
   const selected = 'https://owalalife.sg/products/freesip?variant=123456';
   assert.equal(selectedDirectMerchantPage(selected, 'SG')?.href, selected);

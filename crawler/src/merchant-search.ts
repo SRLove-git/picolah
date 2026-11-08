@@ -18,7 +18,9 @@ export function selectedDirectMerchantPage(value: string, market: MarketCode): U
   const page = safeWebUrl(value);
   if (market !== 'SG' || !page) return;
   if (page.origin === 'https://www.courts.com.sg'
-    && /-IP\d{5,}\.html?$/i.test(page.pathname)) return page;
+    && /-IP\d{5,}\.html?$/i.test(page.pathname)) return new URL(page.origin + page.pathname);
+  if (page.origin === 'https://www.fairprice.com.sg'
+    && /^\/product\/[a-z0-9][a-z0-9-]+\/?$/i.test(page.pathname)) return new URL(page.origin + page.pathname);
   if (page.origin === 'https://owalalife.sg' && /^\/products\/[^/]+\/?$/.test(page.pathname)
     && page.searchParams.getAll('variant').length === 1
     && /^\d+$/.test(page.searchParams.get('variant') || '')) return page;

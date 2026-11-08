@@ -75,7 +75,10 @@ function bound(value: any, page: URL, variant = false): boolean {
   if (typeof value !== 'string') return false;
   try {
     const u = safeWebUrl(/^https?:/i.test(value) ? value : new URL(value, page).href);
-    if (!u || u.origin !== page.origin || (!variant && u.pathname !== page.pathname)) return false;
+    const hosts = u ? [u.hostname.replace(/^www\./, ''), page.hostname.replace(/^www\./, '')] : [];
+    const fairPriceAlias = new Set(hosts).size === 2
+      && hosts.every((host) => ['fairprice.com.sg', 'omni.fairprice.com.sg'].includes(host));
+    if (!u || (u.origin !== page.origin && !fairPriceAlias) || (!variant && u.pathname !== page.pathname)) return false;
     if (!variant) for (const key of new Set([...page.searchParams.keys(), ...u.searchParams.keys()])) {
       if (/^(?:variant|sku|id|size|color|colour|capacity)$/i.test(key) && page.searchParams.get(key)!==u.searchParams.get(key)) return false;
     }

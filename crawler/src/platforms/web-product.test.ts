@@ -25,6 +25,15 @@ test('graph, mainEntity and repeated identical product declarations still repres
   assert.equal(parseWebProduct(html(product).replace('type="application/ld+json"', "TYPE = 'application/ld+json'"), url, 'SG').length, 1);
 });
 
+test('bounded retailer JSON-LD repairs retain a source-bound product', () => {
+  const escaped = html({ ...product, description: 'Line one\nLine two' });
+  const malformedRetailerJson = escaped.replace('Line one\\nLine two', 'Line one\nLine two')
+    .replace('</script>', '}</script>');
+  const [row] = parseWebProduct(malformedRetailerJson, url, 'SG');
+  assert.equal(row.price, 399);
+  assert.equal(row.productDetails?.description, 'Line one Line two');
+});
+
 test('URLs may be absent or relative, but explicit product/offer/canonical URLs must bind this page', () => {
   assert.equal(parseWebProduct(html({ ...product, url: undefined, offers: { ...offer, url: undefined } }), url, 'SG')[0].url, url);
   assert.equal(parseWebProduct(html({ ...product, url: '/products/wf-1000xm6' }), url, 'SG').length, 1);
@@ -37,6 +46,26 @@ test('URLs may be absent or relative, but explicit product/offer/canonical URLs 
     assert.deepEqual(parseWebProduct(html({ ...product, offers: { ...offer, url: bad } }), url, 'SG'), [], String(bad));
     assert.deepEqual(parseWebProduct(html(product, `<link rel="canonical" href="${bad}">`), url, 'SG'), [], String(bad));
   }
+});
+
+test('FairPrice structured offers bind its www and omni hosts only for the same product path', () => {
+  const page = 'https://www.fairprice.com.sg/product/toshiba-10l-electric-rice-cookerrc-10nmfeis';
+  const omni = 'https://omni.fairprice.com.sg/product/toshiba-10l-electric-rice-cookerrc-10nmfeis';
+  const fairPriceProduct = {
+    '@type': 'Product', name: 'Toshiba 1.0L Electric Rice Cooker RC-10NMFEIS', url: omni,
+    offers: { '@type': 'Offer', url: omni, price: '199', priceCurrency: 'SGD',
+      priceValidUntil: '2099-12-31', availability: ' https://schema.org/OutOfStock' },
+  };
+  const [row] = parseWebProduct(html(fairPriceProduct, '<link rel="canonical" href="/product/toshiba-10l-electric-rice-cookerrc-10nmfeis">'), page, 'SG');
+  assert.equal(row.title, fairPriceProduct.name);
+  assert.equal(row.price, 199);
+  assert.equal(row.url, page);
+  assert.equal(row.inStock, false);
+  assert.deepEqual(row.priceQuote, { kind: 'exact', availability: 'out-of-stock', source: 'html' });
+  for (const other of [
+    'https://evil.example/product/toshiba-10l-electric-rice-cookerrc-10nmfeis',
+    'https://omni.fairprice.com.sg/product/a-different-product',
+  ]) assert.deepEqual(parseWebProduct(html({ ...fairPriceProduct, url: other }), page, 'SG'), []);
 });
 
 test('canonical and variant identity conflicts are rejected rather than choosing a cheap variant', () => {
