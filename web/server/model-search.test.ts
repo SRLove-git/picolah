@@ -18,6 +18,12 @@ test('compact brand names are not mistaken for part of the requested model', () 
   assert.deepEqual(explicitModelCodes('Sony500 budget400 SGD300'), []);
 });
 
+test('tool schema accepts a five-character mixed appliance model', () => {
+  const input = { market: 'SG' as const, scope: 'web' as const, platforms: [], query: 'TCL TV 75C8K', model: '75C8K' };
+  assert.equal(liveSearchInputSchema.parse(input).model, '75C8K');
+  assert.equal(liveSearchInputSchema.safeParse({ ...input, model: '12345' }).success, false);
+});
+
 test('global search preserves foreign currencies and never feeds them into local cheapest-price ranking', async () => {
   const input = { scope: 'web' as const, geography: 'global' as const, market: 'SG' as const, platforms: [], query: 'Sony WF-1000XM6', model: 'WF-1000XM6' };
   const search = createModelSearchTool({ url: 'http://crawler.internal', token: 'test', fetchImpl: async () => Response.json({

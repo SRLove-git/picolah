@@ -18,7 +18,7 @@ export const liveSearchInputSchema = z.object({
   excludedPlatforms: z.array(z.enum(excludedPlatforms)).max(6).optional(),
   query: z.string().trim().min(2).max(120),
   maxPrice: z.number().finite().positive().max(1e12).optional(),
-  model: z.string().trim().min(6).max(40).transform((value, ctx) => {
+  model: z.string().trim().min(5).max(40).transform((value, ctx) => {
     const model = canonicalModelCode(value);
     if (model) return model;
     ctx.addIssue({ code: 'custom', message: '请提供单一商品型号或型号片段' });

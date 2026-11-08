@@ -11,6 +11,19 @@ export function singaporeShops(query: string, market: MarketCode): Shop[] {
   return /\bowala\b|\bfreesip\b/i.test(query) ? ['owalalife.sg'] : ['online.challenger.sg'];
 }
 
+/** Retailers whose public PDP HTML can be fetched directly without executing
+ * merchant code. Keep this allowlist path-bound: category and search pages do
+ * not establish one product price. */
+export function selectedDirectMerchantPage(value: string, market: MarketCode): URL | undefined {
+  const page = safeWebUrl(value);
+  if (market !== 'SG' || !page) return;
+  if (page.origin === 'https://www.courts.com.sg'
+    && /-IP\d{5,}\.html?$/i.test(page.pathname)) return page;
+  if (page.origin === 'https://owalalife.sg' && /^\/products\/[^/]+\/?$/.test(page.pathname)
+    && page.searchParams.getAll('variant').length === 1
+    && /^\d+$/.test(page.searchParams.get('variant') || '')) return page;
+}
+
 async function fetchMerchantBody(url: URL, accept: string, maxBytes: number, fetchImpl: typeof fetch): Promise<string | undefined> {
   await assertPublicWebUrl(url.href);
   const response = await fetchImpl(url, {redirect:'error',signal:AbortSignal.timeout(6500),headers:{accept}});
@@ -27,13 +40,12 @@ async function fetchMerchantBody(url: URL, accept: string, maxBytes: number, fet
   return Buffer.concat(chunks).toString('utf8');
 }
 
-/** Fetch the selected public retail page only from this fixed origin; never follow a redirect. */
+/** Fetch a selected public retail page only from fixed origins; never follow a redirect. */
 export async function selectedMerchantHtml(value: string, market: MarketCode): Promise<string | undefined> {
-  const page = safeWebUrl(value);
   const lazada = marketplacePage(value, market, 'lazada');
   if (lazada) return fetchMerchantBody(lazada,'text/html',4_000_000,fetch);
-  if (market!=='SG' || page?.origin!=='https://owalalife.sg' || !/^\/products\/[^/]+\/?$/.test(page.pathname)
-    || page.searchParams.getAll('variant').length!==1 || !/^\d+$/.test(page.searchParams.get('variant') || '')) return;
+  const page = selectedDirectMerchantPage(value, market);
+  if (!page) return;
   return fetchMerchantBody(page,'text/html',6_000_000,fetch);
 }
 
