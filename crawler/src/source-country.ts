@@ -14,6 +14,7 @@ const genericTwoLetterTlds = new Set(['io', 'ai', 'co', 'me', 'tv', 'fm', 'cc', 
 // never enough to classify an arbitrary .com storefront as local.
 const retailerCountries: Record<string, string> = {
   'gaincity.com': 'SG', 'ishopchangi.com': 'SG', 'tangs.com': 'SG', '7daysdeals.com': 'SG',
+  'lioncityco.com': 'SG',
 };
 function region(value: string): string | undefined {
   const token = value.toLowerCase().replace(/\s+/g, '-');

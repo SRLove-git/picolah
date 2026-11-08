@@ -13,6 +13,9 @@ const LOCAL_MALLS: Partial<Record<MarketCode, readonly string[]>> = {
     'audiohouse.com.sg', 'megadiscountstore.com.sg', 'electronicscrazy.sg',
     'luckystore.com.sg', 'webtronic.sg', 'mobilerelation.com.sg', 'switch.sg',
     'connect-it.com.sg', '7daysdeals.com', 'sg.tcacoustic.asia',
+    'appliances.sg', 'electromart.sg', 'everjointelectrical.com.sg',
+    'rinaelectrical.com.sg', 'appliancehub.com.sg', 'horme.com.sg',
+    'lioncityco.com',
   ],
 };
 

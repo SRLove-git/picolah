@@ -10,7 +10,8 @@ test('Singapore marketplaces and established retail malls outrank classifieds', 
   for (const url of ['https://www.courts.com.sg/product', 'https://www.harveynorman.com.sg/product',
     'https://www.gaincity.com/product', 'https://online.challenger.sg/products/item',
     'https://www.cathayphoto.com.sg/cameras/item', 'https://alanphoto.com.sg/nikon-z6-iii',
-    'https://7daysdeals.com/products/camera']) {
+    'https://7daysdeals.com/products/camera', 'https://appliances.sg/products/dishwasher',
+    'https://electromart.sg/products/washer', 'https://lioncityco.com/products/fridge']) {
     assert.equal(isMallSite(new URL(url), 'SG'), true, url);
     assert.equal(mallPriority(new URL(url), 'SG'), 2, url);
   }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {normalizeDiscoveryModel,queryMatchesTitle} from './discovery-match.ts';
 import {parseWebProduct} from './platforms/web-product.ts';
 import {inspectMarkdownProduct} from './platforms/markdown-product.ts';
+import {quoteOnlyMarkdownPrice} from './product-page-prices.ts';
 import {discoverWebProducts} from './web-discovery.ts';
 const url='https://merchant.example.com/product/roborock-s8';
 const md=(content:string)=>({format:'markdown' as const,title:'Roborock S8',content});
@@ -67,7 +68,7 @@ test('RAM and generation typography do not discard the requested laptop storage'
  assert.equal(queryMatchesTitle('Lenovo ThinkPad X1 Carbon Gen 12','Lenovo ThinkPad X1 Carbon 13th Generation'),false);
 });
 test('known aggregators and affiliate review pages cannot become HTML or Fetch quotes',()=>{
- for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8','https://www.whistleout.com.sg/MobilePhones/Phones/Samsung/Galaxy-S24-Ultra','https://robbreport.com.sg/jbl-tour-pro-3-future-ready/']){
+ for(const source of ['https://phoneaqua.com/xiaomi-14-price-in-malaysia','https://mobilekishop.net/my/product/xiaomi-14','https://biggo.com.tw/gp/tw_Roborock_S8','https://bigshopper.ie/product/s8','https://www.photoprice.ca/product/s8','https://cosmetify.com/s8','https://smartpicksguides.com/p/s8','https://www.stockinthechannel.co.uk/Product/s8','https://us.stockinthechannel.com/Product/s8','https://www.whistleout.com.sg/MobilePhones/Phones/Samsung/Galaxy-S24-Ultra','https://robbreport.com.sg/jbl-tour-pro-3-future-ready/','https://groceryprices.sg/offers/store:item/','https://nylon.com.sg/dyson-washg1-review/','https://www.zaobao.com.sg/lifestyle/story123','https://www.homeanddecor.com.sg/shopping/appliances']){
   assert.deepEqual(parseWebProduct(html(),source,'SG','global'),[]);
   assert.deepEqual(inspectMarkdownProduct(md('# Roborock S8\nUSD 149\nIn stock\nAdd to cart'),source,'SG','global').listings,[]);
  }
@@ -152,6 +153,10 @@ test('unheaded delivery options cannot replace the primary item price',()=>{
  const page={format:'markdown' as const,title:'Philips HX9911/84 - Internet Explorer 11 is no longer supported',content:'# Philips HX9911/84\nGBP 360.99\nFREE standard delivery\nClick & Collect delivery options\nStandard delivery\nGBP 3.99\nExpected delivery 3-5 days\nFrom GBP 5.99 per week'};
  const row=inspectMarkdownProduct(page,'https://merchant.example.com/hx9911','SG','global').listings[0];
  assert.equal(row.price,360.99);assert.equal(row.priceQuote?.kind,'exact');
+});
+test('a delivery schedule fee cannot become the product price when the item has no price',()=>{
+ const page={format:'markdown' as const,title:'Xiaomi Smart Air Purifier 4 Pro',content:'# Xiaomi Smart Air Purifier 4 Pro\nAvailability:\nin Stock\n## About Product\nModel XM200039\nDelivery Options\n#### Same Day Home Delivery for $20 only\n#### Schedule your delivery\n11 AM to 5 PM for $35.00 only\nPayment Methods\nPayNow'};
+ assert.deepEqual(quoteOnlyMarkdownPrice(page,'https://merchant.example.sg/products/xiaomi-air-purifier','SG','Xiaomi Smart Air Purifier 4 Pro'),[]);
 });
 test('a known domestic yuan storefront is distinct from an ambiguous yen symbol',()=>{
  const page={format:'markdown' as const,title:'Joyoung DJ13E-Q7',content:'# Joyoung DJ13E-Q7\n价格：\n¥2397.00'};

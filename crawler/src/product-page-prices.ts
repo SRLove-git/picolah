@@ -17,7 +17,7 @@ const type = (v: Obj, name: string) => list(v['@type']).some(t => String(t).repl
 const clean = (v: any) => typeof v === 'string' ? v.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 /** Aggregators and editorial guides are discovery sources, not merchant quotes. */
 export function nonRetailPriceSource(host: string): boolean {
-  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|phoneaqua\.com|mobilekishop\.net|smartpicksguides\.com|whistleout\.com\.sg|robbreport\.com\.sg|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
+  return /(^|\.)(?:biggo\.[a-z.]+|bigshopper\.[a-z.]+|photoprice\.ca|buywisely\.com\.au|prices\.appleinsider\.com|staticice\.com\.au|kakaku\.com|applepricehunt\.com|yesky\.com|zol\.com\.cn|manmanbuy\.com|smzdm\.com|cosmetify\.com|goxip\.com|phoneaqua\.com|mobilekishop\.net|smartpicksguides\.com|whistleout\.com\.sg|robbreport\.com\.sg|groceryprices\.sg|nylon\.com\.sg|zaobao\.com\.sg|homeanddecor\.com\.sg|hardwarezone\.com\.sg|asiaone\.com|straitstimes\.com|channelnewsasia\.com|thehoneycombers\.com|stockinthechannel\.(?:com|co\.uk))$/i.test(host);
 }
 export function nonPurchasePageText(text: string): boolean {
   const plain=text.replace(/\s+/g,' ');
@@ -316,8 +316,14 @@ export function quoteOnlyMarkdownPrice(page: MarkdownPage, pageUrl: string, mark
   const nextProduct = primary.findIndex((line, index) => index > 0 && /^#{1,2}\s+/.test(line)
     && queryMatchesTitle(query, plainMarkdown(line.replace(/^#{1,2}\s+/, '')), model) === false
     && MONEY_LINE.test(line));
-  const body = (nextProduct < 0 ? primary : primary.slice(0, nextProduct))
+  let body = (nextProduct < 0 ? primary : primary.slice(0, nextProduct))
     .map(line => /^#{1,6}\s+/.test(line) ? line.replace(/^#{1,6}\s+/, '') : line);
+  // Some stores omit the item price but render delivery-slot fees after the
+  // product description. Those amounts are not a fallback product quote. A
+  // distinct fulfilment/payment section is therefore a hard boundary even
+  // when no earlier item amount was visible.
+  const serviceSection = body.findIndex(line => /^(?:delivery|shipping|payment|refund|warranty|self[ -]?pickup|product care)\b/i.test(line.trim()));
+  if (serviceSection >= 0) body = body.slice(0, serviceSection);
   return broadMarkdownPrices({ ...page, title: identity, content: '# ' + identity + '\n' + body.join('\n') }, pageUrl, market, geography, true);
 }
 

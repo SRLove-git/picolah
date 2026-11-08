@@ -27,7 +27,7 @@ test('country-specific brand stores stay local only to their own market', () => 
 });
 
 test('established Singapore retailers on generic domains remain country scoped', () => {
-  for (const host of ['gaincity.com','www.ishopchangi.com','tangs.com','7daysdeals.com']) {
+  for (const host of ['gaincity.com','www.ishopchangi.com','tangs.com','7daysdeals.com','lioncityco.com']) {
     assert.equal(sourceCountry(new URL(`https://${host}/products/item`),'SG'),'local',host);
     assert.equal(sourceCountry(new URL(`https://${host}/products/item`),'MY'),'foreign',host);
   }
