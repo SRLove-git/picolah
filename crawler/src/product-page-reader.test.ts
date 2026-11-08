@@ -84,3 +84,14 @@ test('an exact same-merchant canonical can be rediscovered even when stale Markd
    [html.replace('WH-CH720N','WH-CH730N'),url],[html,url+'?variant=5'],[html+'<link rel=canonical href="/product/conflict">',url],
    ['<script>'+html+'</script>',url]]) assert.equal(canonicalProductPage(markup,source,'Sony WH-CH720N'),undefined);
 });
+
+test('a live Harvey Norman campaign alias retains its exact page quote when the canonical renderer omits price',async()=>{
+ const source='https://www.harveynorman.com.sg/promotions/tefal-ey905b40.html';
+ const canonical='https://www.harveynorman.com.sg/home-appliances/fryers/tefal-ey905b40.html';
+ const fetched:MarkdownPage={format:'markdown',title:'Tefal EY905B40 Dual Air Fryer',
+  content:'# Tefal EY905B40 Dual Air Fryer\nS$229\nAdd to Cart'};
+ const markup='<h1>Tefal EY905B40 Dual Air Fryer</h1><link href="'+canonical+'" rel="canonical">';
+ assert.deepEqual(await readProductPage(source,'SG',{provider:'deepseek',fallback:true,
+  query:'Tefal air fryer EY905B40',model:'EY-905B40',fetchMarkdown:async()=>fetched,fetchHtml:async()=>markup}),
+  {...fetched,stockUnconfirmed:true});
+});

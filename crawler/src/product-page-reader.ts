@@ -83,8 +83,19 @@ export async function readProductPage(url: string, market: MarketCode, options: 
       return html.value;
     }
     // Let discovery verify the merchant's new URL rather than quote Markdown
-    // cached under an obsolete slug. The old page itself remains unverified.
-    if (options.query && canonicalProductPage(html.value,url,options.query,options.model)) return html.value;
+    // cached under an obsolete slug. Harvey Norman is an exception: campaign
+    // URLs are live aliases of the canonical PDP, while the canonical renderer
+    // currently omits its primary price. A freshly fetched exact-model quote on
+    // that alias remains bound to the current HTML canonical identity.
+    const canonical = options.query && canonicalProductPage(html.value,url,options.query,options.model);
+    if (canonical) {
+      if (/^(?:www\.)?harveynorman\.com\.sg$/i.test(new URL(url).hostname) && md.status === 'fulfilled') {
+        const fetched=quoteOnlyMarkdownPrice(md.value,url,market,options.query!,options.model,options.geography);
+        if(fetched.some(row=>queryMatchesListing(options.query!,row,market,'web',options.model,options.geography)))
+          return {...md.value,stockUnconfirmed:true};
+      }
+      return html.value;
+    }
   }
   if (md.status==='fulfilled') return { ...md.value, stockUnconfirmed: true };
   if (html.status==='fulfilled') return html.value;
