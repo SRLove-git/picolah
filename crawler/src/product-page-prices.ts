@@ -238,7 +238,7 @@ export function broadMarkdownPrices(page: MarkdownPage, pageUrl: string, market:
   const money=/(US\$|S\$|HK\$|AU\$|CA\$|[€£₹¥￥]|\b[A-Z]{3}\b|\$)\s*(\d[\d.,]*(?:[ \u00a0]\d{3})*(?:[.,]\d+)?)|(?<![\p{L}\p{N}_.])(\d[\d.,]*)\s*(EUR|USD|SGD|GBP|€|£|₹)\b/gu;
   const candidates:Array<{price:number;currency:string;line:string}>=[];
   for(const line of body){
-    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|deposit|booking fee|down payment|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|订金|定金|返现|积分|运费|原价/i.test(line))continue;
+    if(/^\+\s*(?:[A-Z]{3}|[€£$¥￥])|^(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|\bclaim\s+(?:[A-Z]{3}|(?:S|US|HK|A|NZ|CA)?\$|[€£₹¥￥])\s*\d[\d.,]*\s*off\b|^was\b|original price|list price|rrp|save\b|you save|shipping|delivery|deposit|booking fee|down payment|instalments?|installments?|payments? of|payment plans?|monthly|\/month|pay in|cash\s*back|rewards?|loyalty|earn\b|interest[- ]free|per (?:month|week)|\/(?:mo|wk)\b|orders? over|spend|credit|月供|分期|订金|定金|返现|积分|运费|原价/i.test(line))continue;
     for(const match of line.matchAll(money)){
       const symbol=match[1]||match[4], currency=symbols[symbol]??(symbol==='$'&&['USD','SGD','AUD','CAD','HKD','NZD'].includes(currencyHint)?currencyHint:/^[¥￥]$/.test(symbol)&&['CNY','JPY'].includes(currencyHint)?currencyHint:symbol.toUpperCase()); const price=numeric((match[2]||match[3]).replace(/(?<=\d)[.,]$/,''));
       if(price!==undefined&&currency&&currencyDigits(currency)!==null) {

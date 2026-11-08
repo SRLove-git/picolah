@@ -16,7 +16,13 @@ export function normalizeSearchQuery(value: string): string {
 export function normalizeDiscoveryModel(value: string): string {
   const model = value.normalize('NFKC').trim().toUpperCase();
   const compact = model.replace(/[-\s]/g, '');
-  if (model.length > 40 || compact.length < 5 || !new RegExp(`^(?:${MODEL_CODE})$`).test(model)) {
+  const generic = !/\s/.test(model)
+    && /^[A-Z0-9](?:[A-Z0-9]|[./-](?=[A-Z0-9]))*$/.test(model)
+    && (compact.match(/[A-Z]/g)?.length ?? 0) >= 2
+    && (compact.match(/\d/g)?.length ?? 0) >= 2
+    && !/^(?:IPHONE|PIXEL|GALAXY|WINDOWS|ANDROID|OLED|QLED|UHD|FHD)\d/.test(compact)
+    && !/^\d+(?:GB|TB|ML|MM|CM|INCH|KG|MG|G|OZ|LB|CL|DL|L)$/.test(compact);
+  if (model.length > 40 || compact.length < 5 || (!new RegExp(`^(?:${MODEL_CODE})$`).test(model) && !generic)) {
     throw new Error('model 必须是单一型号或至少 5 字符的型号片段，例如 FV1413');
   }
   if (/^WHCH\d{3,}[A-Z]*$/.test(compact)) return compact.replace(/^WHCH/, 'WH-CH');
@@ -66,6 +72,11 @@ function nonProductTitle(rawTitle: string): boolean {
   // different requested product.
   if (/\b(?:power|battery)\s*bank\b|移动电源|充电宝/i.test(title)) {
     title=title.replace(/\bportable\s+chargers?\b/gi,' ');
+  }
+  // Top/bottom mount describes the freezer layout of a refrigerator, not a
+  // mounting accessory sold for the requested appliance.
+  if (/\b(?:fridge|refrigerator|freezer)\b/i.test(title)) {
+    title=title.replace(/\b(?:top|bottom)[ -]?mount(?:ed)?\b/gi, ' ');
   }
   // "Stand mixer" names the appliance itself; a standalone stand remains an
   // accessory and continues to match NON_PRODUCT below.
@@ -155,7 +166,14 @@ function exactTitle(model: string, rawTitle: string): boolean {
     // complete separated N so the next word (for example "Noise") cannot
     // become a model suffix on a code without N, such as WH-CH520.
     const suffix = family === 'CH' ? '(?:[-\\s]+N(?=$|[^A-Z0-9])|[A-Z]*)' : '[A-Z]*(?:-[A-Z]+)*';
-    for (const candidate of title.matchAll(new RegExp(`\\b${family}[-\\s]*\\d+${suffix}\\b`, 'g'))) {
+    // Normalize the already verified full model before scanning for a second
+    // generation. Otherwise a legitimate segmented suffix such as
+    // "DSI 46750 SS" is read as the shorter conflicting code DSI46750.
+    const generationTitle = title.replace(
+      new RegExp(`(^|[^A-Z0-9])${fullModel}(?=$|[^A-Z0-9])`, 'g'),
+      (_value, boundary: string) => boundary + compact,
+    );
+    for (const candidate of generationTitle.matchAll(new RegExp(`\\b${family}[-\\s]*\\d+${suffix}\\b`, 'g'))) {
       if (candidate[0].replace(/[-\s]/g, '') !== generation) return false;
     }
   }

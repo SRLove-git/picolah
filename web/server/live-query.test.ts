@@ -71,6 +71,20 @@ test('keeps abbreviated appliance model prefixes as fuzzy live-search hints', ()
   });
 });
 
+test('keeps complete mixed appliance and TV SKUs including regional suffixes', () => {
+  const cases: Array<[string, string, string]> = [
+    ['Electrolux refrigerator EQE4900B-B', 'Electrolux refrigerator EQE4900B-B', 'EQE4900B-B'],
+    ['Midea refrigerator MDRT385MTC50-SG', 'Midea refrigerator MDRT385MTC50-SG', 'MDRT385MTC50-SG'],
+    ['Whirlpool refrigerator WF2B291RSSG', 'Whirlpool refrigerator WF2B291RSSG', 'WF-2B291RSSG'],
+    ['TCL TV 75C8K', 'TCL TV 75C8K', '75C8K'],
+    ['Xiaomi TV L55MC-SSEA', 'Xiaomi TV L55MC-SSEA', 'L55MC-SSEA'],
+    ['TCL TV 65C6KS', 'TCL TV 65C6KS', '65C6KS'],
+    ['Toshiba rice cooker RC-10NMFEIS', 'Toshiba rice cooker RC-10NMFEIS', 'RC-10NMFEIS'],
+    ['Teka dishwasher DSI 46750 SS', 'Teka dishwasher DSI 46750 SS', 'DSI-46750SS'],
+  ];
+  for (const [message, query, model] of cases) assert.deepEqual(liveSearchQuery(message), { query, model }, message);
+});
+
 test('keeps the complete XPS chassis code instead of matching only the screen-size family', () => {
   assert.deepEqual(liveSearchQuery('Dell XPS 13 9340'), {
     query: 'Dell XPS 13 9340', model: 'XPS-13-9340',

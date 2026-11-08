@@ -71,20 +71,27 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
       .map((match) => match[0].replace(/(\d)\s+(gb|tb|ml|mm)/i, '$1$2'));
   };
   if (model) {
-    // Reuse the ordinary request cleaner, keeping all product words instead of
-    // rebuilding identity from a short allow-list of brands and variants.
-    const cleaned = liveSearchQuery(message, previous, 'catalog');
-    if (!cleaned) return null;
     const compact = model.replace(/[-\s]/g, '');
     const escaped = [...compact].map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[-\\s]*');
     // The canonical code is for matching. Keep the manufacturer's punctuation in
     // the merchant query, including regional suffixes supplied in the user turn.
     const token = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9/])`, 'i');
+    const messageSpelling = message.match(token)?.[0];
+    // Protect country-looking suffixes inside the SKU while the ordinary
+    // request cleaner removes standalone market names (for example -SG in
+    // MDRT385MTC50-SG must remain part of the model).
+    const marker = 'PicolahModelToken';
+    const cleaned = liveSearchQuery(messageSpelling ? message.replace(token, marker) : message, previous, 'catalog');
+    if (!cleaned) return null;
     const original = originalQuestion && userModel === model
       ? separateBrandAndModel(originalQuestion).match(token)?.[0] : undefined;
     // Sony's established WH/WF codes use a hyphen even in common unspaced aliases.
-    const spelling = /^(?:WH|WF)-/.test(model) ? model : (original ?? cleaned.query.match(token)?.[0] ?? model).toUpperCase();
-    const normalized = cleaned.query.replace(token, () => spelling)
+    const suppliedSpelling = original ?? messageSpelling;
+    const spelling = /^(?:WH-CH\d|(?:WH|WF)-\d{3,}XM)/.test(model)
+      ? model : suppliedSpelling
+        ? (/[A-Z]/.test(suppliedSpelling) ? suppliedSpelling : suppliedSpelling.toUpperCase())
+        : model.toUpperCase();
+    const normalized = cleaned.query.replace(marker, spelling).replace(token, () => spelling)
       .replace(/\b(?:sony|bose|samsung|apple|huawei|xiaomi|canon|nikon|lenovo|dell|acer|philips|dyson|panasonic|toshiba|tefal|midea|joyoung|honor|braun)\b/gi, name=>name[0].toUpperCase()+name.slice(1).toLowerCase())
       .replace(/\b(?:jbl|asus)\b/gi, name=>name.toUpperCase());
     return { ...cleaned, query: normalized, model, ...budget };

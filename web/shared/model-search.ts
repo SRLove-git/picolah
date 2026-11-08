@@ -2,6 +2,7 @@ const nonModelPrefixes = new Set([
   'SONY', 'BOSE', 'SAMSUNG', 'APPLE', 'HUAWEI', 'XIAOMI', 'CANON', 'NIKON', 'JBL', 'LENOVO', 'DELL', 'ASUS', 'ACER',
   'LEGO', 'PRO', 'PLUS', 'MINI', 'ULTRA', 'MAX', 'BALANCE', 'CREAM', 'ESSENCE', 'SERIES', 'EDITION', 'INSTA',
   'DIAMONDCLEAN', 'SONICARE', 'AIRFRYER', 'PURIFIER',
+  'IPHONE', 'PIXEL', 'GALAXY', 'MAGIC', 'WATCH', 'WINDOWS', 'ANDROID', 'OLED', 'QLED', 'UHD', 'FHD',
   'LAZADA', 'SHOPEE', 'AMAZON', 'TIKTOK', 'TOKOPEDIA', 'TIKI',
   'BUDGET', 'UNDER', 'BELOW', 'MAX', 'MAXIMUM', 'PRICE', 'PRICES', 'REVIEW', 'REVIEWS', 'RATING', 'RATINGS',
   'SGD', 'MYR', 'THB', 'IDR', 'PHP', 'VND', 'USD', 'EUR', 'GBP',
@@ -31,9 +32,17 @@ export function explicitModelCodes(text: string): string[] {
     /(?<![a-z0-9])(\d[a-z]{2,}\d{2,}[a-z0-9]*(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
     // Regional appliance SKUs often contain a letter block before their first digit (ES-LS9A-K, EH-NA9N).
     /(?<![a-z0-9])([a-z]{1,3}(?:-[a-z]{1,4})+-?\d[a-z0-9]*(?:-[a-z0-9]{1,4})*(?:\s*\/\s*[a-z0-9]+)?)(?![a-z0-9])/gi,
+    // Built-in appliances sometimes print a segmented code such as
+    // "DSI 46750 SS". Keep the full suffix instead of accepting DSI-46750.
+    /(?<![a-z0-9])([a-z]{2,4}[\s-]+\d{3,6}[\s-]+[a-z]{1,4})(?![a-z0-9])/gi,
     // Five-character appliance codes and one-letter regional codes are valid
     // while four-character fragments such as EC68 remain too ambiguous.
     /(?<![a-z0-9])([a-z]{3,4}[\s-]?\d{2}[a-z]{0,3}(?:\s*\/\s*[a-z0-9]+)?|[a-z][\s-]?\d{4,}[a-z]{0,3}\s*\/\s*[a-z0-9]+)(?![a-z0-9])/gi,
+    // Exact retailer SKUs are often one contiguous mixed token and do not fit
+    // the older letter-then-number families: WF2B291RSSG, 75C8K and
+    // EQE4900B-B are examples. Later filters still require a substantial mix
+    // of letters and digits and reject capacities and marketing words.
+    /(?<![a-z0-9])([a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+)?)(?![a-z0-9])/gi,
   ];
   const matches = patterns.flatMap((pattern) => [...normalized.matchAll(pattern)].map((match) => match[1]));
   const canonical = (value: string) => {
@@ -49,12 +58,18 @@ export function explicitModelCodes(text: string): string[] {
   const unique = [...new Set(matches.map(canonical)
     // Product names followed by a capacity are not invented model identifiers.
     .filter((model) => !/^[A-Z]+\d+(?:GB|TB|ML|MM|CM|KG|MG|G|OZ|LB|CL|DL|L)$/.test(compactModel(model)))
+    .filter((model) => !/^\d+(?:GB|TB|ML|MM|CM|INCH|KG|MG|G|OZ|LB|CL|DL|L)$/.test(compactModel(model)))
+    .filter((model) => (compactModel(model).match(/[A-Z]/g)?.length ?? 0) >= 1
+      && (compactModel(model).match(/\d/g)?.length ?? 0) >= 1)
+    .filter((model) => !/^[A-Z]\d+$/.test(compactModel(model)))
+    .filter((model) => !/^\d+[A-Z]+$/.test(compactModel(model)))
     .filter((model) => !nonModelPrefixes.has(model.match(/^[A-Z]+/)?.[0] ?? ''))
     )].filter((model) => model.replace(/[^A-Z0-9]/g, '').length >= 5 && model.length <= 40);
   // A more specific multi-part model may also satisfy an older generic regex
   // (XPS-13-9340 also looked like XPS-13). Keep only the longest identity.
   return unique.filter((model) => !unique.some((other) => other !== model
-    && compactModel(other).startsWith(compactModel(model))));
+    && (compactModel(other).startsWith(compactModel(model))
+      || compactModel(other).endsWith(compactModel(model)))));
 }
 
 export function compactModel(model: string): string {

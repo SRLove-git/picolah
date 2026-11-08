@@ -13,6 +13,19 @@ test('five-character complete models enter search while malformed hints stay inv
  for(const model of ['E685','EC68','Sony EC685','EC685 EC785'])assert.throws(()=>normalizeDiscoveryModel(model));
  assert.equal(queryMatchesTitle('EC-685','DeLonghi EC685 Coffee Machine','EC-685'),true);
 });
+test('mixed retailer SKUs remain complete model hints and match exact product titles',()=>{
+ const cases:Array<[string,string,string]>=[
+  ['Electrolux refrigerator EQE4900B-B','ELECTROLUX 4 Door Fridge EQE4900B-B','EQE4900B-B'],
+  ['Midea refrigerator MDRT385MTC50-SG','MIDEA Fridge Top Mount Freezer MDRT385MTC50-SG','MDRT385MTC50-SG'],
+  ['Whirlpool refrigerator WF2B291RSSG','WHIRLPOOL Bottom Mount Fridge WF2B291RSSG','WF-2B291RSSG'],
+  ['TCL TV 75C8K','TCL 75C8K Premium QD Mini LED TV','75C8K'],
+  ['Xiaomi TV L55MC-SSEA','XIAOMI L55MC-SSEA 55 inch TV','L55MC-SSEA'],
+  ['TCL TV 65C6KS','TCL 65C6KS 65 inch TV','65C6KS'],
+  ['Toshiba rice cooker RC-10NMFEIS','TOSHIBA RC-10NMFEIS Rice Cooker','RC-10NMFEIS'],
+  ['Teka dishwasher DSI 46750 SS','Teka DSI 46750 SS Integrated Dishwasher','DSI-46750SS'],
+ ];
+ for(const [query,title,model] of cases){assert.equal(normalizeDiscoveryModel(model),model);assert.equal(queryMatchesTitle(query,title,model),true,title);}
+});
 test('model prefixes can match a longer regional SKU without accepting another prefix or accessories',()=>{
  const matches:Array<[string,string,string?]>=[
   ['LG Washer Dryer FV1413','LG Front Load Washer Dryer 13kg/8kg FV1413H2BA','FV1413'],
@@ -157,6 +170,10 @@ test('unheaded delivery options cannot replace the primary item price',()=>{
 test('a delivery schedule fee cannot become the product price when the item has no price',()=>{
  const page={format:'markdown' as const,title:'Xiaomi Smart Air Purifier 4 Pro',content:'# Xiaomi Smart Air Purifier 4 Pro\nAvailability:\nin Stock\n## About Product\nModel XM200039\nDelivery Options\n#### Same Day Home Delivery for $20 only\n#### Schedule your delivery\n11 AM to 5 PM for $35.00 only\nPayment Methods\nPayNow'};
  assert.deepEqual(quoteOnlyMarkdownPrice(page,'https://merchant.example.sg/products/xiaomi-air-purifier','SG','Xiaomi Smart Air Purifier 4 Pro'),[]);
+});
+test('a claimed voucher saving cannot become the first visible product price',()=>{
+ const page={format:'markdown' as const,title:'LG FB1209S6M 9kg Front Load Washer',content:'🎉 LIMITED TIME\n\n### 3-Step Atome Guide to\nClaim $50 OFF\n\nVoucher MUST be claimed in the Atome App BEFORE payment.\n\n# LG FB1209S6M 9kg Front Load Washer\nSku: FB1209S6M\nIn stock'};
+ assert.deepEqual(quoteOnlyMarkdownPrice(page,'https://lioncityco.com/products/lg-fb1209s6m-9kg-front-load-washer','SG','LG washing machine FB1209S6M'),[]);
 });
 test('a known domestic yuan storefront is distinct from an ambiguous yen symbol',()=>{
  const page={format:'markdown' as const,title:'Joyoung DJ13E-Q7',content:'# Joyoung DJ13E-Q7\n价格：\n¥2397.00'};
