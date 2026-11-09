@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronDown, Search, Sparkles, X } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Search, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { CountryCode } from '../../shared/types';
 import { searchCatalog, type CatalogProduct, type CatalogSort } from '../lib/api';
@@ -22,10 +22,19 @@ const CATEGORY_KEYS: Record<string, string> = {
   '鞋履': 'shoes', '穿戴': 'wearables', '音频': 'audio',
 };
 
+const PAGE_SIZE = 28;
+
+function paginationPages(page: number, totalPages: number): number[] {
+  return [...new Set([1, page - 1, page, page + 1, totalPages])]
+    .filter(value => value >= 1 && value <= totalPages)
+    .sort((a, b) => a - b);
+}
+
 export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   const { t, i18n } = useTranslation();
   const tryonEnabled = useTryOnConfig();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const collectionRef = useRef<HTMLElement>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
@@ -34,6 +43,8 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   const [categories, setCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -44,7 +55,7 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
     let alive = true;
     setLoading(true);
     setFailed(false);
-    searchCatalog(query, category, brand, sort)
+    searchCatalog(query, category, brand, sort, page, PAGE_SIZE)
       .then((data) => {
         if (!alive) return;
         // Older local API processes omit facets; keep their loaded catalog usable.
@@ -54,15 +65,18 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
           const byName = compare(a.name, b.name) || compare(a.id, b.id);
           return sort === 'name-desc' ? -byName : sort === 'brand-asc' ? compare(a.brand, b.brand) || byName : byName;
         });
-        setProducts(visible);
+        const apiSupportsPagination = Number.isInteger(data.pageSize) && Number.isInteger(data.totalPages);
+        const visibleTotal = brand && !data.brands ? visible.length : data.total;
+        setProducts(apiSupportsPagination ? visible : visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
         setBrands(data.brands ?? [...new Set(data.products.map(product => product.brand))].sort(compare));
         setCategories(data.categories);
-        setTotal(brand && !data.brands ? visible.length : data.total);
+        setTotal(visibleTotal);
+        setTotalPages(apiSupportsPagination ? (data.totalPages ?? 0) : Math.ceil(visibleTotal / PAGE_SIZE));
       })
       .catch(() => { if (alive) setFailed(true); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [query, category, brand, sort, retry]);
+  }, [query, category, brand, sort, page, retry]);
 
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {
@@ -80,13 +94,21 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
   function changeCategory(value: string) {
     setCategory(value);
     setBrand('');
+    setPage(1);
   }
 
   function resetFilters() {
     setQuery('');
     setCategory('');
     setBrand('');
+    setPage(1);
     searchInputRef.current?.focus();
+  }
+
+  function changePage(value: number) {
+    if (value === page || value < 1 || value > totalPages) return;
+    setPage(value);
+    collectionRef.current?.scrollIntoView({ block: 'start' });
   }
 
   return (
@@ -106,17 +128,17 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
               <div className="discover-search-input">
                 <Search size={19} aria-hidden="true" />
                 <input ref={searchInputRef} type="search" value={query}
-                  onChange={(event) => setQuery(event.target.value)} placeholder={t('search.placeholder')}
+                  onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t('search.placeholder')}
                   aria-label={t('search.placeholder')} aria-keyshortcuts="/" />
                 {query ? <button type="button" className="discover-clear" aria-label={t('search.clear')}
-                  onClick={() => { setQuery(''); searchInputRef.current?.focus(); }}><X size={17} /></button>
+                  onClick={() => { setQuery(''); setPage(1); searchInputRef.current?.focus(); }}><X size={17} /></button>
                   : <kbd aria-hidden="true">/</kbd>}
               </div>
             </form>
             <div className="shop-filter-controls">
               <label className="shop-select">
                 <span>{t('search.brand')}</span>
-                <select aria-label={t('search.brand')} value={brand} onChange={event => setBrand(event.target.value)}>
+                <select aria-label={t('search.brand')} value={brand} onChange={event => { setBrand(event.target.value); setPage(1); }}>
                   <option value="">{t('search.allBrands')}</option>
                   {brand && !brands.includes(brand) && <option value={brand}>{brand}</option>}
                   {brands.map(value => <option key={value} value={value}>{value}</option>)}
@@ -125,7 +147,7 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
               </label>
               <label className="shop-select">
                 <span>{t('search.sort')}</span>
-                <select aria-label={t('search.sort')} value={sort} onChange={event => setSort(event.target.value as CatalogSort)}>
+                <select aria-label={t('search.sort')} value={sort} onChange={event => { setSort(event.target.value as CatalogSort); setPage(1); }}>
                   <option value="name-asc">{t('search.nameAsc')}</option>
                   <option value="name-desc">{t('search.nameDesc')}</option>
                   <option value="brand-asc">{t('search.brandAsc')}</option>
@@ -136,7 +158,7 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
           </div>
         </div>
 
-        <section className="discover-collection" aria-labelledby="discover-collection-title">
+        <section ref={collectionRef} className="discover-collection" aria-labelledby="discover-collection-title">
           <div className="discover-collection-head">
             <div className="shop-results-title">
               <h2 id="discover-collection-title">{brand || (category ? categoryLabel(category) : t('search.allProducts'))}</h2>
@@ -150,7 +172,7 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
             {category && <button type="button" aria-label={`${t('search.removeFilter')}: ${categoryLabel(category)}`}
               onClick={() => changeCategory('')}>{categoryLabel(category)}<X size={12} aria-hidden="true" /></button>}
             {brand && <button type="button" aria-label={`${t('search.removeFilter')}: ${brand}`}
-              onClick={() => setBrand('')}>{brand}<X size={12} aria-hidden="true" /></button>}
+              onClick={() => { setBrand(''); setPage(1); }}>{brand}<X size={12} aria-hidden="true" /></button>}
             <button className="shop-clear-filters" type="button" onClick={resetFilters}>{t('search.clearFilters')}</button>
           </div>}
 
@@ -186,6 +208,24 @@ export function SearchView({ market, onOpenSidebar, onAsk }: SearchViewProps) {
               )}
             </li>)}
           </ul>}
+          {!loading && !failed && products.length > 0 && totalPages > 1 && <nav className="discover-pagination"
+            aria-label={t('search.pagination')}>
+            <button type="button" className="discover-page-direction" disabled={page === 1}
+              aria-label={t('search.previousPage')} onClick={() => changePage(page - 1)}>
+              <ChevronLeft size={16} aria-hidden="true" /><span>{t('search.previous')}</span>
+            </button>
+            <div className="discover-page-numbers">
+              {paginationPages(page, totalPages).map((value, index, values) => <span key={value} className="discover-page-slot">
+                {index > 0 && value - values[index - 1] > 1 && <span className="discover-page-gap" aria-hidden="true">…</span>}
+                <button type="button" aria-current={value === page ? 'page' : undefined}
+                  aria-label={t('search.pageNumber', { page: value })} onClick={() => changePage(value)}>{value}</button>
+              </span>)}
+            </div>
+            <button type="button" className="discover-page-direction" disabled={page === totalPages}
+              aria-label={t('search.nextPage')} onClick={() => changePage(page + 1)}>
+              <span>{t('search.next')}</span><ChevronRight size={16} aria-hidden="true" />
+            </button>
+          </nav>}
         </section>
       </div>
       {tryonEnabled && (

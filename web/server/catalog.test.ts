@@ -25,6 +25,9 @@ type CatalogBody = {
   categories: string[];
   brands: string[];
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 };
 
 test('lists products and categories', async () => {
@@ -93,4 +96,21 @@ test('sorts by name in either direction or groups by brand', async () => {
   assert.deepEqual(grouped.products.map(p => p.id), [...asc.products]
     .sort((a, b) => compare(a.brand, b.brand) || compare(a.name, b.name) || compare(a.id, b.id)).map(p => p.id));
   assert.deepEqual((await get('unknown')).products, asc.products);
+});
+
+test('paginates the filtered and sorted catalog without hiding the total', async () => {
+  const first = (await (await fetch(`${baseUrl}/api/catalog?page=1&pageSize=10`)).json()) as CatalogBody;
+  const second = (await (await fetch(`${baseUrl}/api/catalog?page=2&pageSize=10`)).json()) as CatalogBody;
+  const last = (await (await fetch(`${baseUrl}/api/catalog?page=999&pageSize=10`)).json()) as CatalogBody;
+
+  assert.equal(first.page, 1);
+  assert.equal(first.pageSize, 10);
+  assert.equal(first.totalPages, Math.ceil(first.total / 10));
+  assert.equal(first.products.length, 10);
+  assert.equal(second.page, 2);
+  assert.equal(second.products.length, 10);
+  const secondIds = new Set(second.products.map(product => product.id));
+  assert.ok(first.products.every(product => !secondIds.has(product.id)));
+  assert.equal(last.page, first.totalPages);
+  assert.equal(last.products.length, first.total % 10 || 10);
 });

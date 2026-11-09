@@ -56,6 +56,17 @@
 .discover-skeletons li > div { aspect-ratio: 4 / 5; border-radius: 16px; background: #f8f8f8; }
 .discover-skeletons li > span { display: block; width: 70%; height: 10px; margin: 17px 0 0; border-radius: 3px; background: #dedede; }
 .discover-skeletons li > span:last-child { width: 45%; margin-top: 10px; }
+.discover-pagination { display: grid; grid-template-columns: minmax(90px, 1fr) auto minmax(90px, 1fr); align-items: center; gap: 18px; margin-top: 44px; padding-top: 22px; border-top: 1px solid #d7d7d7; }
+.discover-pagination button { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; color: var(--pc-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.discover-pagination button:hover:not(:disabled) { border-color: #ccc; background: var(--pc-paper); color: var(--pc-ink); }
+.discover-pagination button:disabled { opacity: .38; cursor: not-allowed; }
+.discover-pagination .discover-page-direction { gap: 6px; }
+.discover-pagination .discover-page-direction:first-child { justify-self: start; }
+.discover-pagination .discover-page-direction:last-child { justify-self: end; }
+.discover-page-numbers { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.discover-page-slot { display: inline-flex; align-items: center; gap: 4px; }
+.discover-page-numbers button[aria-current='page'] { border-color: var(--pc-ink); background: var(--pc-ink); color: #fff; font-weight: 650; }
+.discover-page-gap { display: inline-grid; min-width: 20px; place-items: center; color: var(--pc-muted); font-size: 11px; }
 @media (hover: hover) and (pointer: fine) {
   .discover-product-button:hover .discover-capy-art { transform: translateY(-3px) scale(1.025); }
   .discover-product-button:hover .discover-product-arrow { background: #202020; color: #fff; }
@@ -95,6 +106,12 @@
   .discover-product-arrow { width: 28px; height: 28px; right: 8px; bottom: 9px; }
   .discover-product-arrow svg { width: 16px; }
   .discover-illustration { left: 10px; bottom: 15px; font-size: 8px; max-width: calc(100% - 48px); }
+  .discover-pagination { grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 6px; margin-top: 32px; padding-top: 18px; }
+  .discover-pagination button { min-width: 34px; height: 34px; padding: 0 8px; }
+  .discover-page-direction span { display: none; }
+  .discover-page-numbers { gap: 1px; }
+  .discover-page-slot { gap: 1px; }
+  .discover-page-gap { min-width: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .discover-capy-art, .discover-search { transition: none; }

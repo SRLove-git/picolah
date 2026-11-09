@@ -578,5 +578,405 @@
     ],
     "transparentBackground": true,
     "prompt": "Use case: identity-preserve product try-on edit for PICOLAH Discover. Image 1 is the approved capybara mascot edit target. Preserve its golden fur, broad brown muzzle, cream belly, eyes, rainbow horn and overall identity. Image 2 is the REAL PRODUCT reference: its exact design, materials, proportions, colors, brand markings and recognizable model details are authoritative. Reproduce THAT product faithfully in the character scene, not a generic category substitute. Discard marketing banners, borders, price badges, backgrounds and store logos around the product; preserve branding printed ON the actual product. One full-body capybara and this product only, physically correct contact/occlusion. Transparent background. Complete head/horn/feet and product inside frame with clear margins. Soft studio light matching the mascot, premium tactile 3D rendering, realistic product materials. No caption, no invented labels, no shopping bag, no other accessories. Product must remain clearly recognizable at card size.\nCapybara using exact Xiaomi G20 Max dark graphite stick vacuum, gripping angular handle, dark gray cylindrical motor, metallic circular side and clear bin with orange inner element, darkgray wand, orange roller in broad gray floorhead. Entire vacuum visible, no unattached accessories."
+  },
+  {
+    "productId": "philips-hd2350-80",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S83562e194e4444ac97a4785494bd336cm.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips HD2350/80 black sandwich maker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact low closed black sandwich maker with rounded rectangular body, brushed silver lid inset carrying the Philips mark, small indicator window, thick black edge, front latch and shallow side vents. Capybara rests a paw beside it and presents it.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, warranty marks, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-ac2220-10",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S960aec94b28b4fa8b8806b35ce1f6579r.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips AC2220/10 cylindrical air purifier.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact tall rounded cylinder with matte white upper shell, fine vertical black grille over the lower half, dark perforated top and thin blue status light ring. Capybara stands beside and presents it.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and appliance within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic product materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, sale badge, benefit icon, room, floor and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-xv3101-01",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S22eacf1fbf9e4d679d137ba3d9c2bfa9c.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips OneUp XV3101/01 electric mop.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact slim blue-gray upright electric mop: long narrow handle, compact cylindrical motor/water unit near the bottom, pivot joint and flat rectangular blue cleaning head. Show the complete handle and head; capybara holds the handle naturally. Do not include the refill bottle, spare pad or USB cable.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and appliance within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic product materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, sale badge, benefit icon, room, floor and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-ep3343-31",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/Sb58317fd061c47a19020d7bb9cf4ba2c2.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips EP3343/31 white automatic espresso machine.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact tall white-and-black machine: clear bean hopper lid on top, wide glossy black color control panel, central silver coffee spout, white milk carafe attached on the left, open central cup bay and perforated silver drip tray. Capybara presents it.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, warranty marks, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-hd5850-98",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/Sb9dded567b1348af9218a101abab2114N.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips HD5850/98 black induction cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact induction cooker from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact thin black rectangular glass cooker with rounded corners, large subtle dotted circular cooking zone, small gold Philips mark and a wide red-lit touch-control band along the bottom. Show it in a slight three-quarter raised view; capybara presents it.\nComposition: one complete full-body capybara and one cooker only; cooker fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glossy glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, warranty badges, alternate variants and surrounding text from Image 2; preserve only branding and controls printed on the product; no caption, no invented labels, no cookware or food, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-na231-09",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S2f2856f4850d4b7b9e2a069041826879N.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips NA231/09 black window air fryer.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact rounded black air fryer with oval flat top, upper circular digital control cluster, thin silver horizontal trim, large dark front viewing window and tall centered silver pull handle. Capybara stands beside and presents it. Do not include the promotional grill kit or rack.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, feature icons, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-xu6500-82",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S0ca4c688558f45fe9e03d3fadb772102u.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips XU6500/82 robot vacuum and white base.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact low white round robot, red-ring lidar turret, paired black oblong front sensors, and the white docking station behind it. Capybara crouches beside and presents it.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and appliance within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic product materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, sale badge, benefit icon, room, floor and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-hd3064-62",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/688f1e846dba9a5ff1ff71c81eeb43be.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips HD3064/62 white mini rice cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact compact rounded-square white cooker with softly rounded lid, slim pink/coral band around the upper body, pale front digital display and three small pink/coral controls. Capybara stands beside with a paw on the lid.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, warranty marks, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-hd3213-32",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S7c832a9883e2425990ca63fc53e0fe4dN.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips HD3213/32 silver rice cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact compact barrel-shaped cooker with black top and base, brushed silver front body, small top steam assembly and central round black control panel containing the cook/warm rocker switch. Capybara presents it.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, warranty marks, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "philips-hd4814-31",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/5c60dae2586bc7374e342dc250cc4ebe.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Philips HD4814/31 black digital rice cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact rounded black cooker with broad cylindrical brushed dark-metal body, black base, deep black top deck with multiple touch controls, central circular display area, large rectangular lid panel and clear-topped steam vent at the rear. Capybara presents it with one paw resting near the lid.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, feature icons, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "xiaomi-smart-air-purifier-4-compact",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/357425e054111f2298ca438f1177fb4d.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Xiaomi Smart Air Purifier 4 Compact.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact compact white rounded cylinder, smooth upper shell with small Xiaomi mark, dense circular perforations wrapping the lower half, dark circular top outlet and tiny feet. Capybara stands beside it with a paw resting lightly on top.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and product inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glass, metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, coupons, bonus items, room backgrounds and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "dreame-f20",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S6308395a2c744f8ba4feccfb9a473ad73.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Dreame F20 white robot vacuum.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact cleaning appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact low white circular robot visible in Image 2, with raised lidar turret, black oblong front sensor and small side brush. No room scene and no base station. The capybara crouches beside it and points toward the robot.\nComposition: one complete capybara and one product set only; appliance fully visible and recognizable at card size; complete horn, feet and appliance within frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing banners, benefit icons, prices, labels, room and floor from Image 2; preserve only branding printed on the appliance; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate robot, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "dreame-d9-max-gen-2",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/7f9775522102060ccaa2e15d5a20afaa.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Dreame D9 Max Gen 2 white robot vacuum.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact cleaning appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact low white circular robot, centered raised lidar turret with black ring, slim black lower bumper and perforated side vent. No base station. The capybara crouches or gestures beside it without obscuring the body.\nComposition: one complete capybara and one product set only; appliance fully visible and recognizable at card size; complete horn, feet and appliance within frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing banners, benefit icons, prices, labels, room and floor from Image 2; preserve only branding printed on the appliance; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate robot, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "dreame-d20-ultra",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/c4cd4ecac24ecc7d1b52e7dca2213c88.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Dreame D20 Ultra robot vacuum and auto-clean base.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact cleaning appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact white round robot with raised lidar turret, black front sensor panel, and tall rounded white docking base with ribbed lower front. Show robot docked partly in front; capybara presents the set.\nComposition: one complete capybara and one product set only; appliance fully visible and recognizable at card size; complete horn, feet and appliance within frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing banners, benefit icons, prices, labels, room and floor from Image 2; preserve only branding printed on the appliance; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate robot, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "xiaomi-h50",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/d188939e888ee6fe350ec760fcb865b2.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Xiaomi Robot Vacuum H50 and collection base.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact white round robot with wide black front sensor, orange-accent lidar turret and small side brush, plus the compact white rectangular base behind it. This is the H50, not H50 Pro: keep the simpler dock facade. Capybara presents the set.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and appliance within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic product materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, sale badge, benefit icon, room, floor and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "xiaomi-h50-pro",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/1e88c5beacb18fff83a6115efa075228.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Xiaomi Robot Vacuum H50 Pro with white collection base.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact cleaning appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact white circular robot with black sensor details, orange lidar accent, two visible mop pads, and the tall white base with black dock opening and lower service bay. Capybara stands beside and presents the set.\nComposition: one complete capybara and one product set only; appliance fully visible and recognizable at card size; complete horn, feet and appliance within frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing banners, benefit icons, prices, labels, room and floor from Image 2; preserve only branding printed on the appliance; no caption, no invented text, no shopping bag, no bonus accessories, no duplicate robot, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "hitachi-lf-d6rgwp",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/da9ffe8df095f381c14f6d2843de005f.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Hitachi LF-D6RGWP white DC stand fan.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact fan from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact white pedestal fan with round wire grille, translucent multi-blade rotor, compact center hub, slim white neck with small black LED control panel, chrome adjustable stem, tapered white lower column and wide round white base. Capybara lightly holds the stem.\nComposition: one complete full-body capybara and one complete fan only; fan fully visible from top to base and recognizable at card size; complete horn, feet and fan within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature text, store backgrounds, sale badges and surrounding text from Image 2; preserve only branding printed on the fan; no caption, no invented labels, no remote control, no shopping bag, no duplicate or alternate-color fans, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "mistral-mmsf12r",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/88a2f22ab96abb3dfca817f12d120f5e.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Mistral MMSF12R dark pedestal fan.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact charcoal-black pedestal fan with round black wire grille, five broad dark blades, metallic bronze center hub, short black neck with a round bronze-rimmed display/control, slim dark pole and wide low round dark base. Capybara presents it.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and product inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glass, metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, coupons, bonus items, room backgrounds and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "mistral-mfd4000r",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/b7d30aec7fba2194f04c7eb821ef669d.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Mistral MFD4000R remote tower fan.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact fan from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact tall slim tower: black rounded top, narrow silver brand band, full-height black vertical outlet grille, silver side columns and low round silver base. Capybara stands beside it with one paw resting near the top.\nComposition: one complete full-body capybara and one complete fan only; fan fully visible from top to base and recognizable at card size; complete horn, feet and fan within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature text, store backgrounds, sale badges and surrounding text from Image 2; preserve only branding printed on the fan; no caption, no invented labels, no remote control, no shopping bag, no duplicate or alternate-color fans, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "kdk-p40us",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/423c3eecb9e8114b50976c78cd1d12d3.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for KDK P40US 16-inch champagne stand fan.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact fan from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Use only the champagne-colored center fan from Image 2. Reproduce its round pale champagne wire grille, translucent blades, small hub with red KDK mark, slim champagne control neck, chrome adjustable pole and wide low oval champagne base. Capybara presents the fan.\nComposition: one complete full-body capybara and one complete fan only; fan fully visible from top to base and recognizable at card size; complete horn, feet and fan within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature text, store backgrounds, sale badges and surrounding text from Image 2; preserve only branding printed on the fan; no caption, no invented labels, no remote control, no shopping bag, no duplicate or alternate-color fans, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "europace-etf7114d",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S9ffbd47be5024b3bba587c1037eab05bw.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for EuropAce ETF7114D 44-inch brown DC tower fan.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact fan from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reconstruct the complete tall slim tower fan from the close-up: softly rounded light beige-brown rear shell, narrow vertical dark display slot, deep brown-black full-height front outlet with vertical fins, and a compact matching round base. Capybara stands beside it and points toward the outlet.\nComposition: one complete full-body capybara and one complete fan only; fan fully visible from top to base and recognizable at card size; complete horn, feet and fan within a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature text, store backgrounds, sale badges and surrounding text from Image 2; preserve only branding printed on the fan; no caption, no invented labels, no remote control, no shopping bag, no duplicate or alternate-color fans, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "panasonic-nr-xz550hwks",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/dbd55ee5ea43154660c26e08c992e68b.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for Panasonic NR-XZ550HWKS refrigerator.\nPrimary request: edit the mascot into a polished product scene where the capybara stands beside and visibly presents the exact Panasonic NR-XZ550HWKS refrigerator.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact refrigerator from Image 2: matte black, tall two-door slot-in body, long recessed vertical center handles and the recognizable proportions/details of this model.\nComposition: one full-body capybara and one refrigerator only; capybara beside the refrigerator with one paw naturally touching the handle, refrigerator fully visible and large enough to recognize at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale/contact/occlusion; discard all marketing banners, badges, room backgrounds and surrounding text from Image 2; preserve only branding actually printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate appliance, no pedestal or floor shadow rectangle."
+  },
+  {
+    "productId": "panasonic-nr-bv361bpks",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/2842380404aba1e3c552bd4c8eab1364.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for Panasonic NR-BV361BPKS black bottom-freezer refrigerator.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact refrigerator from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact glossy black tall refrigerator with the large upper refrigerator door, lower freezer drawer/door, recessed horizontal separation and recognizable model proportions. Capybara stands beside and presents it.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "lg-fx1411s3ka",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/1398b840aab32fd408ea04a74162a0fe.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for LG FX1411S3KA black 11kg front-load washing machine.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact dark charcoal front-load washer from Image 2: large black circular door, top-left detergent drawer, round central black control dial, slim black display panel at upper right and clean dark cabinet. Capybara stands beside it with one paw on the top edge.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "lg-fv1409s4w",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.lg.com/content/dam/channel/wcms/sg/01-assets/products/energy-label/fv1409s4w/Basic_2010x1334.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for LG FV1409S4W white 9kg front-load washing machine.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact white washer: very large black circular tempered-glass door with thin silver rim, white body, top-left detergent drawer, top-center silver program dial, black rectangular control panel at upper right and small lower service hatch. Capybara presents the door.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "lg-fv1285h4w",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://www.lg.com/content/dam/channel/wcms/sg/01-assets/products/energy-label/fv1285h4w/Basic_2010x1334.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for LG FV1285H4W white washer dryer.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact washer dryer from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact white washer dryer with a very large black circular glass door and silver rim, top-left detergent drawer, silver selector dial, black upper-right control panel and small lower service hatch. Capybara stands beside and presents it.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "lg-fb1208s50",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/55752588f96eb37018729f4c415519af.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for LG FB1208S50 black front-load washing machine.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact washing machine from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact dark graphite-black washer with large circular black glass door, subtle rim, top-left detergent drawer, centered selector dial, upper-right control panel and small lower service hatch. Capybara rests one paw on top and presents it.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "sharp-r-2201h-w",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/S0280899501a14d1388b9ef37654fe6946.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative product reference for Sharp R-2201H-W 20L white basic microwave.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce its white cabinet, black mesh door, black right-side panel, and two large stacked mechanical dials. The capybara presents the dials.\nComposition: one full-body capybara and one microwave only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, price badge, label, room background and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no food, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "sharp-r-72e0-sm",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/d3cd1a386036d7d17a8bb70e4388beb7.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative product reference for Sharp R-72E0(SM) 25L silver microwave with grill.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce its curved silver front, wide chrome pull handle, dark reflective door, and slim black touch-control column at right. The capybara rests a paw naturally on top.\nComposition: one full-body capybara and one microwave only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, price badge, label, room background and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no food, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "sharp-r-20gd-b",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/689f7807b918100101f507677afb9b01.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative product reference for Sharp R-20GD-B 20L black microwave with grill.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce its black box body, large dark front window, narrow right control panel, upper display, printed buttons, and circular control knob. The capybara points toward the controls.\nComposition: one full-body capybara and one microwave only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, price badge, label, room background and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no food, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "panasonic-nn-st65qbypq",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/afdb0071d7431b24220a2eb0e0e95568.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative product reference for Panasonic NN-ST65QBYPQ 32L black inverter solo microwave.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce its glossy black rectangular body, large dark mesh window, slim right-side touch-control column, and small Panasonic mark. The capybara rests one paw on top and presents it.\nComposition: one full-body capybara and one microwave only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard every marketing banner, price badge, label, room background and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no food, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "panasonic-nn-cd58rsypq",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/3dc14e3cf63794a820e6d08fc6e56d1a.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for Panasonic NN-CD58RSYPQ 27L 4-in-1 microwave oven.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact silver countertop oven: brushed silver rectangular body, large black glass door on the left, narrow right control column with small display, round silver dial and rows of small buttons, short black feet. Capybara stands beside it and points toward the controls.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "panasonic-nn-st34nbypq",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/d2259bb839cf8a95ae74053e0785863f.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for Panasonic NN-ST34NBYPQ 25L solo microwave oven.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact glossy black countertop microwave: large black glass door with inset viewing window and subtle left-bottom Panasonic mark, narrow right touch-control strip with white indicators and digital clock, simple rectangular body. Capybara stands beside it and presents the door.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "mayer-mmic2050",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/fbef40b8e6e4cea2e9d33dc339b07916.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Mayer MMIC2050 black induction cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact thin black rectangular glass cooker beneath the pot in Image 2, with rounded corners, centered cooking zone and the distinctive wide front touch-control strip. Show the cooker alone in a raised three-quarter view; capybara points to the controls. Do not include the pot.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and product inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glass, metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, coupons, bonus items, room backgrounds and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "midea-mic2233",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/4b5941c8797243416c7e09e3daf7031e.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Midea MIC2233 black induction cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact induction cooker from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact portrait-oriented black glass cooker with rounded corners, large cyan broken-ring cooking-zone graphic around a cyan Midea mark, blue warning symbols along the top and a dense blue/red touch-control strip along the bottom. Show it in a slight three-quarter raised view; capybara points to the controls.\nComposition: one complete full-body capybara and one cooker only; cooker fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glossy glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, warranty badges, alternate variants and surrounding text from Image 2; preserve only branding and controls printed on the product; no caption, no invented labels, no cookware or food, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "russell-taylors-ic-10",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/1374facddbeec2751a9acda2692152b6.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Russell Taylors IC-10 black induction cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact induction cooker from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact slim glossy black rectangular cooker with rounded corners, dotted circular cooking-zone arc and center cross, Russell Taylors mark above a small display, and white touch controls along the lower edge. Show it in a slight three-quarter raised view; capybara points to the controls.\nComposition: one complete full-body capybara and one cooker only; cooker fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glossy glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, warranty badges, alternate variants and surrounding text from Image 2; preserve only branding and controls printed on the product; no caption, no invented labels, no cookware or food, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "song-cho-sd300",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/ff/kf/Sdb04b55036d54673a1830c5722796009q.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Song-Cho SD-300 portable induction cooker in black.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact induction cooker from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Use only the black upper variant from Image 2. Reproduce its very slim black glass cooktop, thin white circular cooking-zone outline, pale silver front bevel/handle strip and narrow front touch-control row with red digital display. Show it in a slight three-quarter raised view; capybara presents it. Do not include the white variant.\nComposition: one complete full-body capybara and one cooker only; cooker fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glossy glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, warranty badges, alternate variants and surrounding text from Image 2; preserve only branding and controls printed on the product; no caption, no invented labels, no cookware or food, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "europace-eic2201dbk",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/57ddc74a06f537bd2b81f808ce8c6fac.jpg_720x720q80.jpg_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for EuropAce EIC2201DBK black portable induction cooker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact product from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce only the exact thin black rectangular cooker from Image 2: glossy crystal-glass top, rounded corners, large white circular cooking-zone outline, subtle bevelled border, and front control strip with small display and touch controls. Show it in a raised three-quarter view so the whole appliance is readable; capybara points to the controls. Do not include the free pot.\nComposition: one complete full-body capybara and one product only; product fully visible and recognizable at card size; complete horn, feet and product inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic glass, metal and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, feature icons, coupons, bonus items, room backgrounds and surrounding text from Image 2; preserve only branding printed on the product; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "cornell-csm-s31",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/f033660636bcd084a4b44a411cb48065.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot; Image 2 is the authoritative product reference for Cornell CSM-S31 black sandwich maker.\nPrimary request: create a polished product scene where the mascot visibly interacts with the exact kitchen appliance from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, proportions and premium tactile 3D identity. Reproduce the exact compact black clamshell sandwich maker from Image 2, closed so the full appliance is visible: rounded oval-rectangular body, pale inset carry handle at the front, top indicator light and thick hinged sides. Capybara presents it. Do not include sandwiches or show the appliance open.\nComposition: one complete full-body capybara and one appliance only; appliance fully visible and recognizable at card size; complete horn, feet and appliance inside a portrait frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic metal, glass and plastic materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard all marketing panels, sale badges, feature icons, accessories and surrounding text from Image 2; preserve only branding and controls printed on the appliance; no caption, no invented labels, no food or drink, no shopping bag, no duplicate product, no pedestal or rectangular floor shadow."
+  },
+  {
+    "productId": "panasonic-nr-tc311buss",
+    "mode": "edit",
+    "references": [
+      "web/src/assets/capy-actions-v1/idle.webp",
+      "https://img.lazcdn.com/g/p/c4c34c5f0d9fa518ceeba4bdac4d9b79.png_720x720q80.png_.webp"
+    ],
+    "transparentBackground": true,
+    "prompt": "Use case: identity-preserve\nAsset type: PICOLAH Discover product-card character illustration\nInput images: Image 1 is the approved capybara mascot edit target; Image 2 is the authoritative real-product reference for Panasonic NR-TC311BUSS silver top-freezer refrigerator.\nPrimary request: edit the mascot into a polished product scene where the capybara visibly interacts with the exact refrigerator from Image 2.\nSubject: preserve the mascot's golden fur, broad brown muzzle, cream belly, large brown eyes, rainbow horn, friendly expression, body proportions and premium tactile 3D identity. Reproduce the exact brushed silver tall two-door refrigerator with smaller top freezer door, larger lower refrigerator door, dark horizontal recessed handles and recognizable model proportions. Capybara stands beside and presents it.\nComposition: one full-body capybara and one appliance only; product fully visible and clearly recognizable at card size; complete horn, feet and appliance inside frame with clear margins.\nStyle: soft studio lighting matching the mascot, premium tactile 3D rendering, realistic appliance materials.\nConstraints: genuinely transparent background; physically correct scale, contact and occlusion; discard marketing banners, energy labels, badges, room backgrounds and surrounding text from Image 2; preserve only branding printed on the appliance; no caption, no invented labels, no shopping bag, no extra accessories, no duplicate product, no pedestal or rectangular floor shadow."
   }
 ]

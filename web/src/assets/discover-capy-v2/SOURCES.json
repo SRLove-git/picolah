@@ -817,5 +817,554 @@
     "skuId": "21704380275",
     "referenceSha256": "688010ed12898e5903754eb22b0a719ceff61bc8286fe2705a87e6f248358aae",
     "artSha256": "39c6c219da9144a2f9ff5f8bf8758cf51166e6fb0d4326df40fd768ef963bdd5"
+  },
+  {
+    "productId": "philips-hd2350-80",
+    "name": "飞利浦 HD2350/80 三明治机",
+    "catalogSpecs": "HD2350/80 · 三组烤盘",
+    "sourcePage": "https://www.lazada.sg/products/philips-sandwich-maker-5000-series-hd235080-3-set-plates-sandwich-waffle-panini-i3043456609-s20765483112.html",
+    "sourceTitle": "PHILIPS Sandwich Maker 5000 Series - HD2350/80, 3 Set Plates (Sandwich, Waffle, Panini)",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S83562e194e4444ac97a4785494bd336cm.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:47.089Z",
+    "selectedVariant": [],
+    "skuId": "20765483112",
+    "referenceSha256": "e5accd81a762a5897283cb65d4f32094379b405e704202349d597ec2f74f778d",
+    "artSha256": "7e6aa2d841d4c744b4235135606e569b4e0a41315b23e7705700638fc64889df"
+  },
+  {
+    "productId": "philips-ac2220-10",
+    "name": "飞利浦 AC2220/10 空气净化器",
+    "catalogSpecs": "AC2220/10",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-air-purifier-ac222010-room-size-109m2-3-layer-hepa-filter-low-noise-i3544020177-s23386231072.html",
+    "sourceTitle": "[NEW] Philips Air Purifier AC2220/10 | room size 109m2 | 3-layer HEPA filter | Low Noise",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S960aec94b28b4fa8b8806b35ce1f6579r.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:47.140Z",
+    "selectedVariant": [],
+    "skuId": "23386231072",
+    "referenceSha256": "a66850259bc122f192a20b693a374dc638299a9b092bfdf9ccf41604d5afa082",
+    "artSha256": "e4df86f461f17ab908cd7931c9a544f22482127eae2bea682ac309dffc97c9a9"
+  },
+  {
+    "productId": "philips-xv3101-01",
+    "name": "飞利浦 XV3101/01 电动拖把",
+    "catalogSpecs": "XV3101/01 · OneUp 3000",
+    "sourcePage": "https://www.lazada.sg/products/philips-oneup-electric-mop-3000s-xv310101-50min-runtime-cordless-lightweight-1-wetness-setting-i3599648689-s23749419766.html",
+    "sourceTitle": "Philips OneUp Electric Mop 3000s XV3101/01 | 50min runtime | Cordless Lightweight | 1 wetness setting",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S22eacf1fbf9e4d679d137ba3d9c2bfa9c.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:47.686Z",
+    "selectedVariant": [],
+    "skuId": "23749419766",
+    "referenceSha256": "0afdb76fcc6bf5955f6a0ef1bd5f9dcde4e0b3c780147bf32d08fef6e9b277c6",
+    "artSha256": "2ac16251bca13b423249aa7745854b50e8d1d7321ee7b2881708e0077365aaba"
+  },
+  {
+    "productId": "philips-ep3343-31",
+    "name": "飞利浦 EP3343/31 全自动咖啡机",
+    "catalogSpecs": "EP3343/31 · LatteGo 3300",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-lattego-series-3300-fully-automatic-espresso-machine-ep334331-6-coffee-settings-iced-coffee-touch-di-i3183337831-s21653501829.html",
+    "sourceTitle": "(NEW) PHILIPS LatteGo Series 3300 Fully Automatic Espresso Machine – EP3343/31, 6 coffee settings, iced coffee, touch di",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/Sb58317fd061c47a19020d7bb9cf4ba2c2.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:48.903Z",
+    "selectedVariant": [],
+    "skuId": "21653501829",
+    "referenceSha256": "be74ff82554b38bd520647a685194b32360efd1eedbb5c4a47bd68e163f9e162",
+    "artSha256": "1e974875c267c00e966b2b647d2bd0a02d5af9b10d31884edc814e210d67f30c"
+  },
+  {
+    "productId": "philips-hd5850-98",
+    "name": "飞利浦 HD5850/98 电磁炉",
+    "catalogSpecs": "HD5850/98 · 2000W",
+    "sourcePage": "https://www.lazada.sg/products/new-philips-2000w-ultra-slim-induction-cooker-5000s-hd585098-10-adjustable-heat-levels-8-preset-menus-free-stainless-steel-sus304-pot-i13687992052-s124542631438.html",
+    "sourceTitle": "[NEW] Philips 2000W Ultra Slim Induction Cooker 5000s HD5850/98 | 10 adjustable heat levels |8 preset menus | Free Stainless Steel SUS304 pot",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/Sb9dded567b1348af9218a101abab2114N.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:49.049Z",
+    "selectedVariant": [],
+    "skuId": "124542631438",
+    "referenceSha256": "50c8b85206aebca344ec5920b9ea82225d9554840f18d7e550c5f7b0f4928a03",
+    "artSha256": "076464a59d18d458bfd9fab72c7fce89ac1b0f3f06d661f740d8090d1ea3254c"
+  },
+  {
+    "productId": "philips-na231-09",
+    "name": "飞利浦 NA231/09 空气炸锅",
+    "catalogSpecs": "NA231/09 · 6.2L",
+    "sourcePage": "https://www.lazada.sg/products/philips-na23109-13-in-1-airfryer-62l-capacity-rapidair-tech-deliciously-crisp-13-cooking-modes-frill-grill-bake-see-thru-window-up-to-90-less-fat-touch-screen-even-cooking-no-flipping-required-official-store-i3139764441-s21394662941.html",
+    "sourceTitle": "Philips NA231/09 | 13-in-1 Airfryer | 6.2L Capacity | RapidAir Tech - Deliciously Crisp | 13 Cooking Modes: Frill, Grill, Bake... ++ | See-Thru Window | Up to 90% Less Fat | Touch Screen | Even Cooking, No Flipping Required | Official Store",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S2f2856f4850d4b7b9e2a069041826879N.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:49.145Z",
+    "selectedVariant": [],
+    "skuId": "21394662941",
+    "referenceSha256": "d6f52dcae3e46ae50c6c126127dcaf68708e48b0cce0ea85fe3eaf888858f41e",
+    "artSha256": "ce8d5748af66030f9b52b56afe97b2e30c6afe6237f485158c7938321166a1cb"
+  },
+  {
+    "productId": "philips-xu6500-82",
+    "name": "飞利浦 XU6500/82 扫拖机器人",
+    "catalogSpecs": "XU6500/82 · 6000 系列 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/philips-2-in-1-wet-dry-vacuum-mop-robot-vacuum-6000-series-xu650082-auto-self-clean-i2885130429-s19988940294.html",
+    "sourceTitle": "PHILIPS 2-in-1 Wet & Dry Vacuum & Mop Robot Vacuum 6000 Series - XU6500/82, Auto Self Clean | White",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S0ca4c688558f45fe9e03d3fadb772102u.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:50.466Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "19988940294",
+    "referenceSha256": "a16b8684304d2fd6d71ea4e2acbece6f80c09a3229e09d95fc2a76f8ebf2a571",
+    "artSha256": "54174f10843019f36af811f86cf599ec44030726ec97a545fe0bdf3f0122dc7e"
+  },
+  {
+    "productId": "philips-hd3064-62",
+    "name": "飞利浦 HD3064/62 迷你电饭煲",
+    "catalogSpecs": "HD3064/62 · 0.54L",
+    "sourcePage": "https://www.lazada.sg/products/philips-rice-cooker-3000-series-mini-rice-cooker-054l-hd306462-i2883239235-s19967467923.html",
+    "sourceTitle": "Philips Rice Cooker 3000 Series Mini Rice Cooker 0.54L - HD3064/62",
+    "imageUrl": "https://img.lazcdn.com/g/p/688f1e846dba9a5ff1ff71c81eeb43be.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:50.566Z",
+    "selectedVariant": [],
+    "skuId": "19967467923",
+    "referenceSha256": "c3383e5e304123b49ad9e52bec29fb94a8adbf9615dc595114e287c585526841",
+    "artSha256": "1750abc1dd1344102c47c44481e68f1a5402c77d345251d78b4cb8cea0ef5ead"
+  },
+  {
+    "productId": "philips-hd3213-32",
+    "name": "飞利浦 HD3213/32 电饭煲",
+    "catalogSpecs": "HD3213/32 · 1.8L · 银色",
+    "sourcePage": "https://www.lazada.sg/products/philips-rice-cooker-18l-3000-series-silver-hd321332-i3167217312-s21542130416.html",
+    "sourceTitle": "PHILIPS Rice Cooker 1.8L 3000 Series Silver HD3213/32",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S7c832a9883e2425990ca63fc53e0fe4dN.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:50.642Z",
+    "selectedVariant": [],
+    "skuId": "21542130416",
+    "referenceSha256": "eb4a3cc5784f7d0ed35642497eb2d122c7c80e3348b40d327489ac54dbe7feb8",
+    "artSha256": "5ea8e117c8c272613c071a0dcc4701d1a44c9b164fb4393e1ba7fc42f27b710f"
+  },
+  {
+    "productId": "philips-hd4814-31",
+    "name": "飞利浦 HD4814/31 电饭煲",
+    "catalogSpecs": "HD4814/31 · 5000 系列",
+    "sourcePage": "https://www.lazada.sg/products/philips-5000-series-hd481431-digital-rice-cooker-i3537869139-s23333820913.html",
+    "sourceTitle": "Philips 5000 Series HD4814/31 - Digital Rice Cooker",
+    "imageUrl": "https://img.lazcdn.com/g/p/5c60dae2586bc7374e342dc250cc4ebe.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:52.871Z",
+    "selectedVariant": [],
+    "skuId": "23333820913",
+    "referenceSha256": "0a5404341b4fbe52e83ac1b68e22aef7c6ae196cf941e575163013584ad8c5df",
+    "artSha256": "a2ad079329fe8a7fe489df7159020abff695d0f2df1fda50d3815e5904f7f3b1"
+  },
+  {
+    "productId": "xiaomi-smart-air-purifier-4-compact",
+    "name": "小米 Smart Air Purifier 4 Compact 空气净化器",
+    "catalogSpecs": "Smart Air Purifier 4 Compact · 230 m³/h",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-smart-air-purifier-4-compact-230mh-cadr-3-in-1-hepagrade-filter-9997-whisperquiet-20db-sleep-mode-i3635975722-s24043382807.html",
+    "sourceTitle": "Xiaomi Smart Air Purifier 4 Compact | 230 m³/h CADR | 3-in-1 HEPA‑grade Filter (99.97%) | Whisper‑Quiet 20 dB Sleep Mode",
+    "imageUrl": "https://img.lazcdn.com/g/p/357425e054111f2298ca438f1177fb4d.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:52.903Z",
+    "selectedVariant": [],
+    "skuId": "24043382807",
+    "referenceSha256": "c7243625c43837b809eb7cdd75156bec1935b714782888fd0e345f60f98464c5",
+    "artSha256": "849e7da7f8adce4e493ae388478b4289c8f7292a260d963bc571ad163ceb3aa4"
+  },
+  {
+    "productId": "dreame-f20",
+    "name": "追觅 F20 扫拖机器人",
+    "catalogSpecs": "F20 · 20,000Pa",
+    "sourcePage": "https://www.lazada.sg/products/dreame-f20-robot-vacuum-20000pa-vormax-suction-2-in-1-vacuum-mop-anti-tangle-system-smart-pathfinder-technology-i2341760931-s124682327884.html",
+    "sourceTitle": "Dreame F20 Robot Vacuum | 20,000Pa Vormax Suction, 2-in-1 Vacuum & Mop, Anti-Tangle System, Smart Pathfinder™ Technology",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S6308395a2c744f8ba4feccfb9a473ad73.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:02:52.313Z",
+    "selectedVariant": [],
+    "skuId": "124682327884",
+    "referenceSha256": "aaf32811eef8fc38a9444616a30e5c86b87aaf9f68c5565381428055fdef7e8b",
+    "artSha256": "996281c9b2b194cc7166c2cb236653e53b7a3a6450bb78df78e6a96c5c13cfb2"
+  },
+  {
+    "productId": "dreame-d9-max-gen-2",
+    "name": "追觅 D9 Max Gen 2 扫拖机器人",
+    "catalogSpecs": "D9 Max Gen 2",
+    "sourcePage": "https://www.lazada.sg/products/dreame-d9-max-gen-2-robot-vacuum-mop-i2908595772-s20119493051.html",
+    "sourceTitle": "DREAME D9 MAX GEN 2 ROBOT VACUUM & MOP",
+    "imageUrl": "https://img.lazcdn.com/g/p/7f9775522102060ccaa2e15d5a20afaa.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:21.792Z",
+    "selectedVariant": [],
+    "skuId": "20119493051",
+    "referenceSha256": "bf8f985e70e829ddaaadffe32e8b5136de4181dbfecbd32f17d99feb5ebb144c",
+    "artSha256": "11b5382c637f680caf8edb1b45ce90e83a505f58db31e2fe5d1d366c47c6f1b0"
+  },
+  {
+    "productId": "dreame-d20-ultra",
+    "name": "追觅 D20 Ultra 扫地机器人",
+    "catalogSpecs": "D20 Ultra",
+    "sourcePage": "https://www.lazada.sg/products/dreame-robot-vacuum-d20-ultra-i3483692045-s23044318050.html",
+    "sourceTitle": "Dreame Robot Vacuum D20 Ultra",
+    "imageUrl": "https://img.lazcdn.com/g/p/c4cd4ecac24ecc7d1b52e7dca2213c88.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:21.804Z",
+    "selectedVariant": [],
+    "skuId": "23044318050",
+    "referenceSha256": "31c0855ff68a37512718b9070f2362b76e7c1d17365ca3beac9cae72bae71ae8",
+    "artSha256": "a53ce3f6fff54157798dd28f9f925cf511fd0f14721eb0f414b6c4f6d182e13c"
+  },
+  {
+    "productId": "xiaomi-h50",
+    "name": "小米 H50 扫地机器人",
+    "catalogSpecs": "H50",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-robot-vacuum-h50-i13726215153-s124664445318.html",
+    "sourceTitle": "Xiaomi Robot Vacuum H50",
+    "imageUrl": "https://img.lazcdn.com/g/p/d188939e888ee6fe350ec760fcb865b2.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:23.418Z",
+    "selectedVariant": [],
+    "skuId": "124664445318",
+    "referenceSha256": "ba4b9f59e348b57e91d49a44ba0e4982cc4c6b0ed19f859ae599cdb349600dcb",
+    "artSha256": "24b9760cc74dbc4c3f0b475b3be8145a99fa85f98b96fe1d717a4e74e5f8ad48"
+  },
+  {
+    "productId": "xiaomi-h50-pro",
+    "name": "小米 H50 Pro 扫地机器人",
+    "catalogSpecs": "H50 Pro",
+    "sourcePage": "https://www.lazada.sg/products/xiaomi-robot-vacuum-h50-pro-ultra-long-range-coverage-with-strong-suction-for-powerful-clean-i13716665613-s124647627876.html",
+    "sourceTitle": "Xiaomi Robot Vacuum H50 Pro - Ultra-long-range coverage with strong suction for powerful clean | H50 Pro Robot Vacuum",
+    "imageUrl": "https://img.lazcdn.com/g/p/1e88c5beacb18fff83a6115efa075228.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:23.576Z",
+    "selectedVariant": [
+      "H50 Pro Robot Vacuum"
+    ],
+    "skuId": "124647627876",
+    "referenceSha256": "d7e09fbb7857a42a8bb9141f91385b8e4f62cc7b5f401e1cb524e3402e60461e",
+    "artSha256": "4cfaaf46c40a9d455e6c131a5a512e08c7bcf1e5b9f75f4f237381b72be6c756"
+  },
+  {
+    "productId": "hitachi-lf-d6rgwp",
+    "name": "日立 LF-D6RGWP 直流落地扇",
+    "catalogSpecs": "LF-D6RGWP",
+    "sourcePage": "https://www.lazada.sg/products/hitachi-dc-motor-stand-fan-lf-d6rgwp-i3562707960-s23522806484.html",
+    "sourceTitle": "Hitachi DC Motor Stand Fan LF-D6RGWP",
+    "imageUrl": "https://img.lazcdn.com/g/p/da9ffe8df095f381c14f6d2843de005f.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:24.795Z",
+    "selectedVariant": [],
+    "skuId": "23522806484",
+    "referenceSha256": "5b016b4af40527031912853a86fd91034a0063d8333a35bdfa55c7cb30e6c4b0",
+    "artSha256": "192bf2fb73bdb074288baa08a87ffb42775ae05d63caf9cf91c6c566d851845b"
+  },
+  {
+    "productId": "mistral-mmsf12r",
+    "name": "Mistral MMSF12R 落地扇",
+    "catalogSpecs": "MMSF12R · 12 英寸",
+    "sourcePage": "https://www.lazada.sg/products/mistral-12-metal-stand-fan-mmsf12r-i2011389128-s10943044427.html",
+    "sourceTitle": "Mistral 12\" Metal Stand Fan MMSF12R",
+    "imageUrl": "https://img.lazcdn.com/g/p/88a2f22ab96abb3dfca817f12d120f5e.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:25.505Z",
+    "selectedVariant": [],
+    "skuId": "10943044427",
+    "referenceSha256": "19ddf177b6aa7ce69f1a3b01461ae1c43ea3704c9be594f3096c5bdbbed11226",
+    "artSha256": "777e224207f4c323b875cd6235d262eb059e4135915d10dc2d8829b3ae4cf011"
+  },
+  {
+    "productId": "mistral-mfd4000r",
+    "name": "Mistral MFD4000R 遥控塔扇",
+    "catalogSpecs": "MFD4000R",
+    "sourcePage": "https://www.lazada.sg/products/mistral-tower-fan-with-remote-control-mfd4000r-i2225835872-s12784633803.html",
+    "sourceTitle": "Mistral Tower Fan with Remote Control MFD4000R",
+    "imageUrl": "https://img.lazcdn.com/g/p/b7d30aec7fba2194f04c7eb821ef669d.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:27.404Z",
+    "selectedVariant": [],
+    "skuId": "12784633803",
+    "referenceSha256": "a2ac6695619b3b5506a8f193904e34690a6fcffc23bd1c15ee723353e1aeb097",
+    "artSha256": "4e3d9ea98b8cefd489f3e0bd78ac01db08d9e4918c745139ccf47ae3f1877180"
+  },
+  {
+    "productId": "kdk-p40us",
+    "name": "KDK P40US 落地扇",
+    "catalogSpecs": "P40US · 16 英寸 · 香槟色",
+    "sourcePage": "https://www.lazada.sg/products/kdk-p40us-16-inch-stand-fan-3-speed-oscillating-fan-adjustable-height-quiet-cooling-energy-efficient-singapore-i455414885-s1220416012.html",
+    "sourceTitle": "KDK P40US 16 Inch Stand Fan | 3 Speed Oscillating Fan | Adjustable Height | Quiet Cooling | Energy Efficient | Singapore | Champagne",
+    "imageUrl": "https://img.lazcdn.com/g/p/423c3eecb9e8114b50976c78cd1d12d3.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:29.379Z",
+    "selectedVariant": [
+      "Champagne"
+    ],
+    "skuId": "1220416012",
+    "referenceSha256": "41016fe4870ec7acdc350086999cda8235d781fe127c82f22d4900dd9e8fbee4",
+    "artSha256": "62fd0067bcc363915759745d03a594a5a1a96256b1479c51453c4f8e121b3ba7"
+  },
+  {
+    "productId": "europace-etf7114d",
+    "name": "EuropAce ETF7114D 直流塔扇",
+    "catalogSpecs": "ETF7114D · 44 英寸 · 棕色",
+    "sourcePage": "https://www.lazada.sg/products/europace-44-dc-tower-fan-with-air-sterilizer-etf7114d-up-to-9999-electronic-sterilization-energy-efficient-easy-cleaning-i2377535231-s20626923504.html",
+    "sourceTitle": "EuropAce 44\" DC Tower Fan with Air Sterilizer  | ETF7114D | Up to 99.99% Electronic Sterilization, Energy Efficient, Easy Cleaning | Brown",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S9ffbd47be5024b3bba587c1037eab05bw.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:27.838Z",
+    "selectedVariant": [
+      "Brown"
+    ],
+    "skuId": "20626923504",
+    "referenceSha256": "172ee151a46a23f6fb5273a305a2424d3d0fab5a447e011a218eb1182f888675",
+    "artSha256": "bb23001c1f0bf5f0a40ccda638c2825adb5d943e5a9cbd1af29f7377828443b7"
+  },
+  {
+    "productId": "panasonic-nr-xz550hwks",
+    "name": "松下 NR-XZ550HWKS 冰箱",
+    "catalogSpecs": "NR-XZ550HWKS · 482L · 常规购买 · 哑光黑",
+    "sourcePage": "https://www.lazada.sg/products/panasonic-482l-slot-in-refrigerator-nr-xz550hwks120-wide-opening-65cm-depth-cv-eligible-i13880373235-s124889557000.html",
+    "sourceTitle": "Panasonic 482L Slot-in Refrigerator NR-XZ550HWKS|120° Wide-Opening| 65cm Depth [CV Eligible] | No Climate Voucher, Matte Black",
+    "imageUrl": "https://img.lazcdn.com/g/p/dbd55ee5ea43154660c26e08c992e68b.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:29.127Z",
+    "selectedVariant": [
+      "No Climate Voucher",
+      "Matte Black"
+    ],
+    "skuId": "124889557000",
+    "referenceSha256": "9459d3887d8dddaf4341028d874b68b01882e7ba706118ffb313dcdf98440101",
+    "artSha256": "1ef9755940f7c2bb5ec54a513f5133f16564dacb97b94c586259a3ddc80130cd"
+  },
+  {
+    "productId": "panasonic-nr-bv361bpks",
+    "name": "松下 NR-BV361BPKS 双门冰箱",
+    "catalogSpecs": "NR-BV361BPKS · 332L · 常规购买",
+    "sourcePage": "https://www.lazada.sg/products/panasonic-332l-2-doors-refrigerator-nr-bv361bpks-cv-eligible-i2744039082-s18605132342.html",
+    "sourceTitle": "Panasonic 332L 2 Doors Refrigerator NR-BV361BPKS [CV Eligible] | No Climate Voucher",
+    "imageUrl": "https://img.lazcdn.com/g/p/2842380404aba1e3c552bd4c8eab1364.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:33.853Z",
+    "selectedVariant": [
+      "No Climate Voucher"
+    ],
+    "skuId": "18605132342",
+    "referenceSha256": "d40017c29bdcb81fd97613f1106f1c8f041471a67cba5fbaf9caa049d149870c",
+    "artSha256": "353b36a30adb7464d7ad20eb26e24dd9f96308b4a4a5bb7a97ecd6aa8250a392"
+  },
+  {
+    "productId": "lg-fx1411s3ka",
+    "name": "LG FX1411S3KA 滚筒洗衣机",
+    "catalogSpecs": "FX1411S3KA · 11kg",
+    "sourcePage": "https://www.lazada.sg/products/new-lg-front-load-washer-11kg-fx1411s3ka-ai-dd-6-motion-thinqwifi-i13816251706-s124823036923.html",
+    "sourceTitle": "[New] LG Front Load Washer 11kg FX1411S3KA | AI DD | 6 Motion | ThinQ(Wifi)",
+    "imageUrl": "https://img.lazcdn.com/g/p/1398b840aab32fd408ea04a74162a0fe.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:35.474Z",
+    "selectedVariant": [],
+    "skuId": "124823036923",
+    "referenceSha256": "4b26ec82a6104528e51bb5d0a1669a3703255bae9a0a11a850de131f6c7256d2",
+    "artSha256": "a467330ea9cdb92bbc1a5b4a5c3a846dc233887c6e6e9e3fbb69490ebbb086f1"
+  },
+  {
+    "productId": "lg-fv1409s4w",
+    "name": "LG FV1409S4W 滚筒洗衣机",
+    "catalogSpecs": "FV1409S4W · 9kg · 白色",
+    "sourcePage": "https://www.lazada.sg/products/lg-front-load-washing-machine-9kg-fv1409s4w-ai-direct-drive-6-motion-dd-steam-i791088685-s2602376642.html",
+    "sourceTitle": "LG Front Load Washing Machine 9KG FV1409S4W | AI Direct Drive™ | 6 Motion DD | Steam™ | White",
+    "imageUrl": "https://www.lg.com/content/dam/channel/wcms/sg/01-assets/products/energy-label/fv1409s4w/Basic_2010x1334.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800",
+    "sourceCapturedAt": "2026-11-05T01:01:36.873Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "2602376642",
+    "referenceSha256": "17e2881c160af58cc3968272c082eed64415d2de97b5e961822d5384e0b5bd20",
+    "artSha256": "0e3fb4ef2725b21dd54c18263cf69772c34dcb332073319c2dfc3a0b73030caa"
+  },
+  {
+    "productId": "lg-fv1285h4w",
+    "name": "LG FV1285H4W 洗烘一体机",
+    "catalogSpecs": "FV1285H4W · 洗衣 8.5kg · 烘干 5kg · 白色",
+    "sourcePage": "https://www.lazada.sg/products/online-exclusive-lg-fv1285h4w-85kg-washer-5kg-dryer-slim-ai-dd-front-load-combo-i1839034799-s9797518321.html",
+    "sourceTitle": "[Online Exclusive] LG FV1285H4W 8.5kg Washer + 5kg Dryer Slim AI DD Front Load Combo | White",
+    "imageUrl": "https://www.lg.com/content/dam/channel/wcms/sg/01-assets/products/energy-label/fv1285h4w/Basic_2010x1334.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800",
+    "sourceCapturedAt": "2026-11-05T01:01:37.479Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "9797518321",
+    "referenceSha256": "97533be1ffcb36a93c37600ec0bf0340b908cbdd454b06c07b16e1b0cf87df97",
+    "artSha256": "2e79d7a89b7b75d46dd6934c37842bc11a3062849ada375ed60ae4e9d6573c50"
+  },
+  {
+    "productId": "lg-fb1208s50",
+    "name": "LG FB1208S50 滚筒洗衣机",
+    "catalogSpecs": "FB1208S50 · 8kg",
+    "sourcePage": "https://www.lazada.sg/products/new-online-exclusive-lg-front-load-washer-8kg-fb1208s50-inverter-dd-6-motion-thinq-wifi-i13691769967-s124572873022.html",
+    "sourceTitle": "[New] [Online Exclusive] LG Front Load Washer 8kg FB1208S50 | Inverter DD | 6 Motion | ThinQ (Wifi)",
+    "imageUrl": "https://img.lazcdn.com/g/p/55752588f96eb37018729f4c415519af.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:38.007Z",
+    "selectedVariant": [],
+    "skuId": "124572873022",
+    "referenceSha256": "5cd00ee02f096a7140b823ae3163c2e3be0944cbc2a15a197f0cfb7e6f14c0d5",
+    "artSha256": "7a73ccbdd60c67461d48b550b1c258156260ba20cb573fa08d6916534850e625"
+  },
+  {
+    "productId": "sharp-r-2201h-w",
+    "name": "夏普 R-2201H(W) 微波炉",
+    "catalogSpecs": "R-2201H(W) · 20L",
+    "sourcePage": "https://www.lazada.sg/products/sharp-20l-microwave-oven-r-2201hw-i2777228954-s19193252296.html",
+    "sourceTitle": "SHARP 20L Microwave Oven R-2201H(W)",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/S0280899501a14d1388b9ef37654fe6946.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:38.275Z",
+    "selectedVariant": [],
+    "skuId": "19193252296",
+    "referenceSha256": "d6ff89b3d393cb74927789f0f9330e80b1258c28164a48fcbadfcd8395f3c7cd",
+    "artSha256": "bd0d9983d0a1db267b942d22ad03115ca8095f815f44fd97935efb9f22c5a44e"
+  },
+  {
+    "productId": "sharp-r-72e0-sm",
+    "name": "夏普 R-72E0(SM) 烧烤微波炉",
+    "catalogSpecs": "R-72E0(SM) · 25L",
+    "sourcePage": "https://www.lazada.sg/products/sharp-25l-microwave-oven-with-grill-r-72e0sm-i241717436-s370296980.html",
+    "sourceTitle": "SHARP 25L Microwave Oven with Grill R-72E0(SM) | R-72E0(SM)",
+    "imageUrl": "https://img.lazcdn.com/g/p/d3cd1a386036d7d17a8bb70e4388beb7.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:39.412Z",
+    "selectedVariant": [
+      "R-72E0(SM)"
+    ],
+    "skuId": "370296980",
+    "referenceSha256": "2aad9f895c4aed6899d608a3297dce4ddf8f6ed99135ea1e136ad815a1f1658a",
+    "artSha256": "01a9e828e75881837f9d70f178af57862e2bedc3b703f812eb1da5dbf76b6634"
+  },
+  {
+    "productId": "sharp-r-20gd-b",
+    "name": "夏普 R-20GD-B 烧烤微波炉",
+    "catalogSpecs": "R-20GD-B · 20L",
+    "sourcePage": "https://www.lazada.sg/products/sharp-20l-r-20gd-b-grill-microwave-oven-grill-function-6-programs-11-power-levels-childlock-timer-and-clock-i3594438157-s23713695248.html",
+    "sourceTitle": "SHARP 20L R-20GD-B Grill Microwave Oven | Grill Function | 6 Programs | 11 Power Levels | Childlock | Timer and Clock",
+    "imageUrl": "https://img.lazcdn.com/g/p/689f7807b918100101f507677afb9b01.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:39.883Z",
+    "selectedVariant": [],
+    "skuId": "23713695248",
+    "referenceSha256": "47428e451af7660502a6efaba45870a5cc6c0f91b2b2c7be743f97a39578d764",
+    "artSha256": "6a2c875b815a1d829b4ebbf14635382a2bab308be14dd04331a207e61e8bec2e"
+  },
+  {
+    "productId": "panasonic-nn-st65qbypq",
+    "name": "松下 NN-ST65QBYPQ 变频微波炉",
+    "catalogSpecs": "NN-ST65QBYPQ · 32L · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/panasonic-nn-st65qbypq-32l-solo-microwave-oven-with-inverter-technology-i370828463-s9992080861.html",
+    "sourceTitle": "Panasonic NN-ST65QBYPQ 32L Solo Microwave Oven with Inverter Technology | Black",
+    "imageUrl": "https://img.lazcdn.com/g/p/afdb0071d7431b24220a2eb0e0e95568.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:40.121Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "9992080861",
+    "referenceSha256": "17eeb4956c6a48f14a30d000dd97298517a1846d78ed32f29cf5701cbd0d5aa8",
+    "artSha256": "bfb042fd4a86a230117383aa03286b041eeff28c4f16b3ff683780c76f502e59"
+  },
+  {
+    "productId": "panasonic-nn-cd58rsypq",
+    "name": "松下 NN-CD58RSYPQ 多功能微波炉",
+    "catalogSpecs": "NN-CD58RSYPQ · 27L",
+    "sourcePage": "https://www.lazada.sg/products/new-panasonic-27l-inverter-air-fry-grill-convection-and-microwave-oven-nn-cd58rsypq-i13889024146-s124886761798.html",
+    "sourceTitle": "[NEW] Panasonic 27L Inverter Air Fry, Grill, Convection and Microwave Oven NN-CD58RSYPQ",
+    "imageUrl": "https://img.lazcdn.com/g/p/3dc14e3cf63794a820e6d08fc6e56d1a.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:41.510Z",
+    "selectedVariant": [],
+    "skuId": "124886761798",
+    "referenceSha256": "918418cc761d1ed98c3fe4208347cf6fdccb5317654e5bafa01aa3cb5dfd3d1a",
+    "artSha256": "282f4fbc41098c52fce278eb357a5cdf41dd2e77f500c78b80ac5c13efadddf6"
+  },
+  {
+    "productId": "panasonic-nn-st34nbypq",
+    "name": "松下 NN-ST34NBYPQ 微波炉",
+    "catalogSpecs": "NN-ST34NBYPQ · 25L",
+    "sourcePage": "https://www.lazada.sg/products/panasonic-25l-solo-microwave-oven-nn-st34nbypq-i2554794749-s15989737524.html",
+    "sourceTitle": "Panasonic 25L Solo Microwave Oven NN-ST34NBYPQ",
+    "imageUrl": "https://img.lazcdn.com/g/p/d2259bb839cf8a95ae74053e0785863f.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:43.810Z",
+    "selectedVariant": [],
+    "skuId": "15989737524",
+    "referenceSha256": "4ea47a1a5871a7cbd39974c22445f35fa46eafa076789c102e998e90650f4d68",
+    "artSha256": "6944be6e4be55eaf62d00b626bd21dda78c82f39d2066e4fecd6010264a304db"
+  },
+  {
+    "productId": "mayer-mmic2050",
+    "name": "Mayer MMIC2050 电磁炉",
+    "catalogSpecs": "MMIC2050 · 2000W",
+    "sourcePage": "https://www.lazada.sg/products/mayer-mmic2050-electric-induction-cooker-2000w-i2125653273-s20981601250.html",
+    "sourceTitle": "Mayer (MMIC2050) Electric Induction Cooker 2000W",
+    "imageUrl": "https://img.lazcdn.com/g/p/fbef40b8e6e4cea2e9d33dc339b07916.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:44.461Z",
+    "selectedVariant": [],
+    "skuId": "20981601250",
+    "referenceSha256": "14818007ac5c3bfd2c053dacbfbd757aeb4a0b59e8ab02dfd58264b0eed55536",
+    "artSha256": "8f977a2a7daf6cf29cc436815b5bc30e524d3eeaf2c3026b4d1c533126ca8ef5"
+  },
+  {
+    "productId": "midea-mic2233",
+    "name": "美的 MIC2233 电磁炉",
+    "catalogSpecs": "MIC2233 · 2000W",
+    "sourcePage": "https://www.lazada.sg/products/mtech-midea-induction-cooker-2000w-mic2233-local-sg-delivery-i3558886770-s23499771620.html",
+    "sourceTitle": "[mtech] MIDEA INDUCTION COOKER 2000W MIC2233 [LOCAL SG DELIVERY]",
+    "imageUrl": "https://img.lazcdn.com/g/p/4b5941c8797243416c7e09e3daf7031e.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:46.443Z",
+    "selectedVariant": [],
+    "skuId": "23499771620",
+    "referenceSha256": "d5132d33cda6163172f8dd3f653c6fb739e68b60bf2b780a31dbcf1f9c6b7eb3",
+    "artSha256": "4287485e7aa623d53649067b7f05fb178fce9d50e3c588eba0c79533610b1681"
+  },
+  {
+    "productId": "russell-taylors-ic-10",
+    "name": "Russell Taylors IC-10 电磁炉",
+    "catalogSpecs": "IC-10 · 2000W · 黑色",
+    "sourcePage": "https://www.lazada.sg/products/russell-taylors-6-programs-induction-cooker-2000w-ic-10-i3296278818-s22138987761.html",
+    "sourceTitle": "Russell Taylors 6 Programs Induction Cooker 2000W IC-10 | Black",
+    "imageUrl": "https://img.lazcdn.com/g/p/1374facddbeec2751a9acda2692152b6.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:44.497Z",
+    "selectedVariant": [
+      "Black"
+    ],
+    "skuId": "22138987761",
+    "referenceSha256": "2039105816676c0fe85b1261b999c230a6f1451067ed119c67131fccea26b401",
+    "artSha256": "636283911d6829abc62c225e5f39a92b94b10a4efadecb281ed6a21b09086552"
+  },
+  {
+    "productId": "song-cho-sd300",
+    "name": "Song-Cho SD300 便携电磁炉",
+    "catalogSpecs": "SD300 · 白色",
+    "sourcePage": "https://www.lazada.sg/products/song-cho-induction-cooker-portable-sd300-i2997752217-s20534504762.html",
+    "sourceTitle": "Song Cho Induction Cooker, Portable (SD300) | White",
+    "imageUrl": "https://img.lazcdn.com/g/ff/kf/Sdb04b55036d54673a1830c5722796009q.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:46.049Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "20534504762",
+    "referenceSha256": "e0727f90ff9a56f289bc33a25ffe5d1cacbada7fc4d0c2f63cda0852b383c143",
+    "artSha256": "a93c5dfaef2ad645198be5bea262249c7b5260795f66a4f6d68ff44e5e988aed"
+  },
+  {
+    "productId": "europace-eic2201dbk",
+    "name": "EuropAce EIC2201DBK 便携电磁炉",
+    "catalogSpecs": "EIC2201DBK · 2000W",
+    "sourcePage": "https://www.lazada.sg/products/europace-2000w-portable-induction-cooker-eic2201dbk-crystal-glass-cooktop-for-high-durability-and-heat-resistance-pan-sensor-perfect-for-daily-cooking-i878757-s19591220789.html",
+    "sourceTitle": "EuropAce 2000W Portable Induction Cooker  | EIC2201DBK | Crystal Glass Cooktop for High Durability and Heat Resistance, Pan Sensor, Perfect for Daily Cooking",
+    "imageUrl": "https://img.lazcdn.com/g/p/57ddc74a06f537bd2b81f808ce8c6fac.jpg_720x720q80.jpg_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:46.374Z",
+    "selectedVariant": [],
+    "skuId": "19591220789",
+    "referenceSha256": "45a82ddcf014c31749e4838436a4fca82eb1c58e3664f8a0b6d21fd5efdcad9a",
+    "artSha256": "1aa30d0607dc5568b8001140880b05553334ea1b9dc2afacd2ec77a62353044f"
+  },
+  {
+    "productId": "cornell-csm-s31",
+    "name": "Cornell CSM-S31 三明治机",
+    "catalogSpecs": "CSM-S31 · 700W · 白色",
+    "sourcePage": "https://www.lazada.sg/products/cornell-sandwich-maker-700w-csm-s31-i308882660-s559364948.html",
+    "sourceTitle": "Cornell Sandwich Maker 700W CSM-S31 | White",
+    "imageUrl": "https://img.lazcdn.com/g/p/f033660636bcd084a4b44a411cb48065.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:47.928Z",
+    "selectedVariant": [
+      "White"
+    ],
+    "skuId": "559364948",
+    "referenceSha256": "c20f528b2f79cc7cab4fe2fac83e4dec6462d64653c4e294064a81569facfba1",
+    "artSha256": "4c2bb7f7889f25b183135d61f68284663ad3bfb858cced7283a1a0e1db54e6af"
+  },
+  {
+    "productId": "panasonic-nr-tc311buss",
+    "name": "松下 NR-TC311BUSS 双门冰箱",
+    "catalogSpecs": "NR-TC311BUSS · 297L · 仅配送",
+    "sourcePage": "https://www.lazada.sg/products/panasonic-nr-tc311buss-297l-2-door-top-mount-fridge-3-ticks-1-year-warranty-i3520054725-s23227434027.html",
+    "sourceTitle": "PANASONIC NR-TC311BUSS 297L 2 DOOR TOP MOUNT FRIDGE (3 Ticks) + 1 YEAR WARRANTY | DELIVERY ONLY",
+    "imageUrl": "https://img.lazcdn.com/g/p/c4c34c5f0d9fa518ceeba4bdac4d9b79.png_720x720q80.png_.webp",
+    "sourceCapturedAt": "2026-11-05T01:01:31.635Z",
+    "selectedVariant": [
+      "DELIVERY ONLY"
+    ],
+    "skuId": "23227434027",
+    "referenceSha256": "d2ff94dbf51322a6e6d6f0bb97e32e087645a312652fa437029d07afbf22a169",
+    "artSha256": "7bc1f36f6a36d5744f6a3f0c01f9bc8ae2a8cd1fcfb3500c4d6be1b79ac72aa9"
   }
 ]

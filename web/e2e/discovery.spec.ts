@@ -122,6 +122,44 @@ test('brand, category and sorting controls change the product results', async ({
   await expect(page.locator('.discover-product')).toHaveCount(28);
 });
 
+test('catalog pagination reaches later products and resets after a new search', async ({ page }) => {
+  const catalog = Array.from({ length: 30 }, (_, index) => ({
+    id: `pagination-product-${index + 1}`,
+    name: `Pagination Product ${String(index + 1).padStart(2, '0')}`,
+    brand: 'Pagination Brand',
+    category: '耳机',
+    visual: 'headphones',
+    specs: `Model ${index + 1}`,
+  }));
+  await page.route('**/api/catalog**', async route => {
+    const url = new URL(route.request().url());
+    const requestedPage = Number(url.searchParams.get('page') || 1);
+    const pageSize = Number(url.searchParams.get('pageSize') || 28);
+    const totalPages = Math.ceil(catalog.length / pageSize);
+    const currentPage = Math.min(requestedPage, totalPages);
+    await route.fulfill({ json: {
+      products: catalog.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+      categories: ['耳机'], brands: ['Pagination Brand'], total: catalog.length,
+      page: currentPage, pageSize, totalPages,
+    } });
+  });
+
+  await page.goto('/7hk9ho#search');
+  await expect(page.locator('.discover-product')).toHaveCount(28);
+  const pagination = page.getByRole('navigation', { name: 'Product pages' });
+  await expect(pagination).toBeVisible();
+  await pagination.getByRole('button', { name: 'Page 2' }).click();
+  await expect(page.locator('.discover-product')).toHaveCount(2);
+  await expect(page.locator('.discover-product h3')).toHaveText([
+    'Pagination Product 29', 'Pagination Product 30',
+  ]);
+  await expect(pagination.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
+
+  await page.getByPlaceholder('Search products, brands or models').fill('Pagination');
+  await expect(page.locator('.discover-product')).toHaveCount(28);
+  await expect(pagination.getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
+});
+
 test('an older preview API still supports brand filtering and sorting', async ({ page }) => {
   await page.route('**/api/catalog**', async route => {
     const url = new URL(route.request().url());

@@ -197,16 +197,28 @@ export interface CatalogResponse {
   categories: string[];
   brands?: string[];
   total: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 }
 
 export type CatalogSort = 'name-asc' | 'name-desc' | 'brand-asc';
 
-export async function searchCatalog(query = '', category = '', brand = '', sort: CatalogSort = 'name-asc'): Promise<CatalogResponse> {
+export async function searchCatalog(
+  query = '',
+  category = '',
+  brand = '',
+  sort: CatalogSort = 'name-asc',
+  page = 1,
+  pageSize = 28,
+): Promise<CatalogResponse> {
   const params = new URLSearchParams();
   if (query.trim()) params.set('q', query.trim());
   if (category) params.set('category', category);
   if (brand) params.set('brand', brand);
   if (sort !== 'name-asc') params.set('sort', sort);
+  params.set('page', String(page));
+  params.set('pageSize', String(pageSize));
   const suffix = params.toString() ? `?${params}` : '';
   return getJson<CatalogResponse>(`/api/catalog${suffix}`);
 }

@@ -3,9 +3,14 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowUp,
+  BadgeDollarSign,
   ImagePlus,
   Loader2,
   Mic,
+  PackageCheck,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
   Square,
   X,
 } from 'lucide-react';
@@ -169,6 +174,17 @@ export function PromptComposer({
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
+  }
+
+  function insertSearchGuide(query: string) {
+    if (busy || loadingConversation || imageBusy) return;
+    setValue(query);
+    setImageError(null);
+    setVoiceError(null);
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(query.length, query.length);
+    });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -401,6 +417,64 @@ export function PromptComposer({
           </div>
         </div>
       </form>
+
+      {variant === 'hero' && (
+        <section className="pc-query-guide" aria-label={t('composer.guideLabel')}>
+          <div className="pc-query-guide-heading">
+            <Sparkles size={15} aria-hidden="true" />
+            <span>
+              <strong>{t('composer.guideTitle')}</strong>
+              <small>{t('composer.guideHint')}</small>
+            </span>
+          </div>
+          <div className="pc-query-guide-chips">
+            <button
+              type="button"
+              className="pc-query-guide-chip"
+              onClick={() => insertSearchGuide(t('composer.guidePrice'))}
+              disabled={busy || loadingConversation || imageBusy}
+            >
+              <span className="pc-query-guide-chip-inner">
+                <BadgeDollarSign size={15} aria-hidden="true" />
+                <span>{t('composer.guidePrice')}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="pc-query-guide-chip"
+              onClick={() => insertSearchGuide(t('composer.guideWarranty'))}
+              disabled={busy || loadingConversation || imageBusy}
+            >
+              <span className="pc-query-guide-chip-inner">
+                <ShieldCheck size={15} aria-hidden="true" />
+                <span>{t('composer.guideWarranty')}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="pc-query-guide-chip"
+              onClick={() => insertSearchGuide(t('composer.guideBudget'))}
+              disabled={busy || loadingConversation || imageBusy}
+            >
+              <span className="pc-query-guide-chip-inner">
+                <PackageCheck size={15} aria-hidden="true" />
+                <span>{t('composer.guideBudget')}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="pc-query-guide-chip"
+              onClick={() => insertSearchGuide(t('composer.guideOfficial'))}
+              disabled={busy || loadingConversation || imageBusy}
+            >
+              <span className="pc-query-guide-chip-inner">
+                <SlidersHorizontal size={15} aria-hidden="true" />
+                <span>{t('composer.guideOfficial')}</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      )}
 
     </div>
   );

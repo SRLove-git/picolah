@@ -22,6 +22,14 @@ catalogRouter.get('/', async (req, res) => {
   const rawCategory = String(req.query.category || '').trim();
   const rawBrand = String(req.query.brand || '').trim();
   const sort = String(req.query.sort || 'name-asc');
+  const parsePositiveInteger = (value: unknown, fallback: number, maximum: number) => {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, maximum) : fallback;
+  };
+  const requestedPage = parsePositiveInteger(req.query.page, 1, 10_000);
+  // Keep the historical unpaginated API response for existing consumers.
+  // The Discover page explicitly requests its smaller display page size.
+  const pageSize = parsePositiveInteger(req.query.pageSize, 100, 100);
   const all = await listProducts();
   const categories = [...new Set(all.map((product) => product.category))].sort((a, b) =>
     a.localeCompare(b, 'zh-CN'),
@@ -42,8 +50,11 @@ catalogRouter.get('/', async (req, res) => {
     if (sort === 'brand-asc') return compare(a.brand, b.brand) || byName;
     return byName;
   });
+  const totalPages = Math.ceil(products.length / pageSize);
+  const page = totalPages > 0 ? Math.min(requestedPage, totalPages) : 1;
+  const pageStart = (page - 1) * pageSize;
   res.json({
-    products: products.slice(0, 100).map((product) => ({
+    products: products.slice(pageStart, pageStart + pageSize).map((product) => ({
       id: product.id,
       name: product.name,
       brand: product.brand,
@@ -54,5 +65,8 @@ catalogRouter.get('/', async (req, res) => {
     categories,
     brands,
     total: products.length,
+    page,
+    pageSize,
+    totalPages,
   });
 });
