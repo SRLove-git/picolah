@@ -10,7 +10,9 @@ self.addEventListener('activate', (event) => {
     (async () => {
       const keys = await caches.keys();
       await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
-      await self.clients.claim();
+      // No clients.claim() on purpose: claiming a page mid-load can abort the
+      // subresource requests it already started (first visit showed no images
+      // until a reload). New visits are controlled on their next navigation.
     })(),
   );
 });
