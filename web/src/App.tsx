@@ -84,7 +84,7 @@ export default function App() {
 }
 
 function AppWorkspace() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, required, promptLogin } = useSession();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -402,6 +402,7 @@ function AppWorkspace() {
             market,
             conversationId: startingId,
             image,
+            language: i18n.language === 'zh' ? 'zh' : 'en',
           },
           {
             onMeta: (meta) => {

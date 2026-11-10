@@ -1554,6 +1554,52 @@
   }
 }
 
+/* Keep the floating search guidance available under the docked chat composer. */
+.pc-composer-dock .pc-query-guide {
+  width: min(910px, 100%);
+  margin: 9px auto 0;
+  gap: 7px;
+  animation: none;
+}
+
+.pc-composer-dock .pc-query-guide-heading {
+  display: none;
+}
+
+.pc-composer-dock .pc-query-guide-chips {
+  gap: 7px;
+}
+
+.pc-composer-dock .pc-query-guide-chip {
+  min-height: 34px;
+  font-size: 10px;
+}
+
+.pc-composer-dock .pc-query-guide-chip-inner {
+  min-height: 30px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 18px -22px rgba(76, 39, 55, 0.72);
+}
+
+@media (max-width: 700px) {
+  .pc-composer-dock .pc-query-guide-chips {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 2px 2px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pc-composer-dock .pc-query-guide-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pc-composer-dock .pc-query-guide-chip {
+    flex: 0 0 auto;
+  }
+}
+
 .pc-home-reels {
   width: 100%;
   max-width: 720px;

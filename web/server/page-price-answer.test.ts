@@ -14,10 +14,9 @@ test('price view gives each distinct verified page amount, preserving qualifiers
   assert.equal(pagePriceAnswer(result([verified(0),{...verified(200),verification:undefined}]),'价格'),'暂无页面价');
   assert.equal(pagePriceAnswer(result([{...verified(12.5),currency:'USD'}]),'Price only').replace(/\s+/g,' '),'USD 12.50');
 });
-test('the web price preference respects explicit detail requests and a previous-price restatement',()=>{
-  for(const q of ['小米14','只要价格，不要链接','What is the price of this item?'])assert.equal(wantsPagePriceOnly(q,true),true);
-  for(const q of ['列出价格和库存','商品链接给我','Compare both stores','为什么没查到？'])assert.equal(wantsPagePriceOnly(q,true),false);
-  assert.equal(wantsPagePriceOnly('只要显示价格就可以',false),true);
+test('the amount-only reply is reserved for explicit price requests',()=>{
+  for(const q of ['只要价格，不要链接','只看价格','price only','只要显示价格就可以'])assert.equal(wantsPagePriceOnly(q),true);
+  for(const q of ['小米14','iphone17','What is the price of this item?','有现货吗','什么时候发货','哪个平台最便宜','列出价格和库存','商品链接给我','Compare both stores','为什么没查到？'])assert.equal(wantsPagePriceOnly(q),false);
   assert.equal(isPriceRestatement('只要显示价格就可以'),true);
   assert.equal(isPriceRestatement('只要小米14的价格'),false);
 });

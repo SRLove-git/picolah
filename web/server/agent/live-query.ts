@@ -11,6 +11,26 @@ const BASE_EDITION = /标准版|普通版|基础版|基础款|普通款|\b(?:sta
 const NAMED_PHONE = /\b(?:xiaomi|iphone|pixel|oneplus)\s*\d{1,2}[a-z]?\b/i;
 const PHONE_EDITION = /\b(?:pro|max|plus|mini|ultra|lite|se|air|fe)\b/gi;
 
+const IPHONE_QUERY = /^(.*?)\biphone\s*(\d{1,2})(.*)$/i;
+const IPHONE_EDITION: Record<string, string> = {
+  'pro max': 'Pro Max', pro: 'Pro', max: 'Max', plus: 'Plus', mini: 'Mini', air: 'Air', se: 'SE', e: 'e',
+};
+
+/** "iphone18pro" retrieves reviews and articles; Apple's spaced spelling retrieves merchant pages. */
+function formatPhoneQuery(value: string): string {
+  const match = value.match(IPHONE_QUERY);
+  if (!match) return value;
+  const prefix = (match[1] || '').replace(/\bapple\b/gi, 'Apple');
+  const rest = match[3] || '';
+  const editionMatch = rest.match(/^\s*(pro\s*max|pro|max|plus|mini|air|se|e)(?=$|[\s,，/+-])/i);
+  const editionKey = editionMatch ? editionMatch[1].toLowerCase().replace(/\s+/g, ' ') : '';
+  const normalizedKey = editionKey === 'promax' ? 'pro max' : editionKey;
+  const edition = IPHONE_EDITION[normalizedKey];
+  const tail = editionMatch ? rest.slice(editionMatch[0].length) : rest;
+  const head = `${prefix}iPhone ${match[2]}`;
+  return `${head}${edition ? (normalizedKey === 'e' ? '' : ' ') + edition : ''}${tail}`.replace(/\s+/g, ' ').trim();
+}
+
 /** Base phones usually omit "standard edition" from their merchant titles.
  * Keep other named editions, negations and unrelated products unchanged. The
  * crawler's base-model filter still rejects Pro/Ultra/etc. after normalization.
@@ -52,7 +72,8 @@ function searchContent(message: string): string {
 /** Normalize a shopping request without consulting a product catalog. */
 export function liveSearchQuery(message: string, previous?: Comparison | null, mode: 'live' | 'catalog' = 'live', originalQuestion?: string): { query: string; model?: string; maxPrice?: number } | null {
   message = normalizeBasePhoneEdition(separateBrandAndModel(searchContent(stripPlatformExamples(message))));
-  const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
+  // "Pro Max 256GB" is a model and capacity, not a maximum budget.
+  const budgetPattern = /(?:预算\s*|不超过\s*|低于\s*|\bunder\s+|\bbelow\s+|(?<!pro)(?<!pro\s)\bmax(?:imum)?\s+)(\d+(?:\.\d+)?)(?!\s*(?:gb|tb|ml|mm)\b)(?:\s*(?:SGD|MYR|THB|IDR|PHP|VND|元|块))?(?:\s*以内)?/i;
   const budgetMatch = message.match(budgetPattern);
   const maxPrice = budgetMatch && Number(budgetMatch[1]) > 0 ? Number(budgetMatch[1]) : undefined;
   const budget = maxPrice === undefined ? {} : { maxPrice };
@@ -100,7 +121,7 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
   if (ordinal) return null;
   const previousText = previous?.search?.query || previous?.search?.model || previous?.product?.name;
   const normalizedPrevious = previousText ? normalizeBasePhoneEdition(normalizeSearchLanguage(previousText)) : '';
-  const previousQuery = normalizedPrevious.length <= 120 ? normalizedPrevious : '';
+  const previousQuery = normalizedPrevious.length <= 120 ? formatPhoneQuery(normalizedPrevious) : '';
   // Variant-only followups change constraints without losing the previous product.
   const requestedVariants = variants(message);
   if (previousQuery && requestedVariants.length && /^(?:那|这个|这款|换成|换|要|看|的|呢|吗|\s|黑色|白色|银色|蓝色|粉色|[a-z]+|[0-9.])+[?？]?$/i.test(message)) {
@@ -155,7 +176,7 @@ export function liveSearchQuery(message: string, previous?: Comparison | null, m
   }
   if (/^(你好|您好|谢谢|hi|hello|thanks)$/i.test(query)) return null;
   if (query.length < 2 || query.length > 120 || /https?:\/\//i.test(query)) return null;
-  query = normalizeSearchLanguage(query);
+  query = formatPhoneQuery(normalizeSearchLanguage(query));
   if (query.length > 120) return null;
   return { query, ...budget };
 }

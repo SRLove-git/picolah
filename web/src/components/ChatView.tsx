@@ -162,6 +162,8 @@ export function ChatView({
                     text={stream.text}
                     hasResults={!stream.comparison?.priceOnly && Boolean(stream.comparison?.offers.length)}
                     offerCount={stream.comparison?.offers.length || 0}
+                    startedAt={stream.startedAt}
+                    resultsReady={Boolean(stream.comparison)}
                   />
                 )}
               </>

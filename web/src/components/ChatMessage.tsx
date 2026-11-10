@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Copy, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, CountryCode, PriceMode } from '../../shared/types';
@@ -122,18 +122,44 @@ export function ChatMessage({ message, priceMode, market, onAsk }: ChatMessagePr
   );
 }
 
+/**
+ * A search can take a minute or more and the crawler reports no numeric
+ * progress. Advance toward the last honest checkpoint instead of pretending
+ * the bar knows the exact remaining work.
+ */
+function useSearchProgress(startedAt: number, resultsReady: boolean, streamingText: boolean): number {
+  const [progress, setProgress] = useState(6);
+  useEffect(() => {
+    if (streamingText) return;
+    const tick = () => {
+      const elapsed = Math.max(0, (Date.now() - startedAt) / 1000);
+      const target = resultsReady ? 94 : 4 + 86 * (1 - Math.exp(-elapsed / 26));
+      setProgress((current) => Math.max(current, Math.min(target, resultsReady ? 94 : 90)));
+    };
+    tick();
+    const timer = window.setInterval(tick, 450);
+    return () => window.clearInterval(timer);
+  }, [startedAt, resultsReady, streamingText]);
+  return progress;
+}
+
 export function StreamingMessage({
   status,
   text,
   hasResults,
   offerCount,
+  startedAt,
+  resultsReady,
 }: {
   status: string;
   text: string;
   hasResults: boolean;
   offerCount: number;
+  startedAt: number;
+  resultsReady: boolean;
 }) {
   const { t } = useTranslation();
+  const progress = useSearchProgress(startedAt, resultsReady, Boolean(text));
   return (
     <article className="message message-assistant is-streaming" aria-live="polite">
       <header className="assistant-head">
@@ -174,6 +200,16 @@ export function StreamingMessage({
                 <i />
                 <i />
               </span>
+            </div>
+            <div
+              className="thinking-progress"
+              role="progressbar"
+              aria-label={t('chat.searching')}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress)}
+            >
+              <span className="thinking-progress-fill" style={{ width: `${progress}%` }} />
             </div>
             <div className="thinking-skeleton" aria-hidden="true">
               <span style={{ width: '92%' }} />

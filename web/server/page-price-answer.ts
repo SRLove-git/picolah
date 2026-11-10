@@ -3,11 +3,12 @@ import { formatCurrency, formatMoney } from '../shared/format.ts';
 
 const amountRequest = /(?:只(?:要|需(?:要)?|想|用)?|仅(?:需|要)?)\s*(?:看|显示|返回|展示|给(?:我)?|告诉我|报)?\s*(?:商品|页面|实际)?(?:价格|金额|价钱|售价)|(?:price|amount|prices) only|(?:only|just) (?:show (?:me )?|give (?:me )?|the )*(?:prices?|amounts?)\b/i;
 
-export function wantsPagePriceOnly(question: string, compact: boolean): boolean {
+export function wantsPagePriceOnly(question: string): boolean {
   const request=question.replace(/(?:不要|不用|无需|不需要|别)(?:再)?(?:显示|给我|附|加)?(?:商品页)?(?:链接|库存|说明|详情)|(?:without|no) (?:links?|details?|explanations?)/gi,'');
   // Explicit requests for evidence, comparisons, purchase advice or a specific format keep the detailed reply.
   const details=/链接|网址|库存|有货|缺货|配送|运费|优惠|(?:卖家|商家)(?:名称|名字|链接|列表)|(?:和|及|加上)(?:卖家|商家)|怎么买|哪里买|哪里.*购买|为什么|原因|怎么办|下一步|推荐|比较|对比|区别|参数|规格.{0,4}(?:对照|列出)|建议|值得|表格|来源|\b(?:links?|urls?|sources?|stock|availability|shipping|delivery|sellers?|compare|comparison|recommend|table|why|advice)\b|where (?:can I |to )?buy/i;
-  return (compact || amountRequest.test(request)) && !details.test(request);
+  // A display preference alone never turns a normal question into a bare amount list.
+  return amountRequest.test(request) && !details.test(request);
 }
 
 export function isPriceRestatement(question: string): boolean {

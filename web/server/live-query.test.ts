@@ -16,6 +16,21 @@ test('brand and model typed without spaces retain separate identities and constr
   assert.deepEqual(liveSearchQuery('philipsna221/09价格'), { query: 'Philips NA221/09', model: 'NA-221/09' });
 });
 
+test('compact iPhone spellings become the merchant-searchable Apple name', () => {
+  for (const text of ['iphone18pro', 'iphone 18 pro', 'iPhone18Pro', 'Apple iphone18pro']) {
+    assert.deepEqual(liveSearchQuery(text), { query: text.startsWith('Apple') ? 'Apple iPhone 18 Pro' : 'iPhone 18 Pro' });
+  }
+  assert.deepEqual(liveSearchQuery('iphone18promax'), { query: 'iPhone 18 Pro Max' });
+  assert.deepEqual(liveSearchQuery('iphone16e'), { query: 'iPhone 16e' });
+  assert.deepEqual(liveSearchQuery('iphone17'), { query: 'iPhone 17' });
+});
+
+test('Pro Max is a model suffix, not a maximum budget', () => {
+  assert.deepEqual(liveSearchQuery('iphone 15 pro max 256gb'), { query: 'iPhone 15 Pro Max 256gb' });
+  assert.deepEqual(liveSearchQuery('iPhone 15 Pro Max 512GB 预算6000'), { query: 'iPhone 15 Pro Max 512GB', maxPrice: 6000 });
+  assert.deepEqual(liveSearchQuery('iPhone 15 max 500'), { query: 'iPhone 15', maxPrice: 500 });
+});
+
 function previous(query: string): Comparison {
   return {
     kind: 'empty', query, market: 'SG', product: null, offers: [], alternatives: [],

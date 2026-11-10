@@ -25,7 +25,7 @@ import { conversationTools, fallbackConversationAnswer, needsProductClarificatio
 export const chatRouter = Router();
 const chatSchema = z.object({
   message: z.string().trim().max(1200).default(''),
-  priceDisplay: z.enum(['amount','details']).optional(),
+  language: z.enum(['zh', 'en']).optional(),
   conversationId: z.string().trim().min(1).max(100).optional().nullable(),
   market: z.enum(COUNTRY_CODES).default('SG'),
   image: z.string().trim().max(4_500_000).optional().nullable(),
@@ -57,7 +57,7 @@ async function streamLocal(res: import('express').Response, text: string): Promi
 chatRouter.post('/', async (req, res) => {
   const parsed = chatSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'INVALID_REQUEST', message: '请输入想比价的商品' });
-  const { message: rawMessage, conversationId, market: selectedMarket } = parsed.data;
+  const { message: rawMessage, conversationId, market: selectedMarket, language } = parsed.data;
   let image: string | undefined;
   try { image = validateImage(parsed.data.image); }
   catch (error) { return res.status(400).json({ error: 'INVALID_IMAGE', message: error instanceof Error ? error.message : '图片无法读取' }); }
@@ -142,7 +142,7 @@ chatRouter.post('/', async (req, res) => {
       answer = await streamLocal(res,pagePriceAnswer(replyContext.previous,message));
     } else if (llmConfigured) {
       try {
-        for await (const delta of streamChatAnswer(message, replyContext)) {
+        for await (const delta of streamChatAnswer(message, replyContext, language)) {
           if (res.destroyed) return;
           answer += delta;
           usedLlm = true;
@@ -256,7 +256,7 @@ chatRouter.post('/', async (req, res) => {
   }
 
   if (!catalogMode && target && comparison.search && !comparison.unsupportedPlatforms?.length &&
-    wantsPagePriceOnly(message, parsed.data.priceDisplay === 'amount')) comparison.priceOnly = true;
+    wantsPagePriceOnly(message)) comparison.priceOnly = true;
   try {
     if (!(await recordConversationComparison(conversation.id, comparison))) {
       sse(res, 'error', { message: '对话已删除，请开始新的比价。' });
@@ -286,8 +286,8 @@ chatRouter.post('/', async (req, res) => {
     answer = await streamLocal(res,pagePriceAnswer(comparison,message));
   } else if (llmConfigured && canAnswer && (!catalogMode || catalogQuotes(comparison).length > 0)) {
     try {
-      const stream = catalogMode ? streamCatalogAnswer(comparison, message)
-        : target ? streamLlmAnswer(comparison, message) : streamChatAnswer(message);
+      const stream = catalogMode ? streamCatalogAnswer(comparison, message, language)
+        : target ? streamLlmAnswer(comparison, message, undefined, language) : streamChatAnswer(message, undefined, language);
       for await (const delta of stream) {
         usedLlm = true;
         answer += delta;

@@ -25,7 +25,9 @@ export function CapyWardrobe({ view, syncing, available, onToggle }: {
         <span>{en ? uiText('Today’s little look') : '今天穿什么'}</span>
         <strong>{outfit ? en ? uiText(outfit.nameEn) : outfit.nameZh : en ? uiText('Fluffy and free') : '原装毛茸茸'}</strong>
         <p>{outfit ? en ? uiText(outfit.descriptionEn) : outfit.descriptionZh : en ? uiText('Pick a little outfit below.') : '选一套喜欢的，马上穿给你看。'}</p>
-        <small role="status">{syncing ? en ? uiText('Getting dressed…') : '正在换装……' : !available ? en ? uiText('Connect to save your outfit.') : '联网后就能保存穿搭啦。' : en ? uiText('Tap a worn item to take it off.') : '再点一下已穿的款式，就能脱下。'}</small>
+        {(syncing || !available) && (
+          <small role="status">{syncing ? en ? uiText('Getting dressed…') : '正在换装……' : en ? uiText('Connect to save your outfit.') : '联网后就能保存穿搭啦。'}</small>
+        )}
       </div>
     </div>
     <div className="pc-wardrobe-categories" role="group" aria-label={en ? uiText('Wardrobe category') : '衣橱分类'}>

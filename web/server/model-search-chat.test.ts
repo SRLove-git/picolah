@@ -612,9 +612,13 @@ test('chat searches each selected country and an explicit country overrides the 
   assert.equal(requests.at(-1)?.payload.geography, undefined);
 });
 
-test('a compact lookup keeps the structured result and emits only the price or a no-price reply',async()=>{
+test('only an explicit amount request returns a bare price list',async()=>{
   mode='valid';
-  const matched=await ask('Sony WH-CH720N',{priceDisplay:'amount'});
+  // A client-side display preference must not strip the written answer.
+  const normal=await ask('Sony WH-CH720N',{priceDisplay:'amount'});
+  assert.equal(normal.comparison.priceOnly,undefined);
+  assert.doesNotMatch(normal.answer,/^S\$[\d,.]+(?:\n\nS\$[\d,.]+)*$/);
+  const matched=await ask('只看价格 Sony WH-CH720N');
   if (matched.comparison.offers.length || matched.comparison.alternatives.some(i=>i.offer)) {
     assert.equal(matched.comparison.priceOnly,true);
     assert.match(matched.answer,/^S\$[\d,.]+(?:\n\nS\$[\d,.]+)*$/);
@@ -622,7 +626,7 @@ test('a compact lookup keeps the structured result and emits only the price or a
     assert.equal(matched.answer,'暂无页面价');
   }
   mode='not_found';
-  const missing=await ask('价格：Sony WF-1000XM6',{priceDisplay:'amount'});
+  const missing=await ask('只看价格 Sony WF-1000XM6');
   assert.equal(missing.comparison.priceOnly,true);
   assert.equal(missing.answer,'暂无页面价');
 });

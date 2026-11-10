@@ -34,6 +34,23 @@ import {
 } from '../lib/social';
 import './radar.css';
 
+const DOMAIN_TAG = /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/.*)?$/i;
+
+/** A merchant domain recorded from browsing is not a shopping preference. */
+const withoutDomainTags = (tags: SharedPreference[]) =>
+  tags.filter((tag) => !DOMAIN_TAG.test(tag.en.trim()) && !DOMAIN_TAG.test(tag.zh.trim()));
+
+const visibleRadar = (data: RadarData): RadarData => ({
+  ...data,
+  self: {
+    ...data.self,
+    categories: withoutDomainTags(data.self.categories),
+    brands: withoutDomainTags(data.self.brands),
+    platforms: withoutDomainTags(data.self.platforms),
+  },
+  candidates: data.candidates.map((candidate) => ({ ...candidate, shared: withoutDomainTags(candidate.shared) })),
+});
+
 const COPY = {
   zh: {
     more: '雷达选项',
@@ -41,10 +58,8 @@ const COPY = {
     profile: '查看资料',
     navigation: '打开导航',
     title: '雷达',
-    description: '根据消费偏好，找到和你相似的人。',
     headline: '发现与你同频的人',
     community: '购物同好',
-    intro: '从喜欢的品牌到常逛的品类，让共同偏好成为认识的开始。',
     preferenceNote: '来自你的比价足迹',
     viewPreferences: '查看偏好',
     emptyTitle: '还在寻找你的购物同好',
@@ -103,10 +118,8 @@ const COPY = {
     profile: 'View profile',
     navigation: 'Open navigation',
     title: 'Radar',
-    description: 'Meet people whose shopping preferences look like yours.',
     headline: 'Good finds. Like minds.',
     community: 'A shared taste',
-    intro: 'A favorite brand. A shared interest. Find your next conversation in the things you love.',
     preferenceNote: 'From your comparison activity',
     viewPreferences: 'View preferences',
     emptyTitle: 'Your shopping circle is still growing',
@@ -219,7 +232,7 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
     setLoading(true);
     setError('');
     try {
-      setData(await getRadar());
+      setData(visibleRadar(await getRadar()));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : copy.loading);
     } finally {
@@ -370,7 +383,6 @@ export function RadarView({ onOpenSidebar, onStart, notify }: RadarViewProps) {
             <div className="radar-intro-copy">
               <span className="radar-eyebrow"><Radar size={17} aria-hidden="true" />{copy.community}</span>
               <h2>{copy.headline}</h2>
-              <p>{copy.intro}</p>
             </div>
             {user && data ? (
               <div className="radar-shortcuts">

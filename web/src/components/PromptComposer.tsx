@@ -418,7 +418,7 @@ export function PromptComposer({
         </div>
       </form>
 
-      {variant === 'hero' && (
+      {(variant === 'hero' || variant === 'dock') && (
         <section className="pc-query-guide" aria-label={t('composer.guideLabel')}>
           <div className="pc-query-guide-heading">
             <Sparkles size={15} aria-hidden="true" />
@@ -475,7 +475,6 @@ export function PromptComposer({
           </div>
         </section>
       )}
-
     </div>
   );
 }

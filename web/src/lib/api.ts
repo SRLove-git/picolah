@@ -264,6 +264,8 @@ export interface StreamChatInput {
   market: string;
   conversationId?: string | null;
   image?: string;
+  /** UI language, used for a bare product name that has no language of its own. */
+  language?: 'zh' | 'en';
 }
 
 interface SseEvent {
@@ -300,7 +302,7 @@ export async function streamChat(
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...userHeaders() },
-    body: JSON.stringify({ ...input, priceDisplay: 'amount' }),
+    body: JSON.stringify(input),
     signal,
   });
 

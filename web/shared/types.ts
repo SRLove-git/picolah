@@ -9,6 +9,9 @@ export type CountryCode = (typeof COUNTRY_CODES)[number];
 
 export type PriceMode = 'landed' | 'item' | 'shipping' | 'history';
 
+/** Interface language used when a query itself carries no natural-language cue. */
+export type ReplyLanguage = 'zh' | 'en';
+
 export interface Market {
   code: CountryCode;
   nameZh: string;
@@ -143,8 +146,8 @@ export interface PricePoint {
 }
 
 export interface Offer {
-  productTitle?: string;
   source?: 'live' | 'catalog';
+  productTitle?: string;
   productDetails?: { brand?: string; model?: string; description?: string };
   verification?: { source: 'product-page'; checkedAt: string };
   imageUrl?: string;

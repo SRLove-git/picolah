@@ -52,6 +52,18 @@ test('the chat payload has no price data and forbids inventing one', () => {
   assert.doesNotMatch(JSON.stringify(messages), /SGD|S\$|liveResults/);
 });
 
+test('a bare product name answers in the interface language instead of English', () => {
+  const comparison = searchComparison('failed');
+  comparison.search!.query = 'iphone18pro';
+  const [prompt, payload] = buildLiveMessages(comparison, 'iphone18pro', 'zh');
+  assert.equal(JSON.parse(payload.content as string).uiLanguage, '中文');
+  assert.match(prompt.content as string, /uiLanguage/);
+  assert.match(prompt.content as string, /Latin-script product name never means English/);
+  assert.match(buildLiveMessages(searchComparison('matched'), 'iphone17', 'zh')[0].content as string, /不要因为商品名是拉丁字母就改用英文/);
+  assert.equal(buildChatMessages('iphone18pro', undefined, 'zh')[1].content, '用户问题：iphone18pro\n界面语言：中文');
+  assert.equal(buildChatMessages('iphone18pro', undefined, 'en')[1].content, '用户问题：iphone18pro\n界面语言：English');
+});
+
 test('coverage footer augments partial results but does not repeat a failed-search answer', () => {
   assert.equal(liveSearchCoverageNote(searchComparison('failed', true)), '');
   assert.equal(liveSearchCoverageNote(searchComparison('not_found', true)), '');
